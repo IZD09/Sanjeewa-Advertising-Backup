@@ -1,0 +1,14 @@
+{
+    "Admin": true,
+    "Core": true,
+    "User": true,
+    "Customer": true,
+    "PrintJob": true,
+    "Design": true,
+    "Inventory": true,
+    "Supplier": true,
+    "Transaction": true,
+    "UI": true,
+    "Invoice": true,
+    "Reports": true
+}

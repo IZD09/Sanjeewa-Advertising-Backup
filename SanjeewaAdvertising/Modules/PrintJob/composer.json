@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/printjob",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\PrintJob\\": "app/",
+            "Modules\\PrintJob\\Database\\Factories\\": "database/factories/",
+            "Modules\\PrintJob\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\PrintJob\\Tests\\": "tests/"
+        }
+    }
+}
