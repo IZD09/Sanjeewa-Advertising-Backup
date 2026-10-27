@@ -1,30 +1,62 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en" data-theme="light">
 
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>SanjeewaAdvertising | Management System</title>
 
-        <title>UI Module - {{ config('app.name', 'Laravel') }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ asset('dashboard.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/place-order.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/modules.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/inventory.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/grn.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/payments.css') }}">
+</head>
 
-        <meta name="description" content="{{ $description ?? '' }}">
-        <meta name="keywords" content="{{ $keywords ?? '' }}">
-        <meta name="author" content="{{ $author ?? '' }}">
+<body>
+  <div class="app" id="app">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    {{-- Sidebar Component --}}
+    @include('ui::components.sidebar')
 
-        {{-- Vite CSS --}}
-        {{-- {{ module_vite('build-ui', 'resources/assets/sass/app.scss') }} --}}
-    </head>
+    <!-- Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <body>
+    <!-- Main Content Area with Shared Topbar & Viewport -->
+    <main class="main-area" id="mainArea">
+
+      {{-- Topbar Component --}}
+      @include('ui::components.topbar')
+
+      <!-- Dynamic Main Content Viewport -->
+      <div class="main-content-viewport" id="mainContentViewport">
         {{ $slot }}
+      </div>
+    </main>
+  </div>
 
-        {{-- Vite JS --}}
-        {{-- {{ module_vite('build-ui', 'resources/assets/js/app.js') }} --}}
-    </body>
+  {{-- Shared Modals Container --}}
+  @include('ui::layouts.modals.modals')
+
+  <!-- Toast Container -->
+  <div class="po-toast-container" id="poToastContainer"></div>
+
+  <!-- Application Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="{{ asset('dashboard.js') }}"></script>
+  <script src="{{ asset('js/sidebar.js') }}"></script>
+  <script src="{{ asset('js/components/topbar.js') }}"></script>
+  <script src="{{ asset('js/place-order.js') }}"></script>
+  <script src="{{ asset('js/inventory.js') }}"></script>
+  <script src="{{ asset('js/grn.js') }}"></script>
+  <script src="{{ asset('js/payments.js') }}"></script>
+  <script src="{{ asset('js/app.js') }}"></script>
+</body>
+
 </html>
