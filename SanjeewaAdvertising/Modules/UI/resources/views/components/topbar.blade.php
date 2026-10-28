@@ -8,8 +8,8 @@
             <i class="fa-solid fa-bars"></i>
           </button>
           <div>
-            <div class="breadcrumb" id="breadcrumbArea">Workspace / <span id="breadcrumbTitle">Dashboard</span></div>
-            <h1 id="pageTitle">Business Overview</h1>
+            <div class="breadcrumb" id="breadcrumbArea">@hasSection('breadcrumb')@yield('breadcrumb')@else Workspace / <span id="breadcrumbTitle">Dashboard</span>@endif</div>
+            <h1 id="pageTitle">@hasSection('page_title')@yield('page_title')@else Business Overview @endif</h1>
           </div>
         </div>
 

@@ -48,6 +48,13 @@ class GRNManager {
     this.loadData();
     this.bindEvents();
     this.render();
+
+    // Support URL view parameter (e.g. ?view=suppliers or ?view=po)
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get("view");
+    if (viewParam === "suppliers" || viewParam === "po" || viewParam === "form") {
+      this.switchView(viewParam);
+    }
   }
 
   /* ==========================================================================

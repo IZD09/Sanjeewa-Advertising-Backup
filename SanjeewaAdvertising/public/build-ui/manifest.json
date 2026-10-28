@@ -1,0 +1,92 @@
+{
+  "resources/assets/sass/app.scss": {
+    "file": "assets/app.css",
+    "src": "resources/assets/sass/app.scss",
+    "isEntry": true
+  },
+  "resources/assets/js/app.js": {
+    "file": "assets/app.js",
+    "src": "resources/assets/js/app.js",
+    "isEntry": true
+  },
+  "resources/assets/css/core.css": {
+    "file": "assets/core.css",
+    "src": "resources/assets/css/core.css",
+    "isEntry": true
+  },
+  "resources/assets/css/dashboard.css": {
+    "file": "assets/dashboard.css",
+    "src": "resources/assets/css/dashboard.css",
+    "isEntry": true
+  },
+  "resources/assets/css/modules.css": {
+    "file": "assets/modules.css",
+    "src": "resources/assets/css/modules.css",
+    "isEntry": true
+  },
+  "resources/assets/css/place-order.css": {
+    "file": "assets/place-order.css",
+    "src": "resources/assets/css/place-order.css",
+    "isEntry": true
+  },
+  "resources/assets/css/inventory.css": {
+    "file": "assets/inventory.css",
+    "src": "resources/assets/css/inventory.css",
+    "isEntry": true
+  },
+  "resources/assets/css/grn.css": {
+    "file": "assets/grn.css",
+    "src": "resources/assets/css/grn.css",
+    "isEntry": true
+  },
+  "resources/assets/css/payments.css": {
+    "file": "assets/payments.css",
+    "src": "resources/assets/css/payments.css",
+    "isEntry": true
+  },
+  "resources/assets/css/components/sidebar.css": {
+    "file": "assets/components/sidebar.css",
+    "src": "resources/assets/css/components/sidebar.css",
+    "isEntry": true
+  },
+  "resources/assets/js/core.js": {
+    "file": "assets/core.js",
+    "src": "resources/assets/js/core.js",
+    "isEntry": true
+  },
+  "resources/assets/js/dashboard.js": {
+    "file": "assets/dashboard.js",
+    "src": "resources/assets/js/dashboard.js",
+    "isEntry": true
+  },
+  "resources/assets/js/components/sidebar.js": {
+    "file": "assets/components/sidebar.js",
+    "src": "resources/assets/js/components/sidebar.js",
+    "isEntry": true
+  },
+  "resources/assets/js/components/topbar.js": {
+    "file": "assets/components/topbar.js",
+    "src": "resources/assets/js/components/topbar.js",
+    "isEntry": true
+  },
+  "resources/assets/js/place-order.js": {
+    "file": "assets/place-order.js",
+    "src": "resources/assets/js/place-order.js",
+    "isEntry": true
+  },
+  "resources/assets/js/inventory.js": {
+    "file": "assets/inventory.js",
+    "src": "resources/assets/js/inventory.js",
+    "isEntry": true
+  },
+  "resources/assets/js/grn.js": {
+    "file": "assets/grn.js",
+    "src": "resources/assets/js/grn.js",
+    "isEntry": true
+  },
+  "resources/assets/js/payments.js": {
+    "file": "assets/payments.js",
+    "src": "resources/assets/js/payments.js",
+    "isEntry": true
+  }
+}

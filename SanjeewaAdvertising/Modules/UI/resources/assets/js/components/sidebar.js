@@ -1,10 +1,104 @@
 /**
- * Reusable Sidebar Component
+ * Reusable Sidebar & Navigation Component
  * Sanjeewa Advertising Printing Shop Management System
- * Handles: Desktop Collapse/Expand, Mobile Drawer, Link Active States, Responsiveness
+ * Handles: Switch-case Navigation, Desktop Collapse/Expand, Mobile Drawer, Link Active States
  */
 
 "use strict";
+
+class Navigation {
+  constructor() {
+    this.init();
+  }
+
+  init() {
+    this.bindEvents();
+  }
+
+  bindEvents() {
+    document.addEventListener("click", (e) => {
+      // Find button clicked within navigation
+      const navBtn = e.target.closest("button.nav-link, button.nav-sublink, button[data-route]");
+      if (!navBtn) return;
+
+      // If clicked specifically on the caret inside a dropdown toggle, only toggle dropdown (don't navigate)
+      if (e.target.closest(".nav-caret")) {
+        return;
+      }
+
+      const navigateLocation = navBtn.getAttribute("data-route");
+      const targetView = navBtn.getAttribute("data-view");
+
+      if (navigateLocation) {
+        this.navigate(navigateLocation, targetView);
+      }
+    });
+  }
+
+  navigate(navigateLocation, targetView = null) {
+    switch (navigateLocation) {
+      case "dashboard":
+        window.location.href = "/dashboard";
+        break;
+
+      case "reports":
+        window.location.href = "/reports";
+        break;
+
+      case "print-jobs":
+        window.location.href = "/print-jobs";
+        break;
+
+      case "place-order":
+        if (targetView === "orders") {
+          window.location.href = "/place-order?view=orders";
+        } else {
+          window.location.href = "/place-order";
+        }
+        break;
+
+      case "customers":
+        window.location.href = "/customers";
+        break;
+
+      case "payments":
+        if (targetView === "invoice-payment") {
+          window.location.href = "/payments?view=invoice-payment";
+        } else if (targetView === "grn-payment") {
+          window.location.href = "/payments?view=grn-payment";
+        } else {
+          window.location.href = "/payments";
+        }
+        break;
+
+      case "inventory":
+        if (targetView === "categories") {
+          window.location.href = "/inventory?view=categories";
+        } else {
+          window.location.href = "/inventory";
+        }
+        break;
+
+      case "grn":
+        if (targetView === "po") {
+          window.location.href = "/grn?view=po";
+        } else if (targetView === "suppliers") {
+          window.location.href = "/grn?view=suppliers";
+        } else {
+          window.location.href = "/grn";
+        }
+        break;
+
+      case "settings":
+        window.location.href = "/settings";
+        break;
+
+      default:
+        window.location.href = "/" + navigateLocation;
+        break;
+    }
+  }
+}
 
 class SidebarComponent {
   constructor() {
@@ -22,32 +116,8 @@ class SidebarComponent {
 
   init() {
     this.refreshElements();
-    if (!this.sidebar && document.getElementById("sidebarContainer")) {
-      this.loadSidebar();
-    } else {
-      this.initDesktopState();
-      this.bindEvents();
-    }
-  }
-
-  async loadSidebar(containerId = "sidebarContainer") {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    try {
-      const res = await fetch("components/sidebar.html");
-      if (res.ok) {
-        container.innerHTML = await res.text();
-        this.refreshElements();
-        this.initDesktopState();
-        this.bindEvents();
-        if (window.appRouter) {
-          this.setActiveRoute(window.appRouter.currentRoute);
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch components/sidebar.html dynamically", err);
-    }
+    this.initDesktopState();
+    this.bindEvents();
   }
 
   refreshElements() {
@@ -98,14 +168,14 @@ class SidebarComponent {
       if (dropdownToggle) {
         const dropdown = dropdownToggle.closest(".nav-dropdown");
         if (dropdown) {
-          // If clicked directly on the caret icon, just toggle the dropdown
+          // If clicked on caret or to expand/collapse dropdown
           if (e.target.closest(".nav-caret")) {
             e.preventDefault();
             e.stopPropagation();
             dropdown.classList.toggle("expanded");
             return;
           }
-          // Otherwise expand dropdown when navigating
+          // Otherwise expand dropdown
           dropdown.classList.add("expanded");
         }
       }
@@ -142,7 +212,6 @@ class SidebarComponent {
     localStorage.setItem("sa-sidebar-collapsed", this.isCollapsed ? "true" : "false");
     this.updateToggleIcon();
 
-    // Trigger window resize so charts and responsive tables resize smoothly
     window.dispatchEvent(new Event("resize"));
     setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
     setTimeout(() => window.dispatchEvent(new Event("resize")), 320);
@@ -208,7 +277,7 @@ class SidebarComponent {
 
     if (view) {
       this.navLinks.forEach(link => {
-        const linkRoute = link.getAttribute("data-route") || link.getAttribute("href")?.replace("#", "");
+        const linkRoute = link.getAttribute("data-route");
         const linkView = link.getAttribute("data-view");
         const normalizedView = (view === "invoice" ? "invoice-payment" : (view === "grn" ? "grn-payment" : view));
         const normalizedLinkView = (linkView === "invoice" ? "invoice-payment" : (linkView === "grn" ? "grn-payment" : linkView));
@@ -225,7 +294,7 @@ class SidebarComponent {
     if (!matchedSpecific) {
       let activatedPrimary = false;
       this.navLinks.forEach(link => {
-        const linkRoute = link.getAttribute("data-route") || link.getAttribute("href")?.replace("#", "");
+        const linkRoute = link.getAttribute("data-route");
         if (linkRoute === route && !activatedPrimary) {
           link.classList.add("active");
           activatedPrimary = true;
@@ -239,8 +308,10 @@ class SidebarComponent {
 
 // Global initialization
 if (typeof window !== "undefined") {
+  window.Navigation = Navigation;
   window.SidebarComponent = SidebarComponent;
   document.addEventListener("DOMContentLoaded", () => {
+    window.navigation = new Navigation();
     window.sidebarComponent = new SidebarComponent();
   });
 }

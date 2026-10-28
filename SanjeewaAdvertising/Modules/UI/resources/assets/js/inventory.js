@@ -22,6 +22,12 @@ class InventoryManager {
     this.loadData();
     this.bindEvents();
     this.render();
+
+    // URL parameter support (?view=categories)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("view") === "categories") {
+      this.openCategoriesModal();
+    }
   }
 
   loadData() {
@@ -313,6 +319,24 @@ class InventoryManager {
       });
     });
 
+    // Close modal on clicking backdrop outside modal content
+    document.querySelectorAll(".po-modal-overlay").forEach(overlay => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove("open");
+        }
+      });
+    });
+
+    // Close modal on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document.querySelectorAll(".po-modal-overlay.open").forEach(modal => {
+          modal.classList.remove("open");
+        });
+      }
+    });
+
     // Adjustment modal segmented options toggle
     const addOption = document.getElementById("adjTypeAdd");
     const deductOption = document.getElementById("adjTypeDeduct");
@@ -363,6 +387,183 @@ class InventoryManager {
     if (saveNewStockBtn) {
       saveNewStockBtn.addEventListener("click", () => this.saveNewStock());
     }
+
+    // Categories button in header
+    const invCategoriesBtn = document.getElementById("invCategoriesBtn");
+    if (invCategoriesBtn) {
+      invCategoriesBtn.addEventListener("click", () => this.openCategoriesModal());
+    }
+
+    // Suppliers button in header - links to GRN Suppliers Directory UI
+    const invSuppliersBtn = document.getElementById("invSuppliersBtn");
+    if (invSuppliersBtn) {
+      invSuppliersBtn.addEventListener("click", () => {
+        window.location.href = "/grn?view=suppliers";
+      });
+    }
+
+    // New Category Form toggle
+    const openNewCategoryFormBtn = document.getElementById("openNewCategoryFormBtn");
+    const cancelNewCategoryBtn = document.getElementById("cancelNewCategoryBtn");
+    const saveNewCategoryBtn = document.getElementById("saveNewCategoryBtn");
+    const newCategoryFormWrap = document.getElementById("newCategoryFormWrap");
+
+    if (openNewCategoryFormBtn && newCategoryFormWrap) {
+      openNewCategoryFormBtn.addEventListener("click", () => {
+        newCategoryFormWrap.style.display = "block";
+      });
+    }
+
+    if (cancelNewCategoryBtn && newCategoryFormWrap) {
+      cancelNewCategoryBtn.addEventListener("click", () => {
+        newCategoryFormWrap.style.display = "none";
+      });
+    }
+
+    if (saveNewCategoryBtn) {
+      saveNewCategoryBtn.addEventListener("click", () => this.saveNewCategory());
+    }
+  }
+
+  getCategoryIcon(catName) {
+    const map = {
+      "Paper & Boards": "fa-scroll",
+      "Inks & Toners": "fa-fill-drip",
+      "Flex & Banners": "fa-flag",
+      "Vinyl & Stickers": "fa-note-sticky",
+      "Rigid Boards & Hardware": "fa-hammer"
+    };
+    return map[catName] || "fa-tags";
+  }
+
+  openCategoriesModal() {
+    this.renderCategoriesGrid();
+    this.openModal("invCategoriesModal");
+  }
+
+  renderCategoriesGrid() {
+    const container = document.getElementById("categoriesGridContainer");
+    if (!container) return;
+
+    // Collect all unique categories
+    const categoriesMap = {};
+    const defaultCategories = [
+      "Paper & Boards",
+      "Inks & Toners",
+      "Flex & Banners",
+      "Vinyl & Stickers",
+      "Rigid Boards & Hardware"
+    ];
+
+    defaultCategories.forEach(cat => {
+      categoriesMap[cat] = { name: cat, itemsCount: 0, totalVal: 0, totalQty: 0 };
+    });
+
+    this.items.forEach(item => {
+      const cat = item.category || "Uncategorized";
+      if (!categoriesMap[cat]) {
+        categoriesMap[cat] = { name: cat, itemsCount: 0, totalVal: 0, totalQty: 0 };
+      }
+      categoriesMap[cat].itemsCount++;
+      const qty = this.getItemAvailableQty(item);
+      categoriesMap[cat].totalQty += qty;
+      categoriesMap[cat].totalVal += (qty * (item.unitPrice || 0));
+    });
+
+    container.innerHTML = "";
+    Object.values(categoriesMap).forEach(cat => {
+      const icon = this.getCategoryIcon(cat.name);
+      const card = document.createElement("div");
+      card.className = "inv-kpi-card";
+      card.style.cursor = "default";
+      card.style.display = "flex";
+      card.style.flexDirection = "column";
+      card.style.justifyContent = "space-between";
+      card.style.border = "1px solid var(--border)";
+      card.style.borderRadius = "8px";
+      card.style.padding = "14px";
+      card.style.background = "var(--surface-2)";
+      card.innerHTML = `
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(22, 119, 255, 0.12); color: #1677ff; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+              <i class="fa-solid ${icon}"></i>
+            </div>
+            <span class="ant-tag ant-tag-blue" style="margin: 0; font-size: 11px;">${cat.itemsCount} ${cat.itemsCount === 1 ? "SKU" : "SKUs"}</span>
+          </div>
+          <h4 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--text);">${cat.name}</h4>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">Total Valuation: <strong style="color: #52c41a;">${this.formatCurrency(cat.totalVal)}</strong></div>
+        </div>
+        <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
+          <button type="button" class="ant-btn ant-btn-default" style="font-size: 11.5px; padding: 4px 10px; width: 100%;" onclick="window.inventoryManager.filterByCategoryFromModal('${cat.name.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-filter"></i> View Stock Items
+          </button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  filterByCategoryFromModal(categoryName) {
+    this.selectedCategory = categoryName;
+    const catSelect = document.getElementById("invCategoryFilter");
+    if (catSelect) {
+      let found = false;
+      for (let i = 0; i < catSelect.options.length; i++) {
+        if (catSelect.options[i].value === categoryName) {
+          catSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const opt = document.createElement("option");
+        opt.value = categoryName;
+        opt.textContent = categoryName;
+        catSelect.appendChild(opt);
+        catSelect.value = categoryName;
+      }
+    }
+    this.closeModal("invCategoriesModal");
+    this.renderTable();
+    this.showToast(`Filtered stock items by category: ${categoryName}`, "info");
+  }
+
+  saveNewCategory() {
+    const nameInput = document.getElementById("newCatName");
+    const descInput = document.getElementById("newCatDesc");
+    const name = nameInput ? nameInput.value.trim() : "";
+
+    if (!name) {
+      this.showToast("Please enter a category name.", "error");
+      return;
+    }
+
+    // Add to filter dropdown if not existing
+    const catSelect = document.getElementById("invCategoryFilter");
+    if (catSelect) {
+      let exists = false;
+      for (let i = 0; i < catSelect.options.length; i++) {
+        if (catSelect.options[i].value.toLowerCase() === name.toLowerCase()) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        catSelect.appendChild(opt);
+      }
+    }
+
+    if (nameInput) nameInput.value = "";
+    if (descInput) descInput.value = "";
+    const wrap = document.getElementById("newCategoryFormWrap");
+    if (wrap) wrap.style.display = "none";
+
+    this.showToast(`New category '${name}' created successfully!`, "success");
+    this.renderCategoriesGrid();
   }
 
   render() {

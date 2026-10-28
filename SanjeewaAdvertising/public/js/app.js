@@ -1,8 +1,8 @@
 /**
- * Central Application Router & Module Coordinator
+ * Central Application Coordinator & Module Lifecycle Manager
  * Sanjeewa Advertising Printing Shop Management System
- * Manages: Route Switching, URL Hashes, and Module Lifecycle Hooks
- * 
+ * Handles: Route Detection, Page Lifecycle Management, Clean URL Navigation, and Deep Linking
+ *
  * Note: Topbar & Sidebar components are decoupled and managed by:
  * - components/topbar.js (TopbarController)
  * - components/sidebar.js (SidebarComponent)
@@ -60,145 +60,89 @@ class AppRouter {
       }
     };
 
-    this.currentRoute = "dashboard";
+    this.currentRoute = this.detectCurrentRoute();
     this.viewport = document.getElementById("mainContentViewport");
-    this.loadedModules = new Set();
     this.topbarController = null;
 
     this.init();
+  }
+
+  detectCurrentRoute() {
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
+    if (path && this.routes[path]) {
+      return path;
+    }
+    const moduleElem = document.querySelector(".app-module[data-module]");
+    if (moduleElem) {
+      const moduleKey = moduleElem.getAttribute("data-module");
+      if (moduleKey && this.routes[moduleKey]) return moduleKey;
+    }
+    return "dashboard";
   }
 
   init() {
     // Reference TopbarController initialized by components/topbar.js
     this.topbarController = window.topbarController || (window.TopbarController ? new window.TopbarController() : null);
 
-    this.bindNavigation();
-
-    // Listen to hash changes (browser back/forward navigation)
-    window.addEventListener("hashchange", () => this.handleHashChange());
-
-    // Handle initial route on page load
-    this.handleHashChange();
-  }
-
-  bindNavigation() {
-    // Delegated navigation click handler to capture all present and future nav links
-    document.addEventListener("click", (e) => {
-      const link = e.target.closest("a.nav-link, a[data-route], [data-navigate]");
-      if (!link) return;
-
-      const rawRoute = link.getAttribute("data-route") ||
-                       link.getAttribute("data-navigate") ||
-                       link.getAttribute("href")?.replace("#", "");
-
-      if (!rawRoute || rawRoute.startsWith("http") || rawRoute.startsWith("//")) return;
-
-      e.preventDefault();
-      const targetView = link.getAttribute("data-view");
-      this.navigateTo(rawRoute, true, targetView);
-    });
-  }
-
-  handleHashChange() {
-    const rawHash = window.location.hash.replace("#", "").trim();
-    const targetRoute = this.routes[rawHash] ? rawHash : "dashboard";
-    this.navigateTo(targetRoute, false);
-  }
-
-  async navigateTo(routeKey, updateHash = true, targetView = null) {
-    const normalizedKey = this.routes[routeKey] ? routeKey : "dashboard";
-    const route = this.routes[normalizedKey];
-    this.currentRoute = normalizedKey;
-
-    if (updateHash && window.location.hash !== `#${normalizedKey}`) {
-      window.location.hash = `#${normalizedKey}`;
-    }
-
-    // 1. Update Title and Breadcrumbs via TopbarController or DOM
-    if (this.topbarController?.updateTitleAndBreadcrumb) {
-      this.topbarController.updateTitleAndBreadcrumb(route.title, route.breadcrumb);
-    } else {
-      const pageTitle = document.getElementById("pageTitle");
-      const breadcrumbArea = document.getElementById("breadcrumbArea");
-      if (pageTitle) pageTitle.textContent = route.title;
-      if (breadcrumbArea) breadcrumbArea.innerHTML = route.breadcrumb;
-    }
-
-    // 2. Ensure module content is available in DOM (from file or pre-rendered)
-    let targetModule = document.getElementById(route.moduleId);
-    if (!targetModule && this.viewport) {
-      targetModule = await this.loadModuleContent(normalizedKey);
-    }
-
-    // 3. Show target module and hide all other modules
-    const allModules = document.querySelectorAll(".app-module");
-    allModules.forEach(mod => {
-      const isTarget = mod.id === route.moduleId || mod.getAttribute("data-module") === normalizedKey;
-      mod.classList.toggle("active", isTarget);
-      if (isTarget) {
-        mod.scrollTop = 0;
-      }
-    });
-
-    // 4. Update Sidebar active states and close mobile drawer
-    if (window.sidebarComponent) {
-      window.sidebarComponent.setActiveRoute(normalizedKey, targetView);
-      window.sidebarComponent.closeMobileDrawer();
-    }
-
-    // 5. Ensure Topbar handles orientation on module navigation
-    if (this.topbarController) {
-      this.topbarController.onModuleNavigate();
-    }
-
-    // 6. Reset viewport scroll position
-    if (this.viewport && !targetView) {
-      this.viewport.scrollTop = 0;
-    }
-
-    // 7. Module-specific lifecycle management
-    this.handleModuleLifecycle(normalizedKey, targetView);
-  }
-
-  async loadModuleContent(routeKey) {
-    if (!this.viewport) return null;
-
-    try {
-      const response = await fetch(`pages/${routeKey}.html`);
-      if (response.ok) {
-        const html = await response.text();
-        const temp = document.createElement("div");
-        temp.innerHTML = html;
-        const moduleElement = temp.firstElementChild;
-        if (moduleElement) {
-          this.viewport.appendChild(moduleElement);
-          this.loadedModules.add(routeKey);
-          return moduleElement;
+    // If an old legacy hash route exists (e.g. /dashboard#print-jobs), redirect to clean URL /print-jobs
+    if (window.location.hash) {
+      const hash = window.location.hash.replace("#", "").trim();
+      if (hash && this.routes[hash]) {
+        if (this.currentRoute !== hash) {
+          window.location.replace(`/${hash}`);
+          return;
+        } else {
+          // Remove hash from address bar cleanly without reloading
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
         }
       }
-    } catch (err) {
-      console.warn(`Could not load pages/${routeKey}.html dynamically, using DOM fallback.`, err);
     }
 
-    return document.getElementById(this.routes[routeKey]?.moduleId);
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetView = searchParams.get("view");
+
+    // 1. Update Title and Breadcrumbs via TopbarController if elements exist
+    const route = this.routes[this.currentRoute];
+    if (route) {
+      const pageTitle = document.getElementById("pageTitle");
+      const breadcrumbArea = document.getElementById("breadcrumbArea");
+      if (pageTitle && !pageTitle.textContent.trim()) {
+        pageTitle.textContent = route.title;
+      }
+      if (breadcrumbArea && !breadcrumbArea.textContent.trim()) {
+        breadcrumbArea.innerHTML = route.breadcrumb;
+      }
+      if (this.topbarController?.updateTitleAndBreadcrumb && pageTitle && breadcrumbArea) {
+        this.topbarController.updateTitleAndBreadcrumb(pageTitle.textContent, breadcrumbArea.innerHTML);
+      }
+    }
+
+    // 2. Update Sidebar active state
+    if (window.sidebarComponent) {
+      window.sidebarComponent.setActiveRoute(this.currentRoute, targetView);
+    }
+
+    // 3. Module-specific lifecycle management
+    this.handleModuleLifecycle(this.currentRoute, targetView);
+  }
+
+  navigateTo(routeKey, targetView = null) {
+    const route = this.routes[routeKey] ? routeKey : "dashboard";
+    const url = targetView ? `/${route}?view=${encodeURIComponent(targetView)}` : `/${route}`;
+    window.location.href = url;
   }
 
   handleModuleLifecycle(routeKey, targetView = null) {
     if (routeKey === "dashboard") {
-      // Resume dashboard slideshow and refresh charts
       if (window.dashboardInstance) {
         window.dashboardInstance.startSlideshow();
         setTimeout(() => window.dashboardInstance.resizeVisibleCharts(), 60);
       }
-    } else {
-      // Pause slideshow when away from dashboard to preserve CPU and timer resources
-      if (window.dashboardInstance) {
-        window.dashboardInstance.stopSlideshow();
-      }
     }
 
     if (routeKey === "place-order") {
-      // Initialize or refresh place order records and financial calculations
       if (window.placeOrderApp) {
         window.placeOrderApp.renderOrdersTable();
         window.placeOrderApp.updateKPIs();
@@ -214,14 +158,12 @@ class AppRouter {
     }
 
     if (routeKey === "inventory") {
-      // Refresh inventory table and KPIs
       if (window.inventoryManager) {
         window.inventoryManager.render();
       }
     }
 
     if (routeKey === "grn") {
-      // Refresh GRN directory and KPIs
       if (window.grnManager) {
         if (targetView === "po") {
           window.grnManager.switchView("po");
@@ -236,7 +178,6 @@ class AppRouter {
     }
 
     if (routeKey === "payments") {
-      // Refresh Payments Hub and activate specific sub-channel tab
       if (window.paymentsManager) {
         if (targetView === "invoice" || targetView === "invoice-payment") {
           window.paymentsManager.switchTab("invoice");
