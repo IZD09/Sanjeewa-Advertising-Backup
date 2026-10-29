@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('invoice', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->dateTime('invoice_at');
+            $table->unsignedInteger('customer_id');
+            $table->dateTime('due_date');
+
+            $table->index('customer_id', 'fk_invoice_customer1_idx');
+
+            $table->foreign('customer_id', 'fk_invoice_customer1')
+                ->references('id')
+                ->on('customer')
+                ->onDelete('no action')
+                ->onUpdate('no action');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('invoice');
+    }
+};

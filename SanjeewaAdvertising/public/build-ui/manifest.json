@@ -1,92 +1,137 @@
 {
-  "resources/assets/sass/app.scss": {
-    "file": "assets/app.css",
-    "src": "resources/assets/sass/app.scss",
-    "isEntry": true
-  },
-  "resources/assets/js/app.js": {
-    "file": "assets/app.js",
-    "src": "resources/assets/js/app.js",
+  "resources/assets/css/components/sidebar.css": {
+    "file": "assets/sidebar-pR4I-GdJ.css",
+    "name": "sidebar",
+    "names": [
+      "sidebar.css"
+    ],
+    "src": "resources/assets/css/components/sidebar.css",
     "isEntry": true
   },
   "resources/assets/css/core.css": {
-    "file": "assets/core.css",
+    "file": "assets/core-Ed_dCjrQ.css",
+    "name": "core",
+    "names": [
+      "core.css"
+    ],
     "src": "resources/assets/css/core.css",
     "isEntry": true
   },
   "resources/assets/css/dashboard.css": {
-    "file": "assets/dashboard.css",
+    "file": "assets/dashboard-O7h9Hvmf.css",
+    "name": "dashboard",
+    "names": [
+      "dashboard.css"
+    ],
     "src": "resources/assets/css/dashboard.css",
     "isEntry": true
   },
-  "resources/assets/css/modules.css": {
-    "file": "assets/modules.css",
-    "src": "resources/assets/css/modules.css",
-    "isEntry": true
-  },
-  "resources/assets/css/place-order.css": {
-    "file": "assets/place-order.css",
-    "src": "resources/assets/css/place-order.css",
-    "isEntry": true
-  },
-  "resources/assets/css/inventory.css": {
-    "file": "assets/inventory.css",
-    "src": "resources/assets/css/inventory.css",
-    "isEntry": true
-  },
   "resources/assets/css/grn.css": {
-    "file": "assets/grn.css",
+    "file": "assets/grn-BRDtQ4id.css",
+    "name": "grn",
+    "names": [
+      "grn.css"
+    ],
     "src": "resources/assets/css/grn.css",
     "isEntry": true
   },
+  "resources/assets/css/inventory.css": {
+    "file": "assets/inventory-ueYq9VB9.css",
+    "name": "inventory",
+    "names": [
+      "inventory.css"
+    ],
+    "src": "resources/assets/css/inventory.css",
+    "isEntry": true
+  },
+  "resources/assets/css/modules.css": {
+    "file": "assets/modules-Tz81FR_y.css",
+    "name": "modules",
+    "names": [
+      "modules.css"
+    ],
+    "src": "resources/assets/css/modules.css",
+    "isEntry": true
+  },
   "resources/assets/css/payments.css": {
-    "file": "assets/payments.css",
+    "file": "assets/payments-wdLc-tpe.css",
+    "name": "payments",
+    "names": [
+      "payments.css"
+    ],
     "src": "resources/assets/css/payments.css",
     "isEntry": true
   },
-  "resources/assets/css/components/sidebar.css": {
-    "file": "assets/components/sidebar.css",
-    "src": "resources/assets/css/components/sidebar.css",
+  "resources/assets/css/place-order.css": {
+    "file": "assets/place-order-BRnJsaL_.css",
+    "name": "place-order",
+    "names": [
+      "place-order.css"
+    ],
+    "src": "resources/assets/css/place-order.css",
     "isEntry": true
   },
-  "resources/assets/js/core.js": {
-    "file": "assets/core.js",
-    "src": "resources/assets/js/core.js",
-    "isEntry": true
-  },
-  "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard.js",
-    "src": "resources/assets/js/dashboard.js",
+  "resources/assets/js/app.js": {
+    "file": "assets/app-Db1tQK5B.js",
+    "name": "app",
+    "src": "resources/assets/js/app.js",
     "isEntry": true
   },
   "resources/assets/js/components/sidebar.js": {
-    "file": "assets/components/sidebar.js",
+    "file": "assets/sidebar-CGJ7yWFX.js",
+    "name": "sidebar",
     "src": "resources/assets/js/components/sidebar.js",
     "isEntry": true
   },
   "resources/assets/js/components/topbar.js": {
-    "file": "assets/components/topbar.js",
+    "file": "assets/topbar-C7ZqEcW5.js",
+    "name": "topbar",
     "src": "resources/assets/js/components/topbar.js",
     "isEntry": true
   },
-  "resources/assets/js/place-order.js": {
-    "file": "assets/place-order.js",
-    "src": "resources/assets/js/place-order.js",
+  "resources/assets/js/core.js": {
+    "file": "assets/core-BvRk9kiK.js",
+    "name": "core",
+    "src": "resources/assets/js/core.js",
     "isEntry": true
   },
-  "resources/assets/js/inventory.js": {
-    "file": "assets/inventory.js",
-    "src": "resources/assets/js/inventory.js",
+  "resources/assets/js/dashboard.js": {
+    "file": "assets/dashboard-tLYymx7c.js",
+    "name": "dashboard",
+    "src": "resources/assets/js/dashboard.js",
     "isEntry": true
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn.js",
+    "file": "assets/grn-CM68RZLi.js",
+    "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true
   },
+  "resources/assets/js/inventory.js": {
+    "file": "assets/inventory-Aoe_RkRj.js",
+    "name": "inventory",
+    "src": "resources/assets/js/inventory.js",
+    "isEntry": true
+  },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments.js",
+    "file": "assets/payments-Atqk7WeT.js",
+    "name": "payments",
     "src": "resources/assets/js/payments.js",
+    "isEntry": true
+  },
+  "resources/assets/js/place-order.js": {
+    "file": "assets/place-order-Bc9S8Q5Z.js",
+    "name": "place-order",
+    "src": "resources/assets/js/place-order.js",
+    "isEntry": true
+  },
+  "resources/assets/sass/app.scss": {
+    "file": "assets/app-x1XGuNl0.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/assets/sass/app.scss",
     "isEntry": true
   }
 }

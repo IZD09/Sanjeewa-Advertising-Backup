@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('print_job_status_history', function (Blueprint $table) {
+            $table->unsignedBigInteger('print_jobs_id');
+            $table->unsignedTinyInteger('print_job_statuses_id');
+            $table->dateTime('update_at');
+
+            $table->primary(['print_jobs_id', 'print_job_statuses_id']);
+
+            $table->index('print_jobs_id', 'fk_print_jobs_has_print_job_stateses_print_jobs1_idx');
+            $table->index('print_job_statuses_id', 'fk_print_job_states_update_print_job_statuses1_idx');
+
+            $table->foreign('print_jobs_id', 'fk_print_jobs_has_print_job_stateses_print_jobs1')
+                ->references('id')
+                ->on('print_jobs')
+                ->onDelete('no action')
+                ->onUpdate('no action');
+
+            $table->foreign('print_job_statuses_id', 'fk_print_job_states_update_print_job_statuses1')
+                ->references('id')
+                ->on('print_job_statuses')
+                ->onDelete('no action')
+                ->onUpdate('no action');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('print_job_status_history');
+    }
+};
