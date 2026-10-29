@@ -16,7 +16,7 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics and charts.
+   * Render slide metrics.
    * @param {Object} [data]
    */
   render(data = {}) {
@@ -24,13 +24,21 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
 
     const overviewData = data.overview || {};
 
-    // 1. Update Stat Card DOM Metrics if data is provided
+    // Update Stat Card DOM Metrics if data is provided
     this.updateMetrics(overviewData);
+  }
 
-    // 2. Monthly Revenue Trend Line Chart
+  /**
+   * Render charts when slide becomes active.
+   * @param {Object} [data]
+   */
+  renderCharts(data = {}) {
+    const overviewData = data?.overview || this.data?.overview || {};
+
+    // 1. Monthly Revenue Trend Line Chart
     this.renderRevenueTrendChart(overviewData.revenueTrend);
 
-    // 3. Active Orders Doughnut Chart
+    // 2. Active Orders Doughnut Chart
     this.renderOrdersDoughnutChart(overviewData.ordersBreakdown);
   }
 

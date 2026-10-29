@@ -16,13 +16,19 @@ export class JobStatusSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide charts and content.
+   * Render slide content.
    * @param {Object} [data]
    */
   render(data = {}) {
     super.render(data);
+  }
 
-    const jobsData = data.jobs || {};
+  /**
+   * Render slide charts when slide becomes active.
+   * @param {Object} [data]
+   */
+  renderCharts(data = {}) {
+    const jobsData = data?.jobs || this.data?.jobs || {};
 
     // 1. Weekly Output Bar Chart
     this.renderWeeklyOutputChart(jobsData.weeklyOutput);

@@ -16,7 +16,7 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics and charts.
+   * Render slide metrics.
    * @param {Object} [data]
    */
   render(data = {}) {
@@ -24,10 +24,18 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
 
     const stockData = data.stock || {};
 
-    // 1. Update stock health metrics in DOM if data provided
+    // Update stock health metrics in DOM if data provided
     this.updateStockHealth(stockData.health);
+  }
 
-    // 2. Stock Levels Bar Chart
+  /**
+   * Render charts when slide becomes active.
+   * @param {Object} [data]
+   */
+  renderCharts(data = {}) {
+    const stockData = data?.stock || this.data?.stock || {};
+
+    // Stock Levels Bar Chart
     this.renderStockLevelsChart(stockData.levels);
   }
 

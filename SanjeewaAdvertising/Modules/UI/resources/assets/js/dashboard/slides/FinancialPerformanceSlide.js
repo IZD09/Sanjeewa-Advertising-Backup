@@ -16,7 +16,7 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics and charts.
+   * Render slide metrics.
    * @param {Object} [data]
    */
   render(data = {}) {
@@ -24,10 +24,18 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
 
     const financeData = data.finance || {};
 
-    // 1. Update financial metrics in DOM if data provided
+    // Update financial metrics in DOM if data provided
     this.updateFinancialMetrics(financeData);
+  }
 
-    // 2. Monthly P&L Comparison Line Chart
+  /**
+   * Render charts when slide becomes active.
+   * @param {Object} [data]
+   */
+  renderCharts(data = {}) {
+    const financeData = data?.finance || this.data?.finance || {};
+
+    // Monthly P&L Comparison Line Chart
     this.renderFinanceComparisonChart(financeData.comparison);
   }
 

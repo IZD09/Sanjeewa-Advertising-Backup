@@ -16,13 +16,19 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide charts and content.
+   * Render slide content.
    * @param {Object} [data]
    */
   render(data = {}) {
     super.render(data);
+  }
 
-    const revenueData = data.revenue || {};
+  /**
+   * Render slide charts when slide becomes active.
+   * @param {Object} [data]
+   */
+  renderCharts(data = {}) {
+    const revenueData = data?.revenue || this.data?.revenue || {};
 
     // 1. Sales Category Bar Chart
     this.renderSalesCategoryChart(revenueData.categories);
