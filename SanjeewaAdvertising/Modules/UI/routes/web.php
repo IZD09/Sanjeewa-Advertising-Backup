@@ -1,9 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\UI\Http\Controllers\DashboardController;
 use Modules\UI\Http\Controllers\UIController;
 
-Route::view('/dashboard', 'ui::layouts.pages.dashboard.dashboard')->name('ui.dashboard');
+// Dashboard & Real-Time SSE Streams
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('ui.dashboard');
+Route::get('/dashboard/stream', [DashboardController::class, 'stream'])->name('ui.dashboard.stream');
+Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('ui.dashboard.data');
+
+// Interactive SPA Pages
+Route::view('/login', 'ui::layouts.pages.login.login')->name('login');
 Route::view('/place-order', 'ui::layouts.pages.place-order.place-order')->name('ui.place-order');
 Route::view('/customers', 'ui::layouts.pages.customers.customers')->name('ui.customers');
 Route::view('/print-jobs', 'ui::layouts.pages.print-jobs.print-jobs')->name('ui.print-jobs');

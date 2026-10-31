@@ -60,7 +60,7 @@ export class DashboardBaseSlide {
     }
   }
 
-  // Store data only. Charts render when the slide becomes active.
+  // Store data. Re-render charts if the slide is currently active.
   render(data = {}) {
     this.data = data;
     if (this.isActive) {

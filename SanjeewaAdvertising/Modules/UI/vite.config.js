@@ -23,6 +23,7 @@ export default defineConfig({
                 'resources/assets/css/inventory.css',
                 'resources/assets/css/grn.css',
                 'resources/assets/css/payments.css',
+                'resources/assets/css/login.css',
                 'resources/assets/css/components/sidebar.css',
                 'resources/assets/js/core.js',
                 'resources/assets/js/dashboard.js',
@@ -31,7 +32,8 @@ export default defineConfig({
                 'resources/assets/js/place-order.js',
                 'resources/assets/js/inventory.js',
                 'resources/assets/js/grn.js',
-                'resources/assets/js/payments.js'
+                'resources/assets/js/payments.js',
+                'resources/assets/js/login.js'
             ],
             refresh: true,
         }),

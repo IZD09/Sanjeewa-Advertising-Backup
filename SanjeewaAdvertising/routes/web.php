@@ -6,6 +6,7 @@ Route::get('/', function () {
     return redirect('/dashboard');
 });
 
+Route::view('/login', 'ui::layouts.pages.login.login')->name('login');
 Route::view('/dashboard', 'ui::layouts.pages.dashboard.dashboard')->name('ui.dashboard');
 Route::view('/place-order', 'ui::layouts.pages.place-order.place-order')->name('ui.place-order');
 Route::view('/customers', 'ui::layouts.pages.customers.customers')->name('ui.customers');

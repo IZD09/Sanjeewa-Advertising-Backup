@@ -3,7 +3,7 @@
  * Extends DashboardBaseSlide.
  * Responsible for:
  * - Rendering revenue comparison data across product categories.
- * - Managing sales category bar chart (salesCategoryChart) comparing current and prior year figures.
+ * - Managing sales category line chart (salesCategoryChart) comparing current and prior year figures.
  * - Managing payment collection method distribution chart (paymentMethodsChart).
  */
 
@@ -30,7 +30,7 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
   renderCharts(data = {}) {
     const revenueData = data?.revenue || this.data?.revenue || {};
 
-    // 1. Sales Category Bar Chart
+    // 1. Sales Category Line Chart (2 Years)
     this.renderSalesCategoryChart(revenueData.categories);
 
     // 2. Payment Methods Breakdown Doughnut Chart
@@ -38,7 +38,7 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render or update Sales Category Bar Chart (comparing current vs previous year).
+   * Render or update Sales Category Line Chart (comparing 2 years: current vs previous year).
    * @param {Object} [categoriesData]
    */
   renderSalesCategoryChart(categoriesData) {
@@ -47,23 +47,52 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
     const prevYearData = categoriesData?.previousYear || [280, 210, 140, 90, 70, 50];
 
     this.createChart("salesCategoryChart", {
-      type: "bar",
+      type: "line",
       data: {
         labels: labels,
         datasets: [
           {
             label: "2026",
             data: currentYearData,
-            backgroundColor: "#2563eb",
-            borderRadius: 5
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.12)",
+            fill: true,
+            tension: 0.38,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#2563eb"
           },
           {
             label: "2025",
             data: prevYearData,
-            backgroundColor: "rgba(249, 115, 22, 0.75)",
-            borderRadius: 5
+            borderColor: "#f97316",
+            backgroundColor: "rgba(249, 115, 22, 0.08)",
+            fill: true,
+            tension: 0.38,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#f97316"
           }
         ]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: {
+              boxWidth: 14,
+              usePointStyle: true
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
       }
     });
   }

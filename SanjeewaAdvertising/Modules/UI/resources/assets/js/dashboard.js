@@ -41,8 +41,8 @@ export class SanjeewaAdvertisingDashboard {
     }
 
     // 1. Initialize Dashboard Data Service
-    const apiUrl = this.rootElement.dataset.apiUrl || null;
-    const sseUrl = this.rootElement.dataset.sseUrl || null;
+    const apiUrl = this.rootElement.dataset.apiUrl || '/dashboard/data';
+    const sseUrl = this.rootElement.dataset.sseUrl || '/dashboard/stream';
     this.dataService = new DashboardDataService({ apiUrl, sseUrl });
 
     // 2. Instantiate Slide Classes
@@ -77,7 +77,10 @@ export class SanjeewaAdvertisingDashboard {
       });
     });
 
-    // 4. Initialize Slide Controller
+    // 4. Initialize Data Service first (emits baseline data so all slides have data immediately)
+    this.dataService.init();
+
+    // 5. Initialize Slide Controller
     this.controller = new SlideController({
       slideDuration: Number(this.rootElement.dataset.slideDuration) || 7000,
       uiHideDelay: Number(this.rootElement.dataset.uiHideDelay) || 3500
@@ -85,9 +88,6 @@ export class SanjeewaAdvertisingDashboard {
 
     this.controller.registerSlides(this.slides);
     this.controller.init();
-
-    // 5. Initialize Data Service (emits baseline data, connects to API/SSE if configured)
-    this.dataService.init();
 
     // 6. Handle CDN Chart.js asynchronous readiness check
     this.initChartReadinessCheck();

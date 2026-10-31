@@ -3,6 +3,7 @@
 namespace Modules\User\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Core\Http\Controllers\BaseApiController;
@@ -18,8 +19,7 @@ class AuthController extends BaseApiController
 {
     public function __construct(
         protected AuthService $authService
-    ) {
-    }
+    ) {}
 
     /**
      * Register a new user account.
@@ -37,7 +37,7 @@ class AuthController extends BaseApiController
     /**
      * Authenticate a user and return user resource with session tracking.
      */
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse|RedirectResponse
     {
         $identifier = $request->string('username')->trim()->value();
         $password = $request->string('password')->value();
@@ -45,17 +45,25 @@ class AuthController extends BaseApiController
         $authData = $this->authService->authenticate($identifier, $password);
 
         if (! $authData) {
-            return $this->unauthorized('Invalid username or password.');
+            if ($request->wantsJson() || $request->ajax()) {
+                return $this->unauthorized('Invalid username or password.');
+            }
+
+            return back()->withInput()->withErrors(['username' => 'Invalid username or password.']);
         }
 
         if (Auth::guard('web')->hasUser() || $request->hasSession()) {
             Auth::guard('web')->login($authData['user']);
         }
 
-        return $this->success(
-            new AuthResource($authData),
-            'Login successful.'
-        );
+        if ($request->wantsJson() || $request->ajax()) {
+            return $this->success(
+                new AuthResource($authData),
+                'Login successful.'
+            );
+        }
+
+        return redirect()->intended(route('ui.dashboard'));
     }
 
     /**

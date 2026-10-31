@@ -44,6 +44,15 @@
     "src": "resources/assets/css/inventory.css",
     "isEntry": true
   },
+  "resources/assets/css/login.css": {
+    "file": "assets/login-Br7f3_uM.css",
+    "name": "login",
+    "names": [
+      "login.css"
+    ],
+    "src": "resources/assets/css/login.css",
+    "isEntry": true
+  },
   "resources/assets/css/modules.css": {
     "file": "assets/modules-Tz81FR_y.css",
     "name": "modules",
@@ -96,7 +105,7 @@
     "isEntry": true
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-BoInRktd.js",
+    "file": "assets/dashboard-C1Vo24wR.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
     "isEntry": true
@@ -113,6 +122,12 @@
     "src": "resources/assets/js/inventory.js",
     "isEntry": true
   },
+  "resources/assets/js/login.js": {
+    "file": "assets/login-4gZJwU5e.js",
+    "name": "login",
+    "src": "resources/assets/js/login.js",
+    "isEntry": true
+  },
   "resources/assets/js/payments.js": {
     "file": "assets/payments-Atqk7WeT.js",
     "name": "payments",
@@ -120,7 +135,7 @@
     "isEntry": true
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-Bc9S8Q5Z.js",
+    "file": "assets/place-order-DbkItLYH.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true
