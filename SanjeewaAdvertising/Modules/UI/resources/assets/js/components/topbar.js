@@ -23,6 +23,9 @@ class TopbarController {
     this.dateElem = document.getElementById("todayDate");
     this.pageTitleElem = document.getElementById("pageTitle");
     this.breadcrumbElem = document.getElementById("breadcrumbArea");
+    this.profileToggle = document.getElementById("profileDropdownToggle");
+    this.profileMenu = document.getElementById("profileDropdownMenu");
+    this.isDropdownOpen = false;
 
     this.isPinned = localStorage.getItem("sa-topbar-pinned") === "true";
     this.hideTimeout = null;
@@ -39,6 +42,7 @@ class TopbarController {
     this.setDate();
     this.updatePinUI();
     this.bindEvents();
+    this.bindProfileDropdown();
 
     // Initial state on desktop:
     // If pinned, stay visible permanently.
@@ -150,15 +154,66 @@ class TopbarController {
 
     // When mouse pointer leaves the viewport from the top, keep visible briefly
     document.addEventListener("mouseleave", () => {
-      if (!this.isPinned) {
+      if (!this.isPinned && !this.isDropdownOpen) {
         this.scheduleHide(600);
       }
     });
   }
 
+  bindProfileDropdown() {
+    if (!this.profileToggle || !this.profileMenu) return;
+
+    this.profileToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleProfileDropdown();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#profileDropdownWrapper")) {
+        this.closeProfileDropdown();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.isDropdownOpen) {
+        this.closeProfileDropdown();
+      }
+    });
+  }
+
+  toggleProfileDropdown() {
+    if (this.isDropdownOpen) {
+      this.closeProfileDropdown();
+    } else {
+      this.openProfileDropdown();
+    }
+  }
+
+  openProfileDropdown() {
+    this.isDropdownOpen = true;
+    this.profileMenu.classList.add("show");
+    this.profileMenu.setAttribute("aria-hidden", "false");
+    this.profileToggle.classList.add("open");
+    this.profileToggle.setAttribute("aria-expanded", "true");
+    this.clearHideTimeout();
+    this.showTopbar();
+  }
+
+  closeProfileDropdown() {
+    if (!this.isDropdownOpen) return;
+    this.isDropdownOpen = false;
+    this.profileMenu.classList.remove("show");
+    this.profileMenu.setAttribute("aria-hidden", "true");
+    this.profileToggle.classList.remove("open");
+    this.profileToggle.setAttribute("aria-expanded", "false");
+    if (!this.isPinned && !this.isMouseOverTopbar) {
+      this.scheduleHide(500);
+    }
+  }
+
   handleMouseMove(event) {
     if (window.innerWidth <= 991) return; // Touch & mobile devices stay standard
-    if (this.isPinned) return; // Pinned state prevents auto-hiding
+    if (this.isPinned || this.isDropdownOpen) return; // Pinned state or active dropdown prevents auto-hiding
     if (this.topbar.contains(document.activeElement)) return; // Typing or focused control
 
     // Check if cursor is horizontally within the main workspace (ignore if hovering sidebar)
@@ -193,7 +248,7 @@ class TopbarController {
 
   scheduleHide(delay = 300) {
     this.clearHideTimeout();
-    if (window.innerWidth <= 991 || this.isPinned) return;
+    if (window.innerWidth <= 991 || this.isPinned || this.isDropdownOpen) return;
     if (this.isMouseOverTopbar) return;
     if (this.topbar.contains(document.activeElement)) return;
 
@@ -204,7 +259,7 @@ class TopbarController {
 
   hideTopbar() {
     this.clearHideTimeout();
-    if (window.innerWidth <= 991 || this.isPinned) return;
+    if (window.innerWidth <= 991 || this.isPinned || this.isDropdownOpen) return;
     if (this.isMouseOverTopbar) return;
     if (this.topbar.contains(document.activeElement)) return;
 

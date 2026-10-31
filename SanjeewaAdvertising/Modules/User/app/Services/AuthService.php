@@ -2,6 +2,7 @@
 
 namespace Modules\User\Services;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
@@ -79,17 +80,23 @@ class AuthService
     /**
      * Terminate the user session and record logout time.
      */
-    public function logout(?User $user): bool
+    public function logout(Authenticatable|User|null $user): bool
     {
         if (! $user) {
             return false;
         }
 
-        $user->update(['is_login' => 0]);
+        $userId = $user->getAuthIdentifier();
+
+        if ($user instanceof User) {
+            $user->update(['is_login' => 0]);
+        } else {
+            User::query()->where('id', $userId)->update(['is_login' => 0]);
+        }
 
         // Close the latest open user_login record
         UserLogin::query()
-            ->where('user_id', $user->id)
+            ->where('user_id', $userId)
             ->whereNull('logout')
             ->latest('id')
             ->first()

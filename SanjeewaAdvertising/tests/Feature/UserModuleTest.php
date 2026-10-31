@@ -144,6 +144,33 @@ class UserModuleTest extends TestCase
         $this->assertNotNull($loginRecord->logout);
     }
 
+    public function test_web_logout_redirects_to_login(): void
+    {
+        $unique = uniqid();
+        $user = User::create([
+            'first_name' => 'Web',
+            'last_name' => 'User',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'webuser_'.$unique,
+            'password' => Hash::make('Secret123'),
+            'register_at' => now(),
+            'is_login' => 1,
+            'user_statuses_id' => $this->status->id,
+        ]);
+
+        $response = $this->actingAs($user)->post('/logout');
+
+        $response->assertRedirect(route('login'));
+        $this->assertGuest();
+
+        // Also verify when authenticated as App\Models\User instance
+        $appUser = \App\Models\User::find($user->id);
+        $this->assertNotNull($appUser);
+        $responseApp = $this->actingAs($appUser)->post('/logout');
+        $responseApp->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
     public function test_user_controller_crud(): void
     {
         $unique = uniqid();

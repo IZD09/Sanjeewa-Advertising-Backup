@@ -69,7 +69,7 @@ class AuthController extends BaseApiController
     /**
      * Terminate the user's active session and record logout time.
      */
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request): JsonResponse|RedirectResponse
     {
         /** @var User|null $user */
         $user = Auth::guard('web')->user()
@@ -84,7 +84,11 @@ class AuthController extends BaseApiController
             $request->session()->regenerateToken();
         }
 
-        return $this->success(null, 'Logged out successfully.');
+        if ($request->wantsJson() || $request->ajax()) {
+            return $this->success(null, 'Logged out successfully.');
+        }
+
+        return redirect()->route('login');
     }
 
     /**
