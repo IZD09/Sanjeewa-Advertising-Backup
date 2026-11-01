@@ -1,13 +1,3 @@
-/**
- * SanjeewaAdvertising - TableBuilder Class
- * Generic Fluent Table Builder for Payments & Financial Settlements.
- * Responsible for:
- *  - Orchestrating row rendering via RowBuilder classes (InvoicePaymentRowBuilder, GrnPaymentRowBuilder)
- *  - Place Order style pagination management (page slicing, controls, showing info)
- *  - Empty state rendering (.po-empty-state)
- *  - Populating table bodies and managing UI re-renders on page change
- */
-
 "use strict";
 
 import { InvoicePaymentRowBuilder } from "./InvoicePaymentRowBuilder.js";
