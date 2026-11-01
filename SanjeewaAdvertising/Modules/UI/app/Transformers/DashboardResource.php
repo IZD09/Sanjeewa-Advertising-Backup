@@ -8,6 +8,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class DashboardResource extends JsonResource
 {
     /**
+     * Disable wrapping for this resource to match the requested schema exactly.
+     *
+     * @var string|null
+     */
+    public static $wrap = null;
+
+    /**
      * Transform the resource into an array matching the frontend slides schema.
      *
      * @return array<string, mixed>
@@ -22,11 +29,6 @@ class DashboardResource extends JsonResource
             'jobs' => $data['jobs'] ?? [],
             'stock' => $data['stock'] ?? [],
             'finance' => $data['finance'] ?? [],
-            'meta' => [
-                'generated_at' => now()->toIso8601String(),
-                'refresh_interval' => '60s',
-                'status' => 'live',
-            ],
         ];
     }
 }

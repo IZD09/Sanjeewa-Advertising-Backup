@@ -254,7 +254,6 @@
               <div class="po-field">
                 <label class="po-label" for="poPaidAmount">
                   <span>Advance Deposit Paid (Rs.)</span>
-                  <span class="hint">Default Rs. 0.00</span>
                 </label>
                 <input type="number" id="poPaidAmount" class="po-input" value="0.00" min="0" step="100">
               </div>
@@ -262,19 +261,19 @@
               <!-- Real-Time Financial Summary Card -->
               <div class="payment-summary-box">
                 <div class="summary-line">
-                  <span style="color: var(--text-muted);">12. Total Amount:</span>
+                  <span style="color: var(--text-muted);">Total Amount:</span>
                   <strong id="liveTotalAmount" style="font-size: 15px; color: var(--text);">Rs. 3,800.00</strong>
                 </div>
                 <div class="summary-line">
-                  <span style="color: var(--text-muted);">13. Initial Paid:</span>
+                  <span style="color: var(--text-muted);">Initial Paid:</span>
                   <strong id="livePaidAmount" style="color: var(--green);">Rs. 0.00</strong>
                 </div>
                 <div class="summary-line highlight balance-line">
-                  <span>14. Remaining Balance:</span>
+                  <span>Remaining Balance:</span>
                   <span id="liveBalanceAmount">Rs. 3,800.00</span>
                 </div>
                 <div class="summary-line" style="margin-top: 4px;">
-                  <span style="color: var(--text-muted);">15. Payment Status:</span>
+                  <span style="color: var(--text-muted);">Payment Status:</span>
                   <span class="status-badge unpaid" id="livePaymentStatus">Unpaid</span>
                 </div>
               </div>
@@ -345,12 +344,9 @@
             <tr>
               <th>Order ID</th>
               <th>Customer Name</th>
-              <th>Mobile Number</th>
               <th>Product & Specs</th>
               <th>Qty</th>
               <th>Total (Rs.)</th>
-              <th>Paid (Rs.)</th>
-              <th>Balance (Rs.)</th>
               <th>Payment Status</th>
               <th>Deadline</th>
               <th>Order Status</th>

@@ -16,15 +16,11 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics.
+   * Render slide metrics in the DOM.
    * @param {Object} [data]
    */
-  render(data = {}) {
-    super.render(data);
-
-    const financeData = data.finance || {};
-
-    // Update financial metrics in DOM if data provided
+  renderContent(data = {}) {
+    const financeData = data?.finance || this.data?.finance || {};
     this.updateFinancialMetrics(financeData);
   }
 
@@ -78,9 +74,9 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
    * @param {Object} [chartData]
    */
   renderFinanceComparisonChart(chartData) {
-    const labels = chartData?.labels || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-    const revenueValues = chartData?.revenue || [580, 620, 700, 650, 790, 740, 810, 780, 820, 845];
-    const expenseValues = chartData?.expenses || [320, 360, 390, 370, 420, 410, 450, 430, 460, 468];
+    const labels = chartData?.labels || [];
+    const revenueValues = chartData?.revenue || [];
+    const expenseValues = chartData?.expenses || [];
 
     this.createChart("financeComparisonChart", {
       type: "line",
@@ -93,7 +89,7 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
             borderColor: "#10b981",
             backgroundColor: "rgba(16, 185, 129, 0.10)",
             fill: true,
-            tension: 0.35,
+            tension: 0,
             pointRadius: 3
           },
           {
@@ -102,7 +98,7 @@ export class FinancialPerformanceSlide extends DashboardBaseSlide {
             borderColor: "#ef4444",
             backgroundColor: "rgba(239, 68, 68, 0.08)",
             fill: true,
-            tension: 0.35,
+            tension: 0,
             pointRadius: 3
           }
         ]

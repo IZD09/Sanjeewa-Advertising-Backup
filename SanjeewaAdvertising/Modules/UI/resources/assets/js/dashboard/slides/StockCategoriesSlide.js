@@ -16,15 +16,11 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics.
+   * Render slide metrics in the DOM.
    * @param {Object} [data]
    */
-  render(data = {}) {
-    super.render(data);
-
-    const stockData = data.stock || {};
-
-    // Update stock health metrics in DOM if data provided
+  renderContent(data = {}) {
+    const stockData = data?.stock || this.data?.stock || {};
     this.updateStockHealth(stockData.health);
   }
 
@@ -46,50 +42,95 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
   updateStockHealth(healthItems) {
     if (!Array.isArray(healthItems) || healthItems.length === 0) return;
 
+    const container = this.findElement('.stock-health');
+    if (!container) return;
+
     const rows = this.findElements('.stock-health > div');
+    if (rows.length !== healthItems.length) {
+      container.innerHTML = healthItems.map(item => `
+        <div>
+          <div class="stock-label">
+            <span>${item.name || ''}</span>
+            <strong style="color: ${item.color || '#2563eb'};">${item.value || ''}</strong>
+          </div>
+          <div class="progress-track">
+            <span style="width: ${item.percentage || 0}%; background-color: ${item.color || '#2563eb'};"></span>
+          </div>
+        </div>
+      `).join('');
+      return;
+    }
+
     healthItems.forEach((item, index) => {
       const row = rows[index];
       if (!row) return;
 
+      const nameSpan = row.querySelector('.stock-label span:first-child');
+      if (nameSpan && item.name) {
+        nameSpan.textContent = item.name;
+      }
+
       const labelStrong = row.querySelector('.stock-label strong');
       if (labelStrong && item.value !== undefined) {
         labelStrong.textContent = item.value;
-        if (item.isWarning) {
-          labelStrong.classList.add('warning-text');
-        } else {
-          labelStrong.classList.remove('warning-text');
+        if (item.color) {
+          labelStrong.style.color = item.color;
         }
       }
 
       const progressSpan = row.querySelector('.progress-track span');
-      if (progressSpan && item.percentage !== undefined) {
-        progressSpan.style.width = `${item.percentage}%`;
+      if (progressSpan) {
+        if (item.percentage !== undefined) {
+          progressSpan.style.width = `${item.percentage}%`;
+        }
+        if (item.color) {
+          progressSpan.style.backgroundColor = item.color;
+        }
       }
     });
   }
 
   /**
-   * Render or update Stock Levels Bar Chart.
+   * Render or update Stock Levels Bar Chart (Horizontal for low-stock items).
    * @param {Object} [levelsData]
    */
   renderStockLevelsChart(levelsData) {
-    const labels = levelsData?.labels || ["Frontlit", "Glossy", "Star Flex", "Ink Cyan", "Foam Board"];
-    const values = levelsData?.values || [180, 42, 110, 85, 65];
-    const colors = levelsData?.colors || ["#10b981", "#ef4444", "#10b981", "#10b981", "#2563eb"];
+    const labels = levelsData?.labels || [];
+    const values = levelsData?.values || [];
+    const defaultColors = [
+      "#ef4444",
+      "#f59e0b",
+      "#8b5cf6",
+      "#0ea5e9",
+      "#2563eb"
+    ];
+    const colors = levelsData?.colors && levelsData.colors.length > 0 ? levelsData.colors : defaultColors;
 
     this.createChart("stockLevelsChart", {
       type: "bar",
       data: {
         labels: labels,
         datasets: [{
-          label: "Current Meters/Units",
+          label: "Remaining Stock (Low)",
           data: values,
           backgroundColor: colors,
-          borderRadius: 5
+          borderRadius: 4,
+          barThickness: 16,
+          maxBarThickness: 20
         }]
       },
       options: {
-        plugins: { legend: { display: false } }
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            beginAtZero: true
+          }
+        }
       }
     });
   }

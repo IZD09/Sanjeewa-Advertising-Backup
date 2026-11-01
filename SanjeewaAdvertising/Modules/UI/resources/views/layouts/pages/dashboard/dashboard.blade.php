@@ -28,7 +28,8 @@
                 <!-- ==================================================================
                      MODULE 1: DASHBOARD (Visual Analytics 5-Slide Carousel)
                      ================================================================== -->
-                <div class="app-module" id="module-dashboard" data-module="dashboard" data-sse-url="{{ route('ui.dashboard.stream') }}" data-api-url="{{ route('ui.dashboard.data') }}">
+                <div class="app-module" id="module-dashboard" data-module="dashboard" data-sse-url="{{ route('ui.dashboard.stream') }}" data-api-url="{{ route('ui.dashboard.data') }}" data-initial-payload="{{ e(json_encode($dashboardData ?? [])) }}">
+                    <script id="dashboard-initial-data" type="application/json">@json($dashboardData ?? [])</script>
                     <section class="dashboard-content">
 
                         <!-- Slide 1: Business Overview -->

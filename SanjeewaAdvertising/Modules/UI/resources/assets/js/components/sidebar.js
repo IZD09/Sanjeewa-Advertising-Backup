@@ -36,64 +36,92 @@ class Navigation {
   }
 
   navigate(navigateLocation, targetView = null) {
+    // Terminate any active dashboard connections or streams before navigating to another page
+    if (navigateLocation !== "dashboard" && window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+      try {
+        window.dashboardInstance.destroy();
+      } catch (e) {}
+    }
+
     switch (navigateLocation) {
       case "dashboard":
+        if (window.location.pathname === "/dashboard" || window.location.pathname === "/") {
+          if (window.dashboardInstance && typeof window.dashboardInstance.showSlide === "function") {
+            window.dashboardInstance.showSlide(0);
+          }
+          return;
+        }
         window.location.href = "/dashboard";
         break;
 
       case "reports":
+        if (window.location.pathname === "/reports") return;
         window.location.href = "/reports";
         break;
 
       case "print-jobs":
+        if (window.location.pathname === "/print-jobs") return;
         window.location.href = "/print-jobs";
         break;
 
       case "place-order":
         if (targetView === "orders") {
+          if (window.location.pathname === "/place-order" && window.location.search.includes("view=orders")) return;
           window.location.href = "/place-order?view=orders";
         } else {
+          if (window.location.pathname === "/place-order" && (!window.location.search || window.location.search.includes("view=form"))) return;
           window.location.href = "/place-order";
         }
         break;
 
       case "customers":
+        if (window.location.pathname === "/customers") return;
         window.location.href = "/customers";
         break;
 
       case "payments":
         if (targetView === "invoice-payment") {
+          if (window.location.pathname === "/payments" && window.location.search.includes("view=invoice-payment")) return;
           window.location.href = "/payments?view=invoice-payment";
         } else if (targetView === "grn-payment") {
+          if (window.location.pathname === "/payments" && window.location.search.includes("view=grn-payment")) return;
           window.location.href = "/payments?view=grn-payment";
         } else {
+          if (window.location.pathname === "/payments" && !window.location.search) return;
           window.location.href = "/payments";
         }
         break;
 
       case "inventory":
         if (targetView === "categories") {
+          if (window.location.pathname === "/inventory" && window.location.search.includes("view=categories")) return;
           window.location.href = "/inventory?view=categories";
         } else {
+          if (window.location.pathname === "/inventory" && !window.location.search) return;
           window.location.href = "/inventory";
         }
         break;
 
       case "grn":
         if (targetView === "po") {
+          if (window.location.pathname === "/grn" && window.location.search.includes("view=po")) return;
           window.location.href = "/grn?view=po";
         } else if (targetView === "suppliers") {
+          if (window.location.pathname === "/grn" && window.location.search.includes("view=suppliers")) return;
           window.location.href = "/grn?view=suppliers";
         } else {
+          if (window.location.pathname === "/grn" && !window.location.search) return;
           window.location.href = "/grn";
         }
         break;
 
       case "settings":
+        if (window.location.pathname === "/settings") return;
         window.location.href = "/settings";
         break;
 
       default:
+        if (window.location.pathname === "/" + navigateLocation) return;
         window.location.href = "/" + navigateLocation;
         break;
     }

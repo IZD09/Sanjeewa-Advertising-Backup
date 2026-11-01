@@ -1,21 +1,27 @@
 /**
  * DashboardDataService
- * Simple data service for loading and streaming dashboard data via SSE or REST API.
+ * Data service for loading and streaming dashboard data via REST API and SSE.
+ * Connects directly to backend DashboardService data.
  */
+
+import { RequestHandler } from "../core/RequestHandler.js";
 
 export class DashboardDataService {
   /**
    * @param {Object} [options={}]
    * @param {string|null} [options.apiUrl]
    * @param {string|null} [options.sseUrl]
+   * @param {Object|null} [options.initialData]
    */
   constructor(options = {}) {
     this.months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     this.days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     this.apiUrl = options.apiUrl || "/dashboard/data";
     this.sseUrl = options.sseUrl || "/dashboard/stream";
+    this.initialData = options.initialData || null;
     this.callbacks = [];
     this.eventSource = null;
+    this.pollInterval = null;
     this.lastData = null;
   }
 
@@ -42,8 +48,10 @@ export class DashboardDataService {
    * @param {Object} payload
    */
   emitData(payload) {
+    if (!payload || typeof payload !== "object") return;
+
     const raw =
-      payload && payload.data && typeof payload.data === "object" && payload.data.overview
+      payload && payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
         ? payload.data
         : payload;
 
@@ -59,17 +67,93 @@ export class DashboardDataService {
   }
 
   /**
-   * Initialize data stream: emits baseline data and connects SSE / API.
+   * Initialize data stream: loads initial data, connects SSE asynchronously after page load.
    */
-  init() {
-    // 1. Emit default baseline immediately so UI renders without delay
-    this.emitData(this.getDefaultData());
-
-    // 2. Connect to Server-Sent Events (SSE) or fallback to HTTP fetch
-    if (this.sseUrl && typeof EventSource !== "undefined") {
-      this.connectSSE(this.sseUrl);
+  async init() {
+    // 1. Emit server-rendered initial payload immediately if provided
+    if (this.initialData && typeof this.initialData === "object" && Object.keys(this.initialData).length > 0) {
+      this.emitData(this.initialData);
     } else if (this.apiUrl) {
-      this.fetchData(this.apiUrl);
+      // 2. Fetch fresh live data from backend endpoint if no initial payload
+      await this.fetchData(this.apiUrl);
+    }
+
+    // 3. Connect Server-Sent Events (SSE) asynchronously AFTER the page has completed loading.
+    // Delaying EventSource until after 'load' ensures the browser tab's loading spinner
+    // completes normally and does not spin perpetually.
+    if (this.sseUrl && typeof EventSource !== "undefined") {
+      this.scheduleSSEConnection();
+    } else {
+      // Fallback to polling if EventSource is not supported
+      this.startPolling(30000);
+    }
+
+    // 4. Ensure SSE is cleanly closed before navigating away or closing the tab
+    this.bindLifecycleEvents();
+  }
+
+  /**
+   * Schedule SSE connection safely after window load event.
+   */
+  scheduleSSEConnection() {
+    const startSSE = () => {
+      setTimeout(() => {
+        if (!this.eventSource) {
+          this.connectSSE(this.sseUrl);
+        }
+      }, 500);
+    };
+
+    if (document.readyState === "complete") {
+      startSSE();
+    } else {
+      window.addEventListener("load", startSSE, { once: true });
+    }
+  }
+
+  /**
+   * Bind page lifecycle listeners to cleanly disconnect SSE and avoid blocking server threads.
+   */
+  bindLifecycleEvents() {
+    window.addEventListener("beforeunload", () => {
+      this.disconnectSSE();
+    });
+
+    window.addEventListener("pagehide", () => {
+      this.disconnectSSE();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        // Disconnect SSE while tab is in background to save server resources
+        this.disconnectSSE();
+      } else if (this.sseUrl && !this.eventSource) {
+        // Reconnect SSE when user switches back to the tab
+        this.connectSSE(this.sseUrl);
+      }
+    });
+  }
+
+  /**
+   * Start periodic background polling for live updates.
+   * @param {number} [interval=30000]
+   */
+  startPolling(interval = 30000) {
+    this.stopPolling();
+    this.pollInterval = setInterval(async () => {
+      if (!document.hidden && this.apiUrl) {
+        await this.fetchData(this.apiUrl);
+      }
+    }, interval);
+  }
+
+  /**
+   * Stop background polling timer.
+   */
+  stopPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
     }
   }
 
@@ -83,6 +167,11 @@ export class DashboardDataService {
     try {
       this.eventSource = new EventSource(url);
 
+      this.eventSource.onopen = () => {
+        // When SSE is connected, stop polling fallback if active
+        this.stopPolling();
+      };
+
       this.eventSource.onmessage = event => {
         try {
           this.emitData(JSON.parse(event.data));
@@ -92,13 +181,15 @@ export class DashboardDataService {
       };
 
       this.eventSource.onerror = err => {
-        console.warn("[DashboardDataService] SSE error, browser will retry automatically:", err);
+        if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
+          console.warn("[DashboardDataService] SSE closed permanently, falling back to background polling:", err);
+          this.disconnectSSE();
+          this.startPolling(30000);
+        }
       };
     } catch (e) {
-      console.warn("[DashboardDataService] EventSource setup failed, falling back to fetch:", e);
-      if (this.apiUrl) {
-        this.fetchData(this.apiUrl);
-      }
+      console.warn("[DashboardDataService] EventSource setup failed, falling back to polling:", e);
+      this.startPolling(30000);
     }
   }
 
@@ -113,20 +204,14 @@ export class DashboardDataService {
   }
 
   /**
-   * Fetch data from HTTP endpoint.
+   * Fetch data from HTTP backend endpoint.
    * @param {string} url
    */
   async fetchData(url) {
     try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "X-Requested-With": "XMLHttpRequest"
-        }
-      });
-
-      if (response.ok) {
-        const json = await response.json();
+      const http = new RequestHandler();
+      const json = await http.get(url);
+      if (json) {
         this.emitData(json);
       }
     } catch (e) {
@@ -135,7 +220,7 @@ export class DashboardDataService {
   }
 
   /**
-   * Merge incoming data with default structure safely.
+   * Merge and validate incoming backend data safely.
    * @param {Object} raw
    * @returns {Object}
    */
@@ -144,19 +229,17 @@ export class DashboardDataService {
       return this.getDefaultData();
     }
 
-    const fallback = this.getDefaultData();
-
     return {
-      overview: { ...fallback.overview, ...(raw.overview || {}) },
-      revenue: { ...fallback.revenue, ...(raw.revenue || {}) },
-      jobs: { ...fallback.jobs, ...(raw.jobs || {}) },
-      stock: { ...fallback.stock, ...(raw.stock || {}) },
-      finance: { ...fallback.finance, ...(raw.finance || {}) }
+      overview: raw.overview || {},
+      revenue: raw.revenue || {},
+      jobs: raw.jobs || {},
+      stock: raw.stock || {},
+      finance: raw.finance || {}
     };
   }
 
   /**
-   * Default baseline data structure for all 5 dashboard slides.
+   * Safe empty baseline data structure (no fake metrics).
    * @returns {Object}
    */
   getDefaultData() {
@@ -164,108 +247,46 @@ export class DashboardDataService {
       overview: {
         states: {
           articles: {
-            article1: {
-              value: 845000,
-              trendState: "positive",
-              trend: 12.8,
-              bars: [30, 45, 35, 62, 50, 78, 95]
-            },
-            article2: {
-              value: 14,
-              trendState: "positive",
-              trend: 8.4,
-              bars: [35, 50, 40, 68, 55, 80, 95]
-            },
-            article3: {
-              value: 14,
-              trendState: "positive",
-              trend: 4.2,
-              bars: [25, 40, 30, 55, 45, 70, 88]
-            },
-            article4: {
-              value: 182500,
-              trendState: "negative",
-              trend: 3.1,
-              bars: [40, 55, 48, 70, 60, 82, 90]
-            },
+            article1: { value: 0, trendState: "positive", trend: 0, bars: [] },
+            article2: { value: 0, trendState: "positive", trend: 0, bars: [] },
+            article3: { value: 0, trendState: "positive", trend: 0, bars: [] },
+            article4: { value: 0, trendState: "negative", trend: 0, bars: [] }
           },
-          chartTitle: 2026,
-          jobStatas: {
-            completed: 14,
-            printing: 8,
-            designing: 6,
-            pending: 4
-          }
+          chartTitle: new Date().getFullYear(),
+          jobStatas: { completed: 0, printing: 0, designing: 0, pending: 0 }
         },
-        revenueTrend: {
-          labels: this.months,
-          values: [420, 510, 480, 650, 590, 720, 680, 790, 740, 845]
-        },
-        ordersBreakdown: {
-          completed: 14,
-          printing: 8,
-          designing: 6,
-          pending: 4,
-          values: [14, 8, 6, 4]
-        }
+        revenueTrend: { labels: [], values: [] },
+        ordersBreakdown: { completed: 0, printing: 0, designing: 0, pending: 0, values: [] }
       },
       revenue: {
-        states: {
-
+        states: {},
+        income: {
+          labels: [],
+          currentYear: new Date().getFullYear(),
+          previousYear: new Date().getFullYear() - 1,
+          currentYearData: [],
+          previousYearData: []
         },
-        categories: {
-          labels: ["Flex", "Vinyl", "Rollup", "Cards", "Leaflets", "Rigid"],
-          currentYear: [340, 260, 180, 120, 95, 65],
-          previousYear: [280, 210, 140, 90, 70, 50]
-        },
-        paymentMethods: {
-          labels: ["Cash", "Card", "Bank Transfer", "Online / QR", "Cheque"],
-          values: [38, 26, 20, 11, 5]
-        }
+        paymentMethods: { labels: [], values: [] }
       },
       jobs: {
-        states: {
-          
-        },
-        weeklyOutput: {
-          labels: this.days,
-          values: [1240, 1680, 1450, 2100, 2480, 1950, 850]
-        },
-        materialUsage: {
-          labels: ["Frontlit", "Star Flex", "Glossy", "Matte", "Backlit"],
-          values: [42, 24, 18, 10, 6]
-        }
+        states: {},
+        weeklyOutput: { labels: [], values: [], colors: [] },
+        materialUsage: { labels: [], values: [] }
       },
       stock: {
-        states: {
-          
-        },
-        health: [
-          { name: "Frontlit Flex Banner (10ft)", value: "180m / 250m", percentage: 72, isWarning: false },
-          { name: "Glossy Vinyl Sticker (4ft)", value: "42m / 200m (Low)", percentage: 21, isWarning: true },
-          { name: "Solvent Cyan Ink Cartridges", value: "85% Full", percentage: 85, isWarning: false },
-          { name: "Foam Board Sheets (5mm)", value: "65 Sheets", percentage: 65, isWarning: false }
-        ],
-        levels: {
-          labels: ["Frontlit", "Glossy", "Star Flex", "Ink Cyan", "Foam Board"],
-          values: [180, 42, 110, 85, 65],
-          colors: ["#10b981", "#ef4444", "#10b981", "#10b981", "#2563eb"]
-        }
+        states: {},
+        health: [],
+        levels: { labels: [], values: [], colors: [] }
       },
       finance: {
-        states: {
-          
-        },
-        totalRevenue: "Rs. 8.45M",
-        totalExpenses: "Rs. 4.68M",
-        netProfit: "Rs. 3.77M",
-        profitMargin: 44.6,
-        supplierPayables: "Rs. 325,000 Due",
-        comparison: {
-          labels: this.months,
-          revenue: [580, 620, 700, 650, 790, 740, 810, 780, 820, 845],
-          expenses: [320, 360, 390, 370, 420, 410, 450, 430, 460, 468]
-        }
+        states: {},
+        totalRevenue: "",
+        totalExpenses: "",
+        netProfit: "",
+        profitMargin: 0,
+        supplierPayables: "",
+        comparison: { labels: [], revenue: [], expenses: [] }
       }
     };
   }
@@ -274,6 +295,7 @@ export class DashboardDataService {
    * Clean up connections and listeners.
    */
   destroy() {
+    this.stopPolling();
     this.disconnectSSE();
     this.callbacks = [];
     this.lastData = null;

@@ -345,14 +345,13 @@ export class SlideController {
   }
 
   /**
-   * Resize charts on all slides.
+   * Resize charts on the currently active visible slide.
    */
   resizeVisibleCharts() {
-    this.slides.forEach(slide => {
-      if (slide && typeof slide.resizeCharts === "function") {
-        slide.resizeCharts();
-      }
-    });
+    const activeSlide = this.slides[this.currentSlideIndex];
+    if (activeSlide && typeof activeSlide.resizeCharts === "function") {
+      activeSlide.resizeCharts();
+    }
   }
 
   /**

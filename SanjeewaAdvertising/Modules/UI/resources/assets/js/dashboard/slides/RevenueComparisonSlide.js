@@ -31,7 +31,8 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
     const revenueData = data?.revenue || this.data?.revenue || {};
 
     // 1. Sales Category Line Chart (2 Years)
-    this.renderSalesCategoryChart(revenueData.categories);
+    const incomeData = revenueData.income || revenueData.categories || {};
+    this.renderSalesCategoryChart(incomeData);
 
     // 2. Payment Methods Breakdown Doughnut Chart
     this.renderPaymentMethodsChart(revenueData.paymentMethods);
@@ -42,9 +43,13 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
    * @param {Object} [categoriesData]
    */
   renderSalesCategoryChart(categoriesData) {
-    const labels = categoriesData?.labels || ["Flex", "Vinyl", "Rollup", "Cards", "Leaflets", "Rigid"];
-    const currentYearData = categoriesData?.currentYear || [340, 260, 180, 120, 95, 65];
-    const prevYearData = categoriesData?.previousYear || [280, 210, 140, 90, 70, 50];
+    if (!categoriesData) return;
+
+    const labels = categoriesData.labels || [];
+    const currentYearData = categoriesData.currentYearData || (Array.isArray(categoriesData.currentYear) ? categoriesData.currentYear : []);
+    const prevYearData = categoriesData.previousYearData || (Array.isArray(categoriesData.previousYear) ? categoriesData.previousYear : []);
+    const currentYearLabel = String(typeof categoriesData.currentYear === "number" || typeof categoriesData.currentYear === "string" ? categoriesData.currentYear : new Date().getFullYear());
+    const prevYearLabel = String(typeof categoriesData.previousYear === "number" || typeof categoriesData.previousYear === "string" ? categoriesData.previousYear : new Date().getFullYear() - 1);
 
     this.createChart("salesCategoryChart", {
       type: "line",
@@ -52,28 +57,28 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
         labels: labels,
         datasets: [
           {
-            label: "2026",
+            label: currentYearLabel,
             data: currentYearData,
-            borderColor: "#2563eb",
-            backgroundColor: "rgba(37, 99, 235, 0.12)",
+            borderColor: "#02a327ff",
+            backgroundColor: "#02a32820",
             fill: true,
-            tension: 0.38,
+            tension: 0,
             borderWidth: 2.5,
-            pointRadius: 4,
+            pointRadius: 2,
             pointHoverRadius: 6,
-            pointBackgroundColor: "#2563eb"
+            pointBackgroundColor: "#7cfa99ff"
           },
           {
-            label: "2025",
+            label: prevYearLabel,
             data: prevYearData,
-            borderColor: "#f97316",
-            backgroundColor: "rgba(249, 115, 22, 0.08)",
+            borderColor: "#0400fcff",
+            backgroundColor: "#0400fc19",
             fill: true,
-            tension: 0.38,
+            tension: 0,
             borderWidth: 2.5,
-            pointRadius: 4,
+            pointRadius: 2,
             pointHoverRadius: 6,
-            pointBackgroundColor: "#f97316"
+            pointBackgroundColor: "#9bacffff"
           }
         ]
       },
@@ -102,8 +107,8 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
    * @param {Object} [paymentData]
    */
   renderPaymentMethodsChart(paymentData) {
-    const labels = paymentData?.labels || ["Cash", "Card", "Bank Transfer", "Online / QR", "Cheque"];
-    const values = paymentData?.values || [38, 26, 20, 11, 5];
+    const labels = paymentData?.labels || [];
+    const values = paymentData?.values || [];
 
     this.createChart("paymentMethodsChart", {
       type: "doughnut",
@@ -117,7 +122,7 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
         }]
       },
       options: {
-        cutout: "66%"
+        cutout: "50%"
       }
     });
   }

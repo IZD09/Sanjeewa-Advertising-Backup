@@ -20,46 +20,46 @@ class DashboardTest extends TestCase
         $response = $this->getJson('/dashboard/data');
 
         $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'message' => 'Dashboard data retrieved successfully.',
-            ])
             ->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [
-                    'overview' => [
-                        'totalSales',
-                        'activeJobs',
-                        'newCustomers',
-                        'pendingInvoices',
-                        'revenueTrend',
-                        'ordersBreakdown',
+                'overview' => [
+                    'states' => [
+                        'articles' => [
+                            'article1' => ['value', 'trendState', 'trend', 'bars'],
+                            'article2' => ['value', 'trendState', 'trend', 'bars'],
+                            'article3' => ['value', 'trendState', 'trend', 'bars'],
+                            'article4' => ['value', 'trendState', 'trend', 'bars'],
+                        ],
+                        'chartTitle',
+                        'jobStatas' => ['completed', 'printing', 'designing', 'pending'],
                     ],
-                    'revenue' => [
-                        'categories',
-                        'paymentMethods',
+                    'revenueTrend' => ['labels', 'values'],
+                    'ordersBreakdown' => ['completed', 'printing', 'designing', 'pending', 'values'],
+                ],
+                'revenue' => [
+                    'states',
+                    'income' => ['labels', 'currentYear', 'previousYear', 'currentYearData', 'previousYearData'],
+                    'paymentMethods' => ['labels', 'values'],
+                ],
+                'jobs' => [
+                    'states',
+                    'weeklyOutput' => ['labels', 'values', 'colors'],
+                    'materialUsage' => ['labels', 'values'],
+                ],
+                'stock' => [
+                    'states',
+                    'health' => [
+                        '*' => ['name', 'value', 'percentage', 'color'],
                     ],
-                    'jobs' => [
-                        'weeklyOutput',
-                        'materialUsage',
-                    ],
-                    'stock' => [
-                        'health',
-                        'levels',
-                    ],
-                    'finance' => [
-                        'totalRevenue',
-                        'totalExpenses',
-                        'netProfit',
-                        'profitMargin',
-                        'supplierPayables',
-                        'comparison',
-                    ],
-                    'meta' => [
-                        'generated_at',
-                        'status',
-                    ],
+                    'levels' => ['labels', 'values', 'colors'],
+                ],
+                'finance' => [
+                    'states',
+                    'totalRevenue',
+                    'totalExpenses',
+                    'netProfit',
+                    'profitMargin',
+                    'supplierPayables',
+                    'comparison' => ['labels', 'revenue', 'expenses'],
                 ],
             ]);
     }
@@ -83,6 +83,12 @@ class DashboardTest extends TestCase
     {
         $response = $this->getJson('/api/v1/dashboard/data');
         $response->assertStatus(200)
-            ->assertJsonPath('success', true);
+            ->assertJsonStructure([
+                'overview',
+                'revenue',
+                'jobs',
+                'stock',
+                'finance',
+            ]);
     }
 }

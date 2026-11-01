@@ -4,7 +4,8 @@
  * API communication, localStorage caching, and sample seed data.
  */
 
-import { PrintingOrder } from "./PrintingOrder.js";
+import { PrintingOrderBuilder, PrintingOrder } from "./PrintingOrderBuilder.js";
+import { RequestHandler } from "../core/RequestHandler.js";
 
 export class PlaceOrderDataLoad {
   /**
@@ -40,6 +41,8 @@ export class PlaceOrderDataLoad {
       acrylic_sign: { name: "Acrylic Lettering Sign", category: "area", unitPrice: 650.00, defaultUnit: "inches" },
       backlit_film: { name: "Lightbox Backlit Film", category: "area", unitPrice: 240.00, defaultUnit: "feet" }
     };
+
+    this.http = new RequestHandler();
   }
 
   /* ==========================================================================
@@ -47,59 +50,22 @@ export class PlaceOrderDataLoad {
      ========================================================================== */
 
   /**
-   * Retrieve Laravel CSRF token from DOM or meta tag.
+   * Retrieve Laravel CSRF token.
    * @returns {string}
    */
   getCsrfToken() {
-    const metaTag = document.querySelector('meta[name="csrf-token"]');
-    if (metaTag && metaTag.content) {
-      return metaTag.content;
-    }
-    const inputToken = document.querySelector('input[name="_token"]');
-    if (inputToken && inputToken.value) {
-      return inputToken.value;
-    }
-    return "";
+    return this.http.getCsrfToken();
   }
 
   /**
-   * Universal fetch request wrapper with headers, JSON serialization, and error handling.
+   * Universal request wrapper delegating to core RequestHandler.
    *
    * @param {string} url
    * @param {Object} [options={}]
    * @returns {Promise<any>}
    */
   async request(url, options = {}) {
-    const csrfToken = this.getCsrfToken();
-    const defaultHeaders = {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-      ...(csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {})
-    };
-
-    const config = {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...(options.headers || {})
-      }
-    };
-
-    if (config.body && typeof config.body === "object" && !(config.body instanceof FormData)) {
-      config.body = JSON.stringify(config.body);
-    }
-
-    try {
-      const response = await fetch(url, config);
-      if (!response.ok) {
-        throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.warn(`[PlaceOrderDataLoad] Request failed for ${url}:`, error.message);
-      throw error;
-    }
+    return this.http.request(url, options);
   }
 
   /* ==========================================================================

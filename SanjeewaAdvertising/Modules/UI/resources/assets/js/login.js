@@ -8,7 +8,8 @@
  * - Loading indicators and user feedback alerts
  */
 
-import { ValidatBuilder } from "./components/ValidatBuilder.js";
+import { ValidatBuilder } from "./core/ValidatBuilder.js";
+import { RequestHandler } from "./core/RequestHandler.js";
 
 export class LoginManager {
   /**
@@ -306,24 +307,14 @@ export class LoginManager {
       this.form?.dataset?.redirect || "/dashboard";
 
     try {
-      const response = await fetch(loginEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-CSRF-TOKEN": this.getCsrfToken(),
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-          remember,
-        }),
+      const http = new RequestHandler();
+      const data = await http.post(loginEndpoint, {
+        username,
+        password,
+        remember,
       });
 
-      const data = await response.json().catch(() => null);
-
-      if (response.ok && data?.success !== false) {
+      if (data?.success !== false) {
         this.setStatus(data?.message || "Sign in successful. Redirecting…", "success");
         if (this.submitLabel) {
           this.submitLabel.textContent = "Redirecting…";
@@ -344,10 +335,13 @@ export class LoginManager {
       this.setStatus(errorMsg, "error");
     } catch (err) {
       console.warn("[LoginManager] Authentication error:", err);
-      this.setStatus(
-        "Unable to connect to sign-in service. Please try again.",
-        "error"
-      );
+      const errorMsg =
+        (err.data && err.data.message) ||
+        (err.data && err.data.errors ? Object.values(err.data.errors).flat().join(" ") : null) ||
+        err.message ||
+        "Unable to connect to sign-in service. Please try again.";
+
+      this.setStatus(errorMsg, "error");
     } finally {
       this.setLoading(false);
     }

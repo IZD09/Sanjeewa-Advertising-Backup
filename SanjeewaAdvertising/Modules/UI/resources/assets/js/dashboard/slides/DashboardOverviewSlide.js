@@ -67,17 +67,17 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
   }
 
   /**
-   * Render slide metrics.
+   * Render slide metrics into the DOM.
    * @param {Object} [data]
    */
-  render(data = {}) {
-    super.render(data);
+  renderContent(data = {}) {
+    const dataToUse = data && Object.keys(data).length > 0 ? data : this.data || {};
 
     if (!this.articles.article1 && !this.articles.sales) {
       this.init();
     }
 
-    const overview = data.overview || {};
+    const overview = dataToUse.overview || {};
     const breakdown = overview.ordersBreakdown || {};
 
     // Extract states / articles structure from DashboardDataService
@@ -112,13 +112,13 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       .setTitle('Total Sales')
       .setIcon('fa-solid fa-chart-line')
       .setColor('blue')
-      .setValue(formatCurrency(salesArt.value, overview.totalSales ?? 'Rs. 845,000'))
+      .setValue(formatCurrency(salesArt.value, overview.totalSales ?? '—'))
       .setTrend(
         salesArt.trendState || 'positive',
-        formatPercent(salesArt.trend, '12.8%'),
+        formatPercent(salesArt.trend, ''),
         salesArt.trendLabel || 'vs last month'
       )
-      .setBars(salesArt.bars || [30, 45, 35, 62, 50, 78, 95])
+      .setBars(salesArt.bars || [])
       .render();
 
     // 2. Article 2: Active Print Jobs
@@ -129,15 +129,15 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       .setValue(
         formatNumber(
           jobsArt.value,
-          overview.activeJobs !== undefined ? String(overview.activeJobs) : '28'
+          overview.activeJobs !== undefined ? String(overview.activeJobs) : '—'
         )
       )
       .setTrend(
         jobsArt.trendState || 'positive',
-        formatPercent(jobsArt.trend, '8.4%'),
+        formatPercent(jobsArt.trend, ''),
         jobsArt.trendLabel || 'vs last month'
       )
-      .setBars(jobsArt.bars || [35, 50, 40, 68, 55, 80, 95], 'red-bars')
+      .setBars(jobsArt.bars || [], 'red-bars')
       .render();
 
     // 3. Article 3: New Customers
@@ -148,15 +148,15 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       .setValue(
         formatNumber(
           customersArt.value,
-          overview.newCustomers !== undefined ? String(overview.newCustomers) : '14'
+          overview.newCustomers !== undefined ? String(overview.newCustomers) : '—'
         )
       )
       .setTrend(
         customersArt.trendState || 'positive',
-        formatPercent(customersArt.trend, '4.2%'),
+        formatPercent(customersArt.trend, ''),
         customersArt.trendLabel || 'vs last month'
       )
-      .setBars(customersArt.bars || [25, 40, 30, 55, 45, 70, 88], 'green-bars')
+      .setBars(customersArt.bars || [], 'green-bars')
       .render();
 
     // 4. Article 4: Pending Invoices
@@ -164,13 +164,13 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       .setTitle('Pending Invoices')
       .setIcon('fa-solid fa-clock')
       .setColor('orange')
-      .setValue(formatCurrency(invoicesArt.value, overview.pendingInvoices ?? 'Rs. 182,500'))
+      .setValue(formatCurrency(invoicesArt.value, overview.pendingInvoices ?? '—'))
       .setTrend(
         invoicesArt.trendState || 'negative',
-        formatPercent(invoicesArt.trend, '3.1%'),
+        formatPercent(invoicesArt.trend, ''),
         invoicesArt.trendLabel || 'vs last month'
       )
-      .setBars(invoicesArt.bars || [40, 55, 48, 70, 60, 82, 90], 'orange-bars')
+      .setBars(invoicesArt.bars || [], 'orange-bars')
       .render();
 
     // 5. Chart Title
@@ -178,26 +178,21 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       const year = rawStats.chartTitle || overview.chartTitle;
       this.chartTitle.textContent = year
         ? `${year} Monthly Trend`
-        : '2026 Monthly Trend';
+        : `${new Date().getFullYear()} Monthly Trend`;
     }
 
     // 6. Job Status Breakdown
     if (this.jobStatas.completed) {
-      this.jobStatas.completed.textContent = String(jobStats.completed ?? 14);
+      this.jobStatas.completed.textContent = String(jobStats.completed ?? '—');
     }
     if (this.jobStatas.printing) {
-      this.jobStatas.printing.textContent = String(jobStats.printing ?? 8);
+      this.jobStatas.printing.textContent = String(jobStats.printing ?? '—');
     }
     if (this.jobStatas.designing) {
-      this.jobStatas.designing.textContent = String(jobStats.designing ?? 6);
+      this.jobStatas.designing.textContent = String(jobStats.designing ?? '—');
     }
     if (this.jobStatas.pending) {
-      this.jobStatas.pending.textContent = String(jobStats.pending ?? 4);
-    }
-
-    // When slide is active, update the charts as well
-    if (this.isActive) {
-      this.renderCharts(data);
+      this.jobStatas.pending.textContent = String(jobStats.pending ?? '—');
     }
   }
 
@@ -258,8 +253,8 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
    * @param {Object} [chartData]
    */
   renderRevenueTrendChart(chartData) {
-    const labels = chartData?.labels || ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-    const values = chartData?.values || [420, 510, 480, 650, 590, 720, 680, 790, 740, 845];
+    const labels = chartData?.labels || [];
+    const values = chartData?.values || [];
 
     this.createChart("revenueTrendChart", {
       type: "line",
@@ -271,12 +266,14 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
           borderColor: "#2563eb",
           backgroundColor: "rgba(37, 99, 235, 0.12)",
           fill: true,
-          tension: 0.38,
+          tension: 0,
           pointRadius: 3.5,
           pointBackgroundColor: "#2563eb"
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: { y: { beginAtZero: true } }
       }
@@ -289,10 +286,10 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
    */
   renderOrdersDoughnutChart(breakdown) {
     const values = breakdown?.values || [
-      breakdown?.completed ?? 14,
-      breakdown?.printing ?? 8,
-      breakdown?.designing ?? 6,
-      breakdown?.pending ?? 4
+      breakdown?.completed ?? 0,
+      breakdown?.printing ?? 0,
+      breakdown?.designing ?? 0,
+      breakdown?.pending ?? 0
     ];
 
     this.createChart("ordersDoughnutChart", {
@@ -307,6 +304,8 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: "0%",
         plugins: { legend: { display: false } }
       }

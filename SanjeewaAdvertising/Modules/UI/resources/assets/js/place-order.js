@@ -3,25 +3,31 @@
  * Sanjeewa Advertising Printing Shop Management System
  *
  * Modular Architecture:
- * - PrintingOrder: Order Entity Model with Fluent Chaining & Render
+ * - PrintingOrderBuilder: Order Entity Model with Fluent Chaining & Render
  * - PlaceOrderDataLoad: Fetch Requests, CSRF Authentication, & Persistence
  * - PricingCalculator: Real-Time Pricing, Area, & Badge Calculations
  * - CustomerHandler: Autocomplete Search, Dropdown, & Quick Registration
  * - OrderTableHandler: Table Rendering, Filtering, Pagination, & KPIs
- * - OrderModalHandler: Confirmation, View, & Edit Modals
+ * - OrderModalHandler: Confirmation, View, Edit, Payment, & Receipt Modals
  * - PaymentHandler: Installments, History, Reversal, & Printable Receipts
+ * - Processes: Filter, Export, Metrics, and Order Placement Processes
  */
 
 "use strict";
 
 import {
   PrintingOrder,
+  PrintingOrderBuilder,
   PlaceOrderDataLoad,
   PricingCalculator,
   CustomerHandler,
   OrderTableHandler,
   OrderModalHandler,
-  PaymentHandler
+  OrderPlacementProcess,
+  PaymentHandler,
+  FilterProcess,
+  ExportProcess,
+  MetricsProcess
 } from "./place-order/index.js";
 
 class PlaceOrderManager {
@@ -41,9 +47,6 @@ class PlaceOrderManager {
     // Table pagination & filtering
     this.currentPage = 1;
     this.pageSize = 8;
-    this.searchTerm = "";
-    this.statusFilter = "ALL";
-    this.paymentFilter = "ALL";
 
     // Initialize process handler classes
     this.pricingCalculator = new PricingCalculator(this.products);
@@ -71,7 +74,7 @@ class PlaceOrderManager {
       }
     });
 
-    this.orderModalHandler = new OrderModalHandler({
+    this.orderPlacementProcess = new OrderPlacementProcess({
       products: this.products,
       employees: this.employees,
       currentUser: this.currentUser,
@@ -84,6 +87,33 @@ class PlaceOrderManager {
       openModal: (id) => this.openModal(id),
       closeModal: (id) => this.closeModal(id),
       showToast: (msg, type) => this.showToast(msg, type),
+      onOrderPlaced: (newOrder, orders, payments) => {
+        this.orders = orders;
+        this.payments = payments;
+        this.renderOrdersTable();
+        this.updateKPIs();
+      },
+      onFormReset: () => {
+        this.selectedCustomer = null;
+      }
+    });
+
+    this.orderModalHandler = new OrderModalHandler({
+      products: this.products,
+      employees: this.employees,
+      currentUser: this.currentUser,
+      dataLoader: this.dataLoader,
+      pricingCalculator: this.pricingCalculator,
+      orderPlacementProcess: this.orderPlacementProcess,
+      getOrders: () => this.orders,
+      getPayments: () => this.payments,
+      getSelectedCustomer: () => this.customerHandler.getSelectedCustomer(),
+      clearSelectedCustomer: () => this.customerHandler.clearSelectedCustomer(),
+      openModal: (id) => this.openModal(id),
+      closeModal: (id) => this.closeModal(id),
+      showToast: (msg, type) => this.showToast(msg, type),
+      calculateMainForm: () => this.pricingCalculator.calculateMainForm(),
+      saveNewOrder: () => this.saveNewOrder(),
       onOrderCreated: (newOrder, orders, payments) => {
         this.orders = orders;
         this.payments = payments;
@@ -94,6 +124,21 @@ class PlaceOrderManager {
         this.orders = orders;
         this.renderOrdersTable();
         this.updateKPIs();
+      },
+      onPaymentSaved: (newPayment, order, orders, payments) => {
+        this.orders = orders;
+        this.payments = payments;
+        this.renderOrdersTable();
+        this.updateKPIs();
+      },
+      onPaymentReversed: (payment, order, orders, payments) => {
+        this.orders = orders;
+        this.payments = payments;
+        this.renderOrdersTable();
+        this.updateKPIs();
+      },
+      onCustomerCreated: (newCust) => {
+        this.selectedCustomer = newCust;
       },
       resetOrderForm: () => this.resetForm()
     });
@@ -120,8 +165,33 @@ class PlaceOrderManager {
       }
     });
 
+    // Processes (from place-order/processes/)
+    this.filterProcess = new FilterProcess({
+      renderTable: () => {
+        this.currentPage = 1;
+        this.renderOrdersTable();
+      }
+    });
+
+    this.exportProcess = new ExportProcess({
+      getOrders: () => this.orders,
+      showToast: (msg, type) => this.showToast(msg, type)
+    });
+
+    this.metricsProcess = new MetricsProcess({
+      getOrders: () => this.orders
+    });
+
     this.init();
   }
+
+  // Getters for state compatibility
+  get searchTerm() { return this.filterProcess.searchTerm; }
+  set searchTerm(val) { this.filterProcess.searchTerm = val; }
+  get statusFilter() { return this.filterProcess.statusFilter; }
+  set statusFilter(val) { this.filterProcess.statusFilter = val; }
+  get paymentFilter() { return this.filterProcess.paymentFilter; }
+  set paymentFilter(val) { this.filterProcess.paymentFilter = val; }
 
   async init() {
     // 1. Initial synchronous or async data load
@@ -134,7 +204,8 @@ class PlaceOrderManager {
     // Propagate state to handlers
     this.customerHandler.setCustomers(this.customers);
     this.pricingCalculator.setProducts(this.products);
-    this.orderModalHandler.setProducts(this.products);
+    this.orderPlacementProcess.setProducts(this.products);
+    if (this.orderModalHandler.setProducts) this.orderModalHandler.setProducts(this.products);
 
     // 2. Setup pickers and event listeners
     this.setupDatePickers();
@@ -146,149 +217,30 @@ class PlaceOrderManager {
     this.updateKPIs();
   }
 
-  /* ==========================================================================
-     Date Pickers & Time Helpers
-     ========================================================================== */
   setupDatePickers() {
-    const todayStr = new Date().toISOString().split("T")[0];
-    const orderDateInput = document.getElementById("poOrderDate");
-    const requiredDateInput = document.getElementById("poRequiredDate");
-
-    if (orderDateInput) {
-      orderDateInput.value = todayStr;
-    }
-    if (requiredDateInput) {
-      const deadline = new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0];
-      requiredDateInput.value = deadline;
-      requiredDateInput.min = todayStr;
-    }
-
-    const todayDateElem = document.getElementById("todayDate");
-    if (todayDateElem) {
-      todayDateElem.textContent = new Intl.DateTimeFormat("en-LK", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      }).format(new Date());
-    }
+    this.orderPlacementProcess.setupDatePickers();
   }
 
-  /* ==========================================================================
-     Event Binding & Controls
-     ========================================================================== */
   bindEvents() {
-    // Form input changes -> real-time recalculation
-    const calcFields = ["poProductType", "poWidth", "poHeight", "poUnit", "poQty", "poUnitPrice", "poDesignStatus", "poPaidAmount"];
-    calcFields.forEach(id => {
-      const elem = document.getElementById(id);
-      if (elem) {
-        elem.addEventListener("input", () => this.updateCalculation());
-        elem.addEventListener("change", () => this.updateCalculation());
-      }
-    });
-
-    // Product select change -> set default unit & unit price
-    const prodSelect = document.getElementById("poProductType");
-    if (prodSelect) {
-      prodSelect.addEventListener("change", () => {
-        const prod = this.products[prodSelect.value];
-        if (prod) {
-          const unitElem = document.getElementById("poUnit");
-          const priceElem = document.getElementById("poUnitPrice");
-          if (unitElem) unitElem.value = prod.defaultUnit;
-          if (priceElem) priceElem.value = prod.unitPrice.toFixed(2);
-          this.updateCalculation();
-        }
-      });
-    }
-
-    // Reset Form button
-    const resetBtn = document.getElementById("resetOrderFormBtn");
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => this.resetForm());
-    }
-
-    // Table Search & Filters
-    const orderSearch = document.getElementById("orderSearchInput");
-    if (orderSearch) {
-      orderSearch.addEventListener("input", (e) => {
-        this.searchTerm = e.target.value.toLowerCase().trim();
-        this.currentPage = 1;
-        this.renderOrdersTable();
-      });
-    }
-
-    const statusFilter = document.getElementById("orderStatusFilter");
-    if (statusFilter) {
-      statusFilter.addEventListener("change", (e) => {
-        this.statusFilter = e.target.value;
-        this.currentPage = 1;
-        this.renderOrdersTable();
-      });
-    }
-
-    const paymentFilter = document.getElementById("orderPaymentFilter");
-    if (paymentFilter) {
-      paymentFilter.addEventListener("change", (e) => {
-        this.paymentFilter = e.target.value;
-        this.currentPage = 1;
-        this.renderOrdersTable();
-      });
-    }
-
-    // Modal Close buttons
-    document.querySelectorAll("[data-close-modal]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const modalId = btn.getAttribute("data-close-modal");
-        this.closeModal(modalId);
-      });
-    });
-
-    // Close modal on Escape key
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        document.querySelectorAll(".po-modal-overlay.open").forEach(modal => {
-          modal.classList.remove("open");
-        });
-      }
-    });
+    this.filterProcess.bindEvents();
+    this.exportProcess.bindEvents();
   }
 
   updateCalculation() {
-    return this.pricingCalculator.calculateMainForm();
+    return this.orderPlacementProcess.updateCalculation();
   }
 
   resetForm() {
-    this.customerHandler.clearSelectedCustomer();
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val;
-    };
-
-    setVal("poWidth", "10");
-    setVal("poHeight", "4");
-    setVal("poQty", "1");
-    setVal("poProductType", "flex_normal");
-    setVal("poUnit", "feet");
-    setVal("poUnitPrice", "95.00");
-    setVal("poDesignStatus", "Customer Provides Design");
-    setVal("poDeliveryMethod", "Pickup");
-    setVal("poPaidAmount", "0.00");
-    setVal("poNotes", "");
-
-    this.setupDatePickers();
-    this.updateCalculation();
+    this.orderPlacementProcess.resetForm();
   }
 
-  /* ==========================================================================
-     Facade Methods for Template Actions & Inlined Handlers
-     ========================================================================== */
+  // Facade Methods for Template Actions & Inlined Handlers
   openOrderConfirmation() {
-    this.orderModalHandler.openOrderConfirmation();
+    this.orderPlacementProcess.openConfirmation();
   }
 
   saveNewOrder() {
-    this.orderModalHandler.saveNewOrder(this.orders, this.payments);
+    this.orderPlacementProcess.confirmAndPlaceOrder();
   }
 
   openViewModal(orderId) {
@@ -308,19 +260,19 @@ class PlaceOrderManager {
   }
 
   openAddPaymentModal(orderId) {
-    this.paymentHandler.openAddPaymentModal(orderId, this.orders, this.payments);
+    this.orderModalHandler.openAddPaymentModal(orderId);
   }
 
   saveNewPayment() {
-    this.paymentHandler.saveNewPayment(this.orders, this.payments);
+    this.orderModalHandler.saveNewPayment();
   }
 
   openHistoryModal(orderId) {
-    this.paymentHandler.openHistoryModal(orderId, this.orders, this.payments);
+    this.orderModalHandler.openPaymentHistoryModal(orderId);
   }
 
   reversePayment(paymentId) {
-    this.paymentHandler.reversePayment(paymentId, this.orders, this.payments);
+    this.orderModalHandler.reversePayment(paymentId);
   }
 
   printLatestReceipt(orderId) {
@@ -332,11 +284,15 @@ class PlaceOrderManager {
   }
 
   openReceiptModal(payment, order) {
-    this.paymentHandler.openReceiptModal(payment, order);
+    if (typeof payment === "string") {
+      this.orderModalHandler.openReceiptModal(payment);
+    } else {
+      this.paymentHandler.openReceiptModal(payment, order);
+    }
   }
 
   triggerPrintReceipt() {
-    this.paymentHandler.triggerPrintReceipt();
+    this.orderModalHandler.triggerPrintReceipt();
   }
 
   renderOrdersTable() {
@@ -352,47 +308,38 @@ class PlaceOrderManager {
 
   updateKPIs() {
     this.orderTableHandler.updateKPIs(this.orders);
+    this.metricsProcess.updateMetrics();
   }
 
-  /* ==========================================================================
-     Modal & Toast Helpers
-     ========================================================================== */
+  exportCSV() {
+    this.exportProcess.exportCSV();
+  }
+
+  // Modal & Toast Helpers
   openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add("open");
+    return this.orderModalHandler ? this.orderModalHandler.openModal(modalId) : document.getElementById(modalId)?.classList.add("open");
   }
 
   closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove("open");
+    return this.orderModalHandler ? this.orderModalHandler.closeModal(modalId) : document.getElementById(modalId)?.classList.remove("open");
+  }
+
+  closeAllModals() {
+    if (this.orderModalHandler) this.orderModalHandler.closeAllModals();
   }
 
   showToast(message, type = "success") {
-    const container = document.getElementById("poToastContainer");
-    if (!container) return;
-
-    const toast = document.createElement("div");
-    toast.className = `po-toast ${type}`;
-
-    let icon = "fa-check-circle";
-    if (type === "error") icon = "fa-triangle-exclamation";
-    if (type === "warning") icon = "fa-circle-exclamation";
-
-    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.transition = "opacity 0.25s ease, transform 0.25s ease";
-      toast.style.opacity = "0";
-      toast.style.transform = "translateX(100%)";
-      setTimeout(() => toast.remove(), 260);
-    }, 3500);
+    if (this.orderModalHandler) {
+      return this.orderModalHandler.showToast(message, type);
+    }
   }
 }
 
 // Global initialization
 document.addEventListener("DOMContentLoaded", () => {
   window.PrintingOrder = PrintingOrder;
+  window.PrintingOrderBuilder = PrintingOrderBuilder;
   window.PlaceOrderDataLoad = PlaceOrderDataLoad;
+  window.OrderPlacementProcess = OrderPlacementProcess;
   window.placeOrderApp = new PlaceOrderManager();
 });

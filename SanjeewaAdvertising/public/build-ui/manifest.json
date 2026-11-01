@@ -1,4 +1,20 @@
 {
+  "_BaseModalHandler-DQ-OzJeF.js": {
+    "file": "assets/BaseModalHandler-DQ-OzJeF.js",
+    "name": "BaseModalHandler"
+  },
+  "_BaseTableRowBuilder-DjYFcW_M.js": {
+    "file": "assets/BaseTableRowBuilder-DjYFcW_M.js",
+    "name": "BaseTableRowBuilder"
+  },
+  "_RequestHandler-DGIgTA7N.js": {
+    "file": "assets/RequestHandler-DGIgTA7N.js",
+    "name": "RequestHandler"
+  },
+  "_ValidatBuilder-DPg4PYww.js": {
+    "file": "assets/ValidatBuilder-DPg4PYww.js",
+    "name": "ValidatBuilder"
+  },
   "resources/assets/css/components/sidebar.css": {
     "file": "assets/sidebar-pR4I-GdJ.css",
     "name": "sidebar",
@@ -18,7 +34,7 @@
     "isEntry": true
   },
   "resources/assets/css/dashboard.css": {
-    "file": "assets/dashboard-O7h9Hvmf.css",
+    "file": "assets/dashboard-BpLPsqNG.css",
     "name": "dashboard",
     "names": [
       "dashboard.css"
@@ -87,7 +103,7 @@
     "isEntry": true
   },
   "resources/assets/js/components/sidebar.js": {
-    "file": "assets/sidebar-CGJ7yWFX.js",
+    "file": "assets/sidebar-i9AyUO97.js",
     "name": "sidebar",
     "src": "resources/assets/js/components/sidebar.js",
     "isEntry": true
@@ -99,46 +115,76 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-BvRk9kiK.js",
+    "file": "assets/core-BOfevUw-.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_BaseModalHandler-DQ-OzJeF.js",
+      "_BaseTableRowBuilder-DjYFcW_M.js",
+      "_ValidatBuilder-DPg4PYww.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-C1Vo24wR.js",
+    "file": "assets/dashboard-DtnBd0fV.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-CM68RZLi.js",
+    "file": "assets/grn-BGSuFfn5.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_BaseModalHandler-DQ-OzJeF.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-Aoe_RkRj.js",
+    "file": "assets/inventory-BOL5r5KE.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_BaseModalHandler-DQ-OzJeF.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-4gZJwU5e.js",
+    "file": "assets/login-0sGLovUs.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_ValidatBuilder-DPg4PYww.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-Atqk7WeT.js",
+    "file": "assets/payments-CNQJSS1e.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_BaseModalHandler-DQ-OzJeF.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-DbkItLYH.js",
+    "file": "assets/place-order-CHqdku_J.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_BaseModalHandler-DQ-OzJeF.js",
+      "_BaseTableRowBuilder-DjYFcW_M.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/sass/app.scss": {
     "file": "assets/app-x1XGuNl0.css",

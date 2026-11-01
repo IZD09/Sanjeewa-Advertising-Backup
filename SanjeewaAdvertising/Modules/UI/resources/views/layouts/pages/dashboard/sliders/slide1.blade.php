@@ -1,3 +1,14 @@
+@php
+  $overviewData = $dashboardData['overview'] ?? [];
+  $overviewStates = $overviewData['states'] ?? [];
+  $articles = $overviewStates['articles'] ?? [];
+  $jobStats = $overviewStates['jobStatas'] ?? [];
+  $art1 = $articles['article1'] ?? [];
+  $art2 = $articles['article2'] ?? [];
+  $art3 = $articles['article3'] ?? [];
+  $art4 = $articles['article4'] ?? [];
+  $chartTitle = $overviewStates['chartTitle'] ?? date('Y');
+@endphp
 <!-- Slide 1: Overview -->
 <section class="dashboard-slide active" data-title="Business Overview" data-nav="Dashboard">
   <div class="slide-heading">
@@ -18,18 +29,14 @@
           <i class="fa-solid fa-chart-line"></i>
         </span>
       </div>
-      <h3>Rs. 845,000</h3>
-      <p class="positive">
-        <i class="fa-solid fa-arrow-up"></i> 12.8% <span>vs last month</span>
+      <h3>{{ isset($art1['value']) ? 'Rs. ' . number_format($art1['value'], 0) : '—' }}</h3>
+      <p class="{{ ($art1['trendState'] ?? 'positive') === 'positive' ? 'positive' : 'negative' }}">
+        <i class="fa-solid fa-arrow-{{ ($art1['trendState'] ?? 'positive') === 'positive' ? 'up' : 'down' }}"></i> {{ isset($art1['trend']) ? $art1['trend'].'%' : '' }} <span>vs last month</span>
       </p>
       <div class="mini-bars">
-        <i style="height:30%"></i>
-        <i style="height:45%"></i>
-        <i style="height:35%"></i>
-        <i style="height:62%"></i>
-        <i style="height:50%"></i>
-        <i style="height:78%"></i>
-        <i style="height:95%"></i>
+        @foreach($art1['bars'] ?? [] as $bar)
+          <i style="height:{{ $bar }}%"></i>
+        @endforeach
       </div>
     </article>
 
@@ -40,18 +47,14 @@
           <i class="fa-solid fa-print"></i>
         </span>
       </div>
-      <h3>28</h3>
-      <p class="positive">
-        <i class="fa-solid fa-arrow-up"></i> 8.4% <span>vs last month</span>
+      <h3>{{ $art2['value'] ?? '—' }}</h3>
+      <p class="{{ ($art2['trendState'] ?? 'positive') === 'positive' ? 'positive' : 'negative' }}">
+        <i class="fa-solid fa-arrow-{{ ($art2['trendState'] ?? 'positive') === 'positive' ? 'up' : 'down' }}"></i> {{ isset($art2['trend']) ? $art2['trend'].'%' : '' }} <span>vs last month</span>
       </p>
       <div class="mini-bars red-bars">
-        <i style="height:35%"></i>
-        <i style="height:50%"></i>
-        <i style="height:40%"></i>
-        <i style="height:68%"></i>
-        <i style="height:55%"></i>
-        <i style="height:80%"></i>
-        <i style="height:95%"></i>
+        @foreach($art2['bars'] ?? [] as $bar)
+          <i style="height:{{ $bar }}%"></i>
+        @endforeach
       </div>
     </article>
 
@@ -62,18 +65,14 @@
           <i class="fa-solid fa-user-plus"></i>
         </span>
       </div>
-      <h3>14</h3>
-      <p class="positive">
-        <i class="fa-solid fa-arrow-up"></i> 4.2% <span>vs last month</span>
+      <h3>{{ $art3['value'] ?? '—' }}</h3>
+      <p class="{{ ($art3['trendState'] ?? 'positive') === 'positive' ? 'positive' : 'negative' }}">
+        <i class="fa-solid fa-arrow-{{ ($art3['trendState'] ?? 'positive') === 'positive' ? 'up' : 'down' }}"></i> {{ isset($art3['trend']) ? $art3['trend'].'%' : '' }} <span>vs last month</span>
       </p>
       <div class="mini-bars green-bars">
-        <i style="height:25%"></i>
-        <i style="height:40%"></i>
-        <i style="height:30%"></i>
-        <i style="height:55%"></i>
-        <i style="height:45%"></i>
-        <i style="height:70%"></i>
-        <i style="height:88%"></i>
+        @foreach($art3['bars'] ?? [] as $bar)
+          <i style="height:{{ $bar }}%"></i>
+        @endforeach
       </div>
     </article>
 
@@ -84,18 +83,14 @@
           <i class="fa-solid fa-clock"></i>
         </span>
       </div>
-      <h3>Rs. 182,500</h3>
-      <p class="negative">
-        <i class="fa-solid fa-arrow-down"></i> 3.1% <span>vs last month</span>
+      <h3>{{ isset($art4['value']) ? 'Rs. ' . number_format($art4['value'], 0) : '—' }}</h3>
+      <p class="{{ ($art4['trendState'] ?? 'negative') === 'positive' ? 'positive' : 'negative' }}">
+        <i class="fa-solid fa-arrow-{{ ($art4['trendState'] ?? 'negative') === 'positive' ? 'up' : 'down' }}"></i> {{ isset($art4['trend']) ? $art4['trend'].'%' : '' }} <span>vs last month</span>
       </p>
       <div class="mini-bars orange-bars">
-        <i style="height:40%"></i>
-        <i style="height:55%"></i>
-        <i style="height:48%"></i>
-        <i style="height:70%"></i>
-        <i style="height:60%"></i>
-        <i style="height:82%"></i>
-        <i style="height:90%"></i>
+        @foreach($art4['bars'] ?? [] as $bar)
+          <i style="height:{{ $bar }}%"></i>
+        @endforeach
       </div>
     </article>
   </div>
@@ -107,7 +102,7 @@
           <p class="eyebrow">REVENUE ANALYSIS</p>
           <h3>Monthly Revenue (LKR)</h3>
         </div>
-        <span class="pill" data-field="overviewChartTitle">2026 Monthly Trend</span>
+        <span class="pill" data-field="overviewChartTitle">{{ $chartTitle }} Monthly Trend</span>
       </div>
       <div class="chart-wrap">
         <canvas id="revenueTrendChart"></canvas>
@@ -130,22 +125,22 @@
           <div>
             <span class="dot completed"></span>
             <span>Completed</span>
-            <strong data-field="overviewCompleted">14</strong>
+            <strong data-field="overviewCompleted">{{ $jobStats['completed'] ?? '—' }}</strong>
           </div>
           <div>
             <span class="dot printing"></span>
             <span>Printing</span>
-            <strong data-field="overviewPrinting">8</strong>
+            <strong data-field="overviewPrinting">{{ $jobStats['printing'] ?? '—' }}</strong>
           </div>
           <div>
             <span class="dot designing"></span>
             <span>Designing</span>
-            <strong data-field="overviewDesigning">6</strong>
+            <strong data-field="overviewDesigning">{{ $jobStats['designing'] ?? '—' }}</strong>
           </div>
           <div>
             <span class="dot pending"></span>
             <span>Pending</span>
-            <strong data-field="overviewPending">4</strong>
+            <strong data-field="overviewPending">{{ $jobStats['pending'] ?? '—' }}</strong>
           </div>
         </div>
       </div>

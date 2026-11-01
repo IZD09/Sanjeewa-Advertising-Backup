@@ -42,8 +42,18 @@ export class JobStatusSlide extends DashboardBaseSlide {
    * @param {Object} [outputData]
    */
   renderWeeklyOutputChart(outputData) {
-    const labels = outputData?.labels || ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const values = outputData?.values || [1240, 1680, 1450, 2100, 2480, 1950, 850];
+    const labels = outputData?.labels || [];
+    const values = outputData?.values || [];
+    const defaultColors = [
+      "#2563eb", // Mon - Blue
+      "#0ea5e9", // Tue - Sky Blue
+      "#10b981", // Wed - Green
+      "#f59e0b", // Thu - Amber Orange
+      "#ef4444", // Fri - Red
+      "#8b5cf6", // Sat - Purple
+      "#ec4899"  // Sun - Pink
+    ];
+    const colors = outputData?.colors && outputData.colors.length > 0 ? outputData.colors : defaultColors;
 
     this.createChart("weeklyOutputChart", {
       type: "bar",
@@ -52,8 +62,10 @@ export class JobStatusSlide extends DashboardBaseSlide {
         datasets: [{
           label: "Square Feet",
           data: values,
-          backgroundColor: "#ef4444",
-          borderRadius: 5
+          backgroundColor: colors,
+          borderRadius: 6,
+          maxBarThickness: 32,
+          barPercentage: 0.7
         }]
       },
       options: {
@@ -67,8 +79,8 @@ export class JobStatusSlide extends DashboardBaseSlide {
    * @param {Object} [usageData]
    */
   renderMaterialUsageChart(usageData) {
-    const labels = usageData?.labels || ["Frontlit", "Star Flex", "Glossy", "Matte", "Backlit"];
-    const values = usageData?.values || [42, 24, 18, 10, 6];
+    const labels = usageData?.labels || [];
+    const values = usageData?.values || [];
 
     this.createChart("materialUsageChart", {
       type: "doughnut",

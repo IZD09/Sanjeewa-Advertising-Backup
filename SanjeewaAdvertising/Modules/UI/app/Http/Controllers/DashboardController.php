@@ -17,23 +17,26 @@ class DashboardController extends BaseApiController
     ) {}
 
     /**
-     * Display the main interactive dashboard view.
+     * Display the main interactive dashboard view with initial backend data.
      */
     public function index(): View
     {
-        return view('ui::layouts.pages.dashboard.dashboard');
+        $dashboardData = (new DashboardResource($this->dashboardService->getDashboardData()))->resolve();
+
+        return view('ui::layouts.pages.dashboard.dashboard', [
+            'dashboardData' => $dashboardData,
+        ]);
     }
 
     /**
-     * Retrieve dashboard metrics as a single JSON response.
+     * Retrieve dashboard metrics as a single JSON response matching the required schema.
      */
     public function data(DashboardRequest $request): JsonResponse
     {
         $data = $this->dashboardService->getDashboardData($request->validated());
 
-        return $this->success(
-            new DashboardResource($data),
-            'Dashboard data retrieved successfully.'
+        return response()->json(
+            new DashboardResource($data)
         );
     }
 
@@ -49,6 +52,11 @@ class DashboardController extends BaseApiController
                 @set_time_limit(0);
             }
 
+            // Release session lock so concurrent requests from this user aren't blocked
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+
             // Flush any existing output buffering outside testing
             if (! app()->environment('testing')) {
                 while (ob_get_level() > 0) {
@@ -56,37 +64,46 @@ class DashboardController extends BaseApiController
                 }
             }
 
-            // Stream interval: default 60 seconds (1 minute)
-            $interval = (int) $request->input('stream_interval', 60);
-            $interval = max(5, min(300, $interval));
-
-            // Instruct EventSource client to retry after 5 seconds on disconnect
-            echo "retry: 5000\n\n";
+            // Instruct EventSource client to retry automatically after 5 seconds on disconnect
+            $retryMs = (int) $request->input('retry', 5000);
+            $retryMs = max(3000, min(60000, $retryMs));
+            echo "retry: {$retryMs}\n\n";
             flush();
 
             // Send initial immediate payload upon connection
-            $data = $this->dashboardService->getDashboardData($request->validated());
-            echo $this->dashboardService->formatEventStreamMessage($data);
+            $rawData = $this->dashboardService->getDashboardData($request->validated());
+            $resourceData = (new DashboardResource($rawData))->resolve();
+            echo $this->dashboardService->formatEventStreamMessage($resourceData);
             flush();
 
-            // Exit early if running in automated test suite or requested once
-            if (app()->runningUnitTests() || app()->environment('testing') || $request->boolean('once')) {
+            // Only enter continuous blocking loop if explicitly requested (e.g. continuous=1) and not in testing.
+            // On standard development servers (single-process php artisan serve), completing each burst
+            // allows the browser's native EventSource to auto-reconnect via retry without monopolizing the single server worker.
+            if (! $request->boolean('continuous') || app()->runningUnitTests() || app()->environment('testing') || $request->boolean('once')) {
                 return;
             }
 
-            $maxCycles = 120; // 120 cycles * 60 seconds = 2 hours max continuous stream
+            $interval = (int) $request->input('stream_interval', 15);
+            $interval = max(5, min(300, $interval));
+            $maxCycles = 120; // 120 cycles max continuous stream
             $cycle = 0;
 
             while (! connection_aborted() && $cycle < $maxCycles) {
-                // Sleep for 1 minute (60 seconds)
-                sleep($interval);
+                // Sleep in 1-second increments so client disconnect is detected immediately
+                for ($s = 0; $s < $interval; $s++) {
+                    if (connection_aborted()) {
+                        break 2;
+                    }
+                    sleep(1);
+                }
 
                 if (connection_aborted()) {
                     break;
                 }
 
-                $data = $this->dashboardService->getDashboardData($request->validated());
-                echo $this->dashboardService->formatEventStreamMessage($data);
+                $rawData = $this->dashboardService->getDashboardData($request->validated());
+                $resourceData = (new DashboardResource($rawData))->resolve();
+                echo $this->dashboardService->formatEventStreamMessage($resourceData);
                 flush();
 
                 $cycle++;

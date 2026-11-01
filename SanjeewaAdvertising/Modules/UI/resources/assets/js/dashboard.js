@@ -43,7 +43,23 @@ export class SanjeewaAdvertisingDashboard {
     // 1. Initialize Dashboard Data Service
     const apiUrl = this.rootElement.dataset.apiUrl || '/dashboard/data';
     const sseUrl = this.rootElement.dataset.sseUrl || '/dashboard/stream';
-    this.dataService = new DashboardDataService({ apiUrl, sseUrl });
+    let initialData = null;
+    const scriptPayload = document.getElementById("dashboard-initial-data");
+    if (scriptPayload && scriptPayload.textContent) {
+      try {
+        initialData = JSON.parse(scriptPayload.textContent);
+      } catch (e) {
+        initialData = null;
+      }
+    }
+    if (!initialData && this.rootElement.dataset.initialPayload) {
+      try {
+        initialData = JSON.parse(this.rootElement.dataset.initialPayload);
+      } catch (e) {
+        initialData = null;
+      }
+    }
+    this.dataService = new DashboardDataService({ apiUrl, sseUrl, initialData });
 
     // 2. Instantiate Slide Classes
     const overviewEl = slideElements[0] || this.rootElement.querySelector('[data-nav="Dashboard"]');
@@ -70,17 +86,18 @@ export class SanjeewaAdvertisingDashboard {
     this.dataService.onData(data => {
       this.slides.forEach(slide => {
         try {
-          slide.render(data);
+          if (typeof slide.setData === "function") {
+            slide.setData(data);
+          } else {
+            slide.render(data);
+          }
         } catch (err) {
-          console.error(`[Dashboard] Error rendering slide ${slide.name}:`, err);
+          console.error(`[Dashboard] Error updating slide ${slide.name}:`, err);
         }
       });
     });
 
-    // 4. Initialize Data Service first (emits baseline data so all slides have data immediately)
-    this.dataService.init();
-
-    // 5. Initialize Slide Controller
+    // 4. Initialize Slide Controller first so slide 0 is activated
     this.controller = new SlideController({
       slideDuration: Number(this.rootElement.dataset.slideDuration) || 7000,
       uiHideDelay: Number(this.rootElement.dataset.uiHideDelay) || 3500
@@ -88,6 +105,9 @@ export class SanjeewaAdvertisingDashboard {
 
     this.controller.registerSlides(this.slides);
     this.controller.init();
+
+    // 5. Initialize Data Service (emits initial payload or loads data, updating active slide immediately)
+    this.dataService.init();
 
     // 6. Handle CDN Chart.js asynchronous readiness check
     this.initChartReadinessCheck();

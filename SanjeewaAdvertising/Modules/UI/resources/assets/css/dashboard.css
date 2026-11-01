@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Dashboard Carousel & Visual Analytics Stylesheet
    Sanjeewa Advertising Printing Shop Management System
    ========================================================================== */
@@ -293,13 +293,27 @@
 }
 
 .doughnut-wrap {
-    width: 150px;
-    height: 150px;
+    width: 220px;
+    height: 220px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+@media (min-width: 1400px) {
+    .doughnut-wrap {
+        width: 240px;
+        height: 240px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .doughnut-wrap {
+        width: 195px;
+        height: 195px;
+    }
 }
 
 .doughnut-wrap canvas {
@@ -312,11 +326,11 @@
 .order-summary {
     flex: 1;
     min-height: 0;
-    padding: 10px 16px;
+    padding: 12px 22px;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-evenly;
     align-items: center;
-    gap: 14px;
+    gap: 20px;
 }
 
 .donut {
@@ -361,28 +375,30 @@
 
 .legend {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
-    max-width: 170px;
+    max-width: 180px;
 }
 
 .legend > div {
     display: grid;
-    grid-template-columns: 8px 1fr auto;
+    grid-template-columns: 10px 1fr auto;
     align-items: center;
-    gap: 8px;
-    font-size: 10px;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 500;
     color: var(--text-muted);
 }
 
 .legend strong {
     color: var(--text);
     font-weight: 700;
+    font-size: 12.5px;
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     display: inline-block;
 }
@@ -430,18 +446,22 @@
     gap: 6px;
 }
 
-.health-heading {
+.health-heading,
+.stock-label {
     display: flex;
     justify-content: space-between;
-    font-size: 10.5px;
+    font-size: 11px;
+    margin-bottom: 4px;
 }
 
-.health-heading span {
+.health-heading span,
+.stock-label span {
     color: var(--text-muted);
 }
 
-.health-heading strong {
-    font-size: 10.5px;
+.health-heading strong,
+.stock-label strong {
+    font-size: 11px;
     color: var(--text);
 }
 
@@ -752,7 +772,8 @@
     }
 
     .order-summary {
-        min-height: 200px;
+        min-height: 230px;
+        padding: 16px 20px;
     }
 
     .stock-health {
@@ -811,7 +832,13 @@
 
     .order-summary {
         flex-direction: column;
-        gap: 14px;
+        gap: 16px;
+        padding: 16px 14px;
+    }
+
+    .doughnut-wrap {
+        width: 180px;
+        height: 180px;
     }
 
     .legend {

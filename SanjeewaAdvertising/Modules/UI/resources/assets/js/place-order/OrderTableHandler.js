@@ -1,20 +1,33 @@
 /**
  * SanjeewaAdvertising - Order Table Handler
- * Renders the main orders data table utilizing PrintingOrder fluent builder,
- * handles multi-parameter filtering, pagination, and KPI counter calculations.
+ *
+ * Extends BaseTableLoader core class, utilizing PrintingOrderBuilder
+ * to render orders data, handle filtering, pagination, and KPI calculations.
  */
 
-import { PrintingOrder } from "./PrintingOrder.js";
+import { BaseTableLoader } from "../core/BaseTableLoader.js";
+import { PrintingOrderBuilder, PrintingOrder } from "./PrintingOrderBuilder.js";
 
-export class OrderTableHandler {
+export class OrderTableHandler extends BaseTableLoader {
   /**
    * @param {Object} [options={}]
    * @param {Function} [options.onRecalculateTotals]
    * @param {Function} [options.onPageChange]
    */
   constructor(options = {}) {
+    super({
+      tbodyId: "ordersTableBody",
+      paginationInfoId: "paginationInfo",
+      paginationControlsId: "paginationControls",
+      pageSize: 8,
+      colspan: 10,
+      emptyIcon: "fa-folder-open",
+      emptyMessage: "No orders matching your criteria",
+      onPageChange: options.onPageChange,
+      rowBuilder: PrintingOrderBuilder
+    });
+
     this.onRecalculateTotals = options.onRecalculateTotals || (() => {});
-    this.onPageChange = options.onPageChange || (() => {});
   }
 
   /**
@@ -55,151 +68,64 @@ export class OrderTableHandler {
    * @param {number} pageSize
    */
   render(orders = [], searchTerm = "", statusFilter = "ALL", paymentFilter = "ALL", currentPage = 1, pageSize = 8) {
-    const tbody = document.getElementById("ordersTableBody");
-    if (!tbody) return;
+    this.currentPage = currentPage;
+    this.pageSize = pageSize;
 
-    tbody.innerHTML = "";
     const filtered = this.getFilteredOrders(orders, searchTerm, statusFilter, paymentFilter);
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / pageSize) || 1;
-    const activePage = Math.min(currentPage, totalPages);
 
-    const start = (activePage - 1) * pageSize;
-    const pageItems = filtered.slice(start, start + pageSize);
-
-    if (pageItems.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="13">
-            <div class="po-empty-state">
-              <i class="fa-solid fa-folder-open"></i>
-              <p>No orders matching your criteria</p>
-            </div>
-          </td>
-        </tr>
-      `;
-      this.renderPagination(0, 1, 1, pageSize);
-      return;
-    }
-
-    pageItems.forEach(item => {
-      // Recalculate order totals for accurate payment balance
+    // Delegate row rendering & pagination to BaseTableLoader
+    this.loadTable(filtered, (item) => {
       this.onRecalculateTotals(item.id);
+      const order = item instanceof PrintingOrder
+        ? item
+        : new PrintingOrderBuilder(item).build();
+      return order.render();
+    }, currentPage, pageSize);
 
-      // Fluent Chaining Builder Pattern using PrintingOrder class
-      const tr = new PrintingOrder()
-        .setId(item.id)
-        .setOrderDate(item.orderDate)
-        .setCustomerId(item.customerId)
-        .setCustomerName(item.customerName)
-        .setCustomerMobile(item.customerMobile)
-        .setProductKey(item.productKey)
-        .setProductName(item.productName)
-        .setWidth(item.width)
-        .setHeight(item.height)
-        .setUnit(item.unit)
-        .setQuantity(item.quantity)
-        .setAreaSqFt(item.areaSqFt)
-        .setUnitPrice(item.unitPrice)
-        .setDesignStatus(item.designStatus)
-        .setDeliveryMethod(item.deliveryMethod)
-        .setRequiredDate(item.requiredDate)
-        .setTotalAmount(item.totalAmount)
-        .setPaidAmount(item.paidAmount)
-        .setBalanceAmount(item.balanceAmount)
-        .setPaymentStatus(item.paymentStatus)
-        .setOrderStatus(item.orderStatus)
-        .setAssignedEmployee(item.assignedEmployee)
-        .setNotes(item.notes)
-        .render();
-
-      tbody.appendChild(tr);
-    });
-
-    this.renderPagination(total, totalPages, activePage, pageSize);
     this.updateKPIs(orders);
   }
 
   /**
-   * Render pagination summary and page number buttons.
-   *
-   * @param {number} totalCount
-   * @param {number} totalPages
-   * @param {number} currentPage
-   * @param {number} pageSize
+   * Custom pagination summary text for orders.
    */
   renderPagination(totalCount, totalPages, currentPage, pageSize) {
-    const infoElem = document.getElementById("paginationInfo");
-    const controlsElem = document.getElementById("paginationControls");
-    if (!infoElem || !controlsElem) return;
-
-    if (totalCount === 0) {
+    super.renderPagination(totalCount, totalPages, currentPage, pageSize);
+    const infoElem = document.getElementById(this.paginationInfoId);
+    if (infoElem && totalCount > 0) {
+      const start = (currentPage - 1) * pageSize + 1;
+      const end = Math.min(currentPage * pageSize, totalCount);
+      infoElem.textContent = `Showing ${start}-${end} of ${totalCount} orders`;
+    } else if (infoElem) {
       infoElem.textContent = "Showing 0 orders";
-      controlsElem.innerHTML = "";
-      return;
     }
-
-    const start = (currentPage - 1) * pageSize + 1;
-    const end = Math.min(currentPage * pageSize, totalCount);
-    infoElem.textContent = `Showing ${start}-${end} of ${totalCount} orders`;
-
-    controlsElem.innerHTML = "";
-
-    // Prev Button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "page-btn";
-    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.addEventListener("click", () => {
-      if (currentPage > 1) {
-        this.onPageChange(currentPage - 1);
-      }
-    });
-    controlsElem.appendChild(prevBtn);
-
-    // Number Buttons
-    for (let p = 1; p <= totalPages; p++) {
-      const pBtn = document.createElement("button");
-      pBtn.className = `page-btn ${p === currentPage ? "active" : ""}`;
-      pBtn.textContent = String(p);
-      pBtn.addEventListener("click", () => {
-        this.onPageChange(p);
-      });
-      controlsElem.appendChild(pBtn);
-    }
-
-    // Next Button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "page-btn";
-    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.addEventListener("click", () => {
-      if (currentPage < totalPages) {
-        this.onPageChange(currentPage + 1);
-      }
-    });
-    controlsElem.appendChild(nextBtn);
   }
 
   /**
-   * Update top KPI summary cards based on current orders.
+   * Update top-level statistical metrics (KPI cards) based on current orders.
+   *
    * @param {Array} orders
    */
   updateKPIs(orders = []) {
     const totalOrders = orders.length;
     const pendingOrders = orders.filter(o => o.orderStatus === "Pending" || o.orderStatus === "In Progress").length;
-    const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
-    const totalOutstanding = orders.reduce((sum, o) => sum + (parseFloat(o.balanceAmount) || 0), 0);
 
-    const setVal = (id, val) => {
+    const totalRevenue = orders.reduce((sum, o) => {
+      return sum + (parseFloat(o.totalAmount) || 0);
+    }, 0);
+
+    const outstandingBalance = orders.reduce((sum, o) => {
+      return sum + (parseFloat(o.balanceAmount) || 0);
+    }, 0);
+
+    const setTxt = (id, txt) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = val;
+      if (el) el.textContent = txt;
     };
 
-    setVal("kpiTotalOrders", String(totalOrders));
-    setVal("kpiPendingOrders", String(pendingOrders));
-    setVal("kpiTotalRevenue", `Rs. ${totalRevenue.toLocaleString("en-LK", { minimumFractionDigits: 0 })}`);
-    setVal("kpiOutstandingBalance", `Rs. ${totalOutstanding.toLocaleString("en-LK", { minimumFractionDigits: 0 })}`);
+    setTxt("kpiTotalOrders", String(totalOrders));
+    setTxt("kpiPendingOrders", String(pendingOrders));
+    setTxt("kpiTotalRevenue", `Rs. ${totalRevenue.toLocaleString("en-LK", { minimumFractionDigits: 0 })}`);
+    setTxt("kpiOutstandingBalance", `Rs. ${outstandingBalance.toLocaleString("en-LK", { minimumFractionDigits: 0 })}`);
   }
 }
 
