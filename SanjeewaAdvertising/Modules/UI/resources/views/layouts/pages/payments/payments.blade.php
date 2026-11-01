@@ -284,6 +284,12 @@
                       </tbody>
                     </table>
                   </div>
+
+                  <!-- Pagination (Place Order Design) -->
+                  <div class="po-pagination">
+                    <div id="payInvoicePaginationInfo">Showing 0 invoices</div>
+                    <div class="pagination-controls" id="payInvoicePaginationControls"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -412,6 +418,12 @@
                       <tbody id="payGrnTableBody">
                       </tbody>
                     </table>
+                  </div>
+
+                  <!-- Pagination (Place Order Design) -->
+                  <div class="po-pagination grn-pagination">
+                    <div id="payGrnPaginationInfo">Showing 0 stock GRNs</div>
+                    <div class="pagination-controls" id="payGrnPaginationControls"></div>
                   </div>
                 </div>
               </div>
