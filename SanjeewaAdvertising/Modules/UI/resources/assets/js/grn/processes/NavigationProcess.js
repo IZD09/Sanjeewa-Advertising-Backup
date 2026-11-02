@@ -66,8 +66,12 @@ export class NavigationProcess {
     } else if (viewName === "po") {
       if (views.po) views.po.style.display = "block";
       if (tabs.po) tabs.po.classList.add("active");
-      if (this.ctx.renderPOTable) this.ctx.renderPOTable();
-      if (this.ctx.populatePOSupplierFilter) this.ctx.populatePOSupplierFilter();
+      if (this.ctx.loadAndRenderPO) {
+        this.ctx.loadAndRenderPO();
+      } else {
+        if (this.ctx.renderPOTable) this.ctx.renderPOTable();
+        if (this.ctx.populatePOSupplierFilter) this.ctx.populatePOSupplierFilter();
+      }
     } else if (viewName === "suppliers") {
       if (views.suppliers) views.suppliers.style.display = "block";
       if (tabs.suppliers) tabs.suppliers.classList.add("active");
@@ -75,8 +79,23 @@ export class NavigationProcess {
     } else {
       if (views.list) views.list.style.display = "block";
       if (tabs.list) tabs.list.classList.add("active");
-      if (this.ctx.render) this.ctx.render();
+      if (this.ctx.loadAndRenderGRN) {
+        this.ctx.loadAndRenderGRN();
+      } else if (this.ctx.render) {
+        this.ctx.render();
+      }
     }
+
+    // Sync browser URL and sidebar active route
+    try {
+      const newUrl = viewName === "list" ? window.location.pathname : `${window.location.pathname}?view=${viewName}`;
+      if (window.location.search !== (viewName === "list" ? "" : `?view=${viewName}`)) {
+        window.history.replaceState(null, "", newUrl);
+      }
+      if (window.sidebarComponent && typeof window.sidebarComponent.setActiveRoute === "function") {
+        window.sidebarComponent.setActiveRoute("grn", viewName === "po" ? "po" : null);
+      }
+    } catch (e) {}
   }
 }
 

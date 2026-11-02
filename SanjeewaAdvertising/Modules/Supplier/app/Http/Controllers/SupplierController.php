@@ -53,6 +53,19 @@ class SupplierController extends BaseApiController
     }
 
     /**
+     * Retrieve suppliers demo data and summary counts for UI views.
+     */
+    public function suppliersData(Request $request): JsonResponse
+    {
+        $data = $this->supplierService->getSuppliersData($request->all());
+
+        return $this->success(
+            $data,
+            'Suppliers data retrieved successfully.'
+        );
+    }
+
+    /**
      * Search suppliers.
      */
     public function search(Request $request): JsonResponse

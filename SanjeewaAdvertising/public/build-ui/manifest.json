@@ -43,7 +43,7 @@
     "isEntry": true
   },
   "resources/assets/css/grn.css": {
-    "file": "assets/grn-BRDtQ4id.css",
+    "file": "assets/grn-J8qCUudv.css",
     "name": "grn",
     "names": [
       "grn.css"
@@ -103,7 +103,7 @@
     "isEntry": true
   },
   "resources/assets/js/components/sidebar.js": {
-    "file": "assets/sidebar-DOT3pf4K.js",
+    "file": "assets/sidebar-Ivs4Elxm.js",
     "name": "sidebar",
     "src": "resources/assets/js/components/sidebar.js",
     "isEntry": true
@@ -136,12 +136,13 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-BGSuFfn5.js",
+    "file": "assets/grn-B_O5fy1k.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
       "_BaseModalHandler-DQ-OzJeF.js",
+      "_BaseTableRowBuilder-DjYFcW_M.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },

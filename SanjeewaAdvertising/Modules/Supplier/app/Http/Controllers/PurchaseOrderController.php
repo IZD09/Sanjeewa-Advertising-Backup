@@ -53,6 +53,19 @@ class PurchaseOrderController extends BaseApiController
     }
 
     /**
+     * Retrieve Purchase Orders demo data and KPIs for UI views.
+     */
+    public function purchaseOrdersData(Request $request): JsonResponse
+    {
+        $data = $this->purchaseOrderService->getPurchaseOrdersData($request->all());
+
+        return $this->success(
+            $data,
+            'Purchase orders data retrieved successfully.'
+        );
+    }
+
+    /**
      * Store a newly created purchase order.
      */
     public function store(StorePurchaseOrderRequest $request): JsonResponse

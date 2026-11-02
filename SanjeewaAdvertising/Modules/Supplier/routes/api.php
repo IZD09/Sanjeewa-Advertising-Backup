@@ -7,6 +7,7 @@ use Modules\Supplier\Http\Controllers\SupplierController;
 
 Route::prefix('v1')->group(function () {
     // Suppliers
+    Route::get('suppliers/data', [SupplierController::class, 'suppliersData'])->name('supplier.data');
     Route::get('suppliers/all', [SupplierController::class, 'all'])->name('supplier.all');
     Route::get('suppliers/search', [SupplierController::class, 'search'])->name('supplier.search');
     Route::get('suppliers/{id}/purchase-orders', [SupplierController::class, 'purchaseOrders'])->name('supplier.purchase-orders');
@@ -15,6 +16,7 @@ Route::prefix('v1')->group(function () {
         ->names('supplier');
 
     // Purchase Orders
+    Route::get('purchase-orders/data', [PurchaseOrderController::class, 'purchaseOrdersData'])->name('supplier.purchase-orders.data');
     Route::get('purchase-orders/all', [PurchaseOrderController::class, 'all'])->name('supplier.purchase-orders.all');
     Route::post('purchase-orders/{id}/items', [PurchaseOrderController::class, 'addItem'])->name('supplier.purchase-orders.items.add');
     Route::apiResource('purchase-orders', PurchaseOrderController::class)
@@ -22,6 +24,7 @@ Route::prefix('v1')->group(function () {
         ->names('supplier.purchase-orders');
 
     // GRNs (Goods Received Notes)
+    Route::get('grns/data', [GrnController::class, 'grnData'])->name('supplier.grns.data');
     Route::get('grns/all', [GrnController::class, 'all'])->name('supplier.grns.all');
     Route::apiResource('grns', GrnController::class)
         ->parameters(['grns' => 'id'])

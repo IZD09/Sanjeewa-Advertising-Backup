@@ -103,8 +103,10 @@ export class GRNManager {
     // 5. Button Processes (from grn/processes/)
     this.navigationProcess = new NavigationProcess({
       initNewGrnForm: (targetPo) => this.grnFormProcess.initNewGrnForm(targetPo),
+      loadAndRenderPO: () => this.loadAndRenderPO(),
       renderPOTable: () => this.renderPOTable(),
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
+      loadAndRenderGRN: () => this.loadAndRenderGRN(),
       renderSuppliersGrid: () => this.renderSuppliersGrid(),
       render: () => this.render()
     });
@@ -164,13 +166,52 @@ export class GRNManager {
   get activePoContext() { return this.modalHandler.activePoContext; }
   get activeGrnContext() { return this.modalHandler.activeGrnContext; }
 
-  init() {
-    this.dataLoader.loadData();
+  async init() {
+    this.dataLoader.loadSuppliers();
+    this.supplierHandler.populateAllSupplierDropdowns();
     this.navigationProcess.bindEvents();
     this.filterProcess.bindEvents();
     this.formButtonProcess.bindEvents();
     this.exportProcess.bindEvents();
-    this.render();
+
+    // Check initial active view from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get("view");
+
+    if (viewParam === "po") {
+      await this.loadAndRenderPO();
+    } else if (viewParam === "suppliers") {
+      this.supplierHandler.renderSuppliersGrid();
+    } else if (viewParam === "form") {
+      this.grnFormProcess.initNewGrnForm();
+    } else {
+      await this.loadAndRenderGRN();
+    }
+  }
+
+  /**
+   * On-demand data loading & rendering for Purchase Orders (PO) tab.
+   * Loads data from backend Supplier module via RequestHandler.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderPO(forceRefresh = false) {
+    await this.dataLoader.fetchPurchaseOrders({}, forceRefresh);
+    this.renderPOTable();
+    this.supplierHandler.populatePOSupplierFilter();
+    this.metricsProcess.renderOpenPoBadge();
+  }
+
+  /**
+   * On-demand data loading & rendering for Goods Received (GRN) tab.
+   * Loads data from backend Supplier module via RequestHandler.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderGRN(forceRefresh = false) {
+    await this.dataLoader.fetchGrns({}, forceRefresh);
+    this.renderTable();
+    this.metricsProcess.renderKPIs();
   }
 
   render() {

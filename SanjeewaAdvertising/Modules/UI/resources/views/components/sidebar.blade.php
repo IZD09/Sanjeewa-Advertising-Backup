@@ -72,7 +72,7 @@
       <button type="button" class="nav-link {{ request()->is('grn*') && request('view') === 'po' ? 'active' : '' }}" data-route="grn" data-view="po">
         <i class="fa-solid fa-clipboard-list"></i><span>Purchase Orders (PO)</span>
       </button>
-      <button type="button" class="nav-link {{ request()->is('grn*') && !request()->has('view') ? 'active' : '' }}" data-route="grn">
+      <button type="button" class="nav-link {{ request()->is('grn*') && request('view') !== 'po' ? 'active' : '' }}" data-route="grn">
         <i class="fa-solid fa-file-invoice-dollar"></i><span>Goods Received (GRN)</span>
       </button>
 

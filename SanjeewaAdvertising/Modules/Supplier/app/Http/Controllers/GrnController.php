@@ -51,6 +51,19 @@ class GrnController extends BaseApiController
     }
 
     /**
+     * Retrieve Goods Received Notes (GRN) demo data and KPIs for UI views.
+     */
+    public function grnData(Request $request): JsonResponse
+    {
+        $data = $this->grnService->getGrnData($request->all());
+
+        return $this->success(
+            $data,
+            'Goods Received Notes data retrieved successfully.'
+        );
+    }
+
+    /**
      * Store a newly created GRN.
      */
     public function store(StoreGrnRequest $request): JsonResponse

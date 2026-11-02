@@ -306,7 +306,7 @@ class SidebarComponent {
       if (payDropdown) payDropdown.classList.add("expanded");
     }
 
-    if (view) {
+    if (view && view !== "list" && view !== "all") {
       this.navLinks.forEach(link => {
         const linkRoute = link.getAttribute("data-route");
         const linkView = link.getAttribute("data-view");
@@ -323,13 +323,21 @@ class SidebarComponent {
     }
 
     if (!matchedSpecific) {
+      // Find the primary link for this route (one without data-view or with data-view matching route/list)
+      const primaryLink = this.navLinks.find(link => 
+        link.getAttribute("data-route") === route && 
+        (!link.hasAttribute("data-view") || link.getAttribute("data-view") === "list" || link.getAttribute("data-view") === route)
+      );
+
       let activatedPrimary = false;
       this.navLinks.forEach(link => {
-        const linkRoute = link.getAttribute("data-route");
-        if (linkRoute === route && !activatedPrimary) {
+        if (primaryLink && link === primaryLink) {
           link.classList.add("active");
           activatedPrimary = true;
-        } else if (link.getAttribute("data-route") !== route) {
+        } else if (!primaryLink && link.getAttribute("data-route") === route && !activatedPrimary) {
+          link.classList.add("active");
+          activatedPrimary = true;
+        } else {
           link.classList.remove("active");
         }
       });

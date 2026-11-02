@@ -1,8 +1,8 @@
 @extends('ui::layouts.master')
 
-@section('title', 'Goods Received Note (GRN)')
-@section('page_title', 'Goods Received Note (GRN)')
-@section('breadcrumb')Workspace / Inventory / <span>Goods Received (GRN)</span>@endsection
+@section('title', request('view') === 'po' ? 'Purchase Orders (PO)' : (request('view') === 'suppliers' ? 'Suppliers Directory' : 'Goods Received Note (GRN)'))
+@section('page_title', request('view') === 'po' ? 'Purchase Orders (PO)' : (request('view') === 'suppliers' ? 'Suppliers Directory' : 'Goods Received Note (GRN)'))
+@section('breadcrumb')Workspace / Inventory / <span>{{ request('view') === 'po' ? 'Purchase Orders (PO)' : (request('view') === 'suppliers' ? 'Suppliers Directory' : 'Goods Received (GRN)') }}</span>@endsection
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
@@ -107,16 +107,16 @@
 
             <!-- 3. Section Switcher Tabs -->
             <div class="grn-tabs-wrap">
-              <button type="button" class="grn-tab-btn active" id="grnTabListBtn">
+              <button type="button" class="grn-tab-btn {{ (!request()->has('view') || request('view') === 'list') ? 'active' : '' }}" id="grnTabListBtn">
                 <i class="fa-solid fa-list-check"></i> All GRN Records
               </button>
-              <button type="button" class="grn-tab-btn" id="grnTabCreateBtn">
+              <button type="button" class="grn-tab-btn {{ request('view') === 'form' ? 'active' : '' }}" id="grnTabCreateBtn">
                 <i class="fa-solid fa-file-circle-plus"></i> + Create New GRN
               </button>
-              <button type="button" class="grn-tab-btn" id="grnTabPOBtn">
+              <button type="button" class="grn-tab-btn {{ request('view') === 'po' ? 'active' : '' }}" id="grnTabPOBtn">
                 <i class="fa-solid fa-clipboard-list"></i> Purchase Orders (PO) <span class="tab-count-badge" id="grnOpenPoBadge">0</span>
               </button>
-              <button type="button" class="grn-tab-btn" id="grnTabSuppliersBtn">
+              <button type="button" class="grn-tab-btn {{ request('view') === 'suppliers' ? 'active' : '' }}" id="grnTabSuppliersBtn">
                 <i class="fa-solid fa-truck-field"></i> Suppliers Directory <span class="tab-count-badge" id="grnSupplierCountBadge">0</span>
               </button>
             </div>
@@ -124,7 +124,7 @@
             <!-- ======================================================================
                  VIEW A: ALL GRN DIRECTORY & TABLE VIEW
                  ====================================================================== -->
-            <div id="grnListView">
+            <div id="grnListView" style="{{ (request()->has('view') && request('view') !== 'list') ? 'display: none;' : '' }}">
               <div class="grn-card">
                 <!-- Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -182,7 +182,7 @@
             <!-- ======================================================================
                  VIEW B: CREATE NEW GRN FORM VIEW
                  ====================================================================== -->
-            <div id="grnFormView" style="display: none;">
+            <div id="grnFormView" style="{{ request('view') === 'form' ? '' : 'display: none;' }}">
               <div class="grn-card">
                 
                 <!-- Part 1: Header Information (grn_main / grn_header) -->
@@ -362,7 +362,7 @@
             <!-- ==================================================================
                  VIEW C: PURCHASE ORDERS (PO) DIRECTORY & TRACKING VIEW
                  ================================================================== -->
-            <div id="grnPOView" style="display: none;">
+            <div id="grnPOView" style="{{ request('view') === 'po' ? '' : 'display: none;' }}">
               <div class="grn-card">
                 <!-- PO Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -420,7 +420,7 @@
             <!-- ==================================================================
                  VIEW D: SUPPLIERS DIRECTORY VIEW
                  ================================================================== -->
-            <div id="grnSuppliersView" style="display: none;">
+            <div id="grnSuppliersView" style="{{ request('view') === 'suppliers' ? '' : 'display: none;' }}">
               <div class="grn-card">
                 <!-- Supplier Toolbar Controls -->
                 <div class="grn-toolbar">
