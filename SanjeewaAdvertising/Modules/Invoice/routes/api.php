@@ -3,6 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Invoice\Http\Controllers\InvoiceController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('invoices', InvoiceController::class)->names('invoice');
+Route::prefix('v1')->group(function () {
+    // Dedicated search & all
+    Route::get('invoices/all', [InvoiceController::class, 'all'])->name('invoice.all');
+    Route::get('invoices/search', [InvoiceController::class, 'search'])->name('invoice.search');
+
+    // Sub-resources
+    Route::post('invoices/{id}/jobs', [InvoiceController::class, 'attachJob'])->name('invoice.jobs.attach');
+    Route::delete('invoices/{id}/jobs/{jobId}', [InvoiceController::class, 'detachJob'])->name('invoice.jobs.detach');
+
+    // Invoice CRUD
+    Route::apiResource('invoices', InvoiceController::class)
+        ->parameters(['invoices' => 'id'])
+        ->names('invoice');
 });

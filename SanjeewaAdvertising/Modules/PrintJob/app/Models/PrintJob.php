@@ -99,6 +99,22 @@ class PrintJob extends Model
     }
 
     /**
+     * Get the latest status history entry for this print job.
+     */
+    public function latestStatusHistory(): HasOne
+    {
+        return $this->hasOne(PrintJobStatusHistory::class, 'print_jobs_id', 'id')->latestOfMany('update_at');
+    }
+
+    /**
+     * Get the stock item records for this print job.
+     */
+    public function jobStockItems(): HasMany
+    {
+        return $this->hasMany(PrintJobStockItem::class, 'print_jobs_id', 'id');
+    }
+
+    /**
      * Get the stock items allocated to this print job.
      */
     public function stockItems(): BelongsToMany

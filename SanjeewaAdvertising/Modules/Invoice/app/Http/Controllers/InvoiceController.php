@@ -2,55 +2,181 @@
 
 namespace Modules\Invoice\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Core\Http\Controllers\BaseApiController;
+use Modules\Invoice\Http\Requests\StoreInvoiceRequest;
+use Modules\Invoice\Http\Requests\UpdateInvoiceRequest;
+use Modules\Invoice\Services\InvoiceService;
+use Modules\Invoice\Transformers\InvoiceResource;
 
-class InvoiceController extends Controller
+class InvoiceController extends BaseApiController
 {
+    public function __construct(
+        protected InvoiceService $invoiceService
+    ) {}
+
     /**
-     * Display a listing of the resource.
+     * Display a listing of invoices with optional search and pagination.
      */
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        return view('invoice::index');
+        if ($request->boolean('all') || $request->query('per_page') === 'all') {
+            $invoices = $this->invoiceService->getAllInvoices($request->query());
+
+            return $this->success(
+                InvoiceResource::collection($invoices),
+                'All invoices retrieved successfully.'
+            );
+        }
+
+        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $invoices = $this->invoiceService->getInvoices($request->query(), $perPage);
+
+        $invoices->through(fn ($item) => new InvoiceResource($item));
+
+        return $this->paginated($invoices, 'Invoices retrieved successfully.');
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Retrieve all invoices without pagination limit.
      */
-    public function create()
+    public function all(Request $request): JsonResponse
     {
-        return view('invoice::create');
+        $invoices = $this->invoiceService->getAllInvoices($request->query());
+
+        return $this->success(
+            InvoiceResource::collection($invoices),
+            'All invoices retrieved successfully.'
+        );
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Search invoices.
      */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function search(Request $request): JsonResponse
     {
-        return view('invoice::show');
+        if ($request->boolean('all') || $request->query('per_page') === 'all') {
+            $invoices = $this->invoiceService->getAllInvoices($request->query());
+
+            return $this->success(
+                InvoiceResource::collection($invoices),
+                'Invoices search results.'
+            );
+        }
+
+        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $invoices = $this->invoiceService->getInvoices($request->query(), $perPage);
+
+        $invoices->through(fn ($item) => new InvoiceResource($item));
+
+        return $this->paginated($invoices, 'Invoices search results.');
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Store a newly created invoice in storage.
      */
-    public function edit($id)
+    public function store(StoreInvoiceRequest $request): JsonResponse
     {
-        return view('invoice::edit');
+        $invoice = $this->invoiceService->createInvoice($request->validated());
+
+        return $this->created(
+            new InvoiceResource($invoice),
+            'Invoice created successfully.'
+        );
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display the specified invoice.
      */
-    public function update(Request $request, $id) {}
+    public function show(int $id): JsonResponse
+    {
+        $invoice = $this->invoiceService->getInvoiceById($id);
+
+        if (! $invoice) {
+            return $this->notFound('Invoice not found.');
+        }
+
+        return $this->success(
+            new InvoiceResource($invoice),
+            'Invoice details retrieved successfully.'
+        );
+    }
 
     /**
-     * Remove the specified resource from storage.
+     * Update the specified invoice in storage.
      */
-    public function destroy($id) {}
+    public function update(UpdateInvoiceRequest $request, int $id): JsonResponse
+    {
+        $invoice = $this->invoiceService->getInvoiceById($id);
+
+        if (! $invoice) {
+            return $this->notFound('Invoice not found.');
+        }
+
+        $updated = $this->invoiceService->updateInvoice($invoice, $request->validated());
+
+        return $this->success(
+            new InvoiceResource($updated),
+            'Invoice updated successfully.'
+        );
+    }
+
+    /**
+     * Remove the specified invoice from storage.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $invoice = $this->invoiceService->getInvoiceById($id);
+
+        if (! $invoice) {
+            return $this->notFound('Invoice not found.');
+        }
+
+        $this->invoiceService->deleteInvoice($invoice);
+
+        return $this->success(null, 'Invoice deleted successfully.');
+    }
+
+    /**
+     * Attach a print job to this invoice.
+     */
+    public function attachJob(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'print_job_id' => ['required', 'integer', 'exists:print_jobs,id'],
+        ]);
+
+        $invoice = $this->invoiceService->getInvoiceById($id);
+
+        if (! $invoice) {
+            return $this->notFound('Invoice not found.');
+        }
+
+        $updated = $this->invoiceService->attachPrintJob($invoice, $request->integer('print_job_id'));
+
+        return $this->success(
+            new InvoiceResource($updated),
+            'Print job attached to invoice successfully.'
+        );
+    }
+
+    /**
+     * Detach a print job from this invoice.
+     */
+    public function detachJob(int $id, int $jobId): JsonResponse
+    {
+        $invoice = $this->invoiceService->getInvoiceById($id);
+
+        if (! $invoice) {
+            return $this->notFound('Invoice not found.');
+        }
+
+        $updated = $this->invoiceService->detachPrintJob($invoice, $jobId);
+
+        return $this->success(
+            new InvoiceResource($updated),
+            'Print job detached from invoice successfully.'
+        );
+    }
 }
