@@ -55,7 +55,18 @@ class SupplierController extends BaseApiController
     /**
      * Retrieve suppliers demo data and summary counts for UI views.
      */
+<<<<<<< HEAD
     public function suppliersData(Request $request): JsonResponse
+=======
+    public function store(Request $request)
+    {
+    }
+
+    /**
+     * Show the specified resource.
+     */
+    public function show($id)
+>>>>>>> origin/Ardithya
     {
         $data = $this->supplierService->getSuppliersData($request->all());
 
@@ -90,6 +101,7 @@ class SupplierController extends BaseApiController
     /**
      * Store a newly created supplier.
      */
+<<<<<<< HEAD
     public function store(StoreSupplierRequest $request): JsonResponse
     {
         $supplier = $this->supplierService->createSupplier($request->validated());
@@ -98,11 +110,16 @@ class SupplierController extends BaseApiController
             new SupplierResource($supplier),
             'Supplier created successfully.'
         );
+=======
+    public function update(Request $request, $id)
+    {
+>>>>>>> origin/Ardithya
     }
 
     /**
      * Display the specified supplier.
      */
+<<<<<<< HEAD
     public function show(int $id): JsonResponse
     {
         $supplier = $this->supplierService->getSupplierById($id);
@@ -169,5 +186,9 @@ class SupplierController extends BaseApiController
         $orders->through(fn ($item) => new PurchaseOrderResource($item));
 
         return $this->paginated($orders, 'Supplier purchase orders retrieved successfully.');
+=======
+    public function destroy($id)
+    {
+>>>>>>> origin/Ardithya
     }
 }
