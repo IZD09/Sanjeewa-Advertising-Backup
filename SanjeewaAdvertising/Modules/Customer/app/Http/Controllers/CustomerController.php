@@ -15,8 +15,7 @@ class CustomerController extends BaseApiController
 {
     public function __construct(
         protected CustomerService $customerService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of customers with optional search and pagination.

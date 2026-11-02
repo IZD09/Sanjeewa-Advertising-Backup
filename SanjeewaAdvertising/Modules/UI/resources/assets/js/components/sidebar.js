@@ -86,6 +86,9 @@ class Navigation {
         } else if (targetView === "grn-payment") {
           if (window.location.pathname === "/payments" && window.location.search.includes("view=grn-payment")) return;
           window.location.href = "/payments?view=grn-payment";
+        } else if (targetView === "expenses" || targetView === "expense") {
+          if (window.location.pathname === "/payments" && (window.location.search.includes("view=expenses") || window.location.search.includes("view=expense"))) return;
+          window.location.href = "/payments?view=expenses";
         } else {
           if (window.location.pathname === "/payments" && !window.location.search) return;
           window.location.href = "/payments";
@@ -307,8 +310,8 @@ class SidebarComponent {
       this.navLinks.forEach(link => {
         const linkRoute = link.getAttribute("data-route");
         const linkView = link.getAttribute("data-view");
-        const normalizedView = (view === "invoice" ? "invoice-payment" : (view === "grn" ? "grn-payment" : view));
-        const normalizedLinkView = (linkView === "invoice" ? "invoice-payment" : (linkView === "grn" ? "grn-payment" : linkView));
+        const normalizedView = (view === "invoice" ? "invoice-payment" : (view === "grn" ? "grn-payment" : (view === "expense" ? "expenses" : view)));
+        const normalizedLinkView = (linkView === "invoice" ? "invoice-payment" : (linkView === "grn" ? "grn-payment" : (linkView === "expense" ? "expenses" : linkView)));
         
         if (linkRoute === route && (linkView === view || normalizedLinkView === normalizedView)) {
           link.classList.add("active");

@@ -19,8 +19,7 @@ class PrintJobController extends BaseApiController
 {
     public function __construct(
         protected PrintJobService $printJobService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of print jobs with search and filter capabilities.
@@ -43,6 +42,19 @@ class PrintJobController extends BaseApiController
         $printJobs->through(fn ($job) => new PrintJobResource($job));
 
         return $this->paginated($printJobs, 'Print jobs retrieved successfully.');
+    }
+
+    /**
+     * Retrieve place order demo dataset without connecting to database (matching DashboardService approach).
+     */
+    public function placeOrderData(Request $request): JsonResponse
+    {
+        $data = $this->printJobService->getPlaceOrderData($request->all());
+
+        return $this->success(
+            $data,
+            'Place order data retrieved successfully.'
+        );
     }
 
     /**

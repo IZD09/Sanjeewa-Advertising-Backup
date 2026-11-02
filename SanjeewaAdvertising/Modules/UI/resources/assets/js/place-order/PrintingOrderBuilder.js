@@ -106,6 +106,7 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
     this.customerId = "";
     this.customerName = "";
     this.customerMobile = "";
+    this.printingType = "flex";
     this.productKey = "flex_normal";
     this.productName = "Flex Banner (Normal 280gsm)";
     this.width = 0;
@@ -141,6 +142,7 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
     if (data.customerId !== undefined || data.customer_id !== undefined) this.setCustomerId(data.customerId ?? data.customer_id);
     if (data.customerName !== undefined || data.customer_name !== undefined) this.setCustomerName(data.customerName ?? data.customer_name);
     if (data.customerMobile !== undefined || data.customer_mobile !== undefined) this.setCustomerMobile(data.customerMobile ?? data.customer_mobile);
+    if (data.printingType !== undefined || data.printing_type !== undefined) this.setPrintingType(data.printingType ?? data.printing_type);
     if (data.productKey !== undefined || data.product_key !== undefined) this.setProductKey(data.productKey ?? data.product_key);
     if (data.productName !== undefined || data.product_name !== undefined) this.setProductName(data.productName ?? data.product_name);
     if (data.width !== undefined) this.setWidth(data.width);
@@ -191,6 +193,11 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
 
   setCustomerMobile(customerMobile) {
     this.customerMobile = String(customerMobile ?? "").trim();
+    return this;
+  }
+
+  setPrintingType(printingType) {
+    this.printingType = String(printingType ?? "flex").trim();
     return this;
   }
 

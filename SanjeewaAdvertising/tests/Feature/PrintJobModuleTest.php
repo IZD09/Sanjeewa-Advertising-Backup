@@ -272,7 +272,7 @@ class PrintJobModuleTest extends TestCase
     {
         // 1. Create status
         $response = $this->postJson('/api/v1/print-job-statuses', [
-            'print_job_states' => 'Archived_' . uniqid(),
+            'print_job_states' => 'Archived_'.uniqid(),
         ]);
 
         $response->assertStatus(201);
@@ -284,12 +284,49 @@ class PrintJobModuleTest extends TestCase
 
         // 3. Update status
         $updateResponse = $this->putJson("/api/v1/print-job-statuses/{$statusId}", [
-            'print_job_states' => 'ReadyForDelivery_' . uniqid(),
+            'print_job_states' => 'ReadyForDelivery_'.uniqid(),
         ]);
         $updateResponse->assertStatus(200);
 
         // 4. Delete status
         $deleteResponse = $this->deleteJson("/api/v1/print-job-statuses/{$statusId}");
         $deleteResponse->assertStatus(200);
+    }
+
+    public function test_can_retrieve_place_order_demo_data(): void
+    {
+        $response = $this->getJson('/api/v1/print-jobs/place-order-data');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Place order data retrieved successfully.',
+            ])
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'orders' => [
+                        '*' => [
+                            'id',
+                            'customerName',
+                            'productName',
+                            'quantity',
+                            'totalAmount',
+                            'paidAmount',
+                            'balanceAmount',
+                            'paymentStatus',
+                            'orderStatus',
+                        ],
+                    ],
+                    'payments',
+                    'kpis' => [
+                        'totalOrders',
+                        'inProduction',
+                        'totalRevenue',
+                        'outstandingBalance',
+                    ],
+                ],
+            ]);
     }
 }

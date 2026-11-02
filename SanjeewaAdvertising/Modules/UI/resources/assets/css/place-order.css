@@ -219,63 +219,62 @@ html[data-theme="dark"] .po-header-banner {
     padding: 24px;
 }
 
-/* 3-Column Form Grid */
-.po-form-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px;
-}
-
-@media (max-width: 1200px) {
-    .po-form-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .po-form-grid {
-        grid-template-columns: 1fr;
-    }
+/* Vertical Form Layout */
+.po-form-grid,
+.po-form-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .po-section-card {
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 18px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .po-section-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding-bottom: 12px;
     border-bottom: 1px dashed var(--border);
 }
 
 .po-section-header .step-badge {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     display: grid;
     place-items: center;
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--po-orange-subtle);
     border: 1px solid var(--po-orange-border);
     color: var(--po-orange);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 800;
+    flex-shrink: 0;
 }
 
 .po-section-header h3 {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     margin: 0;
     color: var(--text);
     letter-spacing: -0.2px;
+}
+
+.po-section-subtitle {
+    display: block;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 500;
 }
 
 /* Form Controls */
@@ -289,13 +288,71 @@ html[data-theme="dark"] .po-header-banner {
 .po-field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 16px;
 }
 
 .po-field-row-3 {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.po-field-row-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 992px) {
+    .po-field-row-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .po-field-row,
+    .po-field-row-3,
+    .po-field-row-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Payment Section Split Layout */
+.po-payment-split {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 860px) {
+    .po-payment-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+.po-payment-left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.po-payment-notice {
+    display: flex;
+    align-items: flex-start;
     gap: 10px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.po-payment-right {
+    display: flex;
+    flex-direction: column;
 }
 
 .po-label {
@@ -954,6 +1011,23 @@ html[data-theme="dark"] .po-header-banner {
 
 .po-modal-large {
     max-width: 860px;
+}
+
+.po-modal-xl {
+    max-width: 980px;
+    max-height: 94vh;
+}
+
+#createOrderModal {
+    z-index: 1000;
+}
+
+#orderConfirmationModal {
+    z-index: 1060;
+}
+
+#addCustomerModal {
+    z-index: 1070;
 }
 
 .po-modal-header {

@@ -2,7 +2,9 @@
  * SanjeewaAdvertising - Payments Data Loader
  *
  * Handles storage keys, data persistence, default seeding for
- * Invoice payments and GRN supplier payments.
+ * 1. Invoice payments (Customer print orders)
+ * 2. GRN supplier payments (Stock acquisitions)
+ * 3. Operating expenses (Monthly utility & overhead bills)
  */
 
 import { RequestHandler } from "../core/RequestHandler.js";
@@ -14,13 +16,15 @@ export class PaymentsDataLoader {
       orders: "sa_advertising_orders",
       orderPayments: "sa_advertising_payments",
       grnRecords: "sa_advertising_grn_records",
-      grnPayments: "sa_advertising_grn_payments"
+      grnPayments: "sa_advertising_grn_payments",
+      operatingExpenses: "sa_advertising_operating_expenses"
     };
 
     this.orders = [];
     this.orderPayments = [];
     this.grnRecords = [];
     this.grnPayments = [];
+    this.expenses = [];
   }
 
   loadData() {
@@ -34,6 +38,10 @@ export class PaymentsDataLoader {
       } catch (e) {
         console.error("Could not parse saved orders", e);
       }
+    }
+
+    if (!this.orders || this.orders.length === 0) {
+      this.seedDefaultOrders();
     }
 
     if (savedOrderPayments) {
@@ -65,6 +73,18 @@ export class PaymentsDataLoader {
       this.seedDefaultGrnPayments();
     }
 
+    // 3. Load Operating Expenses (Monthly Overhead Bills)
+    const savedExpenses = localStorage.getItem(this.storageKeys.operatingExpenses);
+    if (savedExpenses) {
+      try {
+        this.expenses = JSON.parse(savedExpenses);
+      } catch (e) {
+        console.error("Could not parse saved operating expenses", e);
+      }
+    } else {
+      this.seedDefaultOperatingExpenses();
+    }
+
     // Ensure initial rich sample data if empty
     this.enrichOrderPayments();
 
@@ -72,8 +92,109 @@ export class PaymentsDataLoader {
       orders: this.orders,
       orderPayments: this.orderPayments,
       grnRecords: this.grnRecords,
-      grnPayments: this.grnPayments
+      grnPayments: this.grnPayments,
+      expenses: this.expenses
     };
+  }
+
+  seedDefaultOrders() {
+    const today = new Date();
+    const formatDate = (d) => d.toISOString().split("T")[0];
+
+    this.orders = [
+      {
+        id: "ORD-2026-1048",
+        orderDate: formatDate(new Date(today.getTime() - 86400000 * 3)),
+        customerId: "CUST-001",
+        customerName: "Kasun Jayasundara",
+        customerMobile: "0771234567",
+        productKey: "flex_normal",
+        productName: "Flex Banner (Normal 280gsm)",
+        totalAmount: 7600.00,
+        paidAmount: 7600.00,
+        balanceAmount: 0.00,
+        paymentStatus: "Paid"
+      },
+      {
+        id: "ORD-2026-1049",
+        orderDate: formatDate(new Date(today.getTime() - 86400000 * 2)),
+        customerId: "CUST-002",
+        customerName: "Dilhani Senaratne",
+        customerMobile: "0719876543",
+        productKey: "sticker_glossy",
+        productName: "Vinyl Sticker (Glossy)",
+        totalAmount: 8060.00,
+        paidAmount: 5000.00,
+        balanceAmount: 3060.00,
+        paymentStatus: "Partial"
+      },
+      {
+        id: "ORD-2026-1050",
+        orderDate: formatDate(today),
+        customerId: "CUST-003",
+        customerName: "Sajith Warnakula",
+        customerMobile: "0755554433",
+        productKey: "rollup_banner",
+        productName: "Rollup Banner Display",
+        totalAmount: 11000.00,
+        paidAmount: 0.00,
+        balanceAmount: 11000.00,
+        paymentStatus: "Pending"
+      },
+      {
+        id: "ORD-2026-1051",
+        orderDate: formatDate(today),
+        customerId: "CUST-004",
+        customerName: "Nuwan Weerasinghe",
+        customerMobile: "0721112233",
+        productKey: "foam_board",
+        productName: "Foam Board Signage (5mm)",
+        totalAmount: 13000.00,
+        paidAmount: 6500.00,
+        balanceAmount: 6500.00,
+        paymentStatus: "Partial"
+      },
+      {
+        id: "ORD-2026-1052",
+        orderDate: formatDate(new Date(today.getTime() - 86400000 * 1)),
+        customerId: "CUST-001",
+        customerName: "Kasun Jayasundara",
+        customerMobile: "0771234567",
+        productKey: "business_card_lux",
+        productName: "Business Cards (Spot UV 500 pcs)",
+        totalAmount: 11000.00,
+        paidAmount: 0.00,
+        balanceAmount: 11000.00,
+        paymentStatus: "Pending"
+      },
+      {
+        id: "ORD-2026-1053",
+        orderDate: formatDate(today),
+        customerId: "CUST-001",
+        customerName: "Kasun Jayasundara",
+        customerMobile: "0771234567",
+        productKey: "backlit_film",
+        productName: "Lightbox Backlit Film (8x3 ft)",
+        totalAmount: 5760.00,
+        paidAmount: 0.00,
+        balanceAmount: 5760.00,
+        paymentStatus: "Pending"
+      },
+      {
+        id: "ORD-2026-1054",
+        orderDate: formatDate(today),
+        customerId: "CUST-002",
+        customerName: "Dilhani Senaratne",
+        customerMobile: "0719876543",
+        productKey: "flyer_a5",
+        productName: "Flyers / Leaflets (A5 1000 pcs)",
+        totalAmount: 15000.00,
+        paidAmount: 0.00,
+        balanceAmount: 15000.00,
+        paymentStatus: "Pending"
+      }
+    ];
+    this.saveOrders(this.orders);
   }
 
   enrichOrderPayments() {
@@ -242,12 +363,166 @@ export class PaymentsDataLoader {
     this.saveGrnPayments();
   }
 
+  seedDefaultOperatingExpenses() {
+    this.expenses = [
+      {
+        id: "EXP-2026-10-001",
+        title: "CEB Heavy Power (3-Phase Workshop & HP Scitex)",
+        category: "Electricity",
+        provider: "Ceylon Electricity Board (CEB)",
+        accountNo: "042-881-9921",
+        month: "2026-10",
+        dueDate: "2026-10-31",
+        amount: 48500.00,
+        status: "Pending",
+        notes: "Main factory meter reading 4,200 units power consumption for digital presses"
+      },
+      {
+        id: "EXP-2026-10-002",
+        title: "NWSDB Water Supply (Workshop & Washing Bay)",
+        category: "Water Board",
+        provider: "National Water Supply & Drainage Board",
+        accountNo: "11/204/883/02",
+        month: "2026-10",
+        dueDate: "2026-10-30",
+        amount: 4850.00,
+        status: "Pending",
+        notes: "Monthly commercial water utility tariff"
+      },
+      {
+        id: "EXP-2026-10-003",
+        title: "SLT Megaline 100Mbps Ultra Fiber Line",
+        category: "Internet & Fiber",
+        provider: "Sri Lanka Telecom (SLT-Mobitel)",
+        accountNo: "011-234-5678",
+        month: "2026-10",
+        dueDate: "2026-10-25",
+        amount: 14200.00,
+        status: "Paid",
+        paidDate: "2026-10-24",
+        paidAmount: 14200.00,
+        paidMethod: "Bank Transfer",
+        paidRef: "BOC-ONLINE-99214",
+        paidNote: "Settled online via BOC corporate portal for graphics file transfers"
+      },
+      {
+        id: "EXP-2026-10-004",
+        title: "Dialog Business Broadband & Customer Hotline",
+        category: "Mobile & Telephone",
+        provider: "Dialog Axiata PLC",
+        accountNo: "D-9928103",
+        month: "2026-10",
+        dueDate: "2026-10-28",
+        amount: 6800.00,
+        status: "Pending",
+        notes: "Customer sales hotline & standby 4G backup router"
+      },
+      {
+        id: "EXP-2026-10-005",
+        title: "Main Street Printing Shop & Factory Premises Rent",
+        category: "Shop Rent",
+        provider: "Premises Landlord (Mr. K. Perera)",
+        accountNo: "RENT-PREM-128",
+        month: "2026-10",
+        dueDate: "2026-10-05",
+        amount: 65000.00,
+        status: "Paid",
+        paidDate: "2026-10-04",
+        paidAmount: 65000.00,
+        paidMethod: "Bank Transfer",
+        paidRef: "COMBANK-FT-44102",
+        paidNote: "Direct monthly transfer to landlord Commercial Bank savings account"
+      },
+      {
+        id: "EXP-2026-10-006",
+        title: "Konica Minolta & Roland Plotter Service Contract",
+        category: "Maintenance & Other",
+        provider: "Techno Graphic Services",
+        accountNo: "AMC-TGS-2026",
+        month: "2026-10",
+        dueDate: "2026-10-29",
+        amount: 18000.00,
+        status: "Pending",
+        notes: "Scheduled printhead cleaning, UV lamp maintenance and RIP calibration"
+      },
+      {
+        id: "EXP-2026-09-001",
+        title: "CEB Heavy Power (September)",
+        category: "Electricity",
+        provider: "Ceylon Electricity Board (CEB)",
+        accountNo: "042-881-9921",
+        month: "2026-09",
+        dueDate: "2026-09-30",
+        amount: 46200.00,
+        status: "Paid",
+        paidDate: "2026-09-28",
+        paidAmount: 46200.00,
+        paidMethod: "Bank Transfer",
+        paidRef: "BOC-TXN-55410",
+        paidNote: "Settled prior to month end"
+      },
+      {
+        id: "EXP-2026-09-002",
+        title: "NWSDB Water Supply (September)",
+        category: "Water Board",
+        provider: "National Water Supply & Drainage Board",
+        accountNo: "11/204/883/02",
+        month: "2026-09",
+        dueDate: "2026-09-30",
+        amount: 4600.00,
+        status: "Paid",
+        paidDate: "2026-09-29",
+        paidAmount: 4600.00,
+        paidMethod: "Cash",
+        paidRef: "WATER-REC-8810",
+        paidNote: "Settled at post office cash counter"
+      },
+      {
+        id: "EXP-2026-09-003",
+        title: "SLT Megaline 100Mbps Ultra Fiber Line (September)",
+        category: "Internet & Fiber",
+        provider: "Sri Lanka Telecom (SLT-Mobitel)",
+        accountNo: "011-234-5678",
+        month: "2026-09",
+        dueDate: "2026-09-25",
+        amount: 14200.00,
+        status: "Paid",
+        paidDate: "2026-09-24",
+        paidAmount: 14200.00,
+        paidMethod: "Bank Transfer",
+        paidRef: "BOC-ONLINE-8812",
+        paidNote: "Settled online"
+      },
+      {
+        id: "EXP-2026-09-004",
+        title: "Main Street Printing Shop & Factory Premises Rent (September)",
+        category: "Shop Rent",
+        provider: "Premises Landlord (Mr. K. Perera)",
+        accountNo: "RENT-PREM-128",
+        month: "2026-09",
+        dueDate: "2026-09-05",
+        amount: 65000.00,
+        status: "Paid",
+        paidDate: "2026-09-04",
+        paidAmount: 65000.00,
+        paidMethod: "Bank Transfer",
+        paidRef: "COMBANK-FT-3391",
+        paidNote: "Monthly shop lease rental"
+      }
+    ];
+    this.saveExpenses();
+  }
+
   saveOrderPayments() {
     localStorage.setItem(this.storageKeys.orderPayments, JSON.stringify(this.orderPayments));
   }
 
   saveGrnPayments() {
     localStorage.setItem(this.storageKeys.grnPayments, JSON.stringify(this.grnPayments));
+  }
+
+  saveExpenses() {
+    localStorage.setItem(this.storageKeys.operatingExpenses, JSON.stringify(this.expenses));
   }
 
   saveOrders(orders) {
@@ -262,4 +537,3 @@ export class PaymentsDataLoader {
     })}`;
   }
 }
-

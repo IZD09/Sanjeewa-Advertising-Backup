@@ -13,6 +13,7 @@
  */
 
 import { PrintingOrderBuilder } from "./PrintingOrderBuilder.js";
+import { PRINTING_TYPES, PRINTING_TYPE_PRODUCTS } from "./PlaceOrderDataLoad.js";
 
 export class OrderPlacementProcess {
   /**
@@ -42,6 +43,8 @@ export class OrderPlacementProcess {
       "Chamara Bandara"
     ];
     this.currentUser = options.currentUser || "Admin User";
+    this.printingTypes = options.printingTypes || PRINTING_TYPES;
+    this.printingTypeProducts = options.printingTypeProducts || PRINTING_TYPE_PRODUCTS;
     this.dataLoader = options.dataLoader || null;
     this.pricingCalculator = options.pricingCalculator || null;
     this.getOrders = options.getOrders || (() => []);
@@ -56,6 +59,10 @@ export class OrderPlacementProcess {
 
     this.setupDatePickers();
     this.bindEvents();
+    const typeSelect = document.getElementById("poPrintingType");
+    if (typeSelect) {
+      this.populateProductsForType(typeSelect.value, "flex_normal");
+    }
   }
 
   setProducts(products) {
@@ -99,11 +106,66 @@ export class OrderPlacementProcess {
   }
 
   /* ==========================================================================
+     Dropdown Synchronization (Printing Type -> Product / Material)
+     ========================================================================== */
+  populateProductsForType(typeKey, selectedProductKey = null) {
+    const prodSelect = document.getElementById("poProductType");
+    if (!prodSelect) return;
+
+    const list = this.printingTypeProducts[typeKey] || this.printingTypeProducts.flex || [];
+    prodSelect.innerHTML = "";
+
+    list.forEach((item, idx) => {
+      const opt = document.createElement("option");
+      opt.value = item.key;
+      opt.textContent = item.name;
+      if (selectedProductKey ? item.key === selectedProductKey : idx === 0) {
+        opt.selected = true;
+      }
+      prodSelect.appendChild(opt);
+    });
+
+    const activeKey = prodSelect.value;
+    const activeProd = this.products[activeKey] || list[0];
+    if (activeProd) {
+      const unitElem = document.getElementById("poUnit");
+      const priceElem = document.getElementById("poUnitPrice");
+      if (unitElem && activeProd.defaultUnit) unitElem.value = activeProd.defaultUnit;
+      if (priceElem && activeProd.unitPrice !== undefined) priceElem.value = activeProd.unitPrice.toFixed(2);
+    }
+  }
+
+  /* ==========================================================================
      Event Binding
      ========================================================================== */
   bindEvents() {
-    // 1. Real-time form recalculation on inputs
+    // 1. Printing Type select change -> dynamically populates Product / Material dropdown
+    const printTypeSelect = document.getElementById("poPrintingType");
+    if (printTypeSelect) {
+      printTypeSelect.addEventListener("change", () => {
+        this.populateProductsForType(printTypeSelect.value);
+        this.updateCalculation();
+      });
+    }
+
+    // 2. Product select change -> synchronizes default unit & unit price
+    const prodSelect = document.getElementById("poProductType");
+    if (prodSelect) {
+      prodSelect.addEventListener("change", () => {
+        const prod = this.products[prodSelect.value];
+        if (prod) {
+          const unitElem = document.getElementById("poUnit");
+          const priceElem = document.getElementById("poUnitPrice");
+          if (unitElem && prod.defaultUnit) unitElem.value = prod.defaultUnit;
+          if (priceElem && prod.unitPrice !== undefined) priceElem.value = prod.unitPrice.toFixed(2);
+          this.updateCalculation();
+        }
+      });
+    }
+
+    // 3. Real-time form recalculation on inputs
     const calcFields = [
+      "poPrintingType",
       "poProductType",
       "poWidth",
       "poHeight",
@@ -122,22 +184,7 @@ export class OrderPlacementProcess {
       }
     });
 
-    // 2. Product select change -> synchronizes default unit & unit price
-    const prodSelect = document.getElementById("poProductType");
-    if (prodSelect) {
-      prodSelect.addEventListener("change", () => {
-        const prod = this.products[prodSelect.value];
-        if (prod) {
-          const unitElem = document.getElementById("poUnit");
-          const priceElem = document.getElementById("poUnitPrice");
-          if (unitElem) unitElem.value = prod.defaultUnit;
-          if (priceElem) priceElem.value = prod.unitPrice.toFixed(2);
-          this.updateCalculation();
-        }
-      });
-    }
-
-    // 3. Reset Form button
+    // 4. Reset Form button
     const resetBtn = document.getElementById("resetOrderFormBtn");
     if (resetBtn) {
       resetBtn.addEventListener("click", () => this.resetForm());
@@ -157,6 +204,19 @@ export class OrderPlacementProcess {
     if (confirmBtn) {
       confirmBtn.addEventListener("click", () => this.confirmAndPlaceOrder());
     }
+
+    // 6. Open Create Order Modal triggers
+    const openCreateBtns = [
+      document.getElementById("openCreateOrderModalBtn"),
+      document.getElementById("openCreateOrderModalBannerBtn")
+    ];
+    openCreateBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          this.openModal("createOrderModal");
+        });
+      }
+    });
   }
 
   /* ==========================================================================
@@ -180,10 +240,11 @@ export class OrderPlacementProcess {
       if (el) el.value = val;
     };
 
+    setVal("poPrintingType", "flex");
+    this.populateProductsForType("flex", "flex_normal");
     setVal("poWidth", "10");
     setVal("poHeight", "4");
     setVal("poQty", "1");
-    setVal("poProductType", "flex_normal");
     setVal("poUnit", "feet");
     setVal("poUnitPrice", "95.00");
     setVal("poDesignStatus", "Customer Provides Design");
@@ -268,6 +329,7 @@ export class OrderPlacementProcess {
     const unit = document.getElementById("poUnit")?.value || "feet";
     const qty = parseInt(document.getElementById("poQty")?.value, 10) || 1;
     const unitPrice = parseFloat(document.getElementById("poUnitPrice")?.value) || 0;
+    const printingType = document.getElementById("poPrintingType")?.value || "flex";
     const prodKey = document.getElementById("poProductType")?.value || "flex_normal";
     const prod = this.products[prodKey] || { name: "Flex Banner" };
     const designStatus = document.getElementById("poDesignStatus")?.value || "Customer Provides Design";
@@ -285,6 +347,7 @@ export class OrderPlacementProcess {
 
     return {
       selectedCustomer,
+      printingType,
       prodKey,
       prod,
       width,
@@ -359,6 +422,7 @@ export class OrderPlacementProcess {
       .setCustomerId(data.selectedCustomer.id)
       .setCustomerName(data.selectedCustomer.name)
       .setCustomerMobile(data.selectedCustomer.mobile)
+      .setPrintingType(data.printingType || "flex")
       .setProductKey(data.prodKey)
       .setProductName(data.prod.name)
       .setWidth(data.width)
@@ -418,6 +482,7 @@ export class OrderPlacementProcess {
 
     // 4. Close confirmation modal & notify user
     this.closeModal("orderConfirmationModal");
+    this.closeModal("createOrderModal");
     this.showToast(`Order ${orderId} created successfully!`, "success");
 
     // 5. Reset form and fire callback to refresh UI tables & KPIs

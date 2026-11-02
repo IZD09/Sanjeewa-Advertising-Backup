@@ -5,6 +5,10 @@ use Modules\PrintJob\Http\Controllers\PrintJobController;
 use Modules\PrintJob\Http\Controllers\PrintJobStatusController;
 
 Route::prefix('v1')->group(function () {
+    // Place order data (demo dataset without DB connection)
+    Route::get('print-jobs/place-order-data', [PrintJobController::class, 'placeOrderData'])->name('printjob.jobs.place-order-data');
+    Route::get('print-jobs/orders', [PrintJobController::class, 'placeOrderData'])->name('printjob.jobs.orders');
+
     // Dedicated search & all endpoints (defined before apiResource to avoid route collision with {id})
     Route::get('print-jobs/all', [PrintJobController::class, 'all'])->name('printjob.jobs.all');
     Route::get('print-jobs/search', [PrintJobController::class, 'search'])->name('printjob.jobs.search');

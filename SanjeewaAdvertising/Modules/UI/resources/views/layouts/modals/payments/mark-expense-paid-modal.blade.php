@@ -1,0 +1,60 @@
+<div class="pay-modal-backdrop" id="modalMarkExpensePaid">
+  <div class="pay-modal-card" style="max-width: 520px;">
+    <div class="pay-modal-header">
+      <h3><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Record Bill Payment (බිල්පත ගෙවීම)</h3>
+      <button type="button" class="pay-modal-close" data-close-pay-modal aria-label="Close modal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="pay-modal-body">
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 12px 16px; margin-bottom: 6px;">
+        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Bill Details</div>
+        <div id="markExpTitleDisplay" style="font-size: 14px; font-weight: 800; color: var(--text); margin-top: 2px;">-</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px;">
+          <span id="markExpAccountDisplay" style="color: var(--text-muted); font-family: ui-monospace;">A/C: -</span>
+          <span>Amount Due: <strong id="markExpAmountDisplay" style="color: #ef4444; font-size: 14px;">Rs. 0.00</strong></span>
+        </div>
+      </div>
+
+      <input type="hidden" id="markExpBillId">
+
+      <div class="pay-form-grid">
+        <div class="pay-field">
+          <label class="pay-label">Payment Date (ගෙවූ දිනය) *</label>
+          <input type="date" id="markExpPaidDate" class="pay-input" required>
+        </div>
+        <div class="pay-field">
+          <label class="pay-label">Paid Amount (ගෙවූ මුදල - Rs.) *</label>
+          <input type="number" id="markExpPaidAmount" class="pay-input" min="1" step="50" required>
+        </div>
+      </div>
+
+      <div class="pay-field">
+        <label class="pay-label">Payment Method (ගෙවූ ක්‍රමවේදය) *</label>
+        <select id="markExpPaidMethod" class="pay-select-field">
+          <option value="Bank Transfer" selected>🏦 Bank Transfer / Online Banking (බැංකු හුවමාරු)</option>
+          <option value="Cash">💵 Cash (මුදල්)</option>
+          <option value="Online / QR">📱 Online / LankaQR (ඔන්ලයින්)</option>
+          <option value="Card">💳 Credit / Debit Card (කාඩ්පත්)</option>
+          <option value="Check">🧾 Cheque (චෙක්පත්)</option>
+        </select>
+      </div>
+
+      <div class="pay-field">
+        <label class="pay-label">Transaction Reference # (ස්ලිප් / Ref අංකය)</label>
+        <input type="text" id="markExpPaidRef" class="pay-input" placeholder="E.g. BOC-TXN-99812 / SLT-SLIP-4521">
+      </div>
+
+      <div class="pay-field">
+        <label class="pay-label">Settlement Note (සටහන්)</label>
+        <input type="text" id="markExpPaidNote" class="pay-input" placeholder="E.g. Paid online via Commercial Bank app">
+      </div>
+    </div>
+    <div class="pay-modal-footer">
+      <button type="button" class="po-btn po-btn-secondary" data-close-pay-modal>Cancel</button>
+      <button type="button" class="po-btn po-btn-primary" id="btnConfirmMarkExpensePaid" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669;">
+        <i class="fa-solid fa-check-double"></i> Confirm Paid Status (තහවුරු කරන්න)
+      </button>
+    </div>
+  </div>
+</div>

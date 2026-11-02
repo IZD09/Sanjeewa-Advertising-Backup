@@ -16,8 +16,7 @@ class PaymentController extends BaseApiController
 {
     public function __construct(
         protected TransactionService $transactionService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of customer payments with pagination or all.

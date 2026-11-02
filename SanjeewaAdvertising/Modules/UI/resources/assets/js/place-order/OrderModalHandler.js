@@ -57,6 +57,10 @@ export class OrderModalHandler extends BaseModalHandler {
            this.paymentHistoryModal.currentContextOrder;
   }
 
+  // 0. Order Creation Modal
+  openCreateOrderModal() { this.openModal("createOrderModal"); }
+  closeCreateOrderModal() { this.closeModal("createOrderModal"); }
+
   // 1. Order Confirmation Modal
   openOrderConfirmation() { this.orderConfirmationModal.openOrderConfirmation(); }
   saveNewOrder(orders, payments) {

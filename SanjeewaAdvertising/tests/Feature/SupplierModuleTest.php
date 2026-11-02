@@ -17,8 +17,8 @@ class SupplierModuleTest extends TestCase
     public function test_can_manage_suppliers(): void
     {
         // 1. Create Supplier
-        $mobile = '077' . rand(1000000, 9999999);
-        $email = 'sup_' . uniqid() . '@example.com';
+        $mobile = '077'.rand(1000000, 9999999);
+        $email = 'sup_'.uniqid().'@example.com';
         $response = $this->postJson('/api/v1/suppliers', [
             'name' => 'Acme Supplies',
             'mobile' => $mobile,
@@ -57,8 +57,8 @@ class SupplierModuleTest extends TestCase
     {
         $supplier = Supplier::create([
             'name' => 'PO Supplier',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'email' => 'posup_' . uniqid() . '@example.com',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'posup_'.uniqid().'@example.com',
             'register_at' => now(),
         ]);
 
@@ -92,8 +92,8 @@ class SupplierModuleTest extends TestCase
     {
         $supplier = Supplier::create([
             'name' => 'GRN Supplier',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'email' => 'grnsup_' . uniqid() . '@example.com',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'grnsup_'.uniqid().'@example.com',
             'register_at' => now(),
         ]);
 

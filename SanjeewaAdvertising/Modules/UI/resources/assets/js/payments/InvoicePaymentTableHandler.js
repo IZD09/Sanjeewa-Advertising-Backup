@@ -39,7 +39,8 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
         (p.invoiceNo && p.invoiceNo.toLowerCase().includes(term)) ||
         (p.orderId && p.orderId.toLowerCase().includes(term)) ||
         (p.customerName && p.customerName.toLowerCase().includes(term)) ||
-        (p.ref && p.ref.toLowerCase().includes(term));
+        (p.ref && p.ref.toLowerCase().includes(term)) ||
+        (p.jobIds && Array.isArray(p.jobIds) && p.jobIds.some(j => j.toLowerCase().includes(term)));
 
       const matchesStatus = invoiceStatusFilter === "ALL" || p.stage === invoiceStatusFilter;
       const matchesMethod = invoiceMethodFilter === "ALL" || p.method === invoiceMethodFilter;
@@ -65,16 +66,22 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
     tbody.innerHTML = filtered.map(p => {
       const stagePill = this.renderStageBadge(p.stage);
       const methodPill = this.renderMethodBadge(p.method, p.ref);
+      const jobsCount = p.jobsCount || (p.jobs && p.jobs.length) || 1;
+      const jobsCountBadge = jobsCount > 1
+        ? `<span class="inv-job-badge" style="font-size: 10px; padding: 1px 6px; margin-left: 5px;">${jobsCount} Jobs</span>`
+        : "";
+      const primaryJobId = (p.jobIds && p.jobIds.length > 0) ? p.jobIds[0] : (p.orderId || "");
 
       return `
         <tr>
           <td>
             <strong style="color: var(--blue);">${p.invoiceNo || p.orderId}</strong>
+            ${jobsCountBadge}
             <div style="font-size: 11px; color: var(--text-muted);">${p.date}</div>
           </td>
           <td>
             <strong>${p.customerName || "Customer"}</strong>
-            <div style="font-size: 11px; color: var(--text-muted);">Ref: ${p.orderId}</div>
+            <div style="font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.orderId}">Ref: ${p.orderId}</div>
           </td>
           <td>${stagePill}</td>
           <td>${methodPill}</td>
@@ -94,7 +101,7 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
                 <i class="fa-solid fa-receipt"></i> Voucher
               </button>
               ${p.balance > 0 ? `
-              <button type="button" class="pay-btn-sm primary-sm" data-open-pay-modal data-pay-type="invoice" data-pay-ref="${p.orderId}" title="Record settlement installment">
+              <button type="button" class="pay-btn-sm primary-sm" data-open-pay-modal data-pay-type="invoice" data-pay-ref="${primaryJobId}" title="Record settlement installment">
                 <i class="fa-solid fa-plus"></i> Pay
               </button>` : ''}
             </div>

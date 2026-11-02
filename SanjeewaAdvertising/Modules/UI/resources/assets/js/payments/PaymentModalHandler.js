@@ -2,8 +2,13 @@
  * SanjeewaAdvertising - Payment Modal Handler Orchestrator
  *
  * Coordinates and delegates modal operations across specialized payment modal classes:
- * - RecordPaymentModal: Settle customer invoices & supplier GRN bills
- * - ReceiptModal: View & print receipt voucher
+ * - RecordInvoicePaymentModal: Customer job order payments (#modalRecordInvoicePayment)
+ * - RecordGrnPaymentModal: Stock supplier purchase disbursements (#modalRecordGrnPayment)
+ * - RecordBillPaymentModal: Monthly operating utility settlements (#modalRecordBillPayment)
+ * - RecordPaymentModal: Dual-channel fallback payment modal (#recordPaymentModal)
+ * - ReceiptModal: View & print official receipt voucher (#printableReceiptModal)
+ * - AddExpenseBillModal: Create new operating utility bill (#modalAddExpenseBill)
+ * - MarkExpensePaidModal: Quick bill settlement dialog (#modalMarkExpensePaid)
  *
  * Extends BaseModalHandler core class.
  */
@@ -11,7 +16,12 @@
 import { BaseModalHandler } from "../core/BaseModalHandler.js";
 import {
   RecordPaymentModal,
-  ReceiptModal
+  ReceiptModal,
+  RecordInvoicePaymentModal,
+  RecordGrnPaymentModal,
+  RecordBillPaymentModal,
+  AddExpenseBillModal,
+  MarkExpensePaidModal
 } from "./modals/index.js";
 
 export class PaymentModalHandler extends BaseModalHandler {
@@ -36,6 +46,28 @@ export class PaymentModalHandler extends BaseModalHandler {
     });
 
     this.receiptModal = new ReceiptModal(this.ctx);
+
+    this.recordInvoicePaymentModal = new RecordInvoicePaymentModal({
+      ...this.ctx,
+      openReceiptModal: (id, type) => this.openReceiptModal(id, type)
+    });
+
+    this.recordGrnPaymentModal = new RecordGrnPaymentModal({
+      ...this.ctx,
+      openReceiptModal: (id, type) => this.openReceiptModal(id, type)
+    });
+
+    this.recordBillPaymentModal = new RecordBillPaymentModal({
+      ...this.ctx
+    });
+
+    this.addExpenseBillModal = new AddExpenseBillModal({
+      ...this.ctx
+    });
+
+    this.markExpensePaidModal = new MarkExpensePaidModal({
+      ...this.ctx
+    });
   }
 
   // Getters & Setters for state compatibility
@@ -44,7 +76,35 @@ export class PaymentModalHandler extends BaseModalHandler {
   get selectedMethod() { return this.recordPaymentModal.selectedMethod; }
   set selectedMethod(val) { this.recordPaymentModal.selectedMethod = val; }
 
-  // Record Payment Modal Delegations
+  // 1. Invoice Payment Modal Delegations
+  openRecordInvoicePaymentModal(prefillOrderId = null) {
+    this.recordInvoicePaymentModal.openRecordInvoicePaymentModal(prefillOrderId);
+  }
+
+  // 2. GRN Payment Modal Delegations
+  openRecordGrnPaymentModal(prefillGrnId = null) {
+    this.recordGrnPaymentModal.openRecordGrnPaymentModal(prefillGrnId);
+  }
+
+  // 3. Bill Payment Modal Delegations
+  openRecordBillPaymentModal(billId = null) {
+    this.recordBillPaymentModal.openRecordBillPaymentModal(billId);
+  }
+
+  // 4. Operating Expense Modal Delegations
+  openAddExpenseBillModal() {
+    this.addExpenseBillModal.openAddExpenseBillModal();
+  }
+
+  openMarkExpensePaidModal(billId) {
+    this.markExpensePaidModal.openMarkExpensePaidModal(billId);
+  }
+
+  undoExpensePaid(billId) {
+    this.markExpensePaidModal.undo(billId);
+  }
+
+  // 5. Dual / Unified Modal Delegations
   openRecordPaymentModal(prefillType, prefillId) {
     this.recordPaymentModal.openRecordPaymentModal(prefillType, prefillId);
   }
@@ -64,7 +124,7 @@ export class PaymentModalHandler extends BaseModalHandler {
     this.recordPaymentModal.savePayment();
   }
 
-  // Receipt Modal Delegations
+  // 6. Receipt Modal Delegations
   openReceiptModal(paymentId, type = "invoice") {
     this.receiptModal.openReceiptModal(paymentId, type);
   }

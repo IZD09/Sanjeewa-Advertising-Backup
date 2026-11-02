@@ -18,8 +18,7 @@ class AdminController extends BaseApiController
 {
     public function __construct(
         protected AdminService $adminService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of admins with optional search and pagination.

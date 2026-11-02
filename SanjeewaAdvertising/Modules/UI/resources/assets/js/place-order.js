@@ -235,6 +235,14 @@ class PlaceOrderManager {
   }
 
   // Facade Methods for Template Actions & Inlined Handlers
+  openCreateOrderModal() {
+    this.openModal("createOrderModal");
+  }
+
+  closeCreateOrderModal() {
+    this.closeModal("createOrderModal");
+  }
+
   openOrderConfirmation() {
     this.orderPlacementProcess.openConfirmation();
   }
@@ -304,6 +312,19 @@ class PlaceOrderManager {
       this.currentPage,
       this.pageSize
     );
+  }
+
+  async reloadOrdersFromPrintJobService() {
+    const data = await this.dataLoader.fetchPrintJobOrders();
+    if (data.orders && data.orders.length > 0) {
+      this.orders = data.orders;
+      if (data.payments && data.payments.length > 0) {
+        this.payments = data.payments;
+      }
+      this.renderOrdersTable();
+      this.updateKPIs();
+    }
+    return data;
   }
 
   updateKPIs() {

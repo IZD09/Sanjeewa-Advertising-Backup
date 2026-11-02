@@ -43,7 +43,7 @@
         <button type="button" class="nav-link nav-dropdown-toggle {{ request()->is('payments*') ? 'active' : '' }}" data-route="payments" id="navLinkPayments">
           <i class="fa-solid fa-money-bill-transfer"></i>
           <span>Payments</span>
-          <span class="nav-pill-badge">2 Parts</span>
+          <span class="nav-pill-badge">3 Parts</span>
           <i class="fa-solid fa-chevron-down nav-caret"></i>
         </button>
         <div class="nav-submenu" id="paymentsSubmenu">
@@ -56,6 +56,11 @@
             <i class="fa-solid fa-boxes-packing"></i>
             <span>GRN Payment</span>
             <span class="sub-badge stock-badge">Stock</span>
+          </button>
+          <button type="button" class="nav-sublink {{ request()->is('payments*') && (request('view') === 'expenses' || request('view') === 'expense') ? 'active' : '' }}" data-route="payments" data-view="expenses">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <span>Operating Expenses</span>
+            <span class="sub-badge expense-badge">Bills</span>
           </button>
         </div>
       </div>

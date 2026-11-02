@@ -15,8 +15,7 @@ class PrintCostController extends BaseApiController
 {
     public function __construct(
         protected DesignService $designService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of print costs.

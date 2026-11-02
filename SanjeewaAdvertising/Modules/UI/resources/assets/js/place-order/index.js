@@ -2,7 +2,7 @@
  * SanjeewaAdvertising - Place Order Module Index
  */
 
-export { PlaceOrderDataLoad } from "./PlaceOrderDataLoad.js";
+export { PlaceOrderDataLoad, PRINTING_TYPES, PRINTING_TYPE_PRODUCTS } from "./PlaceOrderDataLoad.js";
 export { PricingCalculator } from "./PricingCalculator.js";
 export { CustomerHandler } from "./CustomerHandler.js";
 export { PaymentHandler } from "./PaymentHandler.js";

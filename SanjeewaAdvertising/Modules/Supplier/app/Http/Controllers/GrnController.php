@@ -13,8 +13,7 @@ class GrnController extends BaseApiController
 {
     public function __construct(
         protected GrnService $grnService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of GRNs.
