@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Modules\Invoice\Models\Invoice;
+use Modules\Invoice\Transformers\InvoiceResource;
 
 class InvoiceService
 {
@@ -75,6 +76,40 @@ class InvoiceService
         }
 
         return $invoices;
+    }
+
+    /**
+     * Retrieve Invoice payments data and KPIs for UI views.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function getInvoicePaymentsData(array $filters = []): array
+    {
+        $invoices = $this->getAllInvoices($filters);
+
+        $totalBilled = $invoices->sum(fn ($i) => (float) ($i->total_amount ?? $i->totalBill ?? 0));
+        $totalCollected = $invoices->sum(fn ($i) => (float) ($i->paid_amount ?? $i->amount ?? 0));
+        $totalPending = $invoices->sum(fn ($i) => (float) ($i->balance_amount ?? $i->balance ?? 0));
+
+        $completeCount = $invoices->filter(fn ($i) => ($i->stage ?? '') === 'Complete Payment' || ($i->payment_status ?? '') === 'Paid')->count();
+        $advanceCount = $invoices->filter(fn ($i) => ($i->stage ?? '') === 'Advance Payment' || ($i->payment_status ?? '') === 'Partial')->count();
+        $pendingCount = $invoices->filter(fn ($i) => ($i->stage ?? '') === 'Pending Payment' || ($i->payment_status ?? '') === 'Pending')->count();
+
+        return [
+            'invoices' => InvoiceResource::collection($invoices),
+            'kpis' => [
+                'total_billed' => $totalBilled,
+                'total_collected' => $totalCollected,
+                'total_pending' => $totalPending,
+                'counts' => [
+                    'complete' => $completeCount,
+                    'advance' => $advanceCount,
+                    'pending' => $pendingCount,
+                    'total' => $invoices->count(),
+                ],
+            ],
+        ];
     }
 
     /**
@@ -319,7 +354,7 @@ class InvoiceService
         }
 
         $models = array_map(function ($attributes) {
-            $invoice = new Invoice;
+            $invoice = new Invoice();
             $invoice->forceFill($attributes);
 
             return $invoice;

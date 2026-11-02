@@ -52,6 +52,19 @@ class GrnPaymentController extends BaseApiController
     }
 
     /**
+     * Retrieve GRN payments data and KPIs for UI views.
+     */
+    public function grnPaymentsData(Request $request): JsonResponse
+    {
+        $data = $this->transactionService->getGrnPaymentsData($request->all());
+
+        return $this->success(
+            $data,
+            'GRN payments data retrieved successfully.'
+        );
+    }
+
+    /**
      * Store a newly created GRN payment in storage.
      */
     public function store(StoreGrnPaymentRequest $request): JsonResponse

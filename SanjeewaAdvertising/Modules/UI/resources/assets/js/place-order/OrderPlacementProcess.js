@@ -12,7 +12,7 @@
  * - Form reset & post-placement notification/callbacks
  */
 
-import { PrintingOrderBuilder } from "./PrintingOrderBuilder.js";
+import { PrintingOrderBuilder } from "./builders/PrintingOrderBuilder.js";
 import { PRINTING_TYPES, PRINTING_TYPE_PRODUCTS } from "./PlaceOrderDataLoad.js";
 
 export class OrderPlacementProcess {

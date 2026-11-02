@@ -69,6 +69,10 @@ export class PaymentsManager {
 
     // 2. Processes (Navigation, Filters, Metrics)
     this.navigationProcess = new NavigationProcess({
+      loadAndRenderInvoice: () => this.loadAndRenderInvoice(),
+      loadAndRenderGrn: () => this.loadAndRenderGrn(),
+      loadAndRenderExpenses: () => this.loadAndRenderExpenses(),
+      loadAndRenderOverview: () => this.loadAndRenderOverview(),
       render: () => this.render(),
       onConceptFilter: (target, type, val) => this.filterProcess.applyConceptFilter(target, type, val)
     });
@@ -132,12 +136,74 @@ export class PaymentsManager {
   get expenses() { return this.dataLoader.expenses; }
   set expenses(val) { this.dataLoader.expenses = val; }
 
-  init() {
+  async init() {
     this.dataLoader.loadData();
     this.navigationProcess.bindEvents();
     this.filterProcess.bindEvents();
     this.bindGlobalActionButtons();
-    this.navigationProcess.switchTab(this.navigationProcess.activeTab);
+
+    // Check initial active view from URL query param
+    const initialTab = this.navigationProcess.activeTab;
+    this.navigationProcess.switchTab(initialTab);
+
+    // Initial render from local cache
+    this.render();
+
+    // On-demand server fetch based on active tab
+    if (initialTab === "grn") {
+      await this.loadAndRenderGrn();
+    } else if (initialTab === "expenses") {
+      await this.loadAndRenderExpenses();
+    } else if (initialTab === "overview") {
+      await this.loadAndRenderOverview();
+    } else {
+      await this.loadAndRenderInvoice();
+    }
+  }
+
+  /**
+   * On-demand data loading & rendering for Customer Invoice Payments tab.
+   * Loads data from backend Invoice module via RequestHandler.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderInvoice(forceRefresh = false) {
+    await this.dataLoader.fetchInvoicePayments({}, forceRefresh);
+    this.renderInvoiceTable();
+    this.updateKPIs();
+  }
+
+  /**
+   * On-demand data loading & rendering for Supplier GRN Payments tab.
+   * Loads data from backend Transaction module via RequestHandler.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderGrn(forceRefresh = false) {
+    await this.dataLoader.fetchGrnPayments({}, forceRefresh);
+    this.renderGrnTable();
+    this.updateKPIs();
+  }
+
+  /**
+   * On-demand data loading & rendering for Operating Expenses tab.
+   * Loads data from backend Transaction module via RequestHandler.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderExpenses(forceRefresh = false) {
+    await this.dataLoader.fetchOperatingExpenses({}, forceRefresh);
+    this.renderExpenses();
+    this.updateKPIs();
+  }
+
+  /**
+   * On-demand data loading & rendering for Financial Reconciliation & Overview tab.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderOverview(forceRefresh = false) {
+    await this.dataLoader.fetchAll(forceRefresh);
     this.render();
   }
 

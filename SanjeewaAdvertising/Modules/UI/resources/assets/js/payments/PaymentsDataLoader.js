@@ -1,10 +1,13 @@
 /**
  * SanjeewaAdvertising - Payments Data Loader
  *
- * Handles storage keys, data persistence, default seeding for
- * 1. Invoice payments (Customer print orders)
- * 2. GRN supplier payments (Stock acquisitions)
- * 3. Operating expenses (Monthly utility & overhead bills)
+ * Handles API communication via RequestHandler to:
+ * 1. Invoice module (/api/v1/invoices/data)
+ * 2. Transaction module for GRN payments (/api/v1/grn-payments/data)
+ * 3. Transaction module for Operating Expenses (/api/v1/payments/expenses/data)
+ *
+ * Provides client-side caching (localStorage) and field normalizations.
+ * All demo and production records originate from backend service classes.
  */
 
 import { RequestHandler } from "../core/RequestHandler.js";
@@ -25,68 +28,213 @@ export class PaymentsDataLoader {
     this.grnRecords = [];
     this.grnPayments = [];
     this.expenses = [];
+
+    this.invoiceKpis = null;
+    this.grnKpis = null;
+    this.expenseKpis = null;
+
+    this.invoiceLoaded = false;
+    this.grnLoaded = false;
+    this.expensesLoaded = false;
   }
 
-  loadData() {
-    // 1. Load Orders & Invoice Payments
-    const savedOrders = localStorage.getItem(this.storageKeys.orders);
-    const savedOrderPayments = localStorage.getItem(this.storageKeys.orderPayments);
+  /**
+   * Fetch customer invoice payments from Invoice module via RequestHandler.
+   *
+   * @param {Object} [filters={}]
+   * @param {boolean} [forceRefresh=false]
+   * @returns {Promise<Array>}
+   */
+  async fetchInvoicePayments(filters = {}, forceRefresh = false) {
+    if (this.invoiceLoaded && !forceRefresh && Object.keys(filters).length === 0) {
+      return this.orderPayments;
+    }
 
+    try {
+      const response = await this.http.get("/api/v1/invoices/data", filters);
+      const data = response?.data || response;
+      const raw = data?.invoices || (Array.isArray(data) ? data : null);
+
+      if (data?.kpis) {
+        this.invoiceKpis = data.kpis;
+      }
+
+      if (Array.isArray(raw) && raw.length > 0) {
+        this.orderPayments = raw.map(item => this.normalizeInvoice(item));
+        this.orders = this.orderPayments.map(p => ({
+          id: p.orderId || p.id,
+          orderDate: p.date,
+          customerId: p.customerId || "CUST-001",
+          customerName: p.customerName,
+          customerMobile: p.customerMobile,
+          productName: p.productName,
+          totalAmount: p.totalBill,
+          paidAmount: p.amount,
+          balanceAmount: p.balance,
+          paymentStatus: p.paymentStatus
+        }));
+
+        this.saveOrderPayments();
+        this.saveOrders(this.orders);
+        this.invoiceLoaded = true;
+        return this.orderPayments;
+      }
+    } catch (e) {
+      console.warn("[PaymentsDataLoader] Failed to fetch invoices from API, checking local storage:", e);
+    }
+
+    const savedPayments = localStorage.getItem(this.storageKeys.orderPayments);
+    if (savedPayments) {
+      try {
+        this.orderPayments = JSON.parse(savedPayments);
+      } catch (err) {
+        this.orderPayments = [];
+      }
+    }
+
+    const savedOrders = localStorage.getItem(this.storageKeys.orders);
     if (savedOrders) {
       try {
         this.orders = JSON.parse(savedOrders);
-      } catch (e) {
-        console.error("Could not parse saved orders", e);
+      } catch (err) {
+        this.orders = [];
       }
     }
 
-    if (!this.orders || this.orders.length === 0) {
-      this.seedDefaultOrders();
+    this.invoiceLoaded = true;
+    return this.orderPayments;
+  }
+
+  /**
+   * Fetch GRN supplier payments from Transaction module via RequestHandler.
+   *
+   * @param {Object} [filters={}]
+   * @param {boolean} [forceRefresh=false]
+   * @returns {Promise<Array>}
+   */
+  async fetchGrnPayments(filters = {}, forceRefresh = false) {
+    if (this.grnLoaded && !forceRefresh && Object.keys(filters).length === 0) {
+      return this.grnPayments;
     }
 
-    if (savedOrderPayments) {
-      try {
-        this.orderPayments = JSON.parse(savedOrderPayments);
-      } catch (e) {
-        console.error("Could not parse saved order payments", e);
-      }
-    }
+    try {
+      const response = await this.http.get("/api/v1/grn-payments/data", filters);
+      const data = response?.data || response;
+      const raw = data?.grn_payments || data?.grnPayments || (Array.isArray(data) ? data : null);
 
-    // 2. Load GRN Records & GRN Payments
-    const savedGrns = localStorage.getItem(this.storageKeys.grnRecords);
-    if (savedGrns) {
-      try {
-        this.grnRecords = JSON.parse(savedGrns);
-      } catch (e) {
-        console.error("Could not parse saved GRNs", e);
+      if (data?.kpis) {
+        this.grnKpis = data.kpis;
       }
+
+      if (Array.isArray(raw) && raw.length > 0) {
+        this.grnPayments = raw.map(item => this.normalizeGrn(item));
+        this.grnRecords = this.grnPayments.map(g => ({
+          grn_number: g.grnNumber,
+          purchase_order_no: g.poNumber,
+          supplier_name: g.supplierName,
+          supplier_id: g.supplierId,
+          stock_category: g.stockCategory,
+          net_total: g.totalBill,
+          paid_amount: g.amount,
+          balance: g.balance,
+          status: g.paymentStatus === "Paid" ? "Completed" : "Draft",
+          received_date: g.date
+        }));
+
+        this.saveGrnPayments();
+        localStorage.setItem(this.storageKeys.grnRecords, JSON.stringify(this.grnRecords));
+        this.grnLoaded = true;
+        return this.grnPayments;
+      }
+    } catch (e) {
+      console.warn("[PaymentsDataLoader] Failed to fetch GRN payments from API, checking local storage:", e);
     }
 
     const savedGrnPayments = localStorage.getItem(this.storageKeys.grnPayments);
     if (savedGrnPayments) {
       try {
         this.grnPayments = JSON.parse(savedGrnPayments);
-      } catch (e) {
-        console.error("Could not parse saved GRN payments", e);
+      } catch (err) {
+        this.grnPayments = [];
       }
-    } else {
-      this.seedDefaultGrnPayments();
     }
 
-    // 3. Load Operating Expenses (Monthly Overhead Bills)
+    const savedGrns = localStorage.getItem(this.storageKeys.grnRecords);
+    if (savedGrns) {
+      try {
+        this.grnRecords = JSON.parse(savedGrns);
+      } catch (err) {
+        this.grnRecords = [];
+      }
+    }
+
+    this.grnLoaded = true;
+    return this.grnPayments;
+  }
+
+  /**
+   * Fetch operating expenses from Transaction module via RequestHandler.
+   *
+   * @param {Object} [filters={}]
+   * @param {boolean} [forceRefresh=false]
+   * @returns {Promise<Array>}
+   */
+  async fetchOperatingExpenses(filters = {}, forceRefresh = false) {
+    if (this.expensesLoaded && !forceRefresh && Object.keys(filters).length === 0) {
+      return this.expenses;
+    }
+
+    try {
+      const response = await this.http.get("/api/v1/payments/expenses/data", filters);
+      const data = response?.data || response;
+      const raw = data?.expenses || (Array.isArray(data) ? data : null);
+
+      if (data?.kpis) {
+        this.expenseKpis = data.kpis;
+      }
+
+      if (Array.isArray(raw) && raw.length > 0) {
+        this.expenses = raw.map(item => this.normalizeExpense(item));
+        this.saveExpenses();
+        this.expensesLoaded = true;
+        return this.expenses;
+      }
+    } catch (e) {
+      console.warn("[PaymentsDataLoader] Failed to fetch Operating Expenses from API, checking local storage:", e);
+    }
+
     const savedExpenses = localStorage.getItem(this.storageKeys.operatingExpenses);
     if (savedExpenses) {
       try {
         this.expenses = JSON.parse(savedExpenses);
-      } catch (e) {
-        console.error("Could not parse saved operating expenses", e);
+      } catch (err) {
+        this.expenses = [];
       }
-    } else {
-      this.seedDefaultOperatingExpenses();
     }
 
-    // Ensure initial rich sample data if empty
-    this.enrichOrderPayments();
+    this.expensesLoaded = true;
+    return this.expenses;
+  }
+
+  /**
+   * Fetch all datasets in parallel from server.
+   * @returns {Promise<Array>}
+   */
+  async fetchAll(forceRefresh = false) {
+    return Promise.allSettled([
+      this.fetchInvoicePayments({}, forceRefresh),
+      this.fetchGrnPayments({}, forceRefresh),
+      this.fetchOperatingExpenses({}, forceRefresh)
+    ]);
+  }
+
+  /**
+   * Synchronously load data from localStorage cache or trigger background sync.
+   */
+  loadData() {
+    this.loadInvoicePayments();
+    this.loadGrnPayments();
+    this.loadOperatingExpenses();
 
     return {
       orders: this.orders,
@@ -97,420 +245,56 @@ export class PaymentsDataLoader {
     };
   }
 
-  seedDefaultOrders() {
-    const today = new Date();
-    const formatDate = (d) => d.toISOString().split("T")[0];
-
-    this.orders = [
-      {
-        id: "ORD-2026-1048",
-        orderDate: formatDate(new Date(today.getTime() - 86400000 * 3)),
-        customerId: "CUST-001",
-        customerName: "Kasun Jayasundara",
-        customerMobile: "0771234567",
-        productKey: "flex_normal",
-        productName: "Flex Banner (Normal 280gsm)",
-        totalAmount: 7600.00,
-        paidAmount: 7600.00,
-        balanceAmount: 0.00,
-        paymentStatus: "Paid"
-      },
-      {
-        id: "ORD-2026-1049",
-        orderDate: formatDate(new Date(today.getTime() - 86400000 * 2)),
-        customerId: "CUST-002",
-        customerName: "Dilhani Senaratne",
-        customerMobile: "0719876543",
-        productKey: "sticker_glossy",
-        productName: "Vinyl Sticker (Glossy)",
-        totalAmount: 8060.00,
-        paidAmount: 5000.00,
-        balanceAmount: 3060.00,
-        paymentStatus: "Partial"
-      },
-      {
-        id: "ORD-2026-1050",
-        orderDate: formatDate(today),
-        customerId: "CUST-003",
-        customerName: "Sajith Warnakula",
-        customerMobile: "0755554433",
-        productKey: "rollup_banner",
-        productName: "Rollup Banner Display",
-        totalAmount: 11000.00,
-        paidAmount: 0.00,
-        balanceAmount: 11000.00,
-        paymentStatus: "Pending"
-      },
-      {
-        id: "ORD-2026-1051",
-        orderDate: formatDate(today),
-        customerId: "CUST-004",
-        customerName: "Nuwan Weerasinghe",
-        customerMobile: "0721112233",
-        productKey: "foam_board",
-        productName: "Foam Board Signage (5mm)",
-        totalAmount: 13000.00,
-        paidAmount: 6500.00,
-        balanceAmount: 6500.00,
-        paymentStatus: "Partial"
-      },
-      {
-        id: "ORD-2026-1052",
-        orderDate: formatDate(new Date(today.getTime() - 86400000 * 1)),
-        customerId: "CUST-001",
-        customerName: "Kasun Jayasundara",
-        customerMobile: "0771234567",
-        productKey: "business_card_lux",
-        productName: "Business Cards (Spot UV 500 pcs)",
-        totalAmount: 11000.00,
-        paidAmount: 0.00,
-        balanceAmount: 11000.00,
-        paymentStatus: "Pending"
-      },
-      {
-        id: "ORD-2026-1053",
-        orderDate: formatDate(today),
-        customerId: "CUST-001",
-        customerName: "Kasun Jayasundara",
-        customerMobile: "0771234567",
-        productKey: "backlit_film",
-        productName: "Lightbox Backlit Film (8x3 ft)",
-        totalAmount: 5760.00,
-        paidAmount: 0.00,
-        balanceAmount: 5760.00,
-        paymentStatus: "Pending"
-      },
-      {
-        id: "ORD-2026-1054",
-        orderDate: formatDate(today),
-        customerId: "CUST-002",
-        customerName: "Dilhani Senaratne",
-        customerMobile: "0719876543",
-        productKey: "flyer_a5",
-        productName: "Flyers / Leaflets (A5 1000 pcs)",
-        totalAmount: 15000.00,
-        paidAmount: 0.00,
-        balanceAmount: 15000.00,
-        paymentStatus: "Pending"
+  loadInvoicePayments() {
+    const saved = localStorage.getItem(this.storageKeys.orderPayments);
+    if (saved) {
+      try {
+        this.orderPayments = JSON.parse(saved);
+      } catch (e) {
+        this.orderPayments = [];
       }
-    ];
-    this.saveOrders(this.orders);
-  }
-
-  enrichOrderPayments() {
-    const today = new Date();
-    const formatDate = (d) => d.toISOString().split("T")[0];
-
-    if (!this.orderPayments || this.orderPayments.length < 3) {
-      this.orderPayments = [
-        {
-          paymentId: "PAY-INV-2026-001",
-          orderId: "ORD-2026-1048",
-          invoiceNo: "INV-2026-1048",
-          customerName: "Kasun Jayasundara",
-          date: formatDate(new Date(today.getTime() - 86400000 * 3)),
-          totalBill: 7600.00,
-          amount: 7600.00,
-          balance: 0.00,
-          stage: "Complete Payment",
-          method: "Cash",
-          ref: "CASH-REC-1048",
-          note: "Full settlement paid upon delivery"
-        },
-        {
-          paymentId: "PAY-INV-2026-002",
-          orderId: "ORD-2026-1049",
-          invoiceNo: "INV-2026-1049",
-          customerName: "Dilhani Senaratne",
-          date: formatDate(new Date(today.getTime() - 86400000 * 2)),
-          totalBill: 8060.00,
-          amount: 5000.00,
-          balance: 3060.00,
-          stage: "Advance Payment",
-          method: "Card",
-          ref: "VISA-AUTH-9921",
-          cardLast4: "4821",
-          note: "50% upfront advance paid on Visa Debit card"
-        },
-        {
-          paymentId: "PAY-INV-2026-003",
-          orderId: "ORD-2026-1050",
-          invoiceNo: "INV-2026-1050",
-          customerName: "Sajith Warnakula",
-          date: formatDate(today),
-          totalBill: 11000.00,
-          amount: 0.00,
-          balance: 11000.00,
-          stage: "Pending Payment",
-          method: "Check",
-          ref: "CHQ-PENDING",
-          note: "Cheque promised upon final delivery"
-        },
-        {
-          paymentId: "PAY-INV-2026-004",
-          orderId: "ORD-2026-1051",
-          invoiceNo: "INV-2026-1051",
-          customerName: "Nuwan Weerasinghe",
-          date: formatDate(today),
-          totalBill: 13000.00,
-          amount: 6500.00,
-          balance: 6500.00,
-          stage: "Advance Payment",
-          method: "Bank Transfer",
-          ref: "BOC-TXN-881920",
-          note: "Direct online transfer to Sanjeewa Advertising BOC account"
-        }
-      ];
-      this.saveOrderPayments();
     }
+    const savedOrders = localStorage.getItem(this.storageKeys.orders);
+    if (savedOrders) {
+      try {
+        this.orders = JSON.parse(savedOrders);
+      } catch (e) {
+        this.orders = [];
+      }
+    }
+    return this.orderPayments;
   }
 
-  seedDefaultGrnPayments() {
-    const today = new Date();
-    const formatDate = (d) => d.toISOString().split("T")[0];
-
-    this.grnPayments = [
-      {
-        paymentId: "PAY-GRN-2026-001",
-        grnId: "GRN-2610-001",
-        grnNumber: "GRN-2610-001",
-        poNumber: "PO-2026-088",
-        supplierId: "SUP-001",
-        supplierName: "PaperPro Lanka",
-        stockCategory: "300gsm Art Board & Cyan Ink",
-        date: formatDate(new Date(today.getTime() - 86400000 * 2)),
-        totalBill: 87500.00,
-        amount: 87500.00,
-        balance: 0.00,
-        stage: "Complete Payment",
-        method: "Check",
-        ref: "CHQ-882019-COMBANK",
-        checkNo: "882019",
-        bankName: "Commercial Bank",
-        note: "Account payee crossed cheque issued for full SRA3 board delivery"
-      },
-      {
-        paymentId: "PAY-GRN-2026-002",
-        grnId: "GRN-2610-002",
-        grnNumber: "GRN-2610-002",
-        poNumber: "PO-2026-074",
-        supplierId: "SUP-003",
-        supplierName: "MegaFlex Imports",
-        stockCategory: "Flex Banner Heavy Star 380gsm",
-        date: formatDate(new Date(today.getTime() - 86400000 * 1)),
-        totalBill: 108000.00,
-        amount: 50000.00,
-        balance: 58000.00,
-        stage: "Advance Payment",
-        method: "Bank Transfer",
-        ref: "HNB-FT-992011",
-        bankName: "Hatton National Bank",
-        note: "Initial advance transferred on container unloading. Balance on 30 days."
-      },
-      {
-        paymentId: "PAY-GRN-2026-003",
-        grnId: "GRN-2610-003",
-        grnNumber: "GRN-2610-003",
-        poNumber: "PO-2026-092",
-        supplierId: "SUP-002",
-        supplierName: "Flora Tech International",
-        stockCategory: "Solvent Inks & Cleaning Solvents",
-        date: formatDate(today),
-        totalBill: 64000.00,
-        amount: 0.00,
-        balance: 64000.00,
-        stage: "Pending Payment",
-        method: "Check",
-        ref: "DUE-14-DAYS",
-        note: "Credit invoice received, payable within 14 days credit terms"
-      },
-      {
-        paymentId: "PAY-GRN-2026-004",
-        grnId: "GRN-2610-004",
-        grnNumber: "GRN-2610-004",
-        poNumber: "PO-2026-068",
-        supplierId: "SUP-005",
-        supplierName: "Star Media Group",
-        stockCategory: "Foam Boards 5mm & Acrylic Sheets",
-        date: formatDate(today),
-        totalBill: 42000.00,
-        amount: 42000.00,
-        balance: 0.00,
-        stage: "Complete Payment",
-        method: "Cash",
-        ref: "PETTY-CASH-402",
-        note: "Cash on delivery paid from petty cash voucher"
-      },
-      {
-        paymentId: "PAY-GRN-2026-005",
-        grnId: "GRN-2610-005",
-        grnNumber: "GRN-2610-005",
-        poNumber: "PO-2026-095",
-        supplierId: "SUP-004",
-        supplierName: "Avery Dennison Lanka",
-        stockCategory: "Vinyl Sticker Glossy Rolls",
-        date: formatDate(today),
-        totalBill: 96000.00,
-        amount: 30000.00,
-        balance: 66000.00,
-        stage: "Advance Payment",
-        method: "Card",
-        ref: "CORP-CARD-8832",
-        cardLast4: "8832",
-        note: "Deposit paid using company credit card on order placement"
+  loadGrnPayments() {
+    const saved = localStorage.getItem(this.storageKeys.grnPayments);
+    if (saved) {
+      try {
+        this.grnPayments = JSON.parse(saved);
+      } catch (e) {
+        this.grnPayments = [];
       }
-    ];
-    this.saveGrnPayments();
+    }
+    const savedGrns = localStorage.getItem(this.storageKeys.grnRecords);
+    if (savedGrns) {
+      try {
+        this.grnRecords = JSON.parse(savedGrns);
+      } catch (e) {
+        this.grnRecords = [];
+      }
+    }
+    return this.grnPayments;
   }
 
-  seedDefaultOperatingExpenses() {
-    this.expenses = [
-      {
-        id: "EXP-2026-10-001",
-        title: "CEB Heavy Power (3-Phase Workshop & HP Scitex)",
-        category: "Electricity",
-        provider: "Ceylon Electricity Board (CEB)",
-        accountNo: "042-881-9921",
-        month: "2026-10",
-        dueDate: "2026-10-31",
-        amount: 48500.00,
-        status: "Pending",
-        notes: "Main factory meter reading 4,200 units power consumption for digital presses"
-      },
-      {
-        id: "EXP-2026-10-002",
-        title: "NWSDB Water Supply (Workshop & Washing Bay)",
-        category: "Water Board",
-        provider: "National Water Supply & Drainage Board",
-        accountNo: "11/204/883/02",
-        month: "2026-10",
-        dueDate: "2026-10-30",
-        amount: 4850.00,
-        status: "Pending",
-        notes: "Monthly commercial water utility tariff"
-      },
-      {
-        id: "EXP-2026-10-003",
-        title: "SLT Megaline 100Mbps Ultra Fiber Line",
-        category: "Internet & Fiber",
-        provider: "Sri Lanka Telecom (SLT-Mobitel)",
-        accountNo: "011-234-5678",
-        month: "2026-10",
-        dueDate: "2026-10-25",
-        amount: 14200.00,
-        status: "Paid",
-        paidDate: "2026-10-24",
-        paidAmount: 14200.00,
-        paidMethod: "Bank Transfer",
-        paidRef: "BOC-ONLINE-99214",
-        paidNote: "Settled online via BOC corporate portal for graphics file transfers"
-      },
-      {
-        id: "EXP-2026-10-004",
-        title: "Dialog Business Broadband & Customer Hotline",
-        category: "Mobile & Telephone",
-        provider: "Dialog Axiata PLC",
-        accountNo: "D-9928103",
-        month: "2026-10",
-        dueDate: "2026-10-28",
-        amount: 6800.00,
-        status: "Pending",
-        notes: "Customer sales hotline & standby 4G backup router"
-      },
-      {
-        id: "EXP-2026-10-005",
-        title: "Main Street Printing Shop & Factory Premises Rent",
-        category: "Shop Rent",
-        provider: "Premises Landlord (Mr. K. Perera)",
-        accountNo: "RENT-PREM-128",
-        month: "2026-10",
-        dueDate: "2026-10-05",
-        amount: 65000.00,
-        status: "Paid",
-        paidDate: "2026-10-04",
-        paidAmount: 65000.00,
-        paidMethod: "Bank Transfer",
-        paidRef: "COMBANK-FT-44102",
-        paidNote: "Direct monthly transfer to landlord Commercial Bank savings account"
-      },
-      {
-        id: "EXP-2026-10-006",
-        title: "Konica Minolta & Roland Plotter Service Contract",
-        category: "Maintenance & Other",
-        provider: "Techno Graphic Services",
-        accountNo: "AMC-TGS-2026",
-        month: "2026-10",
-        dueDate: "2026-10-29",
-        amount: 18000.00,
-        status: "Pending",
-        notes: "Scheduled printhead cleaning, UV lamp maintenance and RIP calibration"
-      },
-      {
-        id: "EXP-2026-09-001",
-        title: "CEB Heavy Power (September)",
-        category: "Electricity",
-        provider: "Ceylon Electricity Board (CEB)",
-        accountNo: "042-881-9921",
-        month: "2026-09",
-        dueDate: "2026-09-30",
-        amount: 46200.00,
-        status: "Paid",
-        paidDate: "2026-09-28",
-        paidAmount: 46200.00,
-        paidMethod: "Bank Transfer",
-        paidRef: "BOC-TXN-55410",
-        paidNote: "Settled prior to month end"
-      },
-      {
-        id: "EXP-2026-09-002",
-        title: "NWSDB Water Supply (September)",
-        category: "Water Board",
-        provider: "National Water Supply & Drainage Board",
-        accountNo: "11/204/883/02",
-        month: "2026-09",
-        dueDate: "2026-09-30",
-        amount: 4600.00,
-        status: "Paid",
-        paidDate: "2026-09-29",
-        paidAmount: 4600.00,
-        paidMethod: "Cash",
-        paidRef: "WATER-REC-8810",
-        paidNote: "Settled at post office cash counter"
-      },
-      {
-        id: "EXP-2026-09-003",
-        title: "SLT Megaline 100Mbps Ultra Fiber Line (September)",
-        category: "Internet & Fiber",
-        provider: "Sri Lanka Telecom (SLT-Mobitel)",
-        accountNo: "011-234-5678",
-        month: "2026-09",
-        dueDate: "2026-09-25",
-        amount: 14200.00,
-        status: "Paid",
-        paidDate: "2026-09-24",
-        paidAmount: 14200.00,
-        paidMethod: "Bank Transfer",
-        paidRef: "BOC-ONLINE-8812",
-        paidNote: "Settled online"
-      },
-      {
-        id: "EXP-2026-09-004",
-        title: "Main Street Printing Shop & Factory Premises Rent (September)",
-        category: "Shop Rent",
-        provider: "Premises Landlord (Mr. K. Perera)",
-        accountNo: "RENT-PREM-128",
-        month: "2026-09",
-        dueDate: "2026-09-05",
-        amount: 65000.00,
-        status: "Paid",
-        paidDate: "2026-09-04",
-        paidAmount: 65000.00,
-        paidMethod: "Bank Transfer",
-        paidRef: "COMBANK-FT-3391",
-        paidNote: "Monthly shop lease rental"
+  loadOperatingExpenses() {
+    const saved = localStorage.getItem(this.storageKeys.operatingExpenses);
+    if (saved) {
+      try {
+        this.expenses = JSON.parse(saved);
+      } catch (e) {
+        this.expenses = [];
       }
-    ];
-    this.saveExpenses();
+    }
+    return this.expenses;
   }
 
   saveOrderPayments() {
@@ -536,4 +320,95 @@ export class PaymentsDataLoader {
       maximumFractionDigits: 2
     })}`;
   }
+
+  normalizeInvoice(inv = {}) {
+    const total = Number(inv.total_amount ?? inv.totalAmount ?? inv.totalBill ?? inv.total ?? 0);
+    const paid = Number(inv.paid_amount ?? inv.paidAmount ?? inv.amount ?? 0);
+    const balance = Number(inv.balance_amount ?? inv.balanceAmount ?? inv.balance ?? Math.max(0, total - paid));
+    const stage = inv.stage || (inv.payment_status === "Paid" || balance <= 0 ? "Complete Payment" : (paid > 0 ? "Advance Payment" : "Pending Payment"));
+
+    return {
+      id: inv.id || inv.order_id || inv.orderId || `ORD-${Date.now()}`,
+      orderId: inv.order_id || inv.orderId || inv.id || "",
+      paymentId: inv.payment_id || inv.paymentId || `PAY-${inv.id || Date.now()}`,
+      invoiceNo: inv.invoice_no || inv.invoiceNo || (inv.id ? `INV-${inv.id}` : "INV-2026-1048"),
+      customerName: inv.customer_name || inv.customerName || (inv.customer && inv.customer.name) || "Customer",
+      customerMobile: inv.customer_mobile || inv.customerMobile || (inv.customer && inv.customer.mobile) || "",
+      productName: inv.product_name || inv.productName || "Printing Job",
+      totalBill: total,
+      totalAmount: total,
+      amount: paid,
+      paidAmount: paid,
+      balance: balance,
+      balanceAmount: balance,
+      stage: stage,
+      paymentStatus: inv.payment_status || (stage === "Complete Payment" ? "Paid" : (stage === "Advance Payment" ? "Partial" : "Pending")),
+      orderStatus: inv.order_status || inv.status || "Completed",
+      method: inv.method || inv.payment_method || "Cash",
+      ref: inv.ref || inv.reference_no || `REC-${inv.id || "1048"}`,
+      note: inv.note || inv.narration || "Settlement transaction",
+      date: inv.date || (inv.invoice_at ? inv.invoice_at.split("T")[0] : null) || (inv.created_at ? inv.created_at.split("T")[0] : new Date().toISOString().split("T")[0]),
+      jobsCount: inv.jobs_count || inv.jobsCount || (inv.jobs && inv.jobs.length) || 1,
+      jobIds: inv.job_ids || inv.jobIds || [inv.order_id || inv.id]
+    };
+  }
+
+  normalizeGrn(g = {}) {
+    const total = Number(g.net_total ?? g.totalBill ?? g.total_amount ?? g.totalAmount ?? 0);
+    const paid = Number(g.amount ?? g.paid_amount ?? g.paidAmount ?? (g.net_total ? g.net_total : 0));
+    const balance = Number(g.balance ?? g.balance_amount ?? g.balanceAmount ?? Math.max(0, total - paid));
+    const stage = g.stage || (balance <= 0 ? "Complete Payment" : (paid > 0 ? "Advance Payment" : "Pending Payment"));
+
+    return {
+      grn_id: g.grn_id || g.grnId || g.id || "GRN-2610-001",
+      grnId: g.grnId || g.grn_id || g.id || "GRN-2610-001",
+      grn_number: g.grn_number || g.grnNumber || "GRN-2610-001",
+      grnNumber: g.grnNumber || g.grn_number || "GRN-2610-001",
+      po_number: g.po_number || g.poNumber || g.purchase_order_no || "-",
+      poNumber: g.poNumber || g.po_number || g.purchase_order_no || "-",
+      supplier_id: g.supplier_id || g.supplierId || "SUP-001",
+      supplierId: g.supplierId || g.supplier_id || "SUP-001",
+      supplier_name: g.supplier_name || g.supplierName || (g.supplier && g.supplier.name) || "Supplier",
+      supplierName: g.supplierName || g.supplier_name || (g.supplier && g.supplier.name) || "Supplier",
+      stock_category: g.stock_category || g.stockCategory || "Stock Delivery",
+      stockCategory: g.stockCategory || g.stock_category || "Stock Delivery",
+      net_total: total,
+      totalBill: total,
+      amount: paid,
+      paidAmount: paid,
+      balance: balance,
+      balanceAmount: balance,
+      stage: stage,
+      paymentStatus: g.payment_status || (stage === "Complete Payment" ? "Paid" : (stage === "Advance Payment" ? "Partial" : "Pending")),
+      method: g.method || g.payment_method || "Check",
+      ref: g.ref || g.reference_no || `CHQ-${g.grn_number || "2610-001"}`,
+      note: g.note || g.narration || "Supplier consignment invoice",
+      date: g.date || (g.received_date ? g.received_date : null) || (g.created_at ? g.created_at.split("T")[0] : new Date().toISOString().split("T")[0]),
+      paymentId: g.payment_id || g.paymentId || `PAY-${g.grn_number || "GRN-2610-001"}`
+    };
+  }
+
+  normalizeExpense(exp = {}) {
+    return {
+      id: exp.id || `EXP-${Date.now()}`,
+      title: exp.title || exp.description || "Operating Bill",
+      category: exp.category || "Other",
+      provider: exp.provider || "-",
+      accountNo: exp.account_no || exp.accountNo || "-",
+      month: exp.month || "2026-10",
+      dueDate: exp.due_date || exp.dueDate || "-",
+      amount: Number(exp.amount || 0),
+      status: exp.status || "Pending",
+      paidDate: exp.paid_date || exp.paidDate || "",
+      paidAmount: exp.paid_amount !== undefined ? Number(exp.paid_amount) : (exp.status === "Paid" ? Number(exp.amount || 0) : 0),
+      paidMethod: exp.paid_method || exp.paidMethod || "",
+      paidRef: exp.paid_ref || exp.paidRef || "",
+      paidNote: exp.paid_note || exp.paidNote || "",
+      notes: exp.notes || exp.narration || ""
+    };
+  }
 }
+
+export const PaymentsDataService = PaymentsDataLoader;
+export const PaymentDataLoad = PaymentsDataLoader;
+export default PaymentsDataLoader;

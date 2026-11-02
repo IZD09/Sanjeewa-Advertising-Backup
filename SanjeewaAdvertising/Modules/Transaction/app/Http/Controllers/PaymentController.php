@@ -54,6 +54,19 @@ class PaymentController extends BaseApiController
     }
 
     /**
+     * Retrieve Operating Expenses data and KPIs for UI views.
+     */
+    public function expensesData(Request $request): JsonResponse
+    {
+        $data = $this->transactionService->getOperatingExpensesData($request->all());
+
+        return $this->success(
+            $data,
+            'Operating expenses data retrieved successfully.'
+        );
+    }
+
+    /**
      * Store a newly created customer payment in storage.
      */
     public function store(StorePaymentRequest $request): JsonResponse

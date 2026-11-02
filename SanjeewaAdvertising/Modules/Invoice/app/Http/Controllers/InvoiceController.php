@@ -52,6 +52,19 @@ class InvoiceController extends BaseApiController
     }
 
     /**
+     * Retrieve invoice payments data and KPIs for UI views.
+     */
+    public function invoicesData(Request $request): JsonResponse
+    {
+        $data = $this->invoiceService->getInvoicePaymentsData($request->all());
+
+        return $this->success(
+            $data,
+            'Invoice payments data retrieved successfully.'
+        );
+    }
+
+    /**
      * Search invoices.
      */
     public function search(Request $request): JsonResponse

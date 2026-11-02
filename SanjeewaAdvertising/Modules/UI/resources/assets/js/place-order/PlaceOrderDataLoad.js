@@ -4,7 +4,7 @@
  * API communication, localStorage caching, and sample seed data.
  */
 
-import { PrintingOrderBuilder, PrintingOrder } from "./PrintingOrderBuilder.js";
+import { PrintingOrderBuilder, PrintingOrder } from "./builders/PrintingOrderBuilder.js";
 import { RequestHandler } from "../core/RequestHandler.js";
 
 export const PRINTING_TYPES = [

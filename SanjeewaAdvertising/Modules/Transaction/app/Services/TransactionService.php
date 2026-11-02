@@ -10,6 +10,8 @@ use Modules\Transaction\Models\GrnPayment;
 use Modules\Transaction\Models\Payment;
 use Modules\Transaction\Models\PaymentStatus;
 use Modules\Transaction\Models\PaymentType;
+use Modules\Transaction\Transformers\GrnPaymentResource;
+use Modules\Transaction\Transformers\PaymentResource;
 
 class TransactionService
 {
@@ -180,6 +182,65 @@ class TransactionService
         }
 
         return $payments;
+    }
+
+    /**
+     * Retrieve GRN payments data and KPIs for UI views.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function getGrnPaymentsData(array $filters = []): array
+    {
+        $payments = $this->getAllGrnPayments($filters);
+
+        $totalBilled = $payments->sum(fn ($p) => (float) ($p->net_total ?? $p->totalBill ?? $p->total_amount ?? 0));
+        $totalDisbursed = $payments->sum(fn ($p) => (float) ($p->paid_amount ?? $p->payment ?? $p->amount ?? 0));
+        $totalPending = $payments->sum(fn ($p) => (float) ($p->balance ?? $p->balance_amount ?? 0));
+
+        $completeCount = $payments->filter(fn ($p) => ($p->stage ?? '') === 'Complete Payment' || ($p->payment_status ?? '') === 'Paid')->count();
+        $advanceCount = $payments->filter(fn ($p) => ($p->stage ?? '') === 'Advance Payment' || ($p->payment_status ?? '') === 'Partial')->count();
+        $pendingCount = $payments->filter(fn ($p) => ($p->stage ?? '') === 'Pending Payment' || ($p->payment_status ?? '') === 'Pending')->count();
+
+        return [
+            'grn_payments' => GrnPaymentResource::collection($payments),
+            'kpis' => [
+                'total_billed' => $totalBilled,
+                'total_disbursed' => $totalDisbursed,
+                'total_pending' => $totalPending,
+                'counts' => [
+                    'complete' => $completeCount,
+                    'advance' => $advanceCount,
+                    'pending' => $pendingCount,
+                    'total' => $payments->count(),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Retrieve Operating Expenses data and KPIs for UI views.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function getOperatingExpensesData(array $filters = []): array
+    {
+        $expenses = $this->getAllPayments($filters);
+
+        $totalBilled = $expenses->sum(fn ($e) => (float) ($e->amount ?? 0));
+        $totalPaid = $expenses->where('status', 'Paid')->sum(fn ($e) => (float) ($e->paid_amount ?? $e->amount ?? 0));
+        $totalPending = $expenses->whereIn('status', ['Pending', 'Overdue'])->sum(fn ($e) => (float) ($e->amount ?? 0));
+
+        return [
+            'expenses' => PaymentResource::collection($expenses),
+            'kpis' => [
+                'total_billed' => $totalBilled,
+                'total_paid' => $totalPaid,
+                'total_pending' => $totalPending,
+                'total_count' => $expenses->count(),
+            ],
+        ];
     }
 
     /**
@@ -513,7 +574,7 @@ class TransactionService
         }
 
         $models = array_map(function ($attributes) {
-            $grnPayment = new GrnPayment;
+            $grnPayment = new GrnPayment();
             $grnPayment->forceFill($attributes);
 
             return $grnPayment;
@@ -744,7 +805,7 @@ class TransactionService
         }
 
         $models = array_map(function ($attributes) {
-            $payment = new Payment;
+            $payment = new Payment();
             $payment->forceFill($attributes);
 
             return $payment;

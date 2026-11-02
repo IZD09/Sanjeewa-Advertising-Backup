@@ -13,8 +13,13 @@
 export class NavigationProcess {
   /**
    * @param {Object} context
-   * @param {Function} context.render
+   * @param {Function} [context.loadAndRenderInvoice]
+   * @param {Function} [context.loadAndRenderGrn]
+   * @param {Function} [context.loadAndRenderExpenses]
+   * @param {Function} [context.loadAndRenderOverview]
+   * @param {Function} [context.render]
    * @param {Function} [context.onConceptFilter]
+   * @param {Function} [context.onTabSwitched]
    */
   constructor(context) {
     this.ctx = context;
@@ -109,8 +114,18 @@ export class NavigationProcess {
 
     if (this.ctx.onTabSwitched) {
       this.ctx.onTabSwitched(this.activeTab);
+    } else if (this.activeTab === "grn" && this.ctx.loadAndRenderGrn) {
+      this.ctx.loadAndRenderGrn();
+    } else if (this.activeTab === "expenses" && this.ctx.loadAndRenderExpenses) {
+      this.ctx.loadAndRenderExpenses();
+    } else if (this.activeTab === "overview" && this.ctx.loadAndRenderOverview) {
+      this.ctx.loadAndRenderOverview();
+    } else if (this.activeTab === "invoice" && this.ctx.loadAndRenderInvoice) {
+      this.ctx.loadAndRenderInvoice();
     } else if (this.ctx.render) {
       this.ctx.render();
     }
   }
 }
+
+export default NavigationProcess;

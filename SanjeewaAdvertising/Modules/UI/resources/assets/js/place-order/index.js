@@ -4,12 +4,13 @@
 
 export { PlaceOrderDataLoad, PRINTING_TYPES, PRINTING_TYPE_PRODUCTS } from "./PlaceOrderDataLoad.js";
 export { PricingCalculator } from "./PricingCalculator.js";
-export { CustomerHandler } from "./CustomerHandler.js";
-export { PaymentHandler } from "./PaymentHandler.js";
-export { OrderTableHandler } from "./OrderTableHandler.js";
-export { OrderModalHandler } from "./OrderModalHandler.js";
 export { OrderPlacementProcess } from "./OrderPlacementProcess.js";
-export { PrintingOrderBuilder, PrintingOrderBuilder as PrintingOrder } from "./PrintingOrderBuilder.js";
+
+// Builders
+export * from "./builders/index.js";
+
+// Handlers
+export * from "./handlers/index.js";
 
 // Modals
 export * from "./modals/index.js";
