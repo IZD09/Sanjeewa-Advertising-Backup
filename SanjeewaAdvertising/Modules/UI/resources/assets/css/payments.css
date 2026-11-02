@@ -1206,4 +1206,481 @@
     .pay-modal-footer {
         display: none !important;
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+
+/* ==========================================================================
+   Operating Expenses & Monthly Utility Bills Styles
+   ========================================================================== */
+.concept-card.expense-concept {
+    border-left: 4px solid #f59e0b;
+}
+
+.pay-tab-btn.active.exp-tab {
+    color: #f59e0b;
+    border-bottom-color: #f59e0b;
+}
+
+.pay-tab-btn.active.exp-tab .tab-count {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.tab-count.tab-count-alert {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    font-weight: 800;
+}
+
+.expense-month-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+.month-selector-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.month-selector-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.month-selector-label strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.month-selector-label span {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.month-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.exp-progress-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+    border: 1px solid var(--border);
+}
+
+.exp-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 4px;
+    transition: width 0.35s ease;
+}
+
+/* Status Badges for Bills */
+.exp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.exp-badge-pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.exp-badge-paid {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.exp-badge-overdue {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    animation: overduePulse 1.8s infinite;
+}
+
+@keyframes overduePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Category Icons */
+.exp-cat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.exp-cat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 13.5px;
+    flex-shrink: 0;
+}
+
+.exp-cat-icon.elec {
+    background: rgba(245, 158, 11, 0.14);
+    color: #f59e0b;
+}
+
+.exp-cat-icon.water {
+    background: rgba(2, 132, 199, 0.14);
+    color: #0284c7;
+}
+
+.exp-cat-icon.internet {
+    background: rgba(139, 92, 246, 0.14);
+    color: #8b5cf6;
+}
+
+.exp-cat-icon.rent {
+    background: rgba(236, 72, 153, 0.14);
+    color: #ec4899;
+}
+
+.exp-cat-icon.other {
+    background: rgba(100, 116, 139, 0.14);
+    color: #64748b;
+}
+
+.exp-title-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.exp-title-meta strong {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.exp-title-meta span {
+    font-size: 10.5px;
+    color: var(--text-muted);
+}
+
+/* Mark as Paid Action Buttons */
+.btn-mark-paid {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.btn-mark-paid:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
+    filter: brightness(1.05);
+}
+
+.btn-undo-paid {
+    background: var(--surface-2);
+    color: var(--text-muted) !important;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-undo-paid:hover {
+    background: var(--surface);
+    color: #ef4444 !important;
+    border-color: #ef4444;
+}
+
+/* ==========================================================================
+   Three Dedicated Payment Creation Buttons & Modals
+   1. Record Invoice Payment
+   2. Record GRN Payment
+   3. Record Bill Payment
+   ========================================================================== */
+
+.pay-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pay-action-btn {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.2px;
+    border: 1px solid transparent;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.pay-action-btn i {
+    font-size: 14px;
+}
+
+/* 1. Record Invoice Payment Button */
+.pay-btn-invoice {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+.pay-btn-invoice:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.42);
+    filter: brightness(1.06);
+}
+
+.pay-btn-invoice:active {
+    transform: translateY(0);
+}
+
+/* 2. Record GRN Payment Button */
+.pay-btn-grn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.28);
+}
+
+.pay-btn-grn:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.42);
+    filter: brightness(1.06);
+}
+
+.pay-btn-grn:active {
+    transform: translateY(0);
+}
+
+/* 3. Record Bill Payment Button */
+.pay-btn-bill {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #ffffff !important;
+    border-color: #d97706 !important;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.28);
+}
+
+.pay-btn-bill:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.42);
+    filter: brightness(1.06);
+}
+
+.pay-btn-bill:active {
+    transform: translateY(0);
+}
+
+/* Modal Headers Theming */
+.pay-modal-header-invoice {
+    border-left: 5px solid #2563eb !important;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.08) 0%, var(--surface-2) 100%) !important;
+}
+
+.pay-modal-header-grn {
+    border-left: 5px solid #10b981 !important;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, var(--surface-2) 100%) !important;
+}
+
+.pay-modal-header-bill {
+    border-left: 5px solid #f59e0b !important;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, var(--surface-2) 100%) !important;
+}
+
+/* Multi-Job Invoice Modal Styles */
+.inv-job-badge {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    display: inline-flex;
+    align-items: center;
+}
+
+.inv-jobs-table-wrap {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.inv-jobs-table {
+    width: 100%;
+    font-size: 12.5px;
+    border-collapse: collapse;
+}
+
+.inv-jobs-table th {
+    font-weight: 700;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.inv-jobs-table td {
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.inv-jobs-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.inv-jobs-table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.03);
+}
+
+.btn-remove-job {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+}
+
+.btn-remove-job:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+.pay-job-allocation {
+    width: 100%;
+    max-width: 110px;
+    height: 32px;
+    padding: 2px 8px;
+    font-size: 12px;
+    text-align: right;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease;
+}
+
+.pay-job-allocation:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+/* ==========================================================================
+   Place Order Style Table Pagination Controls
+   ========================================================================== */
+.po-pagination {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.page-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2, #ffffff);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+    border-color: var(--po-orange, #ff6b00);
+    color: var(--po-orange, #ff6b00);
+}
+
+.page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-btn.active {
+    background: var(--po-orange, #ff6b00);
+    color: #ffffff;
+    border-color: var(--po-orange, #ff6b00);
+}
+
+
+
+>>>>>>> Stashed changes

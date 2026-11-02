@@ -613,10 +613,229 @@
               </div>
             </div>
 
+<<<<<<< Updated upstream
             <div class="pay-modal-footer">
               <button type="button" class="po-btn po-btn-secondary" data-close-pay-modal>Cancel</button>
               <button type="button" class="po-btn po-btn-primary" id="btnSaveNewPayment">
                 <i class="fa-solid fa-check"></i> Save &amp; Generate Voucher
+=======
+        <div class="pay-filter-bar">
+          <div class="pay-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="payInvoiceSearch" class="pay-search-input" placeholder="Search by Job #, Invoice #, Customer or Ref...">
+          </div>
+          <div class="pay-filter-group">
+            <select id="payInvoiceStatusFilter" class="pay-select" aria-label="Filter by Stage">
+              <option value="ALL">All Stages (සියලු අවස්ථා)</option>
+              <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
+              <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
+              <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
+            </select>
+            <select id="payInvoiceMethodFilter" class="pay-select" aria-label="Filter by Method">
+              <option value="ALL">All Methods (සියලු ක්‍රමවේද)</option>
+              <option value="Card">Card (කාඩ්පත්)</option>
+              <option value="Cash">Cash (මුදල්)</option>
+              <option value="Check">Check (චෙක්පත්)</option>
+              <option value="Bank Transfer">Bank Transfer (බැංකු හුවමාරු)</option>
+            </select>
+            <button type="button" class="pay-btn-reset" id="payInvoiceResetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="pay-table-card">
+          <div class="pay-table-wrapper">
+            <table class="pay-table">
+              <thead>
+                <tr>
+                  <th>Invoice / Date</th>
+                  <th>Customer / Ref</th>
+                  <th>Payment Stage</th>
+                  <th>Method</th>
+                  <th>Total Bill</th>
+                  <th>Paid Amount</th>
+                  <th>Balance Due</th>
+                  <th>Narration</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payInvoiceTableBody">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Place Order Style Pagination -->
+          <div class="po-pagination">
+            <div id="payInvoicePaginationInfo">Showing 0 invoices</div>
+            <div class="pagination-controls" id="payInvoicePaginationControls"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB PANE 2: GRN PAYMENTS -->
+    <div id="payTabPaneGrn" class="pay-tab-pane" style="display: none;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="pay-metric-grid">
+          <div class="pay-metric-card metric-green">
+            <div class="pay-metric-label">
+              <span>Total GRN Stock Billed</span>
+              <i class="fa-solid fa-boxes-packing" style="color: #10b981;"></i>
+            </div>
+            <div class="pay-metric-value" id="kpiGrnTotalBilled">Rs. 0.00</div>
+            <div class="pay-metric-sub">Total inventory consignments received</div>
+          </div>
+
+          <div class="pay-metric-card metric-blue">
+            <div class="pay-metric-label">
+              <span>Paid to Suppliers</span>
+              <i class="fa-solid fa-circle-check" style="color: var(--blue);"></i>
+            </div>
+            <div class="pay-metric-value" id="kpiGrnTotalPaid" style="color: var(--blue);">Rs. 0.00</div>
+            <div class="pay-metric-sub">Company disbursements cleared</div>
+          </div>
+
+          <div class="pay-metric-card metric-amber">
+            <div class="pay-metric-label">
+              <span>Outstanding Payables</span>
+              <i class="fa-solid fa-hand-holding-dollar" style="color: #f59e0b;"></i>
+            </div>
+            <div class="pay-metric-value" id="kpiGrnTotalDue" style="color: #ef4444;">Rs. 0.00</div>
+            <div class="pay-metric-sub">Credit terms due to suppliers</div>
+          </div>
+
+          <div class="pay-metric-card metric-purple">
+            <div class="pay-metric-label">
+              <span>Payment Stages Breakdown</span>
+              <i class="fa-solid fa-chart-pie" style="color: #8b5cf6;"></i>
+            </div>
+            <div class="pay-metric-sub" id="kpiGrnStageCounts" style="font-size: 13px; color: var(--text); margin-top: 6px;">
+              <strong>0</strong> Complete | <strong>0</strong> Advance | <strong>0</strong> Pending
+            </div>
+            <div class="pay-metric-sub" style="font-size: 10.5px; margin-top: auto;">Complete / Advance / Pending</div>
+          </div>
+        </div>
+
+        <div class="methods-bar-card">
+          <div class="methods-bar-top">
+            <span><i class="fa-solid fa-wallet" style="margin-right: 6px; color: #10b981;"></i> Supplier Disbursements by Payment Method</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Card • Cash • Check • Bank Transfer</span>
+          </div>
+          <div class="methods-badges-row">
+            <div class="method-stat-box card-box">
+              <i class="fa-solid fa-credit-card"></i>
+              <div class="method-stat-meta">
+                <span>Corporate Card</span>
+                <strong id="grnMethodCardTotal">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box cash-box">
+              <i class="fa-solid fa-money-bill-wave"></i>
+              <div class="method-stat-meta">
+                <span>Petty Cash / COD</span>
+                <strong id="grnMethodCashTotal">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box check-box">
+              <i class="fa-solid fa-money-check"></i>
+              <div class="method-stat-meta">
+                <span>Company Cheques</span>
+                <strong id="grnMethodCheckTotal">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box transfer-box">
+              <i class="fa-solid fa-building-columns"></i>
+              <div class="method-stat-meta">
+                <span>Bank Transfers</span>
+                <strong id="grnMethodTransferTotal">Rs. 0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pay-filter-bar">
+          <div class="pay-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="payGrnSearch" class="pay-search-input" placeholder="Search by GRN #, PO #, Supplier, Ref or Stock item...">
+          </div>
+          <div class="pay-filter-group">
+            <select id="payGrnStatusFilter" class="pay-select" aria-label="Filter by Stage">
+              <option value="ALL">All Stages (සියලු අවස්ථා)</option>
+              <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
+              <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
+              <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
+            </select>
+            <select id="payGrnMethodFilter" class="pay-select" aria-label="Filter by Method">
+              <option value="ALL">All Methods (සියලු ක්‍රමවේද)</option>
+              <option value="Card">Card (කාඩ්පත්)</option>
+              <option value="Cash">Cash (මුදල්)</option>
+              <option value="Check">Check (චෙක්පත්)</option>
+              <option value="Bank Transfer">Bank Transfer (බැංකු හුවමාරු)</option>
+            </select>
+            <button type="button" class="pay-btn-reset" id="payGrnResetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="pay-table-card">
+          <div class="pay-table-wrapper">
+            <table class="pay-table">
+              <thead>
+                <tr>
+                  <th>GRN # / Date</th>
+                  <th>Supplier / Category</th>
+                  <th>Payment Stage</th>
+                  <th>Method</th>
+                  <th>Bill Total</th>
+                  <th>Paid Amount</th>
+                  <th>Balance Due</th>
+                  <th>Narration</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payGrnTableBody">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Place Order Style Pagination -->
+          <div class="po-pagination">
+            <div id="payGrnPaginationInfo">Showing 0 stock GRNs</div>
+            <div class="pagination-controls" id="payGrnPaginationControls"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB PANE 3: OPERATING EXPENSES (MONTHLY UTILITY BILLS)
+         ==================================================================== -->
+    <div id="payTabPaneExpenses" class="pay-tab-pane" style="display: none;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        <!-- Month Navigation & Quick Actions Bar -->
+        <div class="expense-month-bar">
+          <div class="month-selector-wrap">
+            <div class="month-selector-label">
+              <i class="fa-regular fa-calendar-check" style="color: #f59e0b; font-size: 18px;"></i>
+              <div>
+                <strong>මාසික මෙහෙයුම් වියදම් (Monthly Operating Bills)</strong>
+                <span id="expCurrentMonthLabel">Billing Month: October 2026</span>
+              </div>
+            </div>
+            <div class="month-controls">
+              <select id="expMonthSelect" class="pay-select" style="min-width: 170px; font-weight: 700;">
+                <option value="2026-10" selected>October 2026 (වත්මන්)</option>
+                <option value="2026-09">September 2026</option>
+                <option value="2026-08">August 2026</option>
+                <option value="2026-11">November 2026</option>
+                <option value="ALL">All Months (සියලු මාස)</option>
+              </select>
+              <button type="button" class="po-btn po-btn-secondary" id="btnExpThisMonth" style="height: 38px; padding: 0 12px; font-size: 12px; border-radius: 8px;">
+                <i class="fa-solid fa-calendar-day"></i> This Month
+>>>>>>> Stashed changes
               </button>
             </div>
           </div>
@@ -640,6 +859,110 @@
                 <i class="fa-solid fa-print"></i> Print Voucher
               </button>
             </div>
+<<<<<<< Updated upstream
+=======
+            <div class="method-stat-box" style="border-left: 3px solid #0284c7;">
+              <i class="fa-solid fa-droplet" style="color: #0284c7;"></i>
+              <div class="method-stat-meta">
+                <span>Water Board (NWSDB)</span>
+                <strong id="catTotalWater">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box" style="border-left: 3px solid #8b5cf6;">
+              <i class="fa-solid fa-wifi" style="color: #8b5cf6;"></i>
+              <div class="method-stat-meta">
+                <span>Internet / Fiber</span>
+                <strong id="catTotalInternet">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box" style="border-left: 3px solid #ec4899;">
+              <i class="fa-solid fa-building" style="color: #ec4899;"></i>
+              <div class="method-stat-meta">
+                <span>Shop / Office Rent</span>
+                <strong id="catTotalRent">Rs. 0</strong>
+              </div>
+            </div>
+            <div class="method-stat-box" style="border-left: 3px solid #64748b;">
+              <i class="fa-solid fa-wrench" style="color: #64748b;"></i>
+              <div class="method-stat-meta">
+                <span>Maintenance / Other</span>
+                <strong id="catTotalOther">Rs. 0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="pay-filter-bar">
+          <div class="pay-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="payExpenseSearch" class="pay-search-input" placeholder="Search by Bill name, Provider, Account #, or Reference...">
+          </div>
+          <div class="pay-filter-group">
+            <select id="payExpenseCategoryFilter" class="pay-select" aria-label="Filter by Category">
+              <option value="ALL">All Categories (සියලු කාණ්ඩ)</option>
+              <option value="Electricity">Electricity (විදුලි බිල්පත්)</option>
+              <option value="Water Board">Water Board (ජල බිල්පත්)</option>
+              <option value="Internet & Fiber">Internet &amp; Fiber (අන්තර්ජාල)</option>
+              <option value="Shop Rent">Shop Rent (කුලිය)</option>
+              <option value="Mobile & Telephone">Mobile &amp; Telephone</option>
+              <option value="Maintenance & Other">Maintenance &amp; Other</option>
+            </select>
+            <select id="payExpenseStatusFilter" class="pay-select" aria-label="Filter by Status">
+              <option value="ALL">All Statuses (සියලු තත්ත්වයන්)</option>
+              <option value="Pending">Pending Only (ගෙවීමට ඇති බිල්පත්)</option>
+              <option value="Paid">Paid Only (ගෙවා අවසන් බිල්පත්)</option>
+              <option value="Overdue">Overdue (කල් ඉකුත් වූ)</option>
+            </select>
+            <button type="button" class="pay-btn-reset" id="payExpenseResetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Operating Expenses Table -->
+        <div class="pay-table-card">
+          <div class="pay-table-wrapper">
+            <table class="pay-table">
+              <thead>
+                <tr>
+                  <th>Bill Details &amp; Category</th>
+                  <th>Account / Ref #</th>
+                  <th>Month</th>
+                  <th>Due Date</th>
+                  <th>Bill Amount (Rs.)</th>
+                  <th>Status</th>
+                  <th>Settlement Info</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="payExpenseTableBody">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Place Order style Pagination -->
+          <div class="po-pagination">
+            <div id="payExpensePaginationInfo">Showing 0 bills</div>
+            <div class="pagination-controls" id="payExpensePaginationControls"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB PANE 4: OVERVIEW -->
+    <div id="payTabPaneOverview" class="pay-tab-pane" style="display: none;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="pay-metric-grid">
+          <div class="pay-metric-card" style="border-bottom: 3px solid #2563eb;">
+            <div class="pay-metric-label">
+              <span>Job Cash Inflow (Invoice Payments)</span>
+              <i class="fa-solid fa-arrow-down-left" style="color: #2563eb;"></i>
+            </div>
+            <div class="pay-metric-value" id="ovJobCashInflow" style="color: #2563eb;">Rs. 0.00</div>
+            <div class="pay-metric-sub">Money collected from printing jobs</div>
+>>>>>>> Stashed changes
           </div>
 
 

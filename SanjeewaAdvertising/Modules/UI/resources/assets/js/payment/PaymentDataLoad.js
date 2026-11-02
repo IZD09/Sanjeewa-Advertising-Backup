@@ -1,4 +1,5 @@
 /**
+<<<<<<< Updated upstream:SanjeewaAdvertising/Modules/UI/resources/assets/js/payment/PaymentDataLoad.js
  * SanjeewaAdvertising - Payment Data Service & Request Handler
  * Handles API fetch requests, CSRF authentication, endpoints,
  * localStorage persistence, sample data enrichment, and UI data loading.
@@ -1119,3 +1120,11 @@ export class PaymentDataLoad {
 }
 
 export default PaymentDataLoad;
+=======
+ * SanjeewaAdvertising - Payment Data Load Alias
+ *
+ * Provides compatibility aliases for PaymentsDataLoader & PaymentsDataService.
+ */
+
+export { PaymentsDataLoader, PaymentsDataService, PaymentsDataLoader as PaymentDataLoad, default } from "./PaymentsDataLoader.js";
+>>>>>>> Stashed changes:SanjeewaAdvertising/Modules/UI/resources/assets/js/payments/PaymentDataLoad.js
