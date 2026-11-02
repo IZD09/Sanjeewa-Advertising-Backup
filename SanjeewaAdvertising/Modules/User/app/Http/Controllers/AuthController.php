@@ -19,7 +19,8 @@ class AuthController extends BaseApiController
 {
     public function __construct(
         protected AuthService $authService
-    ) {}
+    ) {
+    }
 
     /**
      * Register a new user account.

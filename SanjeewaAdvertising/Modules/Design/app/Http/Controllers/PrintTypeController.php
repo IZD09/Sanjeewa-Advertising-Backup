@@ -15,7 +15,8 @@ class PrintTypeController extends BaseApiController
 {
     public function __construct(
         protected DesignService $designService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of print types with optional search.

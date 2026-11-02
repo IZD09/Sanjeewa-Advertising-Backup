@@ -14,7 +14,8 @@ class DashboardController extends BaseApiController
 {
     public function __construct(
         protected DashboardService $dashboardService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the main interactive dashboard view with initial backend data.

@@ -13,7 +13,8 @@ class ActivityController extends BaseApiController
 {
     public function __construct(
         protected ActivityService $activityService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of activities.
