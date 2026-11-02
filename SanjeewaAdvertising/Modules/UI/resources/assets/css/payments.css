@@ -1213,12 +1213,6 @@
     .pay-modal-footer {
         display: none !important;
     }
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-}
-=======
->>>>>>> origin/Ardithya
 }
 
 /* ==========================================================================
@@ -1641,9 +1635,6 @@
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
-<<<<<<< HEAD
-
-=======
 /* ==========================================================================
    Place Order Style Table Pagination Controls
    ========================================================================== */
@@ -1693,8 +1684,3 @@
     color: #ffffff;
     border-color: var(--po-orange, #ff6b00);
 }
-
-
-
->>>>>>> Stashed changes
->>>>>>> origin/Ardithya

@@ -55,18 +55,7 @@ class CustomerController extends BaseApiController
     /**
      * Search customers across name, mobile, and email.
      */
-<<<<<<< HEAD
     public function search(Request $request): JsonResponse
-=======
-    public function store(Request $request)
-    {
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
->>>>>>> origin/Ardithya
     {
         if ($request->boolean('all') || $request->query('per_page') === 'all') {
             $customers = $this->customerService->getAllCustomers($request->query());
@@ -101,7 +90,6 @@ class CustomerController extends BaseApiController
     /**
      * Display the specified customer.
      */
-<<<<<<< HEAD
     public function show(int $id): JsonResponse
     {
         $customer = $this->customerService->getCustomerById($id);
@@ -114,16 +102,11 @@ class CustomerController extends BaseApiController
             new CustomerResource($customer),
             'Customer details retrieved successfully.'
         );
-=======
-    public function update(Request $request, $id)
-    {
->>>>>>> origin/Ardithya
     }
 
     /**
      * Update the specified customer in storage.
      */
-<<<<<<< HEAD
     public function update(UpdateCustomerRequest $request, int $id): JsonResponse
     {
         $customer = $this->customerService->getCustomerById($id);
@@ -173,9 +156,5 @@ class CustomerController extends BaseApiController
         $jobs->through(fn ($job) => new PrintJobResource($job));
 
         return $this->paginated($jobs, 'Customer print jobs retrieved successfully.');
-=======
-    public function destroy($id)
-    {
->>>>>>> origin/Ardithya
     }
 }

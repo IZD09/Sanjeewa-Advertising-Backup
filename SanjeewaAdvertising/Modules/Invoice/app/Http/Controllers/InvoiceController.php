@@ -54,18 +54,7 @@ class InvoiceController extends BaseApiController
     /**
      * Search invoices.
      */
-<<<<<<< HEAD
     public function search(Request $request): JsonResponse
-=======
-    public function store(Request $request)
-    {
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
->>>>>>> origin/Ardithya
     {
         if ($request->boolean('all') || $request->query('per_page') === 'all') {
             $invoices = $this->invoiceService->getAllInvoices($request->query());
@@ -100,7 +89,6 @@ class InvoiceController extends BaseApiController
     /**
      * Display the specified invoice.
      */
-<<<<<<< HEAD
     public function show(int $id): JsonResponse
     {
         $invoice = $this->invoiceService->getInvoiceById($id);
@@ -113,16 +101,11 @@ class InvoiceController extends BaseApiController
             new InvoiceResource($invoice),
             'Invoice details retrieved successfully.'
         );
-=======
-    public function update(Request $request, $id)
-    {
->>>>>>> origin/Ardithya
     }
 
     /**
      * Update the specified invoice in storage.
      */
-<<<<<<< HEAD
     public function update(UpdateInvoiceRequest $request, int $id): JsonResponse
     {
         $invoice = $this->invoiceService->getInvoiceById($id);
@@ -195,9 +178,5 @@ class InvoiceController extends BaseApiController
             new InvoiceResource($updated),
             'Print job detached from invoice successfully.'
         );
-=======
-    public function destroy($id)
-    {
->>>>>>> origin/Ardithya
     }
 }

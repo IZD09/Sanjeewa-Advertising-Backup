@@ -58,18 +58,7 @@ class AdminController extends BaseApiController
     /**
      * Search admins across name, username, mobile, and email.
      */
-<<<<<<< HEAD
     public function search(Request $request): JsonResponse
-=======
-    public function store(Request $request)
-    {
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
->>>>>>> origin/Ardithya
     {
         if ($request->boolean('all') || $request->query('per_page') === 'all') {
             $admins = $this->adminService->getAllAdmins($request->query());
@@ -104,7 +93,6 @@ class AdminController extends BaseApiController
     /**
      * Display the specified admin details.
      */
-<<<<<<< HEAD
     public function show(int $id): JsonResponse
     {
         $admin = $this->adminService->getAdminById($id);
@@ -117,16 +105,11 @@ class AdminController extends BaseApiController
             new AdminResource($admin),
             'Admin details retrieved successfully.'
         );
-=======
-    public function update(Request $request, $id)
-    {
->>>>>>> origin/Ardithya
     }
 
     /**
      * Update the specified admin in storage.
      */
-<<<<<<< HEAD
     public function update(UpdateAdminRequest $request, int $id): JsonResponse
     {
         $admin = $this->adminService->getAdminById($id);
@@ -224,9 +207,5 @@ class AdminController extends BaseApiController
             AdminTypeResource::collection($types),
             'Admin types retrieved successfully.'
         );
-=======
-    public function destroy($id)
-    {
->>>>>>> origin/Ardithya
     }
 }

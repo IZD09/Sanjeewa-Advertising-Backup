@@ -107,14 +107,10 @@ export class NavigationProcess {
       window.sidebarComponent.setActiveRoute("payments", subRoute);
     }
 
-<<<<<<< HEAD
-    if (this.ctx.render) this.ctx.render();
-=======
     if (this.ctx.onTabSwitched) {
       this.ctx.onTabSwitched(this.activeTab);
     } else if (this.ctx.render) {
       this.ctx.render();
     }
->>>>>>> origin/Ardithya
   }
 }

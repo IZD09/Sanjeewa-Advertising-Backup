@@ -5,10 +5,7 @@ namespace Modules\Transaction\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-<<<<<<< HEAD
-=======
 use Illuminate\Pagination\Paginator;
->>>>>>> origin/Ardithya
 use Modules\Transaction\Models\GrnPayment;
 use Modules\Transaction\Models\Payment;
 use Modules\Transaction\Models\PaymentStatus;
@@ -57,9 +54,6 @@ class TransactionService
      */
     public function getAllPayments(array $filters = []): Collection
     {
-<<<<<<< HEAD
-        return $this->buildPaymentsQuery($filters)->get();
-=======
         $payments = $this->buildPaymentsQuery($filters)->get();
 
         if ($payments->isEmpty()) {
@@ -67,7 +61,6 @@ class TransactionService
         }
 
         return $payments;
->>>>>>> origin/Ardithya
     }
 
     /**
@@ -79,9 +72,6 @@ class TransactionService
     {
         $perPage = max(1, min(100, $perPage));
 
-<<<<<<< HEAD
-        return $this->buildPaymentsQuery($filters)->paginate($perPage);
-=======
         $paginator = $this->buildPaymentsQuery($filters)->paginate($perPage);
 
         if ($paginator->isEmpty()) {
@@ -89,7 +79,6 @@ class TransactionService
         }
 
         return $paginator;
->>>>>>> origin/Ardithya
     }
 
     /**
@@ -184,9 +173,6 @@ class TransactionService
      */
     public function getAllGrnPayments(array $filters = []): Collection
     {
-<<<<<<< HEAD
-        return $this->buildGrnPaymentsQuery($filters)->get();
-=======
         $payments = $this->buildGrnPaymentsQuery($filters)->get();
 
         if ($payments->isEmpty()) {
@@ -194,7 +180,6 @@ class TransactionService
         }
 
         return $payments;
->>>>>>> origin/Ardithya
     }
 
     /**
@@ -206,9 +191,6 @@ class TransactionService
     {
         $perPage = max(1, min(100, $perPage));
 
-<<<<<<< HEAD
-        return $this->buildGrnPaymentsQuery($filters)->paginate($perPage);
-=======
         $paginator = $this->buildGrnPaymentsQuery($filters)->paginate($perPage);
 
         if ($paginator->isEmpty()) {
@@ -216,7 +198,6 @@ class TransactionService
         }
 
         return $paginator;
->>>>>>> origin/Ardithya
     }
 
     /**
@@ -297,8 +278,6 @@ class TransactionService
     {
         return PaymentStatus::query()->orderBy('id')->get();
     }
-<<<<<<< HEAD
-=======
 
     /**
      * Resolve demo GRN payment records modeled after UI DashboardService.
@@ -793,5 +772,4 @@ class TransactionService
             ['path' => Paginator::resolveCurrentPath()]
         );
     }
->>>>>>> origin/Ardithya
 }

@@ -1,7 +1,6 @@
 /**
  * SanjeewaAdvertising - Payments Data Loader
  *
-<<<<<<< HEAD
  * Handles storage keys, data persistence, default seeding for
  * 1. Invoice payments (Customer print orders)
  * 2. GRN supplier payments (Stock acquisitions)
@@ -88,30 +87,6 @@ export class PaymentsDataLoader {
 
     // Ensure initial rich sample data if empty
     this.enrichOrderPayments();
-=======
- * Extends PaymentsDataService, providing compatibility methods for
- * invoice payments, GRN supplier payments, and operating expenses.
- * Data is dynamically fetched from backend API endpoints via RequestHandler.
- */
-
-import { PaymentsDataService } from "./PaymentsDataService.js";
-
-export class PaymentsDataLoader extends PaymentsDataService {
-  constructor(options = {}) {
-    super(options);
-  }
-
-  /**
-   * Universal initial loader that triggers the 3 API requests via RequestHandler.
-   * @returns {Promise<{orders: Array, orderPayments: Array, grnRecords: Array, grnPayments: Array, expenses: Array}>}
-   */
-  async loadInitialData() {
-    await Promise.allSettled([
-      this.loadInvoicePayments(),
-      this.loadGrnPayments(),
-      this.loadOperatingExpenses()
-    ]);
->>>>>>> origin/Ardithya
 
     return {
       orders: this.orders,
@@ -123,7 +98,6 @@ export class PaymentsDataLoader extends PaymentsDataService {
   }
 
   seedDefaultOrders() {
-<<<<<<< HEAD
     const today = new Date();
     const formatDate = (d) => d.toISOString().split("T")[0];
 
@@ -563,27 +537,3 @@ export class PaymentsDataLoader extends PaymentsDataService {
     })}`;
   }
 }
-=======
-    this.saveOrders(this.orders);
-    return this.orders;
-  }
-
-  enrichOrderPayments() {
-    this.saveOrderPayments();
-    return this.orderPayments;
-  }
-
-  seedDefaultGrnPayments() {
-    this.saveGrnPayments();
-    return this.grnPayments;
-  }
-
-  seedDefaultOperatingExpenses() {
-    this.saveExpenses();
-    return this.expenses;
-  }
-}
-
-export const PaymentDataLoad = PaymentsDataLoader;
-export default PaymentsDataLoader;
->>>>>>> origin/Ardithya

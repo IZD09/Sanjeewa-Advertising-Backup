@@ -17,12 +17,6 @@ class PaymentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-<<<<<<< HEAD
-        return [
-            'id' => $this->id,
-            'payment' => (float) $this->payment,
-            'amount' => (float) $this->payment,
-=======
         $amount = (float) ($this->amount ?? $this->payment ?? 0);
         $paid = (float) ($this->paid_amount ?? ($this->status === 'Paid' ? $amount : 0));
 
@@ -43,7 +37,6 @@ class PaymentResource extends JsonResource
             'paid_ref' => $this->paid_ref ?? '',
             'paid_note' => $this->paid_note ?? '',
             'notes' => $this->notes ?? '',
->>>>>>> origin/Ardithya
             'print_jobs_id' => $this->print_jobs_id,
             'payment_types_id' => $this->payment_types_id,
             'payment_statuses_id' => $this->payment_statuses_id,

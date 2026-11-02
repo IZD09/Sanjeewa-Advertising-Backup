@@ -17,13 +17,6 @@ class GrnPaymentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-<<<<<<< HEAD
-        return [
-            'id' => $this->id,
-            'payment' => (float) $this->payment,
-            'amount' => (float) $this->payment,
-            'grn_id' => $this->grn_id,
-=======
         $netTotal = (float) ($this->net_total ?? $this->totalBill ?? $this->total_amount ?? $this->payment ?? 0);
         $paid = (float) ($this->paid_amount ?? $this->paidAmount ?? $this->payment ?? 0);
         $bal = (float) ($this->balance ?? $this->balance_amount ?? $this->balanceAmount ?? max(0, $netTotal - $paid));
@@ -51,7 +44,6 @@ class GrnPaymentResource extends JsonResource
             'ref' => $this->ref ?? 'CHQ-882019-COMBANK',
             'note' => $this->note ?? '',
             'date' => $this->date ?? ($this->pay_date instanceof \DateTimeInterface ? $this->pay_date->format('Y-m-d') : ($this->pay_date ?? now()->toDateString())),
->>>>>>> origin/Ardithya
             'payment_types_id' => $this->payment_types_id,
             'payment_statuses_id' => $this->payment_statuses_id,
             'pay_date' => $this->pay_date?->toIso8601String() ?? $this->pay_date,

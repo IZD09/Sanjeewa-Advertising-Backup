@@ -5,10 +5,7 @@ namespace Modules\Invoice\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-<<<<<<< HEAD
-=======
 use Illuminate\Pagination\Paginator;
->>>>>>> origin/Ardithya
 use Illuminate\Support\Facades\DB;
 use Modules\Invoice\Models\Invoice;
 
@@ -71,9 +68,6 @@ class InvoiceService
      */
     public function getAllInvoices(array $filters = []): Collection
     {
-<<<<<<< HEAD
-        return $this->buildQuery($filters)->get();
-=======
         $invoices = $this->buildQuery($filters)->get();
 
         if ($invoices->isEmpty()) {
@@ -81,7 +75,6 @@ class InvoiceService
         }
 
         return $invoices;
->>>>>>> origin/Ardithya
     }
 
     /**
@@ -93,9 +86,6 @@ class InvoiceService
     {
         $perPage = max(1, min(100, $perPage));
 
-<<<<<<< HEAD
-        return $this->buildQuery($filters)->paginate($perPage);
-=======
         $paginator = $this->buildQuery($filters)->paginate($perPage);
 
         if ($paginator->isEmpty()) {
@@ -356,7 +346,6 @@ class InvoiceService
             $page,
             ['path' => Paginator::resolveCurrentPath()]
         );
->>>>>>> origin/Ardithya
     }
 
     /**

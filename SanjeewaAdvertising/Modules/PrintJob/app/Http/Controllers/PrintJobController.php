@@ -60,18 +60,7 @@ class PrintJobController extends BaseApiController
     /**
      * Retrieve all print jobs matching criteria without pagination limit.
      */
-<<<<<<< HEAD
     public function all(Request $request): JsonResponse
-=======
-    public function store(Request $request)
-    {
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
->>>>>>> origin/Ardithya
     {
         $printJobs = $this->printJobService->getAllPrintJobs($request->query());
 
@@ -106,7 +95,6 @@ class PrintJobController extends BaseApiController
     /**
      * Store a newly created print job in storage.
      */
-<<<<<<< HEAD
     public function store(StorePrintJobRequest $request): JsonResponse
     {
         $printJob = $this->printJobService->createPrintJob($request->validated());
@@ -115,16 +103,11 @@ class PrintJobController extends BaseApiController
             new PrintJobResource($printJob),
             'Print job created successfully.'
         );
-=======
-    public function update(Request $request, $id)
-    {
->>>>>>> origin/Ardithya
     }
 
     /**
      * Display the specified print job details with relationships.
      */
-<<<<<<< HEAD
     public function show(int $id): JsonResponse
     {
         $printJob = $this->printJobService->getPrintJobById($id);
@@ -278,9 +261,5 @@ class PrintJobController extends BaseApiController
             new PrintJobCostResource($cost),
             'Print job cost updated successfully.'
         );
-=======
-    public function destroy($id)
-    {
->>>>>>> origin/Ardithya
     }
 }

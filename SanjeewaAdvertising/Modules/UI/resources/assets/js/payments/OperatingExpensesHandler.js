@@ -1,5 +1,4 @@
 /**
-<<<<<<< HEAD
  * SanjeewaAdvertising - Operating Expenses Handler
  *
  * Handles rendering for Operating Expenses (Monthly Overhead & Utility Bills):
@@ -316,16 +315,3 @@ export class OperatingExpensesHandler {
   }
 }
 
-=======
- * SanjeewaAdvertising - Operating Expenses Handler (Re-export / Compatibility Layer)
- *
- * Points directly to OperatingExpensesTableHandler which extends BaseTableLoader.
- */
-
-export {
-  OperatingExpensesTableHandler,
-  OperatingExpensesTableHandler as OperatingExpensesHandler,
-  OperatingExpensesTableBuilder,
-  default
-} from "./OperatingExpensesTableHandler.js";
->>>>>>> origin/Ardithya
