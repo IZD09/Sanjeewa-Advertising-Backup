@@ -446,3 +446,5 @@ export class PaymentModalHandler {
   }
 }
 
+export default PaymentModalHandler;
+

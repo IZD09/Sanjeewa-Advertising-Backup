@@ -3,70 +3,59 @@
  * Sanjeewa Advertising Digital Printing Shop Management System
  *
  * Modular Architecture:
- * - PaymentDataLoad: Request Handling, CSRF Security, Remote Endpoints, Local Storage & Sample Seeding
- * - InvoicePaymentHandler: Job / Invoice Payment Table, Filtering & Status Badges
- * - GrnPaymentHandler: Stock / GRN Supplier Payment Table, Filtering & Status Badges
- * - PaymentOverviewHandler: Financial KPIs, Payment Method Breakdowns & Net Operating Cash
+ * - PaymentsDataLoader / PaymentsDataService: Backend API Fetching via RequestHandler & Local Storage Cache
+ * - InvoicePaymentTableHandler: Job / Invoice Payment Table extending BaseTableLoader
+ * - GRNPaymentTableHandler: Stock / GRN Supplier Payment Table extending BaseTableLoader
+ * - OperatingExpensesTableHandler: Monthly Operating Utility Bills extending BaseTableLoader
+ * - PaymentsOverviewHandler: Financial KPIs, Payment Method Breakdowns & Net Operating Cash
  * - PaymentModalHandler: Record Payment Modal, Dynamic Inputs, & Live Calculation
  * - PaymentReceiptHandler: Printable Payment Vouchers, Print Dialog & Alerts
+ * - NavigationProcess: Tab & Subroute Routing and Concept Filter Management
  */
 
 "use strict";
 
 import {
-<<<<<<< Updated upstream
-  PaymentDataLoad,
-  TableBuilder,
-  InvoicePaymentRowBuilder,
-  GrnPaymentRowBuilder,
-  InvoicePaymentHandler,
-  GrnPaymentHandler,
-  PaymentOverviewHandler,
-=======
   PaymentsDataLoader,
+  PaymentDataLoad,
+  PaymentsDataService,
+  InvoicePaymentRowBuilder,
+  InvoicePayment,
+  GrnPaymentRowBuilder,
+  GrnPayment,
+  OperatingExpenseRowBuilder,
+  OperatingExpense,
   InvoicePaymentTableHandler,
+  InvoicePaymentHandler,
   GRNPaymentTableHandler,
+  GrnPaymentHandler,
   OperatingExpensesTableHandler,
+  OperatingExpensesHandler,
   PaymentsOverviewHandler,
->>>>>>> Stashed changes
+  PaymentOverviewHandler,
+  PaymentReceiptHandler,
   PaymentModalHandler,
-  PaymentReceiptHandler
-} from "./payment/index.js";
+  NavigationProcess
+} from "./payments/index.js";
 
 export class PaymentManager {
   constructor() {
     // 1. Data Loader & Remote Request Handler
-    this.dataLoader = new PaymentDataLoad();
+    this.dataLoader = new PaymentsDataLoader();
 
-    // 2. Application State
-    this.orders = [];
-    this.orderPayments = [];
-    this.grnRecords = [];
-    this.grnPayments = [];
-
-    this.activeTab = "invoice"; // "invoice", "grn", or "overview"
-
-    // 3. Initialize Process Handlers
+    // 2. Receipt and Notification Handler
     this.receiptHandler = new PaymentReceiptHandler({
-      getOrderPayments: () => this.orderPayments,
-      getGrnPayments: () => this.grnPayments
+      getOrderPayments: () => this.dataLoader.orderPayments,
+      getGrnPayments: () => this.dataLoader.grnPayments
     });
 
-<<<<<<< Updated upstream
-    this.invoiceHandler = new InvoicePaymentHandler({
-      getOrderPayments: () => this.orderPayments,
-      onFilterChange: () => this.overviewHandler.updateKPIs(this.orderPayments, this.grnPayments)
+    // 3. Overview & Reconciliation Handler
+    this.overviewHandler = new PaymentsOverviewHandler({
+      getOrderPayments: () => this.dataLoader.orderPayments,
+      getGrnPayments: () => this.dataLoader.grnPayments
     });
 
-    this.grnHandler = new GrnPaymentHandler({
-      getGrnPayments: () => this.grnPayments,
-      onFilterChange: () => this.overviewHandler.updateKPIs(this.orderPayments, this.grnPayments)
-    });
-
-    this.overviewHandler = new PaymentOverviewHandler({
-      getOrderPayments: () => this.orderPayments,
-      getGrnPayments: () => this.grnPayments
-=======
+    // 4. Invoice Payment Table Loader (BaseTableLoader)
     this.invoiceTableHandler = new InvoicePaymentTableHandler({
       renderStageBadge: (s) => this.overviewHandler.renderStageBadge(s),
       renderMethodBadge: (m, r) => this.overviewHandler.renderMethodBadge(m, r),
@@ -78,6 +67,7 @@ export class PaymentManager {
       }
     });
 
+    // 5. GRN Payment Table Loader (BaseTableLoader)
     this.grnTableHandler = new GRNPaymentTableHandler({
       renderStageBadge: (s) => this.overviewHandler.renderStageBadge(s),
       renderMethodBadge: (m, r) => this.overviewHandler.renderMethodBadge(m, r),
@@ -89,6 +79,7 @@ export class PaymentManager {
       }
     });
 
+    // 6. Operating Expenses Table Loader (BaseTableLoader)
     this.expensesHandler = new OperatingExpensesTableHandler({
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt),
       pageSize: 8,
@@ -99,110 +90,45 @@ export class PaymentManager {
         this.expensesHandler.currentPage = newPage;
         this.renderExpenses();
       }
->>>>>>> Stashed changes
     });
 
+    // 7. Modal Dialog Handler
     this.modalHandler = new PaymentModalHandler({
-<<<<<<< Updated upstream
       dataLoader: this.dataLoader,
-      getOrders: () => this.orders,
-      getOrderPayments: () => this.orderPayments,
-      getGrnRecords: () => this.grnRecords,
-      getGrnPayments: () => this.grnPayments,
+      getOrders: () => this.dataLoader.orders,
+      getOrderPayments: () => this.dataLoader.orderPayments,
+      getGrnRecords: () => this.dataLoader.grnRecords,
+      getGrnPayments: () => this.dataLoader.grnPayments,
       showToast: (msg) => this.receiptHandler.showToast(msg),
       openReceiptModal: (id, type) => this.receiptHandler.openReceiptModal(id, type),
       closeModals: () => this.receiptHandler.closeModals(),
       onPaymentSaved: (newPayment, type) => {
         this.render();
       }
-=======
-      getOrders: () => this.dataLoader.orders,
-      getOrderPayments: () => this.dataLoader.orderPayments,
-      getGrnRecords: () => this.dataLoader.grnRecords,
-      getGrnPayments: () => this.dataLoader.grnPayments,
-      getExpenses: () => this.dataLoader.expenses,
-      saveOrderPayments: () => this.dataLoader.saveOrderPayments(),
-      saveGrnPayments: () => this.dataLoader.saveGrnPayments(),
-      saveOrders: (ords) => this.dataLoader.saveOrders(ords),
-      saveExpenses: () => this.dataLoader.saveExpenses(),
-      getCurrentMonth: () => this.expensesHandler.expenseMonthFilter,
-      setCurrentMonth: (m) => this.expensesHandler.setMonthFilter(m),
-      render: () => this.render()
     });
 
-    // 2. Processes (Navigation, Filters, Metrics)
+    // 8. Navigation Process
     this.navigationProcess = new NavigationProcess({
       render: () => this.render(),
       onTabSwitched: (tab) => this.onTabSwitched(tab),
-      onConceptFilter: (target, type, val) => this.filterProcess.applyConceptFilter(target, type, val)
+      onConceptFilter: (target, type, val) => this.applyConceptFilter(target, type, val)
     });
 
-    this.filterProcess = new FilterProcess({
-      renderInvoiceTable: () => {
-        this.invoiceTableHandler.currentPage = 1;
-        this.renderInvoiceTable();
-      },
-      renderGrnTable: () => {
-        this.grnTableHandler.currentPage = 1;
-        this.renderGrnTable();
-      },
-      renderExpenses: () => {
-        this.expensesHandler.currentPage = 1;
-        this.renderExpenses();
-      },
-      setExpenseMonth: (m) => this.expensesHandler.setMonthFilter(m),
-      setExpenseSearch: (s) => this.expensesHandler.setSearchFilter(s),
-      setExpenseCategory: (c) => this.expensesHandler.setCategoryFilter(c),
-      setExpenseStatus: (st) => this.expensesHandler.setStatusFilter(st),
-      showToast: (msg) => this.showToast(msg)
-    });
+    // Filter states
+    this.invoiceSearch = "";
+    this.invoiceStatusFilter = "ALL";
+    this.invoiceMethodFilter = "ALL";
 
-    this.metricsProcess = new MetricsProcess({
-      updateKPIs: (orders, grns) => this.overviewHandler.updateKPIs(orders, grns),
-      renderOverviewTab: (orders, grns) => this.overviewHandler.renderOverviewTab(orders, grns),
-      getOrderPayments: () => this.dataLoader.orderPayments,
-      getGrnPayments: () => this.dataLoader.grnPayments
->>>>>>> Stashed changes
-    });
+    this.grnSearch = "";
+    this.grnStatusFilter = "ALL";
+    this.grnMethodFilter = "ALL";
 
     this.init();
   }
 
-<<<<<<< Updated upstream
-  /**
-   * Initialize datasets, event bindings, and initial views.
-   */
-  async init() {
-    await this.loadData();
-    this.bindEvents();
-    this.render();
-=======
-  // Getters & setters for state compatibility
+  // Getters & setters for backward compatibility
   get activeTab() { return this.navigationProcess.activeTab; }
   set activeTab(val) { this.navigationProcess.activeTab = val; }
-
-  get invoiceSearch() { return this.filterProcess.invoiceSearch; }
-  set invoiceSearch(val) { this.filterProcess.invoiceSearch = val; }
-  get invoiceStatusFilter() { return this.filterProcess.invoiceStatusFilter; }
-  set invoiceStatusFilter(val) { this.filterProcess.invoiceStatusFilter = val; }
-  get invoiceMethodFilter() { return this.filterProcess.invoiceMethodFilter; }
-  set invoiceMethodFilter(val) { this.filterProcess.invoiceMethodFilter = val; }
-
-  get grnSearch() { return this.filterProcess.grnSearch; }
-  set grnSearch(val) { this.filterProcess.grnSearch = val; }
-  get grnStatusFilter() { return this.filterProcess.grnStatusFilter; }
-  set grnStatusFilter(val) { this.filterProcess.grnStatusFilter = val; }
-  get grnMethodFilter() { return this.filterProcess.grnMethodFilter; }
-  set grnMethodFilter(val) { this.filterProcess.grnMethodFilter = val; }
-
-  get expenseMonthFilter() { return this.expensesHandler.expenseMonthFilter; }
-  set expenseMonthFilter(val) { this.expensesHandler.setMonthFilter(val); }
-  get expenseSearch() { return this.expensesHandler.expenseSearch; }
-  set expenseSearch(val) { this.expensesHandler.setSearchFilter(val); }
-  get expenseCategoryFilter() { return this.expensesHandler.expenseCategoryFilter; }
-  set expenseCategoryFilter(val) { this.expensesHandler.setCategoryFilter(val); }
-  get expenseStatusFilter() { return this.expensesHandler.expenseStatusFilter; }
-  set expenseStatusFilter(val) { this.expensesHandler.setStatusFilter(val); }
 
   get orders() { return this.dataLoader.orders; }
   set orders(val) { this.dataLoader.orders = val; }
@@ -218,12 +144,16 @@ export class PaymentManager {
   init() {
     this.dataLoader.loadData();
     this.navigationProcess.bindEvents();
-    this.filterProcess.bindEvents();
+    this.bindFilterEvents();
     this.bindGlobalActionButtons();
     this.navigationProcess.switchTab(this.navigationProcess.activeTab);
     this.onTabSwitched(this.navigationProcess.activeTab);
   }
 
+  /**
+   * Universal onTabSwitched trigger: calls backend endpoint via RequestHandler when user opens a tab.
+   * @param {string} tab
+   */
   async onTabSwitched(tab) {
     if (tab === "invoice") {
       this.renderInvoiceTable();
@@ -243,135 +173,18 @@ export class PaymentManager {
       this.renderOverviewTab();
       await Promise.allSettled([
         this.dataLoader.loadInvoicePayments(),
-        this.dataLoader.loadGrnPayments()
+        this.dataLoader.loadGrnPayments(),
+        this.dataLoader.loadOperatingExpenses()
       ]);
       this.renderOverviewTab();
       this.updateKPIs();
     }
->>>>>>> Stashed changes
   }
 
   /**
-   * Load datasets via PaymentDataLoad service directly into the UI state.
-   */
-  async loadData() {
-    await this.dataLoader.loadIntoUI(this);
-  }
-
-  /**
-   * Refresh all data from server/storage and re-render the UI.
-   */
-  async reload() {
-    return this.dataLoader.loadIntoUI(this);
-  }
-
-  /**
-   * Bind page-level event delegation (tabs, modals, receipt buttons).
-   */
-  bindEvents() {
-    document.addEventListener("click", (e) => {
-      // 1. Tab Switching
-      const tabBtn = e.target.closest(".pay-tab-btn");
-      if (tabBtn) {
-        e.preventDefault();
-        const tab = tabBtn.getAttribute("data-tab");
-        this.switchTab(tab);
-        return;
-      }
-
-      // 2. Open Record Payment Modal Button
-      const openModalBtn = e.target.closest("#btnOpenRecordPayment, [data-open-pay-modal]");
-      if (openModalBtn) {
-        e.preventDefault();
-        const prefillType = openModalBtn.getAttribute("data-pay-type") || this.activeTab;
-        const prefillId = openModalBtn.getAttribute("data-pay-ref");
-        this.modalHandler.openRecordPaymentModal(prefillType, prefillId);
-        return;
-      }
-
-      // 3. Close Modal Buttons
-      const closeBtn = e.target.closest(".pay-modal-close, [data-close-pay-modal]");
-      if (closeBtn) {
-        e.preventDefault();
-        this.receiptHandler.closeModals();
-        return;
-      }
-
-      // 4. Method selector inside modal
-      const methodChoice = e.target.closest(".method-choice");
-      if (methodChoice) {
-        e.preventDefault();
-        document.querySelectorAll(".method-choice").forEach((c) => c.classList.remove("selected"));
-        methodChoice.classList.add("selected");
-        const method = methodChoice.getAttribute("data-method");
-        this.modalHandler.setMethod(method);
-        return;
-      }
-
-      // 5. View Receipt / Voucher from table
-      const receiptBtn = e.target.closest("[data-view-receipt]");
-      if (receiptBtn) {
-        e.preventDefault();
-        const payId = receiptBtn.getAttribute("data-view-receipt");
-        const type = receiptBtn.getAttribute("data-type") || "invoice";
-        this.receiptHandler.openReceiptModal(payId, type);
-        return;
-      }
-    });
-  }
-
-  /**
-   * Switch between Invoice Payments, GRN Stock Payments, and Overview tabs.
-   * @param {string} tab
-   */
-  switchTab(tab) {
-    this.activeTab =
-      tab === "grn" || tab === "grn-payment"
-        ? "grn"
-        : tab === "overview"
-        ? "overview"
-        : "invoice";
-
-    // Update Tab Buttons
-    document.querySelectorAll(".pay-tab-btn").forEach((btn) => {
-      const btnTab = btn.getAttribute("data-tab");
-      btn.classList.toggle("active", btnTab === this.activeTab);
-    });
-
-    // Update Tab View Panes
-    const invPane = document.getElementById("payTabPaneInvoice");
-    const grnPane = document.getElementById("payTabPaneGrn");
-    const ovPane = document.getElementById("payTabPaneOverview");
-
-    if (invPane) invPane.style.display = this.activeTab === "invoice" ? "block" : "none";
-    if (grnPane) grnPane.style.display = this.activeTab === "grn" ? "block" : "none";
-    if (ovPane) ovPane.style.display = this.activeTab === "overview" ? "block" : "none";
-
-    // Sync sidebar active sublink if present
-    if (window.sidebarComponent) {
-      window.sidebarComponent.setActiveRoute(
-        "payments",
-        this.activeTab === "invoice"
-          ? "invoice-payment"
-          : this.activeTab === "grn"
-          ? "grn-payment"
-          : null
-      );
-    }
-
-    this.render();
-  }
-
-  /**
-   * Render all sub-views and recalculate KPIs.
+   * Re-render all view panes and metrics.
    */
   render() {
-<<<<<<< Updated upstream
-    this.overviewHandler.updateKPIs(this.orderPayments, this.grnPayments);
-    this.invoiceHandler.render(this.orderPayments);
-    this.grnHandler.render(this.grnPayments);
-    this.overviewHandler.renderOverviewTab(this.orderPayments, this.grnPayments);
-=======
     this.updateKPIs();
     this.renderInvoiceTable();
     this.renderGrnTable();
@@ -380,7 +193,16 @@ export class PaymentManager {
   }
 
   updateKPIs() {
-    this.metricsProcess.updateMetrics();
+    this.overviewHandler.updateKPIs(this.dataLoader.orderPayments, this.dataLoader.grnPayments);
+
+    // Update navigation badge counters
+    const invCount = document.getElementById("tabBadgeInvoiceCount");
+    const grnCount = document.getElementById("tabBadgeGrnCount");
+    const expCount = document.getElementById("tabBadgeExpensesCount");
+
+    if (invCount) invCount.textContent = (this.dataLoader.orderPayments || []).length;
+    if (grnCount) grnCount.textContent = (this.dataLoader.grnPayments || []).length;
+    if (expCount) expCount.textContent = (this.dataLoader.expenses || []).length;
   }
 
   renderInvoiceTable() {
@@ -408,10 +230,10 @@ export class PaymentManager {
   renderExpenses() {
     this.expensesHandler.render(
       this.dataLoader.expenses,
-      this.expenseSearch,
-      this.expenseCategoryFilter,
-      this.expenseStatusFilter,
-      this.expenseMonthFilter,
+      this.expensesHandler.expenseSearch,
+      this.expensesHandler.expenseCategoryFilter,
+      this.expensesHandler.expenseStatusFilter,
+      this.expensesHandler.expenseMonthFilter,
       this.expensesHandler.currentPage,
       this.expensesHandler.pageSize
     );
@@ -432,66 +254,308 @@ export class PaymentManager {
     return this.overviewHandler.renderMethodBadge(method, ref);
   }
 
-  // Modal Delegations
-  openRecordInvoicePayment(prefillOrderId = null) {
-    this.modalHandler.openRecordInvoicePaymentModal(prefillOrderId);
+  applyConceptFilter(target, type, val) {
+    if (target === "invoice") {
+      if (type === "stage") {
+        this.invoiceStatusFilter = val;
+        const sel = document.getElementById("payInvoiceStatusFilter");
+        if (sel) sel.value = val;
+      } else if (type === "method") {
+        this.invoiceMethodFilter = val;
+        const sel = document.getElementById("payInvoiceMethodFilter");
+        if (sel) sel.value = val;
+      }
+      this.invoiceTableHandler.currentPage = 1;
+      this.renderInvoiceTable();
+    } else if (target === "grn") {
+      if (type === "stage") {
+        this.grnStatusFilter = val;
+        const sel = document.getElementById("payGrnStatusFilter");
+        if (sel) sel.value = val;
+      } else if (type === "method") {
+        this.grnMethodFilter = val;
+        const sel = document.getElementById("payGrnMethodFilter");
+        if (sel) sel.value = val;
+      }
+      this.grnTableHandler.currentPage = 1;
+      this.renderGrnTable();
+    }
   }
 
-  openRecordGrnPayment(prefillGrnId = null) {
-    this.modalHandler.openRecordGrnPaymentModal(prefillGrnId);
+  bindFilterEvents() {
+    // 1. Invoice Table Filters
+    const invSearch = document.getElementById("payInvoiceSearch");
+    if (invSearch) {
+      invSearch.addEventListener("input", (e) => {
+        this.invoiceSearch = e.target.value.toLowerCase().trim();
+        this.invoiceTableHandler.currentPage = 1;
+        this.renderInvoiceTable();
+      });
+    }
+
+    const invStage = document.getElementById("payInvoiceStatusFilter");
+    if (invStage) {
+      invStage.addEventListener("change", (e) => {
+        this.invoiceStatusFilter = e.target.value;
+        this.invoiceTableHandler.currentPage = 1;
+        this.renderInvoiceTable();
+      });
+    }
+
+    const invMethod = document.getElementById("payInvoiceMethodFilter");
+    if (invMethod) {
+      invMethod.addEventListener("change", (e) => {
+        this.invoiceMethodFilter = e.target.value;
+        this.invoiceTableHandler.currentPage = 1;
+        this.renderInvoiceTable();
+      });
+    }
+
+    const invReset = document.getElementById("payInvoiceResetFilters");
+    if (invReset) {
+      invReset.addEventListener("click", () => {
+        if (invSearch) invSearch.value = "";
+        if (invStage) invStage.value = "ALL";
+        if (invMethod) invMethod.value = "ALL";
+        this.invoiceSearch = "";
+        this.invoiceStatusFilter = "ALL";
+        this.invoiceMethodFilter = "ALL";
+        this.invoiceTableHandler.currentPage = 1;
+        this.renderInvoiceTable();
+      });
+    }
+
+    // 2. GRN Table Filters
+    const grnSearch = document.getElementById("payGrnSearch");
+    if (grnSearch) {
+      grnSearch.addEventListener("input", (e) => {
+        this.grnSearch = e.target.value.toLowerCase().trim();
+        this.grnTableHandler.currentPage = 1;
+        this.renderGrnTable();
+      });
+    }
+
+    const grnStage = document.getElementById("payGrnStatusFilter");
+    if (grnStage) {
+      grnStage.addEventListener("change", (e) => {
+        this.grnStatusFilter = e.target.value;
+        this.grnTableHandler.currentPage = 1;
+        this.renderGrnTable();
+      });
+    }
+
+    const grnMethod = document.getElementById("payGrnMethodFilter");
+    if (grnMethod) {
+      grnMethod.addEventListener("change", (e) => {
+        this.grnMethodFilter = e.target.value;
+        this.grnTableHandler.currentPage = 1;
+        this.renderGrnTable();
+      });
+    }
+
+    const grnReset = document.getElementById("payGrnResetFilters");
+    if (grnReset) {
+      grnReset.addEventListener("click", () => {
+        if (grnSearch) grnSearch.value = "";
+        if (grnStage) grnStage.value = "ALL";
+        if (grnMethod) grnMethod.value = "ALL";
+        this.grnSearch = "";
+        this.grnStatusFilter = "ALL";
+        this.grnMethodFilter = "ALL";
+        this.grnTableHandler.currentPage = 1;
+        this.renderGrnTable();
+      });
+    }
+
+    // 3. Operating Expenses Filters
+    const expMonth = document.getElementById("expMonthSelect");
+    if (expMonth) {
+      expMonth.addEventListener("change", (e) => {
+        this.expensesHandler.setMonthFilter(e.target.value);
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
+
+    const expThisMonth = document.getElementById("btnExpThisMonth");
+    if (expThisMonth) {
+      expThisMonth.addEventListener("click", () => {
+        const currentMonth = "2026-10";
+        if (expMonth) expMonth.value = currentMonth;
+        this.expensesHandler.setMonthFilter(currentMonth);
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
+
+    const expSearch = document.getElementById("payExpenseSearch");
+    if (expSearch) {
+      expSearch.addEventListener("input", (e) => {
+        this.expensesHandler.setSearchFilter(e.target.value);
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
+
+    const expCat = document.getElementById("payExpenseCategoryFilter");
+    if (expCat) {
+      expCat.addEventListener("change", (e) => {
+        this.expensesHandler.setCategoryFilter(e.target.value);
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
+
+    const expStatus = document.getElementById("payExpenseStatusFilter");
+    if (expStatus) {
+      expStatus.addEventListener("change", (e) => {
+        this.expensesHandler.setStatusFilter(e.target.value);
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
+
+    const expReset = document.getElementById("payExpenseResetFilters");
+    if (expReset) {
+      expReset.addEventListener("click", () => {
+        if (expSearch) expSearch.value = "";
+        if (expCat) expCat.value = "ALL";
+        if (expStatus) expStatus.value = "ALL";
+        this.expensesHandler.setSearchFilter("");
+        this.expensesHandler.setCategoryFilter("ALL");
+        this.expensesHandler.setStatusFilter("ALL");
+        this.expensesHandler.currentPage = 1;
+        this.renderExpenses();
+      });
+    }
   }
 
-  openRecordBillPayment(prefillBillId = null) {
-    this.modalHandler.openRecordBillPaymentModal(prefillBillId);
+  bindGlobalActionButtons() {
+    document.addEventListener("click", (e) => {
+      // 1. Record Payment Modal Opener
+      const openModalBtn = e.target.closest("#btnOpenRecordPayment, [data-open-pay-modal]");
+      if (openModalBtn) {
+        e.preventDefault();
+        const prefillType = openModalBtn.getAttribute("data-pay-type") || this.activeTab;
+        const prefillId = openModalBtn.getAttribute("data-pay-ref");
+        this.modalHandler.openRecordPaymentModal(prefillType, prefillId);
+        return;
+      }
+
+      // 2. Close Modal Buttons
+      const closeBtn = e.target.closest(".pay-modal-close, [data-close-pay-modal]");
+      if (closeBtn) {
+        e.preventDefault();
+        this.receiptHandler.closeModals();
+        return;
+      }
+
+      // 3. Method selector inside modal
+      const methodChoice = e.target.closest(".method-choice");
+      if (methodChoice) {
+        e.preventDefault();
+        document.querySelectorAll(".method-choice").forEach((c) => c.classList.remove("selected"));
+        methodChoice.classList.add("selected");
+        const method = methodChoice.getAttribute("data-method");
+        this.modalHandler.setMethod(method);
+        return;
+      }
+
+      // 4. View Receipt / Voucher from table
+      const receiptBtn = e.target.closest("[data-view-receipt]");
+      if (receiptBtn) {
+        e.preventDefault();
+        const payId = receiptBtn.getAttribute("data-view-receipt");
+        const type = receiptBtn.getAttribute("data-type") || "invoice";
+        this.receiptHandler.openReceiptModal(payId, type);
+        return;
+      }
+
+      // 5. Operating Expenses Actions (Mark as Paid / Revert)
+      const markPaidBtn = e.target.closest("[data-mark-paid-id]");
+      if (markPaidBtn) {
+        e.preventDefault();
+        const expId = markPaidBtn.getAttribute("data-mark-paid-id");
+        this.markExpensePaid(expId);
+        return;
+      }
+
+      const undoPaidBtn = e.target.closest("[data-undo-paid-id]");
+      if (undoPaidBtn) {
+        e.preventDefault();
+        const expId = undoPaidBtn.getAttribute("data-undo-paid-id");
+        this.undoExpensePaid(expId);
+        return;
+      }
+    });
   }
 
-  openAddExpenseModal() {
-    this.modalHandler.openAddExpenseBillModal();
+  markExpensePaid(expenseId) {
+    const expense = (this.dataLoader.expenses || []).find((x) => x.id === expenseId);
+    if (!expense) return;
+
+    expense.status = "Paid";
+    expense.paidDate = new Date().toISOString().split("T")[0];
+    expense.paidAmount = expense.amount;
+    expense.paidMethod = "Bank Transfer";
+    expense.paidRef = `TXN-${Date.now().toString().slice(-6)}`;
+
+    this.dataLoader.saveExpenses();
+    this.renderExpenses();
+    this.showToast(`Operating Bill ${expense.title} marked as Paid!`);
   }
 
-  openMarkExpensePaidModal(billId) {
-    this.modalHandler.openMarkExpensePaidModal(billId);
-  }
+  undoExpensePaid(expenseId) {
+    const expense = (this.dataLoader.expenses || []).find((x) => x.id === expenseId);
+    if (!expense) return;
 
-  undoExpensePaid(billId) {
-    this.modalHandler.undoExpensePaid(billId);
-  }
+    expense.status = "Pending";
+    expense.paidDate = "";
+    expense.paidAmount = 0;
+    expense.paidMethod = "";
+    expense.paidRef = "";
 
-  openRecordPaymentModal(prefillType = "invoice", prefillId = null) {
-    this.modalHandler.openRecordPaymentModal(prefillType, prefillId);
-  }
-
-  openReceiptModal(paymentId, type = "invoice") {
-    this.modalHandler.openReceiptModal(paymentId, type);
-  }
-
-  openModal(modalId) {
-    return this.modalHandler.openModal(modalId);
-  }
-
-  closeModal(modalId) {
-    return this.modalHandler.closeModal(modalId);
-  }
-
-  closeModals() {
-    this.modalHandler.closeAll();
+    this.dataLoader.saveExpenses();
+    this.renderExpenses();
+    this.showToast(`Operating Bill ${expense.title} reverted to Pending.`);
   }
 
   showToast(message) {
-    this.modalHandler.showToast(message);
->>>>>>> Stashed changes
+    this.receiptHandler.showToast(message);
+  }
+
+  switchTab(tab) {
+    this.navigationProcess.switchTab(tab);
   }
 }
 
 // Backward Compatibility Aliases & Global Attachments
 export const PaymentsManager = PaymentManager;
-export { TableBuilder, InvoicePaymentRowBuilder, GrnPaymentRowBuilder };
+export {
+  PaymentsDataLoader,
+  PaymentDataLoad,
+  PaymentsDataService,
+  InvoicePaymentRowBuilder,
+  InvoicePayment,
+  GrnPaymentRowBuilder,
+  GrnPayment,
+  OperatingExpenseRowBuilder,
+  OperatingExpense,
+  InvoicePaymentTableHandler,
+  GRNPaymentTableHandler,
+  OperatingExpensesTableHandler
+};
 
 if (typeof window !== "undefined") {
   window.PaymentDataLoad = PaymentDataLoad;
-  window.TableBuilder = TableBuilder;
+  window.PaymentsDataLoader = PaymentsDataLoader;
+  window.PaymentsDataService = PaymentsDataService;
   window.InvoicePaymentRowBuilder = InvoicePaymentRowBuilder;
   window.GrnPaymentRowBuilder = GrnPaymentRowBuilder;
+  window.OperatingExpenseRowBuilder = OperatingExpenseRowBuilder;
+  window.InvoicePaymentTableHandler = InvoicePaymentTableHandler;
+  window.GRNPaymentTableHandler = GRNPaymentTableHandler;
+  window.OperatingExpensesTableHandler = OperatingExpensesTableHandler;
   window.PaymentManager = PaymentManager;
   window.PaymentsManager = PaymentManager;
 

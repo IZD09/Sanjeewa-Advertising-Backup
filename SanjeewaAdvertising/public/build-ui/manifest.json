@@ -54,11 +54,7 @@
     "isEntry": true
   },
   "resources/assets/css/payments.css": {
-<<<<<<< Updated upstream
-    "file": "assets/payments-CTTLAdtd.css",
-=======
-    "file": "assets/payments-BRUAEF78.css",
->>>>>>> Stashed changes
+    "file": "assets/payments-CgibbLvj.css",
     "name": "payments",
     "names": [
       "payments.css"
@@ -118,22 +114,10 @@
     "isEntry": true
   },
   "resources/assets/js/payments.js": {
-<<<<<<< Updated upstream
-    "file": "assets/payments-D6o9AUMQ.js",
+    "file": "assets/payments-jZ09Xy4H.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true
-=======
-    "file": "assets/payments-CufvOdoU.js",
-    "name": "payments",
-    "src": "resources/assets/js/payments.js",
-    "isEntry": true,
-    "imports": [
-      "_BaseModalHandler-DQ-OzJeF.js",
-      "_BaseTableRowBuilder-DjYFcW_M.js",
-      "_RequestHandler-DGIgTA7N.js"
-    ]
->>>>>>> Stashed changes
   },
   "resources/assets/js/place-order.js": {
     "file": "assets/place-order-Bc9S8Q5Z.js",

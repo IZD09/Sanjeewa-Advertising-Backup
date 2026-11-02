@@ -165,3 +165,5 @@ export class PaymentReceiptHandler {
   }
 }
 
+export default PaymentReceiptHandler;
+

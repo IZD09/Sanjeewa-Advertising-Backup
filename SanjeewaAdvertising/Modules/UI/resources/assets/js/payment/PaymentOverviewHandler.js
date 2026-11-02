@@ -163,3 +163,5 @@ export class PaymentOverviewHandler {
   }
 }
 
+export default PaymentOverviewHandler;
+
