@@ -50,9 +50,9 @@
                   </div>
                 </div>
                 <div class="po-kpi-pill orange-pill">
-                  <i class="fa-solid fa-spinner" style="color: var(--po-orange);"></i>
+                  <i class="fa-solid fa-spinner" style="color: #faad14;"></i>
                   <div>
-                    <div class="kpi-num" id="kpiPendingOrders">0</div>
+                    <div class="kpi-num" id="kpiPendingOrders" style="color: #faad14;">0</div>
                     <div class="kpi-label">In Production</div>
                   </div>
                 </div>
@@ -70,7 +70,7 @@
                     <div class="kpi-label">Outstanding</div>
                   </div>
                 </div>
-                <button type="button" class="po-btn po-btn-primary" id="openCreateOrderModalBannerBtn" onclick="window.placeOrderApp?.openModal('createOrderModal')" style="height: 42px; padding: 0 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(255, 90, 31, 0.35); margin-left: 6px;">
+                <button type="button" class="po-btn po-btn-primary" id="openCreateOrderModalBannerBtn" onclick="window.placeOrderApp?.openModal('createOrderModal')" style="height: 36px; padding: 0 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin-left: 6px;">
                   <i class="fa-solid fa-plus"></i> Place New Order
                 </button>
               </div>

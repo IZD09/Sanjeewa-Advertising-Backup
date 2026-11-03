@@ -75,9 +75,6 @@
 
     </div>
 
-    {{-- Shared Modals Container --}}
-    @include('ui::layouts.modals.modals')
-
     <!-- Toast Container -->
     <div class="po-toast-container" id="poToastContainer"></div>
 

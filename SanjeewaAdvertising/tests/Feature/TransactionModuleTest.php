@@ -6,6 +6,9 @@ use Modules\Customer\Models\Customer;
 use Modules\Design\Models\PrintType;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\Supplier\Models\Grn;
+use Modules\Transaction\Models\Expencesess;
+use Modules\Transaction\Models\ExpencesessStatus;
+use Modules\Transaction\Models\ExpencesessType;
 use Modules\Transaction\Models\PaymentStatus;
 use Modules\Transaction\Models\PaymentType;
 use Modules\User\Models\User;
@@ -136,5 +139,92 @@ class TransactionModuleTest extends TestCase
         // 5. Delete
         $this->deleteJson("/api/v1/grn-payments/{$paymentId}")->assertStatus(200);
         $this->assertDatabaseMissing('grn_payments', ['id' => $paymentId]);
+    }
+
+    public function test_can_manage_expenses_tables_and_models(): void
+    {
+        $type = ExpencesessType::create([
+            'expencesess_type' => 'Electricity Utility',
+        ]);
+
+        $status = ExpencesessStatus::create([
+            'expencesess_status' => 'Pending Approval',
+        ]);
+
+        $user = User::first();
+
+        $expense = Expencesess::create([
+            'expencesess_types_id' => $type->id,
+            'price' => 12500.50,
+            'expencesess_statuses_id' => $status->id,
+            'add_by' => $user->id,
+            'pay_by' => $user->id,
+            'add_date' => now(),
+            'pay_at' => now(),
+        ]);
+
+        $this->assertDatabaseHas('expencesess_types', ['id' => $type->id, 'expencesess_type' => 'Electricity Utility']);
+        $this->assertDatabaseHas('expencesess_statuses', ['id' => $status->id, 'expencesess_status' => 'Pending Approval']);
+        $this->assertDatabaseHas('expencesess', ['id' => $expense->id, 'price' => 12500.50]);
+
+        $this->assertEquals($type->id, $expense->type->id);
+        $this->assertEquals($status->id, $expense->status->id);
+        $this->assertEquals($user->id, $expense->addedBy->id);
+        $this->assertEquals($user->id, $expense->paidBy->id);
+        $this->assertCount(1, $type->expencesess);
+        $this->assertCount(1, $status->expencesess);
+    }
+
+    public function test_can_manage_expenses_via_api_endpoints(): void
+    {
+        $user = User::first();
+
+        // 1. Create Expense Type
+        $typeRes = $this->postJson('/api/v1/expense-types', [
+            'expencesess_type' => 'Internet & Phone',
+        ])->assertStatus(201);
+        $typeId = $typeRes->json('data.id');
+
+        // 2. Create Expense Status
+        $statusRes = $this->postJson('/api/v1/expense-statuses', [
+            'expencesess_status' => 'Paid in Full',
+        ])->assertStatus(201);
+        $statusId = $statusRes->json('data.id');
+
+        // 3. Create Expense
+        $expenseRes = $this->postJson('/api/v1/expenses', [
+            'expencesess_types_id' => $typeId,
+            'price' => 7500.00,
+            'expencesess_statuses_id' => $statusId,
+            'add_by' => $user->id,
+            'pay_by' => $user->id,
+            'add_date' => now()->toDateString(),
+            'pay_at' => now()->toDateString(),
+        ])->assertStatus(201)
+            ->assertJsonPath('data.price', 7500)
+            ->assertJsonPath('data.expencesess_types_id', $typeId);
+
+        $expenseId = $expenseRes->json('data.id');
+
+        // 4. List & All & KPIs
+        $this->getJson('/api/v1/expenses')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/api/v1/expenses/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/api/v1/expenses/types')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/api/v1/expenses/statuses')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/api/v1/expenses/data')->assertStatus(200)->assertJsonStructure(['data' => ['expenses', 'kpis']]);
+
+        // 5. Show
+        $this->getJson("/api/v1/expenses/{$expenseId}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $expenseId);
+
+        // 6. Update
+        $this->putJson("/api/v1/expenses/{$expenseId}", [
+            'price' => 8200.00,
+        ])->assertStatus(200)->assertJsonPath('data.price', 8200);
+
+        // 7. Delete
+        $this->deleteJson("/api/v1/expenses/{$expenseId}")->assertStatus(200);
+        $this->assertDatabaseMissing('expencesess', ['id' => $expenseId]);
     }
 }

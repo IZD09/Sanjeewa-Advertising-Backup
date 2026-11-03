@@ -2,6 +2,7 @@
 
 namespace Modules\Core\Database\Seeders;
 
+use Database\Seeders\ActivityTypeSeeder;
 use Illuminate\Database\Seeder;
 
 class CoreDatabaseSeeder extends Seeder
@@ -11,6 +12,8 @@ class CoreDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            ActivityTypeSeeder::class,
+        ]);
     }
 }

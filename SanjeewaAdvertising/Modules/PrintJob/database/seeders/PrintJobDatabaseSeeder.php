@@ -2,6 +2,7 @@
 
 namespace Modules\PrintJob\Database\Seeders;
 
+use Database\Seeders\PrintJobStatusSeeder;
 use Illuminate\Database\Seeder;
 
 class PrintJobDatabaseSeeder extends Seeder
@@ -11,6 +12,8 @@ class PrintJobDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            PrintJobStatusSeeder::class,
+        ]);
     }
 }

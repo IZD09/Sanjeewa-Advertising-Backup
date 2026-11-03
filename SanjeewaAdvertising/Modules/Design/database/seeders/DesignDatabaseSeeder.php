@@ -2,6 +2,8 @@
 
 namespace Modules\Design\Database\Seeders;
 
+use Database\Seeders\PrintCostTypeSeeder;
+use Database\Seeders\PrintTypeSeeder;
 use Illuminate\Database\Seeder;
 
 class DesignDatabaseSeeder extends Seeder
@@ -11,6 +13,9 @@ class DesignDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            PrintTypeSeeder::class,
+            PrintCostTypeSeeder::class,
+        ]);
     }
 }

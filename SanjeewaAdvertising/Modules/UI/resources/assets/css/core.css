@@ -1116,14 +1116,15 @@ html[data-theme="dark"] .po-header-banner {
 /* ==========================================================================
    Modals & Popups Container System
    ========================================================================== */
-.po-modal-overlay {
+.po-modal-overlay,
+.pay-modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 999;
     background: rgba(10, 16, 30, 0.65);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    display: grid;
+    display: none;
     place-items: center;
     padding: 20px;
     opacity: 0;
@@ -1131,7 +1132,9 @@ html[data-theme="dark"] .po-header-banner {
     transition: opacity 0.22s ease;
 }
 
-.po-modal-overlay.open {
+.po-modal-overlay.open,
+.pay-modal-backdrop.open {
+    display: grid;
     opacity: 1;
     pointer-events: auto;
 }

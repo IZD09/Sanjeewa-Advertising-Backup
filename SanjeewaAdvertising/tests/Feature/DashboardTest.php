@@ -13,6 +13,8 @@ class DashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('id="module-dashboard"', false);
         $response->assertSee('data-sse-url', false);
+        $response->assertDontSee('id="modalRecordInvoicePayment"', false);
+        $response->assertDontSee('id="createOrderModal"', false);
     }
 
     public function test_dashboard_data_endpoint_returns_json_resource(): void

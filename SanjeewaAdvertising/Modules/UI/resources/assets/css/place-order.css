@@ -1,21 +1,29 @@
 /* ==========================================================================
    Place Order Module Stylesheet - Sanjeewa Advertising & Printing
-   Theme: Vibrant Orange & Clean White Design System (Dark & Light Mode Compatible)
+   Theme: Ant Design / Gravity UI Blue Theme (Dark & Light Mode Compatible, Matches Inventory)
    ========================================================================== */
 
 :root {
-    /* Orange & Warm Accents */
-    --po-orange: #f97316;
-    --po-orange-dark: #ea580c;
-    --po-orange-light: #fb923c;
-    --po-orange-subtle: rgba(249, 115, 22, 0.10);
-    --po-orange-glow: rgba(249, 115, 22, 0.25);
-    --po-orange-border: rgba(249, 115, 22, 0.35);
+    /* Brand Theme - Ant Design / Gravity UI Blue (Matching Inventory) */
+    --po-primary: #1677ff;
+    --po-primary-hover: #4096ff;
+    --po-primary-active: #0958d9;
+    --po-primary-subtle: rgba(22, 119, 255, 0.08);
+    --po-primary-glow: rgba(22, 119, 255, 0.18);
+    --po-primary-border: rgba(22, 119, 255, 0.28);
 
-    /* Form control metrics */
-    --input-height: 42px;
-    --input-radius: 10px;
-    --card-radius: 14px;
+    /* Backward-compatible variables for existing class mappings */
+    --po-orange: #1677ff;
+    --po-orange-dark: #0958d9;
+    --po-orange-light: #4096ff;
+    --po-orange-subtle: rgba(22, 119, 255, 0.08);
+    --po-orange-glow: rgba(22, 119, 255, 0.18);
+    --po-orange-border: rgba(22, 119, 255, 0.28);
+
+    /* Form control & card metrics matching inventory */
+    --input-height: 38px;
+    --input-radius: 6px;
+    --card-radius: 8px;
 }
 
 /* ==========================================================================
@@ -91,16 +99,16 @@ html[data-theme="dark"] .po-topbar {
     flex-wrap: wrap;
     gap: 16px;
     padding: 20px 24px;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
-    border: 1px solid var(--po-orange-border);
+    background: linear-gradient(135deg, rgba(22, 119, 255, 0.08) 0%, rgba(22, 119, 255, 0.02) 100%);
+    border: 1px solid rgba(22, 119, 255, 0.25);
     border-radius: var(--card-radius);
     position: relative;
     overflow: hidden;
 }
 
 html[data-theme="dark"] .po-header-banner {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, rgba(17, 26, 46, 0.9) 100%);
-    border-color: rgba(249, 115, 22, 0.25);
+    background: linear-gradient(135deg, rgba(22, 119, 255, 0.14) 0%, rgba(17, 26, 46, 0.9) 100%);
+    border-color: rgba(22, 119, 255, 0.25);
 }
 
 .po-header-banner::before {
@@ -108,9 +116,9 @@ html[data-theme="dark"] .po-header-banner {
     position: absolute;
     top: 0;
     left: 0;
-    width: 5px;
+    width: 4px;
     height: 100%;
-    background: linear-gradient(180deg, var(--po-orange) 0%, var(--po-orange-dark) 100%);
+    background: var(--po-primary);
 }
 
 .po-banner-content h2 {
@@ -129,11 +137,12 @@ html[data-theme="dark"] .po-header-banner {
     height: 32px;
     display: inline-grid;
     place-items: center;
-    background: var(--po-orange);
-    color: #ffffff;
-    border-radius: 9px;
+    background: var(--po-primary-subtle);
+    color: var(--po-primary);
+    border-radius: 6px;
     font-size: 14px;
-    box-shadow: 0 4px 12px var(--po-orange-glow);
+    border: 1px solid var(--po-primary-border);
+    box-shadow: none;
 }
 
 .po-banner-content p {
@@ -174,8 +183,9 @@ html[data-theme="dark"] .po-header-banner {
     letter-spacing: 0.5px;
 }
 
-.po-kpi-pill.orange-pill .kpi-num {
-    color: var(--po-orange);
+.po-kpi-pill.orange-pill .kpi-num,
+.po-kpi-pill.warning-pill .kpi-num {
+    color: #faad14;
 }
 
 /* ==========================================================================
@@ -185,7 +195,7 @@ html[data-theme="dark"] .po-header-banner {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--card-radius);
-    box-shadow: var(--shadow);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
     overflow: hidden;
     transition: border-color 0.25s, box-shadow 0.25s;
 }
@@ -212,7 +222,7 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .po-card-title i {
-    color: var(--po-orange);
+    color: var(--po-primary);
 }
 
 .po-card-body {
@@ -230,13 +240,13 @@ html[data-theme="dark"] .po-header-banner {
 .po-section-card {
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 20px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     position: relative;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
 .po-section-header {
@@ -252,10 +262,10 @@ html[data-theme="dark"] .po-header-banner {
     height: 28px;
     display: grid;
     place-items: center;
-    border-radius: 8px;
-    background: var(--po-orange-subtle);
-    border: 1px solid var(--po-orange-border);
-    color: var(--po-orange);
+    border-radius: 6px;
+    background: var(--po-primary-subtle);
+    border: 1px solid var(--po-primary-border);
+    color: var(--po-primary);
     font-size: 13px;
     font-weight: 800;
     flex-shrink: 0;
@@ -401,8 +411,8 @@ html[data-theme="dark"] .po-header-banner {
 .po-input:focus,
 .po-select:focus,
 .po-textarea:focus {
-    border-color: var(--po-orange);
-    box-shadow: 0 0 0 3px var(--po-orange-glow);
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
 }
 
 .po-input[readonly],
@@ -443,10 +453,10 @@ html[data-theme="dark"] .po-header-banner {
     top: 5px;
     bottom: 5px;
     padding: 0 10px;
-    border-radius: 7px;
-    background: var(--po-orange-subtle);
-    border: 1px solid var(--po-orange-border);
-    color: var(--po-orange);
+    border-radius: 5px;
+    background: var(--po-primary-subtle);
+    border: 1px solid var(--po-primary-border);
+    color: var(--po-primary);
     font-size: 11px;
     font-weight: 700;
     display: flex;
@@ -456,7 +466,7 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .customer-search-input-group .add-cust-btn:hover {
-    background: var(--po-orange);
+    background: var(--po-primary);
     color: #ffffff;
 }
 
@@ -467,7 +477,7 @@ html[data-theme="dark"] .po-header-banner {
     right: 0;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     box-shadow: var(--shadow-lg);
     z-index: 50;
     max-height: 220px;
@@ -512,17 +522,17 @@ html[data-theme="dark"] .po-header-banner {
     font-size: 10px;
     font-weight: 700;
     padding: 2px 7px;
-    border-radius: 6px;
-    background: var(--po-orange-subtle);
-    color: var(--po-orange);
+    border-radius: 4px;
+    background: var(--po-primary-subtle);
+    color: var(--po-primary);
 }
 
 /* Selected Customer Card */
 .selected-customer-card {
     padding: 10px 14px;
     background: var(--surface);
-    border: 1px solid var(--po-orange-border);
-    border-radius: 9px;
+    border: 1px solid var(--po-primary-border);
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -554,7 +564,7 @@ html[data-theme="dark"] .po-header-banner {
 /* Area Calculation Callout */
 .area-calc-pill {
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--surface);
     border: 1px solid var(--border);
     display: flex;
@@ -565,14 +575,14 @@ html[data-theme="dark"] .po-header-banner {
 
 .area-calc-pill .area-val {
     font-weight: 800;
-    color: var(--po-orange);
+    color: var(--po-primary);
 }
 
 /* Payment & Balance Highlights */
 .payment-summary-box {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 14px;
     display: flex;
     flex-direction: column;
@@ -594,7 +604,7 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .summary-line.balance-line {
-    color: var(--po-orange);
+    color: var(--po-primary);
     font-weight: 800;
 }
 
@@ -610,28 +620,37 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .po-btn {
-    height: 42px;
-    padding: 0 20px;
-    border-radius: 9px;
-    font-size: 12.5px;
-    font-weight: 700;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     transition: all 0.2s ease;
     cursor: pointer;
+    user-select: none;
+    line-height: 1;
 }
 
 .po-btn-primary {
-    background: linear-gradient(135deg, var(--po-orange) 0%, var(--po-orange-dark) 100%);
+    background: #1677ff;
     color: #ffffff;
-    border: 1px solid transparent;
-    box-shadow: 0 4px 14px var(--po-orange-glow);
+    border: 1px solid #1677ff;
+    box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
 }
 
 .po-btn-primary:hover {
+    background: #4096ff;
+    border-color: #4096ff;
+    box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--po-orange-glow);
+}
+
+.po-btn-primary:active {
+    background: #0958d9;
+    border-color: #0958d9;
 }
 
 .po-btn-secondary {
@@ -688,19 +707,21 @@ html[data-theme="dark"] .po-header-banner {
 
 .po-search-box input {
     width: 100%;
-    height: 38px;
+    height: 36px;
     padding: 0 12px 0 34px;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
-    font-size: 12px;
+    font-size: 13px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
 }
 
 .po-search-box input:focus {
-    border-color: var(--po-orange);
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+    background: var(--surface);
 }
 
 .po-filter-group {
@@ -711,19 +732,21 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .po-filter-select {
-    height: 38px;
+    height: 36px;
     padding: 0 12px;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
-    font-size: 11.5px;
-    font-weight: 600;
+    font-size: 12.5px;
+    font-weight: 500;
     outline: none;
+    transition: all 0.2s;
 }
 
 .po-filter-select:focus {
-    border-color: var(--po-orange);
+    border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
 }
 
 /* Responsive Table Container */
@@ -764,8 +787,14 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .order-id-cell {
-    font-weight: 800;
-    color: var(--po-orange);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+    color: #1677ff;
+    background: rgba(22, 119, 255, 0.08);
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    font-size: 12px;
     letter-spacing: -0.2px;
 }
 
@@ -832,11 +861,17 @@ html[data-theme="dark"] .po-header-banner {
 .status-badge.paid::before { background: var(--green); }
 
 .status-badge.partially-paid {
-    background: var(--po-orange-subtle);
-    color: var(--po-orange);
-    border: 1px solid var(--po-orange-border);
+    background: #fffbe6;
+    color: #faad14;
+    border: 1px solid #ffe58f;
 }
-.status-badge.partially-paid::before { background: var(--po-orange); }
+.status-badge.partially-paid::before { background: #faad14; }
+
+html[data-theme="dark"] .status-badge.partially-paid {
+    background: rgba(250, 173, 20, 0.15);
+    border-color: rgba(250, 173, 20, 0.35);
+    color: #ffc53d;
+}
 
 .status-badge.unpaid {
     background: var(--red-subtle);
@@ -888,7 +923,7 @@ html[data-theme="dark"] .po-header-banner {
     height: 30px;
     display: inline-grid;
     place-items: center;
-    border-radius: 7px;
+    border-radius: 6px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
@@ -897,8 +932,8 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .action-btn:hover {
-    border-color: var(--po-orange);
-    color: var(--po-orange);
+    border-color: #1677ff;
+    color: #1677ff;
     background: var(--surface);
     transform: translateY(-1px);
 }
@@ -962,9 +997,9 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .page-btn.active {
-    background: var(--po-orange);
+    background: #1677ff;
     color: #ffffff;
-    border-color: var(--po-orange);
+    border-color: #1677ff;
 }
 
 /* ==========================================================================
@@ -1050,7 +1085,7 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .po-modal-header h3 i {
-    color: var(--po-orange);
+    color: #1677ff;
 }
 
 .modal-close-btn {
@@ -1058,7 +1093,7 @@ html[data-theme="dark"] .po-header-banner {
     height: 30px;
     display: grid;
     place-items: center;
-    border-radius: 7px;
+    border-radius: 6px;
     color: var(--text-muted);
     font-size: 14px;
     transition: all 0.15s;
@@ -1094,7 +1129,7 @@ html[data-theme="dark"] .po-header-banner {
     gap: 12px;
     background: var(--surface-2);
     padding: 14px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border);
 }
 
@@ -1119,7 +1154,7 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .info-item .info-value.editable-tag {
-    color: var(--po-orange);
+    color: #1677ff;
 }
 
 /* Payment History Table in Modal */
@@ -1178,7 +1213,7 @@ html[data-theme="dark"] .po-header-banner {
     font-size: 18px;
     font-weight: 900;
     letter-spacing: -0.3px;
-    color: #ea580c;
+    color: #1677ff;
 }
 
 .receipt-header p {
@@ -1232,7 +1267,7 @@ html[data-theme="dark"] .po-header-banner {
 .receipt-fin-row.major {
     font-size: 14px;
     font-weight: 800;
-    color: #ea580c;
+    color: #1677ff;
     border-top: 1px dashed #cbd5e1;
     padding-top: 6px;
     margin-top: 4px;
@@ -1280,7 +1315,7 @@ html[data-theme="dark"] .po-header-banner {
     padding: 12px 18px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
@@ -1293,7 +1328,7 @@ html[data-theme="dark"] .po-header-banner {
 
 .po-toast.success i { color: var(--green); }
 .po-toast.error i { color: var(--red); }
-.po-toast.warning i { color: var(--po-orange); }
+.po-toast.warning i { color: #faad14; }
 
 @keyframes toastSlideIn {
     from { transform: translateX(100%); opacity: 0; }
