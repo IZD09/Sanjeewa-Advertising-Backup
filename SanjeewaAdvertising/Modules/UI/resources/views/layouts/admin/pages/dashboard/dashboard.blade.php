@@ -1,8 +1,8 @@
 @extends('ui::layouts.master')
 
-@section('title', 'Dashboard')
-@section('page_title', 'Business Overview')
-@section('breadcrumb')Workspace / <span id="breadcrumbTitle">Dashboard</span>@endsection
+@section('title', 'Admin Dashboard')
+@section('page_title', 'Admin Business Overview')
+@section('breadcrumb')Admin Workspace / <span id="breadcrumbTitle">Dashboard</span>@endsection
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
@@ -26,26 +26,26 @@
             <div class="main-content-viewport" id="mainContentViewport">
 
                 <!-- ==================================================================
-                     MODULE 1: DASHBOARD (Visual Analytics 5-Slide Carousel)
+                     ADMIN MODULE: DASHBOARD (Visual Analytics 5-Slide Carousel)
                      ================================================================== -->
                 <div class="app-module" id="module-dashboard" data-module="dashboard" data-sse-url="{{ route('ui.dashboard.stream') }}" data-api-url="{{ route('ui.dashboard.data') }}" data-initial-payload="{{ e(json_encode($dashboardData ?? [])) }}">
                     <script id="dashboard-initial-data" type="application/json">@json($dashboardData ?? [])</script>
                     <section class="dashboard-content">
 
                         <!-- Slide 1: Business Overview -->
-                        @include('ui::layouts.pages.dashboard.sliders.slide1')
+                        @include('ui::layouts.admin.pages.dashboard.sliders.slide1')
 
                         <!-- Slide 2: Sales & Revenue Analytics -->
-                        @include('ui::layouts.pages.dashboard.sliders.slide2')
+                        @include('ui::layouts.admin.pages.dashboard.sliders.slide2')
 
                         <!-- Slide 3: Print Jobs & Production -->
-                        @include('ui::layouts.pages.dashboard.sliders.slide3')
+                        @include('ui::layouts.admin.pages.dashboard.sliders.slide3')
 
                         <!-- Slide 4: Stock & Inventory Management -->
-                        @include('ui::layouts.pages.dashboard.sliders.slide4')
+                        @include('ui::layouts.admin.pages.dashboard.sliders.slide4')
 
                         <!-- Slide 5: Financial Summary & Profitability -->
-                        @include('ui::layouts.pages.dashboard.sliders.slide5')
+                        @include('ui::layouts.admin.pages.dashboard.sliders.slide5')
 
                         <!-- Slider Controller positioned at bottom-center of slider -->
                         <div class="slide-controls" id="slideControls">
@@ -65,7 +65,7 @@
 
                     <footer class="dashboard-footer" id="dashboardFooter">
                         <span>© 2026 SanjeewaAdvertising</span>
-                        <span>Executive Visual Analytics</span>
+                        <span>Enterprise Administrative Visual Analytics</span>
                     </footer>
                 </div>
 
@@ -82,7 +82,7 @@
 
 @push('scripts')
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
-    {{ module_vite('build-ui', 'resources/assets/js/dashboard.js') }}
+    {{ module_vite('build-ui', 'resources/assets/js/admin/dashboard.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/topbar.js') }}
 @endpush

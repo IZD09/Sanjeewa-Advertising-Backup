@@ -14,6 +14,8 @@ class UserDatabaseSeeder extends Seeder
     {
         $this->call([
             UserStatusSeeder::class,
+            SystemModuleSeeder::class,
+            PermisionStateSeeder::class,
         ]);
     }
 }

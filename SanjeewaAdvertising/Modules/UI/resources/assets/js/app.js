@@ -57,6 +57,16 @@ class AppRouter {
         title: "System Preferences & Settings",
         breadcrumb: "Workspace / Management / <span>Settings</span>",
         moduleId: "module-settings"
+      },
+      "user-control": {
+        title: "User & Access Control",
+        breadcrumb: "Admin Workspace / Management / <span>User Control</span>",
+        moduleId: "module-user-control"
+      },
+      "sales-revenue": {
+        title: "Sales & Revenue Analytics",
+        breadcrumb: "Admin Workspace / <span>Sales & Revenue</span>",
+        moduleId: "module-dashboard"
       }
     };
 
@@ -68,7 +78,15 @@ class AppRouter {
   }
 
   detectCurrentRoute() {
-    const path = window.location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
+    const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
+    const parts = rawPath.split("/");
+
+    // Handle admin subroutes (e.g. /admin/user-control or /admin/dashboard)
+    if (parts[0] === "admin" && parts[1] && this.routes[parts[1]]) {
+      return parts[1];
+    }
+
+    const path = parts[0];
     if (path && this.routes[path]) {
       return path;
     }
@@ -193,10 +211,19 @@ class AppRouter {
   }
 }
 
-// Global initialization
+// Global initialization with safe readyState handling
 if (typeof window !== "undefined") {
   window.AppRouter = AppRouter;
-  document.addEventListener("DOMContentLoaded", () => {
-    window.appRouter = new AppRouter();
-  });
+
+  const bootApp = () => {
+    if (!window.appRouter) {
+      window.appRouter = new AppRouter();
+    }
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootApp);
+  } else {
+    bootApp();
+  }
 }

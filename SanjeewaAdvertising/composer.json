@@ -33,6 +33,7 @@
             "Modules\\Admin\\": "Modules/Admin/app/",
             "Modules\\Core\\": "Modules/Core/app/",
             "Modules\\User\\": "Modules/User/app/",
+            "Modules\\User\\Database\\Seeders\\": "Modules/User/database/seeders/",
             "Modules\\Customer\\": "Modules/Customer/app/",
             "Modules\\PrintJob\\": "Modules/PrintJob/app/",
             "Modules\\Design\\": "Modules/Design/app/",

@@ -17,15 +17,47 @@ class Navigation {
 
   bindEvents() {
     document.addEventListener("click", (e) => {
-      // Find button clicked within navigation
-      const navBtn = e.target.closest("button.nav-link, button.nav-sublink, button[data-route]");
+      // Find button or link clicked within navigation
+      const navBtn = e.target.closest("button.nav-link, button.nav-sublink, button[data-route], a.nav-link, a.nav-sublink, a[data-route]");
       if (!navBtn) return;
 
-      // If clicked specifically on the caret inside a dropdown toggle, only toggle dropdown (don't navigate)
-      if (e.target.closest(".nav-caret")) {
+      // 1. Handle dropdown toggle (Payments)
+      const dropdownToggle = navBtn.classList.contains("nav-dropdown-toggle") ? navBtn : null;
+      if (dropdownToggle) {
+        e.preventDefault();
+        const dropdown = dropdownToggle.closest(".nav-dropdown");
+        if (dropdown) {
+          dropdown.classList.toggle("expanded");
+        }
         return;
       }
 
+      // 2. Handle in-dashboard slide switches (e.g. Dashboard -> Slide 0, Sales & Revenue -> Slide 1)
+      if (navBtn.hasAttribute("data-slide") && (window.location.pathname === "/admin/dashboard" || window.location.pathname === "/dashboard" || window.location.pathname === "/")) {
+        e.preventDefault();
+        const slideIndex = parseInt(navBtn.getAttribute("data-slide"), 10);
+        if (window.dashboardInstance && typeof window.dashboardInstance.showSlide === "function") {
+          window.dashboardInstance.showSlide(slideIndex);
+        }
+        if (window.sidebarComponent) {
+          window.sidebarComponent.setActiveRoute(navBtn.getAttribute("data-route") || "dashboard");
+        }
+        return;
+      }
+
+      // 3. For any regular link with an href, allow native browser navigation
+      if (navBtn.tagName === "A" && navBtn.hasAttribute("href")) {
+        try {
+          const targetUrl = new URL(navBtn.href, window.location.origin);
+          if (targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search) {
+            e.preventDefault();
+            return;
+          }
+        } catch (_) {}
+        return;
+      }
+
+      // 4. Fallback for elements without href
       const navigateLocation = navBtn.getAttribute("data-route");
       const targetView = navBtn.getAttribute("data-view");
 
@@ -37,7 +69,7 @@ class Navigation {
 
   navigate(navigateLocation, targetView = null) {
     // Terminate any active dashboard connections or streams before navigating to another page
-    if (navigateLocation !== "dashboard" && window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+    if (navigateLocation !== "dashboard" && navigateLocation !== "sales-revenue" && window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
       try {
         window.dashboardInstance.destroy();
       } catch (e) {}
@@ -45,13 +77,29 @@ class Navigation {
 
     switch (navigateLocation) {
       case "dashboard":
-        if (window.location.pathname === "/dashboard" || window.location.pathname === "/") {
+        if (window.location.pathname === "/admin/dashboard" || window.location.pathname === "/dashboard" || window.location.pathname === "/") {
           if (window.dashboardInstance && typeof window.dashboardInstance.showSlide === "function") {
             window.dashboardInstance.showSlide(0);
           }
+          if (window.sidebarComponent) {
+            window.sidebarComponent.setActiveRoute("dashboard");
+          }
           return;
         }
-        window.location.href = "/dashboard";
+        window.location.href = "/admin/dashboard";
+        break;
+
+      case "sales-revenue":
+        if (window.location.pathname === "/admin/dashboard" || window.location.pathname === "/dashboard" || window.location.pathname === "/") {
+          if (window.dashboardInstance && typeof window.dashboardInstance.showSlide === "function") {
+            window.dashboardInstance.showSlide(1);
+          }
+          if (window.sidebarComponent) {
+            window.sidebarComponent.setActiveRoute("sales-revenue");
+          }
+          return;
+        }
+        window.location.href = "/admin/dashboard?slide=1";
         break;
 
       case "reports":
@@ -60,8 +108,13 @@ class Navigation {
         break;
 
       case "print-jobs":
-        if (window.location.pathname === "/print-jobs") return;
-        window.location.href = "/print-jobs";
+        if (targetView === "design") {
+          if (window.location.pathname === "/print-jobs" && window.location.search.includes("view=design")) return;
+          window.location.href = "/print-jobs?view=design";
+        } else {
+          if (window.location.pathname === "/print-jobs" && (!window.location.search || !window.location.search.includes("view=design"))) return;
+          window.location.href = "/print-jobs";
+        }
         break;
 
       case "place-order":
@@ -118,6 +171,11 @@ class Navigation {
         }
         break;
 
+      case "user-control":
+        if (window.location.pathname === "/admin/user-control" || window.location.pathname === "/user-control") return;
+        window.location.href = "/admin/user-control";
+        break;
+
       case "settings":
         if (window.location.pathname === "/settings") return;
         window.location.href = "/settings";
@@ -149,10 +207,33 @@ class SidebarComponent {
     this.refreshElements();
     this.initDesktopState();
     this.bindEvents();
+    this.initActiveRouteFromUrl();
+  }
+
+  initActiveRouteFromUrl() {
+    const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
+    const parts = rawPath.split("/");
+    let route = (parts[0] === "admin" && parts[1]) ? parts[1] : (parts[0] || "dashboard");
+    const searchParams = new URLSearchParams(window.location.search);
+    const view = searchParams.get("view");
+    const slide = searchParams.get("slide");
+
+    if ((route === "dashboard" || route === "") && slide === "1") {
+      route = "sales-revenue";
+    }
+
+    this.setActiveRoute(route, view);
   }
 
   refreshElements() {
     this.sidebar = document.getElementById("sidebar");
+    if (this.sidebar) {
+      const portal = this.sidebar.getAttribute("data-portal");
+      if (portal) {
+        document.cookie = `sa_portal=${portal};path=/;max-age=86400;SameSite=Lax`;
+        localStorage.setItem("sa-portal", portal);
+      }
+    }
     this.overlay = document.getElementById("sidebarOverlay");
     this.menuToggle = document.getElementById("menuToggle");
     this.closeBtn = document.getElementById("sidebarClose");
@@ -199,15 +280,9 @@ class SidebarComponent {
       if (dropdownToggle) {
         const dropdown = dropdownToggle.closest(".nav-dropdown");
         if (dropdown) {
-          // If clicked on caret or to expand/collapse dropdown
-          if (e.target.closest(".nav-caret")) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropdown.classList.toggle("expanded");
-            return;
-          }
-          // Otherwise expand dropdown
-          dropdown.classList.add("expanded");
+          e.preventDefault();
+          dropdown.classList.toggle("expanded");
+          return;
         }
       }
 
@@ -345,12 +420,23 @@ class SidebarComponent {
   }
 }
 
-// Global initialization
+// Global initialization with safe readyState handling
 if (typeof window !== "undefined") {
   window.Navigation = Navigation;
   window.SidebarComponent = SidebarComponent;
-  document.addEventListener("DOMContentLoaded", () => {
-    window.navigation = new Navigation();
-    window.sidebarComponent = new SidebarComponent();
-  });
+
+  const bootSidebar = () => {
+    if (!window.navigation) {
+      window.navigation = new Navigation();
+    }
+    if (!window.sidebarComponent) {
+      window.sidebarComponent = new SidebarComponent();
+    }
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootSidebar);
+  } else {
+    bootSidebar();
+  }
 }

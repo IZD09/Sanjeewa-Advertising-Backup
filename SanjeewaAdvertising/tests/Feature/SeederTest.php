@@ -54,6 +54,12 @@ class SeederTest extends TestCase
         $this->assertGreaterThan(0, DB::table('activity_types')->count());
         $this->assertDatabaseHas('activity_types', ['activity_type' => 'Login']);
 
+        // 8. system_modules, permision_stateses
+        $this->assertGreaterThan(0, DB::table('system_modules')->count());
+        $this->assertGreaterThan(0, DB::table('permision_stateses')->count());
+        $this->assertDatabaseHas('system_modules', ['system_module' => 'Dashboard']);
+        $this->assertDatabaseHas('permision_stateses', ['permision_states' => 'Full Access']);
+
         // Test idempotency: run seeder again, count should not double and no error
         $this->seed(DatabaseSeeder::class);
     }

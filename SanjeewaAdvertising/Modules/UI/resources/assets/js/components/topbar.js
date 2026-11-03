@@ -329,14 +329,21 @@ class TopbarController {
   }
 }
 
-// Global initialization
+// Global initialization with safe readyState handling
 if (typeof window !== "undefined") {
   window.TopbarController = TopbarController;
   window.TopbarComponent = TopbarController;
-  document.addEventListener("DOMContentLoaded", () => {
+
+  const bootTopbar = () => {
     if (!window.topbarController) {
       window.topbarController = new TopbarController();
       window.topbarComponent = window.topbarController;
     }
-  });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootTopbar);
+  } else {
+    bootTopbar();
+  }
 }

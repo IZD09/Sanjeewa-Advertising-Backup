@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             AdminStatusSeeder::class,
             AdminTypeSeeder::class,
             ActivityTypeSeeder::class,
+            SystemModuleSeeder::class,
+            PermisionStateSeeder::class,
         ]);
     }
 }

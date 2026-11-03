@@ -3,6 +3,7 @@
 namespace Modules\User\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -104,5 +105,23 @@ class User extends Authenticatable
     public function printJobs(): HasMany
     {
         return $this->hasMany(PrintJob::class, 'users_id', 'id');
+    }
+
+    /**
+     * Get the system modules assigned to the user.
+     */
+    public function systemModules(): BelongsToMany
+    {
+        return $this->belongsToMany(SystemModule::class, 'system_modules_has_users', 'users_id', 'system_modules_id')
+            ->using(SystemModuleUser::class)
+            ->withPivot('permision_stateses_id');
+    }
+
+    /**
+     * Get the permission assignments for the user.
+     */
+    public function userPermissions(): HasMany
+    {
+        return $this->hasMany(SystemModuleUser::class, 'users_id', 'id');
     }
 }

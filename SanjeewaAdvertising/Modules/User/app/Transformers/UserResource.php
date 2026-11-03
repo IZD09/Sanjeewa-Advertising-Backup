@@ -30,6 +30,8 @@ class UserResource extends JsonResource
             'user_statuses_id' => $this->user_statuses_id,
             'status' => new UserStatusResource($this->whenLoaded('status')),
             'logins' => UserLoginResource::collection($this->whenLoaded('logins')),
+            'permissions' => SystemModuleUserResource::collection($this->whenLoaded('userPermissions')),
+            'system_modules' => SystemModuleResource::collection($this->whenLoaded('systemModules')),
         ];
     }
 }

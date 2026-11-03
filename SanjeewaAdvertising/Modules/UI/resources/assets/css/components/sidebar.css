@@ -129,6 +129,13 @@
     transition: all 0.18s ease;
     position: relative;
     cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    text-align: left;
 }
 
 .nav-link > i {
@@ -261,6 +268,11 @@
     cursor: pointer;
     height: 32px;
     box-sizing: border-box;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
 }
 
 .nav-sublink i {

@@ -23,7 +23,7 @@ class DashboardController extends BaseApiController
     {
         $dashboardData = (new DashboardResource($this->dashboardService->getDashboardData()))->resolve();
 
-        return view('ui::layouts.pages.dashboard.dashboard', [
+        return view('ui::layouts.admin.pages.dashboard.dashboard', [
             'dashboardData' => $dashboardData,
         ]);
     }
