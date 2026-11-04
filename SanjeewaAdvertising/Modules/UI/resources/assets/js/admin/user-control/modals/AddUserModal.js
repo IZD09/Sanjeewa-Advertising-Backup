@@ -6,6 +6,8 @@
 
 "use strict";
 
+import { AddUserProcess } from "../processes/AddUserProcess.js";
+
 export class AddUserModal {
   constructor(options = {}) {
     this.dataLoader = options.dataLoader;
@@ -14,6 +16,14 @@ export class AddUserModal {
     this.overlay = document.getElementById("modalAddUser");
     this.form = document.getElementById("formAddUser");
     this.closeBtns = this.overlay ? this.overlay.querySelectorAll(".modal-close-trigger") : [];
+    this.submitBtn = this.form ? this.form.querySelector('button[type="submit"]') : null;
+
+    this.process = new AddUserProcess({
+      dataLoader: this.dataLoader,
+      onError: (errMsg) => {
+        alert(errMsg);
+      }
+    });
 
     this.bindEvents();
   }
@@ -50,7 +60,7 @@ export class AddUserModal {
     this.overlay.classList.remove("active");
   }
 
-  submit() {
+  async submit() {
     const firstName = document.getElementById("userFirstName")?.value.trim();
     const lastName = document.getElementById("userLastName")?.value.trim();
     const username = document.getElementById("userUsername")?.value.trim();
@@ -60,31 +70,34 @@ export class AddUserModal {
     const statusSelect = document.getElementById("userStatusSelect");
     const userStatusesId = statusSelect ? parseInt(statusSelect.value, 10) : 1;
 
-    if (!firstName || !lastName || !username || !mobile || !password) {
-      alert("Please fill in all required fields marked with *");
-      return;
+    // Set button loading state
+    const originalBtnHtml = this.submitBtn ? this.submitBtn.innerHTML : '<i class="fa-solid fa-check"></i> Create User';
+    if (this.submitBtn) {
+      this.submitBtn.disabled = true;
+      this.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating User...';
     }
 
-    if (password.length < 6) {
-      alert("Password must be at least 6 characters long.");
-      return;
+    try {
+      const result = await this.process.execute({
+        first_name: firstName,
+        last_name: lastName,
+        username: username,
+        mobile: mobile,
+        password: password,
+        password_confirmation: confirmPassword,
+        user_statuses_id: userStatusesId
+      });
+
+      if (result.success && result.data) {
+        this.close();
+        if (this.form) this.form.reset();
+        this.onUserAdded(result.data);
+      }
+    } finally {
+      if (this.submitBtn) {
+        this.submitBtn.disabled = false;
+        this.submitBtn.innerHTML = originalBtnHtml;
+      }
     }
-
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-
-    const newUser = this.dataLoader.addUser({
-      first_name: firstName,
-      last_name: lastName,
-      username: username,
-      mobile: mobile,
-      password: password,
-      user_statuses_id: userStatusesId
-    });
-
-    this.close();
-    this.onUserAdded(newUser);
   }
 }

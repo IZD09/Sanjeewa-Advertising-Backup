@@ -11,6 +11,8 @@ use Modules\Admin\Models\Admin;
 use Modules\Admin\Models\AdminLogin;
 use Modules\Admin\Transformers\AdminResource;
 use Modules\Core\Http\Controllers\BaseApiController;
+use Modules\Core\Models\ActivityType;
+use Modules\Core\Services\ActivityService;
 
 class AdminAuthController extends BaseApiController
 {
@@ -58,6 +60,22 @@ class AdminAuthController extends BaseApiController
             Auth::guard('admin')->login($admin, $remember);
         }
 
+        try {
+            $loginType = ActivityType::firstOrCreate(['activity_type' => 'Login']);
+            app(ActivityService::class)->logActivity([
+                'activity_time' => now(),
+                'user_or_admin' => 2,
+                'activity_types_id' => $loginType->id,
+                'admins_id' => $admin->id,
+                'activity' => [
+                    'action' => 'admin_login',
+                    'message' => "Administrator '{$admin->username}' logged in successfully.",
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return $this->success([
                 'admin' => new AdminResource($admin),
@@ -86,6 +104,22 @@ class AdminAuthController extends BaseApiController
                 ->latest('id')
                 ->first()
                 ?->update(['logout' => now()]);
+
+            try {
+                $logoutType = ActivityType::firstOrCreate(['activity_type' => 'Logout']);
+                app(ActivityService::class)->logActivity([
+                    'activity_time' => now(),
+                    'user_or_admin' => 2,
+                    'activity_types_id' => $logoutType->id,
+                    'admins_id' => $admin->id,
+                    'activity' => [
+                        'action' => 'admin_logout',
+                        'message' => "Administrator '{$admin->username}' logged out.",
+                    ],
+                ]);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         Auth::guard('admin')->logout();

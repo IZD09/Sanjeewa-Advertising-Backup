@@ -148,10 +148,18 @@ export class AdminLoginManager {
     if (!this.usernameInput || !this.usernameField) return false;
 
     const val = this.usernameInput.value.trim();
-    const builder = new ValidatBuilder(val);
-    const isValid = builder.required().minLength(3).validate();
+    const validator = new ValidatBuilder();
 
-    if (!isValid) {
+    if (val.includes("@")) {
+      validator.addEmailValidator(val, "email");
+    } else {
+      validator.addTextValidator(val, "username", 50, 3);
+    }
+
+    const result = validator.validate();
+    const hasError = result.getStatus();
+
+    if (hasError) {
       this.usernameField.classList.add("bad");
       const errEl = this.usernameField.querySelector(".err");
       if (errEl) {
@@ -172,10 +180,13 @@ export class AdminLoginManager {
     if (!this.passwordInput || !this.passwordField) return false;
 
     const val = this.passwordInput.value;
-    const builder = new ValidatBuilder(val);
-    const isValid = builder.required().minLength(4).validate();
+    const validator = new ValidatBuilder();
+    validator.addPasswordValidator(val, val, 100, 4);
 
-    if (!isValid) {
+    const result = validator.validate();
+    const hasError = result.getStatus();
+
+    if (hasError) {
       this.passwordField.classList.add("bad");
       const errEl = this.passwordField.querySelector(".err");
       if (errEl) {

@@ -115,8 +115,25 @@ export class UserControlDataLoader {
   }
 
   syncUsersFromBackend() {
-    fetch('/api/v1/users/all')
-      .then(res => res.json())
+    fetch('/admin/users/all', {
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(res => {
+        if (!res.ok) {
+          return fetch('/api/v1/users/all', {
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          }).then(r => r.json());
+        }
+        return res.json();
+      })
       .then(data => {
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
           const statusMap = { 1: "Active", 2: "Inactive", 3: "Suspended", 4: "Pending" };
@@ -261,13 +278,15 @@ export class UserControlDataLoader {
       register_at: now
     };
 
-    // Attempt backend API persist
-    fetch('/api/v1/users', {
+    // Attempt backend Admin Module persist
+    fetch('/admin/users', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        'X-Requested-With': 'XMLHttpRequest'
       },
       body: JSON.stringify({
         first_name: userData.first_name,
@@ -320,6 +339,58 @@ export class UserControlDataLoader {
     const key = `user_${userId}`;
     this.permissions[key] = permMap;
     this.savePermissions();
+
+    // Map UI module keys to database system_modules_id (1-12)
+    const moduleIdMap = {
+      dashboard: 1,
+      print_jobs: 2,
+      design_mgmt: 3,
+      place_order: 4,
+      customers: 5,
+      quotations_invoices: 6,
+      inventory: 7,
+      grn: 8,
+      payments: 9,
+      reports: 10,
+      user_control: 11,
+      settings: 12
+    };
+
+    const payloadPermissions = [];
+    Object.keys(moduleIdMap).forEach(modKey => {
+      const modId = moduleIdMap[modKey];
+      const perms = permMap[modKey] || {};
+      const actions = Object.values(perms);
+      const trueCount = actions.filter(Boolean).length;
+
+      let stateId = 4; // Denied by default
+      if (trueCount >= 4) {
+        stateId = 1; // Full Access
+      } else if (trueCount > 1) {
+        stateId = 3; // Restricted
+      } else if (trueCount === 1 && perms.view) {
+        stateId = 2; // Read Only
+      } else if (trueCount === 1) {
+        stateId = 3; // Restricted
+      }
+
+      payloadPermissions.push({
+        system_modules_id: modId,
+        permision_stateses_id: stateId
+      });
+    });
+
+    fetch(`/admin/users/${userId}/permissions/sync`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ permissions: payloadPermissions })
+    }).catch(err => console.error("Error syncing permissions with backend:", err));
   }
 
   toggleUserStatus(userId) {
@@ -329,12 +400,14 @@ export class UserControlDataLoader {
       user.status = user.status === "Active" ? "Inactive" : "Active";
       user.user_statuses_id = nextStatusId;
 
-      fetch(`/api/v1/users/${user.id}/status`, {
+      fetch(`/admin/users/${user.id}/status`, {
         method: 'PATCH',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({ user_statuses_id: nextStatusId })
       }).catch(() => {});

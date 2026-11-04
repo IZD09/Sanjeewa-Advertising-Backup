@@ -106,4 +106,12 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(AdminActivity::class, 'admins_id', 'id');
     }
+
+    /**
+     * Check if the administrator can access a system module.
+     */
+    public function canAccessModule(string|int $module): bool
+    {
+        return (int) $this->admin_statuses_id === 1;
+    }
 }

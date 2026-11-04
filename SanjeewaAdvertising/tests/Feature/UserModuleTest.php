@@ -2,7 +2,14 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\AdminStatusSeeder;
+use Database\Seeders\AdminTypeSeeder;
+use Database\Seeders\DefaultAdminSeeder;
+use Database\Seeders\PermisionStateSeeder;
+use Database\Seeders\SystemModuleSeeder;
+use Database\Seeders\UserStatusSeeder;
 use Illuminate\Support\Facades\Hash;
+use Modules\Admin\Models\Admin;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
 use Modules\User\Models\UserStatus;
@@ -16,7 +23,13 @@ class UserModuleTest extends TestCase
     {
         parent::setUp();
 
-        $this->artisan('migrate', ['--path' => 'Modules/User/database/migrations']);
+        $this->artisan('migrate');
+        $this->seed(UserStatusSeeder::class);
+        $this->seed(AdminStatusSeeder::class);
+        $this->seed(AdminTypeSeeder::class);
+        $this->seed(SystemModuleSeeder::class);
+        $this->seed(PermisionStateSeeder::class);
+        $this->seed(DefaultAdminSeeder::class);
 
         $this->status = UserStatus::firstOrCreate(
             ['user_status' => 'Active']
@@ -174,9 +187,10 @@ class UserModuleTest extends TestCase
     public function test_user_controller_crud(): void
     {
         $unique = uniqid();
+        $admin = Admin::where('username', 'admin')->first();
 
-        // 1. Create user
-        $storeResponse = $this->postJson('/api/v1/users', [
+        // 1. Create user (only admin is authorized)
+        $storeResponse = $this->actingAs($admin, 'admin')->postJson('/api/v1/users', [
             'first_name' => 'Kasun',
             'last_name' => 'Fernando',
             'mobile' => '075'.rand(1000000, 9999999),

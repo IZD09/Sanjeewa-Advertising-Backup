@@ -1,10 +1,13 @@
 @php
-  $currentUser = auth()->user();
+  $isAdminAuth = Auth::guard('admin')->check();
+  $currentUser = $isAdminAuth ? Auth::guard('admin')->user() : (Auth::guard('web')->user() ?? Auth::guard('admin')->user());
   $displayName = $currentUser ? trim(($currentUser->first_name ?? '') . ' ' . ($currentUser->last_name ?? '')) : '';
   if (empty($displayName)) {
-      $displayName = $currentUser->username ?? 'Admin User';
+      $displayName = $currentUser->username ?? 'Administrator';
   }
   $initials = strtoupper(substr($displayName, 0, 2));
+  $userRole = $isAdminAuth ? 'Administrator' : ($currentUser && $currentUser->username === 'admin' ? 'Super Administrator' : 'Staff Member');
+  $logoutRoute = $isAdminAuth ? route('admin.logout') : route('logout');
 @endphp
 
 <!-- Desktop Hover-Sensitive Zone to Reveal Auto-Hidden Top Bar -->
@@ -43,11 +46,11 @@
           <div class="avatar small-avatar">{{ $initials }}</div>
           <div class="profile-dropdown-meta">
             <strong class="profile-dropdown-username">{{ $displayName }}</strong>
-            <span class="profile-dropdown-role">Administrator</span>
+            <span class="profile-dropdown-role">{{ $userRole }}</span>
           </div>
         </div>
         <div class="profile-dropdown-divider"></div>
-        <form method="POST" action="{{ route('logout') }}" class="profile-dropdown-logout-form">
+        <form method="POST" action="{{ $logoutRoute }}" class="profile-dropdown-logout-form">
           @csrf
           <button type="submit" class="profile-dropdown-logout-btn">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -58,7 +61,7 @@
     </div>
 
     {{-- Direct Quick Logout Button --}}
-    <form method="POST" action="{{ route('logout') }}" class="topbar-logout-form" id="topbarLogoutForm">
+    <form method="POST" action="{{ $logoutRoute }}" class="topbar-logout-form" id="topbarLogoutForm">
       @csrf
       <button type="submit" class="icon-button topbar-logout-btn" id="topbarLogoutBtn" title="Log Out" aria-label="Log Out">
         <i class="fa-solid fa-arrow-right-from-bracket"></i>

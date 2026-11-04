@@ -5,12 +5,21 @@ namespace Modules\User\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Modules\Core\Models\ActivityType;
+use Modules\Core\Services\ActivityService;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
 
 class UserService
 {
+    public function __construct(
+        protected ?ActivityService $activityService = null
+    ) {
+        $this->activityService = $activityService ?? app(ActivityService::class);
+    }
+
     /**
      * Build the query for users with search and filter criteria.
      *
@@ -108,7 +117,7 @@ class UserService
             $password = Hash::make($password);
         }
 
-        return User::create([
+        $user = User::create([
             'first_name' => trim((string) ($data['first_name'] ?? '')),
             'last_name' => trim((string) ($data['last_name'] ?? '')),
             'mobile' => trim((string) ($data['mobile'] ?? '')),
@@ -118,6 +127,17 @@ class UserService
             'is_login' => 0,
             'user_statuses_id' => (int) ($data['user_statuses_id'] ?? 1),
         ])->load('status');
+
+        $this->logActivity('Create User', [
+            'action' => 'create_user',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'name' => "{$user->first_name} {$user->last_name}",
+            'status' => $user->status?->user_status ?? 'Active',
+            'message' => "Created new user account '{$user->username}' (ID: #{$user->id}).",
+        ]);
+
+        return $user;
     }
 
     /**
@@ -167,6 +187,13 @@ class UserService
 
         $user->update($attributes);
 
+        $this->logActivity('Update User', [
+            'action' => 'update_user',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'message' => "Updated user profile for '{$user->username}' (ID: #{$user->id}).",
+        ]);
+
         return $user->fresh('status');
     }
 
@@ -175,7 +202,21 @@ class UserService
      */
     public function deleteUser(User $user): bool
     {
-        return (bool) $user->delete();
+        $userId = $user->id;
+        $username = $user->username;
+
+        $deleted = (bool) $user->delete();
+
+        if ($deleted) {
+            $this->logActivity('Delete User', [
+                'action' => 'delete_user',
+                'user_id' => $userId,
+                'username' => $username,
+                'message' => "Deleted user account '{$username}' (ID: #{$userId}).",
+            ]);
+        }
+
+        return $deleted;
     }
 
     /**
@@ -187,7 +228,47 @@ class UserService
             'user_statuses_id' => $statusId,
         ]);
 
+        $this->logActivity('Update User Status', [
+            'action' => 'update_user_status',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'new_status_id' => $statusId,
+            'message' => "Changed status for user '{$user->username}' (ID: #{$user->id}) to status #{$statusId}.",
+        ]);
+
         return $user->fresh('status');
+    }
+
+    /**
+     * Log an administrative or user activity using the Core Module's ActivityService.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function logActivity(string $type, array $payload): void
+    {
+        try {
+            $activityType = ActivityType::firstOrCreate(['activity_type' => $type]);
+
+            $logData = [
+                'activity_time' => now(),
+                'activity_types_id' => $activityType->id,
+                'activity' => $payload,
+            ];
+
+            if (Auth::guard('admin')->check()) {
+                $logData['user_or_admin'] = 2; // Admin
+                $logData['admins_id'] = Auth::guard('admin')->id();
+            } elseif (Auth::guard('web')->check()) {
+                $logData['user_or_admin'] = 1; // User
+                $logData['users_id'] = Auth::guard('web')->id();
+            } else {
+                $logData['user_or_admin'] = 2; // Default system / admin context
+            }
+
+            $this->activityService->logActivity($logData);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**

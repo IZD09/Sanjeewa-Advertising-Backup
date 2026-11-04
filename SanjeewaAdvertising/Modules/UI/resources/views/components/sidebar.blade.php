@@ -118,6 +118,42 @@
         ],
     ];
 
+    // Filter staff navigation based on database permissions
+    if (! $isAdmin && ($authUser = auth('web')->user())) {
+        $componentModuleMap = [
+            'print-jobs' => 'Print Jobs',
+            'design-management' => 'Design Management',
+            'place-order' => 'Place Order',
+            'customers' => 'Customers',
+            'quotations-invoices' => 'Quotations & Invoices',
+            'settings' => 'Settings',
+            'dashboard' => 'Dashboard',
+            'inventory' => 'Inventory',
+            'goods-received' => 'GRN & Purchase Orders',
+            'purchase-orders' => 'GRN & Purchase Orders',
+            'payments' => 'Payments & Financials',
+            'reports' => 'Reports',
+            'user-control' => 'User Control',
+        ];
+
+        $filteredUserNav = [];
+        foreach ($userNavigation as $group) {
+            $filteredItems = [];
+            foreach ($group['items'] ?? [] as $item) {
+                $comp = $item['component'] ?? '';
+                $modName = $componentModuleMap[$comp] ?? $comp;
+                if ($authUser->canAccessModule($modName)) {
+                    $filteredItems[] = $item;
+                }
+            }
+            if (! empty($filteredItems)) {
+                $group['items'] = $filteredItems;
+                $filteredUserNav[] = $group;
+            }
+        }
+        $userNavigation = $filteredUserNav;
+    }
+
     // Allow overriding from layout via $sidebarNavigation or $navigation
     $sidebarNavigation = $sidebarNavigation ?? $navigation ?? ($isAdmin ? $adminNavigation : $userNavigation);
 @endphp

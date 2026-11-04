@@ -4,6 +4,7 @@ namespace Modules\Admin\Database\Seeders;
 
 use Database\Seeders\AdminStatusSeeder;
 use Database\Seeders\AdminTypeSeeder;
+use Database\Seeders\DefaultAdminSeeder;
 use Illuminate\Database\Seeder;
 
 class AdminDatabaseSeeder extends Seeder
@@ -16,6 +17,8 @@ class AdminDatabaseSeeder extends Seeder
         $this->call([
             AdminStatusSeeder::class,
             AdminTypeSeeder::class,
+            DefaultAdminSeeder::class,
+            DefaultAdminSeeder::class,
         ]);
     }
 }

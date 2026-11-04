@@ -3,12 +3,21 @@
 namespace Modules\User\Services;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Models\ActivityType;
+use Modules\Core\Services\ActivityService;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
 
 class UserPermissionService
 {
+    public function __construct(
+        protected ?ActivityService $activityService = null
+    ) {
+        $this->activityService = $activityService ?? app(ActivityService::class);
+    }
+
     /**
      * Get all assigned permissions for a given user.
      *
@@ -32,11 +41,21 @@ class UserPermissionService
             ->where('system_modules_id', $moduleId)
             ->delete();
 
-        return SystemModuleUser::create([
+        $assignment = SystemModuleUser::create([
             'users_id' => $userId,
             'system_modules_id' => $moduleId,
             'permision_stateses_id' => $permissionStateId,
         ]);
+
+        $this->logActivity('Update Permissions', [
+            'action' => 'assign_permission',
+            'user_id' => $userId,
+            'system_modules_id' => $moduleId,
+            'permision_stateses_id' => $permissionStateId,
+            'message' => "Updated permission on module #{$moduleId} for user (ID: #{$userId}).",
+        ]);
+
+        return $assignment;
     }
 
     /**
@@ -47,7 +66,7 @@ class UserPermissionService
      */
     public function syncUserPermissions(int $userId, array $permissions): Collection
     {
-        return DB::transaction(function () use ($userId, $permissions) {
+        $result = DB::transaction(function () use ($userId, $permissions) {
             SystemModuleUser::query()
                 ->where('users_id', $userId)
                 ->delete();
@@ -62,6 +81,15 @@ class UserPermissionService
 
             return $this->getUserPermissions($userId);
         });
+
+        $this->logActivity('Update Permissions', [
+            'action' => 'sync_permissions',
+            'user_id' => $userId,
+            'modules_count' => count($permissions),
+            'message' => "Synchronized permissions for user (ID: #{$userId}).",
+        ]);
+
+        return $result;
     }
 
     /**
@@ -69,10 +97,53 @@ class UserPermissionService
      */
     public function revokePermission(int $userId, int $moduleId): bool
     {
-        return (bool) SystemModuleUser::query()
+        $deleted = (bool) SystemModuleUser::query()
             ->where('users_id', $userId)
             ->where('system_modules_id', $moduleId)
             ->delete();
+
+        if ($deleted) {
+            $this->logActivity('Update Permissions', [
+                'action' => 'revoke_permission',
+                'user_id' => $userId,
+                'system_modules_id' => $moduleId,
+                'message' => "Revoked module #{$moduleId} permission from user (ID: #{$userId}).",
+            ]);
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Log an administrative activity using Core Module's ActivityService.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function logActivity(string $type, array $payload): void
+    {
+        try {
+            $activityType = ActivityType::firstOrCreate(['activity_type' => $type]);
+
+            $logData = [
+                'activity_time' => now(),
+                'activity_types_id' => $activityType->id,
+                'activity' => $payload,
+            ];
+
+            if (Auth::guard('admin')->check()) {
+                $logData['user_or_admin'] = 2; // Admin
+                $logData['admins_id'] = Auth::guard('admin')->id();
+            } elseif (Auth::guard('web')->check()) {
+                $logData['user_or_admin'] = 1; // User
+                $logData['users_id'] = Auth::guard('web')->id();
+            } else {
+                $logData['user_or_admin'] = 2;
+            }
+
+            $this->activityService->logActivity($logData);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**

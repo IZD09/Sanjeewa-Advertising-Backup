@@ -124,4 +124,78 @@ class User extends Authenticatable
     {
         return $this->hasMany(SystemModuleUser::class, 'users_id', 'id');
     }
+
+    /**
+     * Normalize module name to match system_modules database record.
+     */
+    public function normalizeModuleName(string $module): string
+    {
+        $normalized = str_replace(['_', '-'], ' ', strtolower(trim($module)));
+
+        $map = [
+            'dashboard' => 'Dashboard',
+            'print jobs' => 'Print Jobs',
+            'design management' => 'Design Management',
+            'design mgmt' => 'Design Management',
+            'place order' => 'Place Order',
+            'customers' => 'Customers',
+            'quotations & invoices' => 'Quotations & Invoices',
+            'quotations invoices' => 'Quotations & Invoices',
+            'inventory' => 'Inventory',
+            'grn & purchase orders' => 'GRN & Purchase Orders',
+            'grn purchase orders' => 'GRN & Purchase Orders',
+            'grn' => 'GRN & Purchase Orders',
+            'purchase orders' => 'GRN & Purchase Orders',
+            'payments & financials' => 'Payments & Financials',
+            'payments financials' => 'Payments & Financials',
+            'payments' => 'Payments & Financials',
+            'reports' => 'Reports',
+            'user control' => 'User Control',
+            'settings' => 'Settings',
+        ];
+
+        return $map[$normalized] ?? $module;
+    }
+
+    /**
+     * Check if the user is authorized to access a system module.
+     */
+    public function canAccessModule(string|int $module): bool
+    {
+        // Inactive or suspended users cannot access any module
+        if ((int) $this->user_statuses_id !== 1) {
+            return false;
+        }
+
+        // Default admin has full superuser access
+        if ($this->username === 'admin') {
+            return true;
+        }
+
+        $query = SystemModuleUser::query()->where('users_id', $this->id);
+
+        if (is_int($module)) {
+            $query->where('system_modules_id', $module);
+        } else {
+            $normalizedName = $this->normalizeModuleName($module);
+            $query->whereHas('systemModule', function ($q) use ($normalizedName, $module) {
+                $q->where('system_module', $normalizedName)
+                    ->orWhere('system_module', $module);
+            });
+        }
+
+        /** @var SystemModuleUser|null $assignment */
+        $assignment = $query->with('permisionState')->first();
+
+        if (! $assignment || ! $assignment->permisionState) {
+            return false;
+        }
+
+        // Denied permission state prevents access
+        if ($assignment->permisionState->permision_states === 'Denied' || (int) $assignment->permision_stateses_id === 4) {
+            return false;
+        }
+
+        return true;
+    }
 }

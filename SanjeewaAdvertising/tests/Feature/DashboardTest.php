@@ -2,13 +2,37 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\AdminStatusSeeder;
+use Database\Seeders\AdminTypeSeeder;
+use Database\Seeders\DefaultAdminSeeder;
+use Database\Seeders\PermisionStateSeeder;
+use Database\Seeders\SystemModuleSeeder;
+use Database\Seeders\UserStatusSeeder;
+use Modules\Admin\Models\Admin;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
+    private Admin $admin;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->artisan('migrate');
+
+        $this->seed(UserStatusSeeder::class);
+        $this->seed(AdminStatusSeeder::class);
+        $this->seed(AdminTypeSeeder::class);
+        $this->seed(SystemModuleSeeder::class);
+        $this->seed(PermisionStateSeeder::class);
+        $this->seed(DefaultAdminSeeder::class);
+
+        $this->admin = Admin::where('username', 'admin')->first();
+    }
+
     public function test_dashboard_page_loads_successfully(): void
     {
-        $response = $this->get('/dashboard');
+        $response = $this->actingAs($this->admin, 'admin')->get('/dashboard');
 
         $response->assertStatus(200);
         $response->assertSee('id="module-dashboard"', false);
@@ -19,7 +43,7 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_data_endpoint_returns_json_resource(): void
     {
-        $response = $this->getJson('/dashboard/data');
+        $response = $this->actingAs($this->admin, 'admin')->getJson('/dashboard/data');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -68,7 +92,7 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_stream_endpoint_returns_sse_stream(): void
     {
-        $response = $this->get('/dashboard/stream');
+        $response = $this->actingAs($this->admin, 'admin')->get('/dashboard/stream');
 
         $response->assertStatus(200);
         $this->assertStringContainsString('text/event-stream', (string) $response->headers->get('Content-Type'));

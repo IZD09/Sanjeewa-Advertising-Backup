@@ -13,6 +13,7 @@ import {
   PermissionHandler,
   AddUserModal,
   AddAdminModal,
+  AddUserProcess,
   FilterProcess,
   MetricsProcess
 } from "./user-control/index.js";

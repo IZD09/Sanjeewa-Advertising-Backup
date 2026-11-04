@@ -24,6 +24,11 @@ class ActivityTypeSeeder extends Seeder
             'Stock Adjustment',
             'Record Expense',
             'Update Settings',
+            'Create User',
+            'Update User',
+            'Delete User',
+            'Update User Status',
+            'Update Permissions',
         ];
 
         foreach ($types as $type) {

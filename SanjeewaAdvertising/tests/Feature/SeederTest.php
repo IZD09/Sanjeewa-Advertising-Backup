@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Modules\Admin\Models\Admin;
+use Modules\User\Models\User;
 use Tests\TestCase;
 
 class SeederTest extends TestCase
@@ -59,6 +62,15 @@ class SeederTest extends TestCase
         $this->assertGreaterThan(0, DB::table('permision_stateses')->count());
         $this->assertDatabaseHas('system_modules', ['system_module' => 'Dashboard']);
         $this->assertDatabaseHas('permision_stateses', ['permision_states' => 'Full Access']);
+
+        // 9. default admin in admins and users tables
+        $this->assertDatabaseHas('admins', ['username' => 'admin']);
+        $this->assertDatabaseHas('users', ['username' => 'admin']);
+        $admin = Admin::where('username', 'admin')->first();
+        $userAdmin = User::where('username', 'admin')->first();
+        $this->assertTrue(Hash::check('admin', $admin->password));
+        $this->assertTrue(Hash::check('admin', $userAdmin->password));
+        $this->assertGreaterThanOrEqual(12, $userAdmin->userPermissions()->count());
 
         // Test idempotency: run seeder again, count should not double and no error
         $this->seed(DatabaseSeeder::class);

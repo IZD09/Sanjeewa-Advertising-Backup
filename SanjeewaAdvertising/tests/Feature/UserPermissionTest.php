@@ -2,7 +2,11 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\AdminStatusSeeder;
+use Database\Seeders\AdminTypeSeeder;
+use Database\Seeders\DefaultAdminSeeder;
 use Database\Seeders\UserStatusSeeder;
+use Modules\Admin\Models\Admin;
 use Modules\User\Models\PermisionState;
 use Modules\User\Models\SystemModule;
 use Modules\User\Models\SystemModuleUser;
@@ -22,7 +26,7 @@ class UserPermissionTest extends TestCase
     {
         parent::setUp();
 
-        $this->artisan('migrate', ['--path' => 'Modules/User/database/migrations']);
+        $this->artisan('migrate');
         $this->seed(UserStatusSeeder::class);
 
         $status = UserStatus::firstOrCreate(['user_status' => 'Active']);
@@ -187,7 +191,13 @@ class UserPermissionTest extends TestCase
 
     public function test_user_control_view_renders_database_statuses(): void
     {
-        $response = $this->get('/admin/user-control');
+        $this->seed(AdminStatusSeeder::class);
+        $this->seed(AdminTypeSeeder::class);
+        $this->seed(DefaultAdminSeeder::class);
+
+        $admin = Admin::where('username', 'admin')->first();
+
+        $response = $this->actingAs($admin, 'admin')->get('/admin/user-control');
 
         $response->assertStatus(200)
             ->assertSee('id="userStatusSelect"', false)
