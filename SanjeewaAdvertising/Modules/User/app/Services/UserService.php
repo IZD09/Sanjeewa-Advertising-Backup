@@ -28,13 +28,58 @@ class UserService
      */
     public function buildQuery(array $filters = []): Builder
     {
-        $query = User::query()->with('status');
+        $query = User::query()->with([
+            'status',
+            'userPermissions.systemModule',
+        ]);
+
+        $isIdFilter = false;
+        if (isset($filters['id']) && $filters['id'] !== '') {
+            $idSearch = ltrim(trim((string) $filters['id']), '#');
+            if (ctype_digit($idSearch)) {
+                $isIdFilter = true;
+                $query->where(function (Builder $q) use ($idSearch) {
+                    $q->where('id', (int) $idSearch)
+                        ->orWhere('id', 'like', "{$idSearch}%");
+                });
+            }
+        }
 
         $search = $filters['search'] ?? $filters['q'] ?? null;
-        if (! empty($search)) {
+        if ($search !== null && $search !== '') {
             $search = trim((string) $search);
-            $query->where(function (Builder $q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
+            $cleanId = ltrim($search, '#');
+            $isHashId = str_starts_with($search, '#') && ctype_digit($cleanId);
+            $isShortNumericId = ctype_digit($search) && ! str_starts_with($search, '0') && strlen($search) <= 6;
+
+            if ($isHashId || $isShortNumericId) {
+                $isIdFilter = true;
+            }
+
+            $query->where(function (Builder $q) use ($search, $cleanId, $isHashId, $isShortNumericId) {
+                if ($isHashId) {
+                    $q->where('id', (int) $cleanId)
+                        ->orWhere('id', 'like', "{$cleanId}%");
+
+                    return;
+                }
+
+                if ($isShortNumericId) {
+                    $q->where('id', (int) $cleanId)
+                        ->orWhere('id', 'like', "{$cleanId}%")
+                        ->orWhere('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%");
+
+                    return;
+                }
+
+                if (ctype_digit($cleanId)) {
+                    $q->where('id', (int) $cleanId)
+                        ->orWhere('id', 'like', "{$cleanId}%");
+                }
+
+                $q->orWhere('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('username', 'like', "%{$search}%")
                     ->orWhere('mobile', 'like', "%{$search}%")
@@ -68,7 +113,8 @@ class UserService
         }
 
         $sortBy = (string) ($filters['sort_by'] ?? 'id');
-        $sortOrder = strtolower((string) ($filters['sort_order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $defaultSortOrder = $isIdFilter ? 'asc' : 'desc';
+        $sortOrder = strtolower((string) ($filters['sort_order'] ?? $defaultSortOrder)) === 'asc' ? 'asc' : 'desc';
         $allowedSorts = ['id', 'first_name', 'last_name', 'username', 'mobile', 'register_at'];
 
         if (in_array($sortBy, $allowedSorts, true)) {

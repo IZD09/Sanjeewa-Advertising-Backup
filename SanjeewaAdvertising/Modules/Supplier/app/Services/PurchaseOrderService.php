@@ -359,7 +359,7 @@ class PurchaseOrderService
 
             if ($searchTerm !== '') {
                 $itemNames = implode(' ', array_column($po['items'] ?? [], 'item_name'));
-                $searchable = strtolower($po['po_number'].' '.$po['supplier_name'].' '.$po['supplier_contact'].' '.$itemNames);
+                $searchable = strtolower($po['po_number'] . ' ' . $po['supplier_name'] . ' ' . $po['supplier_contact'] . ' ' . $itemNames);
                 if (! str_contains($searchable, $searchTerm)) {
                     return false;
                 }

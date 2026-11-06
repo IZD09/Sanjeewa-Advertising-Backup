@@ -14,7 +14,8 @@ class UserPermissionController extends BaseApiController
 {
     public function __construct(
         protected UserPermissionService $permissionService
-    ) {}
+    ) {
+    }
 
     /**
      * Display all assigned permissions for a specified user.
@@ -50,10 +51,10 @@ class UserPermissionController extends BaseApiController
         $permission = $this->permissionService->assignPermission(
             $userId,
             (int) $data['system_modules_id'],
-            (int) $data['permision_stateses_id']
+            $data
         );
 
-        $permission->load(['systemModule', 'permisionState']);
+        $permission->load(['systemModule']);
 
         return $this->created(
             new SystemModuleUserResource($permission),

@@ -46,4 +46,3 @@ class StoreAdminUserRequest extends FormRequest
         ];
     }
 }
-

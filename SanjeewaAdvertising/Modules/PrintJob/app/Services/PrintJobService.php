@@ -538,10 +538,10 @@ class PrintJobService
             }
             if ($search !== '') {
                 $haystack = strtolower(
-                    $order['id'].' '.
-                    $order['customerName'].' '.
-                    $order['customerMobile'].' '.
-                    $order['productName'].' '.
+                    $order['id'] . ' ' .
+                    $order['customerName'] . ' ' .
+                    $order['customerMobile'] . ' ' .
+                    $order['productName'] . ' ' .
                     $order['assignedEmployee']
                 );
                 if (! str_contains($haystack, $search)) {

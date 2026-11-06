@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use Database\Seeders\AdminStatusSeeder;
 use Database\Seeders\AdminTypeSeeder;
 use Database\Seeders\DefaultAdminSeeder;
-use Database\Seeders\PermisionStateSeeder;
 use Database\Seeders\SystemModuleSeeder;
 use Database\Seeders\UserStatusSeeder;
 use Modules\Admin\Models\Admin;
@@ -24,7 +23,6 @@ class DashboardTest extends TestCase
         $this->seed(AdminStatusSeeder::class);
         $this->seed(AdminTypeSeeder::class);
         $this->seed(SystemModuleSeeder::class);
-        $this->seed(PermisionStateSeeder::class);
         $this->seed(DefaultAdminSeeder::class);
 
         $this->admin = Admin::where('username', 'admin')->first();

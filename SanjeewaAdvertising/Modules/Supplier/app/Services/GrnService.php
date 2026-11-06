@@ -318,7 +318,7 @@ class GrnService
 
             if ($searchTerm !== '') {
                 $searchable = strtolower(
-                    $grn['grn_number'].' '.$grn['purchase_order_no'].' '.$grn['supplier_name'].' '.$grn['supplier_contact']
+                    $grn['grn_number'] . ' ' . $grn['purchase_order_no'] . ' ' . $grn['supplier_name'] . ' ' . $grn['supplier_contact']
                 );
                 if (! str_contains($searchable, $searchTerm)) {
                     return false;

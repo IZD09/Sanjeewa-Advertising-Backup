@@ -7,7 +7,6 @@ use Database\Seeders\AdminTypeSeeder;
 use Database\Seeders\DefaultAdminSeeder;
 use Database\Seeders\UserStatusSeeder;
 use Modules\Admin\Models\Admin;
-use Modules\User\Models\PermisionState;
 use Modules\User\Models\SystemModule;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
@@ -19,8 +18,6 @@ class UserPermissionTest extends TestCase
     private User $user;
 
     private SystemModule $module;
-
-    private PermisionState $state;
 
     protected function setUp(): void
     {
@@ -45,7 +42,6 @@ class UserPermissionTest extends TestCase
         );
 
         $this->module = SystemModule::firstOrCreate(['system_module' => 'Test Module']);
-        $this->state = PermisionState::firstOrCreate(['permision_states' => 'Test Allowed']);
     }
 
     public function test_can_list_system_modules(): void
@@ -59,7 +55,7 @@ class UserPermissionTest extends TestCase
 
     public function test_can_create_system_module(): void
     {
-        $name = 'Custom Module '.uniqid();
+        $name = 'Custom Module ' . uniqid();
         $response = $this->postJson('/api/v1/system-modules', [
             'system_module' => $name,
         ]);
@@ -70,54 +66,52 @@ class UserPermissionTest extends TestCase
         $this->assertDatabaseHas('system_modules', ['system_module' => $name]);
     }
 
-    public function test_can_list_permission_states(): void
-    {
-        $response = $this->getJson('/api/v1/permision-states?all=true');
-
-        $response->assertStatus(200)
-            ->assertJson(['success' => true])
-            ->assertJsonFragment(['permision_states' => 'Test Allowed']);
-    }
-
-    public function test_can_create_permission_state(): void
-    {
-        $name = 'State '.substr(uniqid(), 0, 10);
-        $response = $this->postJson('/api/v1/permision-states', [
-            'permision_states' => $name,
-        ]);
-
-        $response->assertStatus(201)
-            ->assertJsonPath('data.permision_states', $name);
-
-        $this->assertDatabaseHas('permision_stateses', ['permision_states' => $name]);
-    }
-
     public function test_can_assign_permission_to_user(): void
     {
         $response = $this->postJson("/api/v1/users/{$this->user->id}/permissions", [
             'system_modules_id' => $this->module->id,
-            'permision_stateses_id' => $this->state->id,
+            'view' => true,
+            'create' => true,
+            'edit' => false,
+            'delete' => false,
+            'export' => true,
         ]);
 
         $response->assertStatus(201)
             ->assertJson(['success' => true])
             ->assertJsonPath('data.system_modules_id', $this->module->id)
-            ->assertJsonPath('data.permision_stateses_id', $this->state->id);
+            ->assertJsonPath('data.view', true)
+            ->assertJsonPath('data.create', true)
+            ->assertJsonPath('data.edit', false)
+            ->assertJsonPath('data.delete', false)
+            ->assertJsonPath('data.export', true);
 
         $this->assertDatabaseHas('system_modules_has_users', [
             'users_id' => $this->user->id,
             'system_modules_id' => $this->module->id,
-            'permision_stateses_id' => $this->state->id,
+            'view' => 1,
+            'create' => 1,
+            'edit' => 0,
+            'delete' => 0,
+            'export' => 1,
         ]);
     }
 
     public function test_can_get_user_permissions(): void
     {
-        SystemModuleUser::firstOrCreate([
-            'users_id' => $this->user->id,
-            'system_modules_id' => $this->module->id,
-            'permision_stateses_id' => $this->state->id,
-        ]);
+        SystemModuleUser::firstOrCreate(
+            [
+                'users_id' => $this->user->id,
+                'system_modules_id' => $this->module->id,
+            ],
+            [
+                'view' => 1,
+                'create' => 0,
+                'edit' => 0,
+                'delete' => 0,
+                'export' => 0,
+            ]
+        );
 
         $response = $this->getJson("/api/v1/users/{$this->user->id}/permissions");
 
@@ -134,11 +128,19 @@ class UserPermissionTest extends TestCase
             'permissions' => [
                 [
                     'system_modules_id' => $this->module->id,
-                    'permision_stateses_id' => $this->state->id,
+                    'view' => true,
+                    'create' => true,
+                    'edit' => true,
+                    'delete' => false,
+                    'export' => true,
                 ],
                 [
                     'system_modules_id' => $module2->id,
-                    'permision_stateses_id' => $this->state->id,
+                    'view' => true,
+                    'create' => false,
+                    'edit' => false,
+                    'delete' => false,
+                    'export' => false,
                 ],
             ],
         ]);
@@ -149,20 +151,38 @@ class UserPermissionTest extends TestCase
         $this->assertDatabaseHas('system_modules_has_users', [
             'users_id' => $this->user->id,
             'system_modules_id' => $this->module->id,
+            'view' => 1,
+            'create' => 1,
+            'edit' => 1,
+            'delete' => 0,
+            'export' => 1,
         ]);
         $this->assertDatabaseHas('system_modules_has_users', [
             'users_id' => $this->user->id,
             'system_modules_id' => $module2->id,
+            'view' => 1,
+            'create' => 0,
+            'edit' => 0,
+            'delete' => 0,
+            'export' => 0,
         ]);
     }
 
     public function test_can_revoke_user_permission(): void
     {
-        SystemModuleUser::firstOrCreate([
-            'users_id' => $this->user->id,
-            'system_modules_id' => $this->module->id,
-            'permision_stateses_id' => $this->state->id,
-        ]);
+        SystemModuleUser::firstOrCreate(
+            [
+                'users_id' => $this->user->id,
+                'system_modules_id' => $this->module->id,
+            ],
+            [
+                'view' => 1,
+                'create' => 1,
+                'edit' => 0,
+                'delete' => 0,
+                'export' => 0,
+            ]
+        );
 
         $response = $this->deleteJson("/api/v1/users/{$this->user->id}/permissions/{$this->module->id}");
 
@@ -177,11 +197,19 @@ class UserPermissionTest extends TestCase
 
     public function test_user_model_relationships(): void
     {
-        SystemModuleUser::firstOrCreate([
-            'users_id' => $this->user->id,
-            'system_modules_id' => $this->module->id,
-            'permision_stateses_id' => $this->state->id,
-        ]);
+        SystemModuleUser::firstOrCreate(
+            [
+                'users_id' => $this->user->id,
+                'system_modules_id' => $this->module->id,
+            ],
+            [
+                'view' => 1,
+                'create' => 1,
+                'edit' => 1,
+                'delete' => 1,
+                'export' => 1,
+            ]
+        );
 
         $freshUser = User::with(['systemModules', 'userPermissions'])->find($this->user->id);
         $this->assertCount(1, $freshUser->systemModules);

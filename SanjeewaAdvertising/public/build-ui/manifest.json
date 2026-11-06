@@ -20,8 +20,17 @@
     "src": "resources/assets/css/admin-login.css",
     "isEntry": true
   },
+  "resources/assets/css/admin-profile.css": {
+    "file": "assets/admin-profile-kgXVKvV5.css",
+    "name": "admin-profile",
+    "names": [
+      "admin-profile.css"
+    ],
+    "src": "resources/assets/css/admin-profile.css",
+    "isEntry": true
+  },
   "resources/assets/css/admin-user-control.css": {
-    "file": "assets/admin-user-control-dsHO-ITK.css",
+    "file": "assets/admin-user-control-DxMweKsq.css",
     "name": "admin-user-control",
     "names": [
       "admin-user-control.css"
@@ -139,11 +148,23 @@
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
-  "resources/assets/js/admin/user-control.js": {
-    "file": "assets/user-control-BgrPEsBE.js",
-    "name": "user-control",
-    "src": "resources/assets/js/admin/user-control.js",
-    "isEntry": true
+  "resources/assets/js/admin/profile/AdminProfileManager.js": {
+    "file": "assets/AdminProfileManager-DBqEYpT_.js",
+    "name": "AdminProfileManager",
+    "src": "resources/assets/js/admin/profile/AdminProfileManager.js",
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-DGIgTA7N.js"
+    ]
+  },
+  "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
+    "file": "assets/UserControlManager-BFaG6JuY.js",
+    "name": "UserControlManager",
+    "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-DGIgTA7N.js"
+    ]
   },
   "resources/assets/js/app.js": {
     "file": "assets/app-Cj9P_8_e.js",

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Admin\Models\Admin;
 use Modules\Admin\Models\AdminStatus;
 use Modules\Admin\Models\AdminType;
-use Modules\User\Models\PermisionState;
 use Modules\User\Models\SystemModule;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
@@ -55,8 +54,7 @@ class DefaultAdminSeeder extends Seeder
             ]
         );
 
-        // 3. Grant Full Access permissions for all modules in `system_modules_has_users`
-        $fullAccessState = PermisionState::firstOrCreate(['permision_states' => 'Full Access']);
+        // 3. Grant Full Access boolean permissions for all modules in `system_modules_has_users`
         $modules = SystemModule::all();
 
         foreach ($modules as $module) {
@@ -66,7 +64,11 @@ class DefaultAdminSeeder extends Seeder
                     'users_id' => $userAdmin->id,
                 ],
                 [
-                    'permision_stateses_id' => $fullAccessState->id,
+                    'view' => 1,
+                    'create' => 1,
+                    'edit' => 1,
+                    'delete' => 1,
+                    'export' => 1,
                 ]
             );
         }

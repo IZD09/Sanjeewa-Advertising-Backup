@@ -30,7 +30,6 @@ class DatabaseSeeder extends Seeder
             AdminTypeSeeder::class,
             ActivityTypeSeeder::class,
             SystemModuleSeeder::class,
-            PermisionStateSeeder::class,
             DefaultAdminSeeder::class,
         ]);
     }

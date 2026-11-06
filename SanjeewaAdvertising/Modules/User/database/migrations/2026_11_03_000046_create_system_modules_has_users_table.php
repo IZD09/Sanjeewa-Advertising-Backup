@@ -14,13 +14,16 @@ return new class extends Migration
         Schema::create('system_modules_has_users', function (Blueprint $table) {
             $table->unsignedTinyInteger('system_modules_id');
             $table->unsignedInteger('users_id');
-            $table->unsignedTinyInteger('permision_stateses_id');
+            $table->unsignedTinyInteger('view')->default(0);
+            $table->unsignedTinyInteger('create')->default(0);
+            $table->unsignedTinyInteger('edit')->default(0);
+            $table->unsignedTinyInteger('delete')->default(0);
+            $table->unsignedTinyInteger('export')->default(0);
 
             $table->primary(['system_modules_id', 'users_id']);
 
             $table->index('users_id', 'fk_system_modules_has_users_users1_idx');
             $table->index('system_modules_id', 'fk_system_modules_has_users_system_modules1_idx');
-            $table->index('permision_stateses_id', 'fk_system_modules_has_users_permision_stateses1_idx');
 
             $table->foreign('system_modules_id', 'fk_system_modules_has_users_system_modules1')
                 ->references('id')
@@ -31,12 +34,6 @@ return new class extends Migration
             $table->foreign('users_id', 'fk_system_modules_has_users_users1')
                 ->references('id')
                 ->on('users')
-                ->onDelete('no action')
-                ->onUpdate('no action');
-
-            $table->foreign('permision_stateses_id', 'fk_system_modules_has_users_permision_stateses1')
-                ->references('id')
-                ->on('permision_stateses')
                 ->onDelete('no action')
                 ->onUpdate('no action');
         });

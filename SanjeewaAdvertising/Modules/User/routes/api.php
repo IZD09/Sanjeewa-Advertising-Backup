@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\User\Http\Controllers\AuthController;
-use Modules\User\Http\Controllers\PermisionStateController;
 use Modules\User\Http\Controllers\SystemModuleController;
 use Modules\User\Http\Controllers\UserController;
 use Modules\User\Http\Controllers\UserPermissionController;
@@ -28,9 +27,6 @@ Route::prefix('v1')->group(function () {
 
     // System Modules API
     Route::apiResource('system-modules', SystemModuleController::class)->names('user.system-modules');
-
-    // Permission States API
-    Route::apiResource('permision-states', PermisionStateController::class)->names('user.permision-states');
 
     // User Permissions Management API
     Route::prefix('users/{userId}/permissions')->group(function () {

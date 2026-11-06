@@ -24,7 +24,11 @@ class AssignUserPermissionRequest extends FormRequest
     {
         return [
             'system_modules_id' => ['required', 'integer', 'exists:system_modules,id'],
-            'permision_stateses_id' => ['required', 'integer', 'exists:permision_stateses,id'],
+            'view' => ['sometimes', 'boolean'],
+            'create' => ['sometimes', 'boolean'],
+            'edit' => ['sometimes', 'boolean'],
+            'delete' => ['sometimes', 'boolean'],
+            'export' => ['sometimes', 'boolean'],
         ];
     }
 }

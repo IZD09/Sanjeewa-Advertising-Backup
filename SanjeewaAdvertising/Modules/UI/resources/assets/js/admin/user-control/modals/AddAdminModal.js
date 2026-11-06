@@ -5,6 +5,8 @@
 
 "use strict";
 
+import { AddAdminProcess } from "../processes/AddAdminProcess.js";
+
 export class AddAdminModal {
   constructor(options = {}) {
     this.dataLoader = options.dataLoader;
@@ -13,6 +15,14 @@ export class AddAdminModal {
     this.overlay = document.getElementById("modalAddAdmin");
     this.form = document.getElementById("formAddAdmin");
     this.closeBtns = this.overlay ? this.overlay.querySelectorAll(".modal-close-trigger") : [];
+    this.submitBtn = this.form ? this.form.querySelector('button[type="submit"]') : null;
+
+    this.process = new AddAdminProcess({
+      dataLoader: this.dataLoader,
+      onError: (errMsg) => {
+        alert(errMsg);
+      }
+    });
 
     this.bindEvents();
   }
@@ -49,7 +59,7 @@ export class AddAdminModal {
     this.overlay.classList.remove("active");
   }
 
-  submit() {
+  async submit() {
     const firstName = document.getElementById("adminFirstName")?.value.trim();
     const lastName = document.getElementById("adminLastName")?.value.trim();
     const username = document.getElementById("adminUsername")?.value.trim();
@@ -57,31 +67,39 @@ export class AddAdminModal {
     const mobile = document.getElementById("adminMobile")?.value.trim();
     const password = document.getElementById("adminPassword")?.value;
     const confirmPassword = document.getElementById("adminPasswordConfirm")?.value;
-    const type = document.getElementById("adminTypeSelect")?.value || "Administrator";
-    const status = document.getElementById("adminStatusSelect")?.value || "Active";
+    const typeVal = document.getElementById("adminTypeSelect")?.value || "2";
+    const statusVal = document.getElementById("adminStatusSelect")?.value || "1";
 
-    if (!firstName || !lastName || !username || !email || !mobile || !password) {
-      alert("Please fill in all required fields marked with *");
-      return;
+    const originalBtnHtml = this.submitBtn ? this.submitBtn.innerHTML : '<i class="fa-solid fa-shield-check"></i> Provision Admin';
+    if (this.submitBtn) {
+      this.submitBtn.disabled = true;
+      this.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Provisioning Admin...';
     }
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+    try {
+      const result = await this.process.execute({
+        first_name: firstName,
+        last_name: lastName,
+        username: username,
+        email: email,
+        mobile: mobile,
+        password: password,
+        password_confirmation: confirmPassword,
+        admin_types_id: typeVal,
+        admin_statuses_id: statusVal
+      });
+
+      if (result.success && result.data) {
+        this.close();
+        if (this.form) this.form.reset();
+        this.onAdminAdded(result.data);
+      }
+    } finally {
+      if (this.submitBtn) {
+        this.submitBtn.disabled = false;
+        this.submitBtn.innerHTML = originalBtnHtml;
+      }
     }
-
-    const newAdmin = this.dataLoader.addAdmin({
-      first_name: firstName,
-      last_name: lastName,
-      username: username,
-      email: email,
-      mobile: mobile,
-      type: type,
-      status: status
-    });
-
-    this.close();
-    this.onAdminAdded(newAdmin);
   }
 }
 

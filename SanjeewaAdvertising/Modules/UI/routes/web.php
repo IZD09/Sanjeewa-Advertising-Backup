@@ -89,6 +89,10 @@ Route::middleware(['auth:web,admin'])->group(function () {
         ->middleware('module.permission:User Control')
         ->name('admin.user-control');
 
+    Route::view('/admin/profile', 'ui::layouts.admin.pages.profile.profile')
+        ->middleware('module.permission:User Control')
+        ->name('admin.profile.view');
+
     Route::get('/user-control', fn () => redirect()->route('admin.user-control'));
 
     Route::resource('uis', UIController::class)->names('ui');

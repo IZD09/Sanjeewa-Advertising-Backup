@@ -10,6 +10,7 @@ export class FilterProcess {
     this.tabButtons = document.querySelectorAll(".uc-tab-btn");
     this.tabPanes = document.querySelectorAll(".uc-tab-pane");
     this.onTabSwitched = options.onTabSwitched || (() => {});
+    this.beforeTabSwitch = options.beforeTabSwitch || null;
 
     this.bindEvents();
   }
@@ -23,7 +24,16 @@ export class FilterProcess {
     });
   }
 
-  switchTab(tabId) {
+  switchTab(tabId, bypassHook = false) {
+    if (!bypassHook && typeof this.beforeTabSwitch === "function") {
+      const canProceed = this.beforeTabSwitch(tabId, () => {
+        this.switchTab(tabId, true);
+      });
+      if (canProceed === false) {
+        return;
+      }
+    }
+
     this.tabButtons.forEach(b => {
       if (b.getAttribute("data-tab") === tabId) {
         b.classList.add("active");

@@ -50,6 +50,13 @@
           </div>
         </div>
         <div class="profile-dropdown-divider"></div>
+        @if($isAdminAuth)
+          <a href="{{ route('admin.profile.view') }}" class="profile-dropdown-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; color: var(--text); font-size: 11.5px; font-weight: 600; text-decoration: none; transition: background 0.15s;">
+            <i class="fa-solid fa-user-gear" style="color: #722ed1; width: 14px;"></i>
+            <span>Admin Profile</span>
+          </a>
+          <div class="profile-dropdown-divider"></div>
+        @endif
         <form method="POST" action="{{ $logoutRoute }}" class="profile-dropdown-logout-form">
           @csrf
           <button type="submit" class="profile-dropdown-logout-btn">

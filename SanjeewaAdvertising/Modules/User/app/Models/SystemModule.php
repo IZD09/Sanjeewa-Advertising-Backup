@@ -57,7 +57,7 @@ class SystemModule extends Model
     {
         return $this->belongsToMany(User::class, 'system_modules_has_users', 'system_modules_id', 'users_id')
             ->using(SystemModuleUser::class)
-            ->withPivot('permision_stateses_id');
+            ->withPivot(['view', 'create', 'edit', 'delete', 'export']);
     }
 
     /**

@@ -206,13 +206,14 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .uc-tabs-nav {
     display: flex;
     align-items: center;
     border-bottom: 1px solid #f0f0f0;
+    border-radius: 10px 10px 0 0;
     padding: 0 20px;
     background: #fafafa;
     gap: 8px;
@@ -489,10 +490,10 @@
     gap: 6px;
 }
 
-/* User Search Box in Permissions Tab */
+/* Unified User Search + Dropdown Combobox in Permissions Tab */
 .uc-perm-search-box {
     position: relative;
-    min-width: 270px;
+    min-width: 340px;
 }
 
 .uc-perm-search-box i.fa-magnifying-glass {
@@ -508,31 +509,35 @@
 .uc-perm-search-box input {
     width: 100%;
     height: 36px;
-    padding: 0 32px 0 32px;
+    padding: 0 56px 0 34px;
     font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
     border: 1px solid #d9d9d9;
     border-radius: 6px;
     outline: none;
     transition: all 0.2s;
     background: #ffffff;
     box-sizing: border-box;
+    cursor: text;
 }
 
-.uc-perm-search-box input:focus {
+.uc-perm-search-box input:focus,
+.uc-perm-search-box.open input {
     border-color: #1677ff;
     box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
 }
 
 .uc-perm-search-clear {
     position: absolute;
-    right: 8px;
+    right: 28px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: #94a3b8;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11.5px;
     width: 20px;
     height: 20px;
     display: flex;
@@ -547,18 +552,52 @@
     background: #94a3b8;
 }
 
+.uc-perm-dropdown-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 11.5px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.uc-perm-dropdown-toggle:hover {
+    color: #1677ff;
+    background: #f0f7ff;
+}
+
+.uc-perm-search-box.open .uc-perm-dropdown-toggle i {
+    transform: rotate(180deg);
+    color: #1677ff;
+}
+
+.uc-perm-dropdown-toggle i {
+    transition: transform 0.2s ease;
+}
+
 /* Floating Autocomplete Dropdown */
 .uc-perm-search-results {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    width: 320px;
+    width: 100%;
+    min-width: 340px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
     z-index: 1000;
-    max-height: 240px;
+    max-height: 260px;
     overflow-y: auto;
 }
 

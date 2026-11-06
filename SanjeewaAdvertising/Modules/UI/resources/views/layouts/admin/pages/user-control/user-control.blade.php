@@ -1,5 +1,10 @@
 @php
     $userStatuses = \Modules\User\Models\UserStatus::orderBy('id', 'asc')->get();
+    $adminTypes = \Modules\Admin\Models\AdminType::orderBy('id', 'asc')->get();
+    $adminStatuses = \Modules\Admin\Models\AdminStatus::orderBy('id', 'asc')->get();
+    $isAdminAuth = Auth::guard('admin')->check();
+    $currentAdmin = $isAdminAuth ? Auth::guard('admin')->user() : (Auth::guard('web')->user() ?? Auth::guard('admin')->user());
+    $adminUsername = $currentAdmin->username ?? 'admin';
 @endphp
 @extends('ui::layouts.master')
 
@@ -11,6 +16,7 @@
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/admin-user-control.css') }}
+    {{ module_vite('build-ui', 'resources/assets/css/admin-profile.css') }}
 @endpush
 
 @section('content')
@@ -203,19 +209,20 @@
                                     <div class="uc-perm-user-picker">
                                         <label for="permSearchUser"><i class="fa-solid fa-user-check" style="color: #1677ff;"></i> Select User:</label>
 
-                                        <!-- Search User by Name or ID -->
-                                        <div class="uc-perm-search-box">
+                                        <!-- Unified Search + Dropdown (Searchable Select) -->
+                                        <div class="uc-perm-search-box" id="permUserCombobox">
                                             <i class="fa-solid fa-magnifying-glass"></i>
-                                            <input type="text" id="permSearchUser" placeholder="Search by Name or ID (e.g. 1, Kamal)..." autocomplete="off">
+                                            <input type="text" id="permSearchUser" placeholder="Search or select user by ID or Name (e.g. 1, Kamal)..." autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="permSearchResults">
                                             <button type="button" class="uc-perm-search-clear" id="btnPermSearchClear" title="Clear search" style="display: none;">
                                                 <i class="fa-solid fa-xmark"></i>
                                             </button>
-                                            <div class="uc-perm-search-results" id="permSearchResults" style="display: none;"></div>
+                                            <button type="button" class="uc-perm-dropdown-toggle" id="btnPermDropdownToggle" title="Show users" tabindex="-1">
+                                                <i class="fa-solid fa-chevron-down"></i>
+                                            </button>
+                                            <div class="uc-perm-search-results" id="permSearchResults" role="listbox" style="display: none;"></div>
                                         </div>
 
-                                        <select class="ant-select" id="permSelectUser" style="min-width: 260px; font-weight: 600;">
-                                            <!-- Injected via PermissionHandler -->
-                                        </select>
+                                        <input type="hidden" id="permSelectUser" value="">
 
                                         <div id="permActiveUserBadge" class="uc-active-user-badge"></div>
                                     </div>
@@ -356,28 +363,30 @@
                                     </div>
                                     <div class="uc-form-group">
                                         <label for="adminTypeSelect">Admin Privilege Type <span class="req">*</span></label>
-                                        <select id="adminTypeSelect" required>
-                                            <option value="Administrator">Administrator</option>
-                                            <option value="Super Admin">Super Admin</option>
-                                            <option value="Manager">Manager</option>
-                                            <option value="Accountant">Accountant</option>
-                                            <option value="Operator">Operator</option>
+                                        <select id="adminTypeSelect" name="admin_types_id" required>
+                                            @foreach($adminTypes as $type)
+                                                <option value="{{ $type->id }}" {{ $type->admin_type === 'Administrator' ? 'selected' : '' }}>
+                                                    {{ $type->admin_type }}
+                                                </option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="uc-form-group">
                                         <label for="adminPassword">Password <span class="req">*</span></label>
-                                        <input type="password" id="adminPassword" placeholder="••••••••" required>
+                                        <input type="password" id="adminPassword" placeholder="••••••••" required minlength="6" maxlength="255">
                                     </div>
                                     <div class="uc-form-group">
                                         <label for="adminPasswordConfirm">Confirm Password <span class="req">*</span></label>
-                                        <input type="password" id="adminPasswordConfirm" placeholder="••••••••" required>
+                                        <input type="password" id="adminPasswordConfirm" placeholder="••••••••" required minlength="6" maxlength="255">
                                     </div>
                                     <div class="uc-form-group full">
-                                        <label for="adminStatusSelect">Account Status</label>
-                                        <select id="adminStatusSelect">
-                                            <option value="Active">Active</option>
-                                            <option value="Locked">Locked</option>
-                                            <option value="Inactive">Inactive</option>
+                                        <label for="adminStatusSelect">Account Status <span class="req">*</span></label>
+                                        <select id="adminStatusSelect" name="admin_statuses_id" required>
+                                            @foreach($adminStatuses as $status)
+                                                <option value="{{ $status->id }}" {{ $status->admin_statas === 'Active' ? 'selected' : '' }}>
+                                                    {{ $status->admin_statas }}
+                                                </option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -398,6 +407,41 @@
                     <span class="toast-msg">Operation completed successfully.</span>
                 </div>
 
+                <!-- Admin Security Permission Modal for Administrators Tab & Add Admin -->
+                <div class="ap-lock-overlay" id="adminSecurityLockModal">
+                    <div class="ap-lock-card">
+                        <div class="ap-lock-icon-wrap">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <h3 class="ap-lock-title">Security Permission Required</h3>
+                        <p class="ap-lock-desc" id="secVerifyDesc">
+                            This action requires administrator credentials. Please enter your administrator username and password to proceed.
+                        </p>
+
+                        <form class="ap-lock-form" id="formVerifySecurityAccess">
+                            <div class="ap-lock-field">
+                                <label for="secVerifyUsername">Admin Username</label>
+                                <input type="text" id="secVerifyUsername" placeholder="e.g. admin" required autocomplete="username">
+                            </div>
+                            <div class="ap-lock-field">
+                                <label for="secVerifyPassword">Admin Password</label>
+                                <input type="password" id="secVerifyPassword" placeholder="••••••••" required autocomplete="current-password">
+                            </div>
+
+                            <div class="ap-lock-error" id="secVerifyError"></div>
+
+                            <div class="ap-lock-actions">
+                                <button type="button" class="ap-lock-btn-cancel" id="btnSecVerifyCancel">
+                                    <i class="fa-solid fa-xmark"></i> Cancel
+                                </button>
+                                <button type="submit" class="ap-lock-btn-submit" id="btnSecVerifySubmit">
+                                    <i class="fa-solid fa-key"></i> Verify & Proceed
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -405,9 +449,12 @@
 @endsection
 
 @push('scripts')
+    <script>
+        window.__CURRENT_ADMIN_USERNAME__ = "{{ $adminUsername }}";
+    </script>
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/topbar.js') }}
-    {{ module_vite('build-ui', 'resources/assets/js/admin/user-control.js') }}
+    {{ module_vite('build-ui', 'resources/assets/js/admin/user-control/processes/UserControlManager.js') }}
 @endpush
 

@@ -10,16 +10,21 @@
 
 "use strict";
 
+import { RequestHandler } from "../../../core/RequestHandler.js";
 import { PermissionMatrixBuilder } from "../builders/PermissionMatrixBuilder.js";
 
 export class PermissionHandler {
   constructor(options = {}) {
+    this.http = new RequestHandler();
     this.dataLoader = options.dataLoader;
+    this.onSavePermissions = options.onSavePermissions || null;
     this.onPermissionsSaved = options.onPermissionsSaved || (() => {});
 
+    this.combobox = document.getElementById("permUserCombobox");
     this.userSelect = document.getElementById("permSelectUser");
     this.searchInput = document.getElementById("permSearchUser");
     this.searchClearBtn = document.getElementById("btnPermSearchClear");
+    this.dropdownToggleBtn = document.getElementById("btnPermDropdownToggle");
     this.searchResults = document.getElementById("permSearchResults");
     this.activeUserBadge = document.getElementById("permActiveUserBadge");
 
@@ -32,68 +37,109 @@ export class PermissionHandler {
     this.currentUserId = null;
     this.currentPermissions = {};
     this.filteredUsers = [];
+    this.highlightedIndex = -1;
+    this.isDropdownOpen = false;
+    this.searchAbortController = null;
 
     this.bindEvents();
   }
 
+  formatUserDisplay(user) {
+    if (!user) return "";
+    return `ID #${user.id} - ${user.first_name} ${user.last_name} (@${user.username})`;
+  }
+
   bindEvents() {
-    // Dropdown change
+    // Hidden select/input change fallback
     if (this.userSelect) {
       this.userSelect.addEventListener("change", (e) => {
-        this.loadUserPermissions(e.target.value);
+        this.loadUserPermissions(e.target.value, true);
       });
     }
 
-    // Search input (by Name or ID)
+    // Unified Search + Dropdown input
     if (this.searchInput) {
       this.searchInput.addEventListener("input", () => {
         this.handleSearch();
       });
 
-      this.searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          this.selectFirstSearchResult();
-        } else if (e.key === "Escape") {
-          this.closeSearchResults();
+      this.searchInput.addEventListener("focus", () => {
+        this.openDropdownWithAllOrFiltered();
+      });
+
+      this.searchInput.addEventListener("click", () => {
+        if (!this.isDropdownOpen) {
+          this.openDropdownWithAllOrFiltered();
         }
       });
 
-      this.searchInput.addEventListener("focus", () => {
-        if (this.searchInput.value.trim()) {
-          this.handleSearch();
+      this.searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (!this.isDropdownOpen) {
+            this.openDropdownWithAllOrFiltered();
+          } else {
+            this.moveHighlight(1);
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (this.isDropdownOpen) {
+            this.moveHighlight(-1);
+          }
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          this.selectHighlightedOrFirstResult();
+        } else if (e.key === "Escape") {
+          this.closeSearchResults(true);
+        }
+      });
+    }
+
+    // Dropdown chevron toggle button
+    if (this.dropdownToggleBtn) {
+      this.dropdownToggleBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.isDropdownOpen) {
+          this.closeSearchResults(true);
+        } else {
+          this.filteredUsers = [...this.dataLoader.users];
+          this.renderSearchResults(this.filteredUsers, "");
+          if (this.searchInput) {
+            this.searchInput.focus();
+            this.searchInput.select();
+          }
         }
       });
     }
 
     // Clear search button
     if (this.searchClearBtn) {
-      this.searchClearBtn.addEventListener("click", () => {
+      this.searchClearBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.clearSearch();
       });
     }
 
-    // Click on autocomplete item
+    // Click on dropdown option item
     if (this.searchResults) {
       this.searchResults.addEventListener("click", (e) => {
         const item = e.target.closest(".uc-perm-search-item");
         if (item) {
           const userId = Number(item.getAttribute("data-id"));
-          const user = this.dataLoader.users.find(u => u.id === userId);
-          if (user && this.searchInput) {
-            this.searchInput.value = `${user.first_name} ${user.last_name}`;
-            if (this.searchClearBtn) this.searchClearBtn.style.display = "flex";
-          }
-          this.closeSearchResults();
-          this.loadUserPermissions(userId);
+          const user =
+            this.filteredUsers.find(u => Number(u.id) === userId) ||
+            this.dataLoader.users.find(u => Number(u.id) === userId);
+          this.selectUserOption(user || { id: userId });
         }
       });
     }
 
-    // Close autocomplete on click outside
+    // Close dropdown on click outside
     document.addEventListener("click", (e) => {
       if (this.searchResults && !e.target.closest(".uc-perm-search-box")) {
-        this.closeSearchResults();
+        this.closeSearchResults(true);
       }
     });
 
@@ -145,43 +191,179 @@ export class PermissionHandler {
     }
   }
 
-  handleSearch() {
+  openDropdownWithAllOrFiltered() {
     if (!this.searchInput) return;
     const raw = this.searchInput.value.trim();
-    const query = raw.toLowerCase().replace(/^#/, "");
+    const currentUser = this.dataLoader.users.find(u => Number(u.id) === Number(this.currentUserId));
+    const isShowingSelectedLabel = currentUser && raw === this.formatUserDisplay(currentUser);
+
+    if (!raw || isShowingSelectedLabel) {
+      if (isShowingSelectedLabel) {
+        this.searchInput.select();
+      }
+      this.filteredUsers = [...this.dataLoader.users];
+      this.renderSearchResults(this.filteredUsers, "");
+    } else {
+      this.handleSearch();
+    }
+  }
+
+  moveHighlight(step) {
+    if (!this.filteredUsers || this.filteredUsers.length === 0) return;
+    this.highlightedIndex += step;
+    if (this.highlightedIndex >= this.filteredUsers.length) {
+      this.highlightedIndex = 0;
+    } else if (this.highlightedIndex < 0) {
+      this.highlightedIndex = this.filteredUsers.length - 1;
+    }
+
+    const items = this.searchResults ? this.searchResults.querySelectorAll(".uc-perm-search-item") : [];
+    items.forEach((el, idx) => {
+      el.classList.toggle("highlighted", idx === this.highlightedIndex);
+      if (idx === this.highlightedIndex) {
+        el.scrollIntoView({ block: "nearest" });
+      }
+    });
+  }
+
+  selectUserOption(user) {
+    if (!user || !user.id) return;
+    const userId = Number(user.id);
+    const resolvedUser =
+      this.dataLoader.users.find(u => Number(u.id) === userId) ||
+      this.filteredUsers.find(u => Number(u.id) === userId) ||
+      user;
+
+    if (this.searchInput && resolvedUser.first_name) {
+      this.searchInput.value = this.formatUserDisplay(resolvedUser);
+    }
+    if (this.searchClearBtn) {
+      this.searchClearBtn.style.display = "flex";
+    }
+
+    this.closeSearchResults(false);
+    this.loadUserPermissions(userId, true);
+  }
+
+  async handleSearch() {
+    if (!this.searchInput) return;
+    const raw = this.searchInput.value.trim();
+    const query = raw.toLowerCase().replace(/^#/, "").trim();
+    const isNumericId = /^\d+$/.test(query);
 
     if (this.searchClearBtn) {
       this.searchClearBtn.style.display = raw ? "flex" : "none";
     }
 
+    if (this.searchAbortController) {
+      this.searchAbortController.abort();
+      this.searchAbortController = null;
+    }
+
     if (!query) {
-      this.populateUserSelect();
-      this.closeSearchResults();
+      this.filteredUsers = [...this.dataLoader.users];
+      this.renderSearchResults(this.filteredUsers, "");
+
+      try {
+        const response = await this.http.get("/api/v1/users/all");
+        if (response && response.success && Array.isArray(response.data)) {
+          this.dataLoader.users = response.data.map(u => this.dataLoader.normalizeUser(u));
+          this.dataLoader.saveUsers();
+          if (!this.searchInput.value.trim()) {
+            this.filteredUsers = [...this.dataLoader.users];
+            this.renderSearchResults(this.filteredUsers, "");
+          }
+        }
+      } catch (err) {
+        // Fallback to local users cache
+      }
       return;
     }
 
-    // Filter users by ID, First Name, Last Name, Full Name, Username or Role
-    this.filteredUsers = this.dataLoader.users.filter(u => {
-      const matchId = String(u.id) === query || String(u.id).startsWith(query) || `#${u.id}`.startsWith(raw.toLowerCase());
+    // Immediate local filtering while User Module request is in flight
+    this.filteredUsers = this.filterLocalUsers(raw, query, isNumericId);
+    this.renderSearchResults(this.filteredUsers, query);
+
+    // Search users from User Module (/api/v1/users/search) using RequestHandler
+    const controller = new AbortController();
+    this.searchAbortController = controller;
+
+    try {
+      const params = {
+        q: raw,
+        all: true
+      };
+      if (isNumericId) {
+        params.id = query;
+      }
+
+      const response = await this.http.get("/api/v1/users/search", params, {
+        signal: controller.signal
+      });
+
+      const list = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+      const matchedUsers = list.map(u =>
+        typeof this.dataLoader.normalizeUser === "function" ? this.dataLoader.normalizeUser(u) : u
+      );
+
+      // Sync discovered users into dataLoader cache
+      matchedUsers.forEach(remoteUser => {
+        const idx = this.dataLoader.users.findIndex(u => Number(u.id) === Number(remoteUser.id));
+        if (idx !== -1) {
+          this.dataLoader.users[idx] = { ...this.dataLoader.users[idx], ...remoteUser };
+        } else {
+          this.dataLoader.users.push(remoteUser);
+        }
+      });
+      this.dataLoader.saveUsers();
+
+      this.filteredUsers = matchedUsers;
+      this.renderSearchResults(this.filteredUsers, query);
+    } catch (err) {
+      if (err && (err.name === "AbortError" || err.isTimeout)) {
+        return;
+      }
+      // Keep local filtered results if API request fails
+    }
+  }
+
+  filterLocalUsers(raw, query, isNumericId) {
+    return this.dataLoader.users.filter(u => {
+      const matchId =
+        String(u.id) === query ||
+        String(u.id).startsWith(query) ||
+        `#${u.id}`.startsWith(raw.toLowerCase());
+
+      if (isNumericId && !query.startsWith("0") && query.length <= 6) {
+        return matchId;
+      }
+
       const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
-      const matchName = fullName.includes(query) || u.first_name.toLowerCase().includes(query) || u.last_name.toLowerCase().includes(query);
-      const matchUsername = u.username.toLowerCase().includes(query);
+      const matchName =
+        fullName.includes(query) ||
+        (u.first_name || "").toLowerCase().includes(query) ||
+        (u.last_name || "").toLowerCase().includes(query);
+      const matchUsername = (u.username || "").toLowerCase().includes(query);
+      const matchMobile = (u.mobile || "").includes(query);
       const matchRole = (u.role || "").toLowerCase().includes(query);
 
-      return matchId || matchName || matchUsername || matchRole;
+      return matchId || matchName || matchUsername || matchMobile || matchRole;
     });
-
-    // Update Select Dropdown with matches
-    this.populateUserSelect(this.filteredUsers);
-
-    // Render Floating Autocomplete Dropdown
-    this.renderSearchResults(this.filteredUsers, query);
   }
 
   renderSearchResults(matches, query) {
     if (!this.searchResults) return;
 
+    this.isDropdownOpen = true;
+    if (this.combobox) {
+      this.combobox.classList.add("open");
+    }
+    if (this.searchInput) {
+      this.searchInput.setAttribute("aria-expanded", "true");
+    }
+
     if (matches.length === 0) {
+      this.highlightedIndex = -1;
       this.searchResults.innerHTML = `
         <div style="padding: 14px; text-align: center; color: #94a3b8; font-size: 12.5px;">
           <i class="fa-solid fa-user-xmark" style="margin-right: 6px;"></i>
@@ -192,92 +374,131 @@ export class PermissionHandler {
       return;
     }
 
-    this.searchResults.innerHTML = matches.map(u => `
-      <div class="uc-perm-search-item ${u.id === this.currentUserId ? 'highlighted' : ''}" data-id="${u.id}">
+    const currentIdx = matches.findIndex(u => Number(u.id) === Number(this.currentUserId));
+    this.highlightedIndex = currentIdx !== -1 ? currentIdx : 0;
+
+    this.searchResults.innerHTML = matches.map((u, idx) => `
+      <div class="uc-perm-search-item ${idx === this.highlightedIndex ? 'highlighted' : ''}" data-id="${u.id}" role="option" aria-selected="${Number(u.id) === Number(this.currentUserId)}">
         <span class="uc-perm-item-id">ID: #${u.id}</span>
         <div class="uc-perm-item-name">
           <span>${u.first_name} ${u.last_name}</span>
-          <small>@${u.username}</small>
+          <small>@${u.username}${u.mobile ? ` • ${u.mobile}` : ""}</small>
         </div>
-        <span class="uc-perm-item-role">${u.role || 'Staff'}</span>
+        <span class="uc-perm-item-role">${u.status || u.role || 'Active'}</span>
       </div>
     `).join("");
 
     this.searchResults.style.display = "block";
   }
 
-  selectFirstSearchResult() {
+  selectHighlightedOrFirstResult() {
     if (this.filteredUsers && this.filteredUsers.length > 0) {
-      const first = this.filteredUsers[0];
-      if (this.searchInput) {
-        this.searchInput.value = `${first.first_name} ${first.last_name}`;
-      }
-      this.closeSearchResults();
-      this.loadUserPermissions(first.id);
+      const target =
+        (this.highlightedIndex >= 0 && this.filteredUsers[this.highlightedIndex]) ||
+        this.filteredUsers[0];
+      this.selectUserOption(target);
     }
   }
 
-  closeSearchResults() {
+  closeSearchResults(restoreSelectedText = false) {
+    this.isDropdownOpen = false;
+    if (this.combobox) {
+      this.combobox.classList.remove("open");
+    }
+    if (this.searchInput) {
+      this.searchInput.setAttribute("aria-expanded", "false");
+    }
     if (this.searchResults) {
       this.searchResults.style.display = "none";
+    }
+    if (restoreSelectedText && this.currentUserId && this.searchInput) {
+      const activeUser = this.dataLoader.users.find(u => Number(u.id) === Number(this.currentUserId));
+      if (activeUser) {
+        this.searchInput.value = this.formatUserDisplay(activeUser);
+        if (this.searchClearBtn) {
+          this.searchClearBtn.style.display = "flex";
+        }
+      }
     }
   }
 
   clearSearch() {
     if (this.searchInput) {
       this.searchInput.value = "";
+      this.searchInput.focus();
     }
     if (this.searchClearBtn) {
       this.searchClearBtn.style.display = "none";
     }
-    this.closeSearchResults();
-    this.populateUserSelect();
-    if (this.currentUserId) {
-      this.loadUserPermissions(this.currentUserId);
-    }
+    this.filteredUsers = [...this.dataLoader.users];
+    this.renderSearchResults(this.filteredUsers, "");
   }
 
   populateUserSelect(userList = null) {
-    if (!this.userSelect) return;
     const users = userList !== null ? userList : this.dataLoader.users;
 
-    if (users.length === 0) {
-      this.userSelect.innerHTML = `<option value="">-- No Matching Users --</option>`;
-      return;
+    if (this.userSelect && this.userSelect.tagName === "SELECT") {
+      if (users.length === 0) {
+        this.userSelect.innerHTML = `<option value="">-- No Matching Users --</option>`;
+      } else {
+        this.userSelect.innerHTML = users.map(u => `
+          <option value="${u.id}" ${Number(u.id) === Number(this.currentUserId) ? 'selected' : ''}>
+            ID #${u.id} - ${u.first_name} ${u.last_name} (@${u.username})
+          </option>
+        `).join("");
+      }
     }
 
-    this.userSelect.innerHTML = users.map(u => `
-      <option value="${u.id}" ${u.id === this.currentUserId ? 'selected' : ''}>
-        ID #${u.id} - ${u.first_name} ${u.last_name} (@${u.username})
-      </option>
-    `).join("");
-
-    // If currently selected user is not in list, auto-select first
-    if (!users.some(u => u.id === this.currentUserId)) {
-      this.currentUserId = users[0].id;
-      this.loadUserPermissions(this.currentUserId);
+    if (users.length > 0 && !users.some(u => Number(u.id) === Number(this.currentUserId))) {
+      this.currentUserId = Number(users[0].id);
+      this.loadUserPermissions(this.currentUserId, true);
+    } else if (this.currentUserId) {
+      const currentUser = users.find(u => Number(u.id) === Number(this.currentUserId));
+      if (currentUser && this.searchInput && document.activeElement !== this.searchInput) {
+        this.searchInput.value = this.formatUserDisplay(currentUser);
+        if (this.searchClearBtn) {
+          this.searchClearBtn.style.display = "flex";
+        }
+      }
     }
   }
 
-  loadUserPermissions(userId) {
+  loadUserPermissions(userId, syncSearchInput = true) {
     this.currentUserId = Number(userId);
     if (this.userSelect && this.userSelect.value !== String(this.currentUserId)) {
       this.userSelect.value = String(this.currentUserId);
     }
 
-    // Update Active User Badge
-    const user = this.dataLoader.users.find(u => u.id === this.currentUserId);
-    if (user && this.activeUserBadge) {
-      this.activeUserBadge.innerHTML = `
-        <span class="ant-tag ant-tag-blue" style="font-size: 12.5px; padding: 4px 10px; border-radius: 6px;">
-          <i class="fa-solid fa-id-badge"></i> <strong>ID: #${user.id}</strong> — ${user.first_name} ${user.last_name} (@${user.username}) • <em>${user.role || 'Staff'}</em>
-        </span>
-      `;
+    const user = this.dataLoader.users.find(u => Number(u.id) === this.currentUserId);
+    if (user) {
+      if (syncSearchInput && this.searchInput && document.activeElement !== this.searchInput) {
+        this.searchInput.value = this.formatUserDisplay(user);
+        if (this.searchClearBtn) {
+          this.searchClearBtn.style.display = "flex";
+        }
+      }
+      if (this.activeUserBadge) {
+        this.activeUserBadge.innerHTML = `
+          <span class="ant-tag ant-tag-blue" style="font-size: 12.5px; padding: 4px 10px; border-radius: 6px;">
+            <i class="fa-solid fa-id-badge"></i> <strong>ID: #${user.id}</strong> — ${user.first_name} ${user.last_name} (@${user.username}) • <em>${user.status || user.role || 'Active'}</em>
+          </span>
+        `;
+      }
     }
 
     const perms = this.dataLoader.getUserPermissions(this.currentUserId);
     this.currentPermissions = JSON.parse(JSON.stringify(perms));
     this.render();
+
+    const requestedUserId = this.currentUserId;
+    if (typeof this.dataLoader.fetchUserPermissions === "function") {
+      this.dataLoader.fetchUserPermissions(requestedUserId).then((remotePerms) => {
+        if (this.currentUserId === requestedUserId && remotePerms) {
+          this.currentPermissions = JSON.parse(JSON.stringify(remotePerms));
+          this.render();
+        }
+      });
+    }
   }
 
   render() {
@@ -349,9 +570,27 @@ export class PermissionHandler {
     }
   }
 
-  save() {
+  async save() {
     if (!this.currentUserId) return;
-    this.dataLoader.saveUserPermissions(this.currentUserId, this.currentPermissions);
-    this.onPermissionsSaved();
+
+    const originalHtml = this.saveBtn ? this.saveBtn.innerHTML : "";
+    if (this.saveBtn) {
+      this.saveBtn.disabled = true;
+      this.saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+    }
+
+    try {
+      if (typeof this.onSavePermissions === "function") {
+        await this.onSavePermissions(this.currentUserId, this.currentPermissions);
+      } else {
+        this.dataLoader.setUserPermissions(this.currentUserId, this.currentPermissions);
+        this.onPermissionsSaved();
+      }
+    } finally {
+      if (this.saveBtn) {
+        this.saveBtn.disabled = false;
+        this.saveBtn.innerHTML = originalHtml;
+      }
+    }
   }
 }

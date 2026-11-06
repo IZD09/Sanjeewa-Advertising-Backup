@@ -15,7 +15,8 @@ class AdminUserController extends BaseApiController
 {
     public function __construct(
         protected AdminUserService $adminUserService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of users managed by administrators.
@@ -106,14 +107,19 @@ class AdminUserController extends BaseApiController
         $validated = $request->validate([
             'permissions' => ['required', 'array'],
             'permissions.*.system_modules_id' => ['required', 'integer', 'exists:system_modules,id'],
-            'permissions.*.permision_stateses_id' => ['required', 'integer', 'exists:permision_stateses,id'],
+            'permissions.*.view' => ['sometimes', 'boolean'],
+            'permissions.*.create' => ['sometimes', 'boolean'],
+            'permissions.*.edit' => ['sometimes', 'boolean'],
+            'permissions.*.delete' => ['sometimes', 'boolean'],
+            'permissions.*.export' => ['sometimes', 'boolean'],
         ]);
 
         $adminId = Auth::guard('admin')->id();
         $this->adminUserService->syncUserPermissions($id, $validated['permissions'], $adminId);
+        $user = $this->adminUserService->getUserById($id);
 
         return $this->success(
-            null,
+            $user ? new UserResource($user) : null,
             'User permissions synchronized successfully.'
         );
     }

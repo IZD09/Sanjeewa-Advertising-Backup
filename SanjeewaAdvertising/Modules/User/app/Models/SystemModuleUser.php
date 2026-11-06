@@ -36,7 +36,11 @@ class SystemModuleUser extends Pivot
     protected $fillable = [
         'system_modules_id',
         'users_id',
-        'permision_stateses_id',
+        'view',
+        'create',
+        'edit',
+        'delete',
+        'export',
     ];
 
     /**
@@ -49,7 +53,11 @@ class SystemModuleUser extends Pivot
         return [
             'system_modules_id' => 'integer',
             'users_id' => 'integer',
-            'permision_stateses_id' => 'integer',
+            'view' => 'boolean',
+            'create' => 'boolean',
+            'edit' => 'boolean',
+            'delete' => 'boolean',
+            'export' => 'boolean',
         ];
     }
 
@@ -67,13 +75,5 @@ class SystemModuleUser extends Pivot
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'users_id', 'id');
-    }
-
-    /**
-     * Get the permission state for this permission assignment.
-     */
-    public function permisionState(): BelongsTo
-    {
-        return $this->belongsTo(PermisionState::class, 'permision_stateses_id', 'id');
     }
 }

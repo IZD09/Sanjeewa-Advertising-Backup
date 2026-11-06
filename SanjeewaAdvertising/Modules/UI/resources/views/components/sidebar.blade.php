@@ -83,6 +83,7 @@
             'section' => 'MANAGEMENT',
             'items' => [
                 ['component' => 'user-control'],
+                ['component' => 'admin-profile'],
                 ['component' => 'settings'],
             ],
         ],

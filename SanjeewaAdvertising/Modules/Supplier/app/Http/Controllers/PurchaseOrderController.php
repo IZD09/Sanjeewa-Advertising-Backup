@@ -15,7 +15,8 @@ class PurchaseOrderController extends BaseApiController
 {
     public function __construct(
         protected PurchaseOrderService $purchaseOrderService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of purchase orders.

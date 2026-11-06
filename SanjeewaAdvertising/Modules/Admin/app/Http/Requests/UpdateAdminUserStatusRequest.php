@@ -38,4 +38,3 @@ class UpdateAdminUserStatusRequest extends FormRequest
         ];
     }
 }
-

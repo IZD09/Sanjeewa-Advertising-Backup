@@ -21,9 +21,12 @@ class SystemModuleUserResource extends JsonResource
         return [
             'system_modules_id' => $this->system_modules_id,
             'users_id' => $this->users_id,
-            'permision_stateses_id' => $this->permision_stateses_id,
+            'view' => (bool) $this->view,
+            'create' => (bool) $this->create,
+            'edit' => (bool) $this->edit,
+            'delete' => (bool) $this->delete,
+            'export' => (bool) $this->export,
             'module' => new SystemModuleResource($this->whenLoaded('systemModule')),
-            'permission_state' => new PermisionStateResource($this->whenLoaded('permisionState')),
             'user' => new UserResource($this->whenLoaded('user')),
         ];
     }

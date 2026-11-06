@@ -114,7 +114,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(SystemModule::class, 'system_modules_has_users', 'users_id', 'system_modules_id')
             ->using(SystemModuleUser::class)
-            ->withPivot('permision_stateses_id');
+            ->withPivot(['view', 'create', 'edit', 'delete', 'export']);
     }
 
     /**
@@ -158,9 +158,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if the user is authorized to access a system module.
+     * Check if the user is authorized to access a system module (or perform a specific action).
      */
-    public function canAccessModule(string|int $module): bool
+    public function canAccessModule(string|int $module, ?string $action = null): bool
     {
         // Inactive or suspended users cannot access any module
         if ((int) $this->user_statuses_id !== 1) {
@@ -185,17 +185,20 @@ class User extends Authenticatable
         }
 
         /** @var SystemModuleUser|null $assignment */
-        $assignment = $query->with('permisionState')->first();
+        $assignment = $query->first();
 
-        if (! $assignment || ! $assignment->permisionState) {
+        if (! $assignment) {
             return false;
         }
 
-        // Denied permission state prevents access
-        if ($assignment->permisionState->permision_states === 'Denied' || (int) $assignment->permision_stateses_id === 4) {
-            return false;
+        if ($action !== null && in_array($action, ['view', 'create', 'edit', 'delete', 'export'], true)) {
+            return (bool) $assignment->{$action};
         }
 
-        return true;
+        return (bool) $assignment->view
+            || (bool) $assignment->create
+            || (bool) $assignment->edit
+            || (bool) $assignment->delete
+            || (bool) $assignment->export;
     }
 }

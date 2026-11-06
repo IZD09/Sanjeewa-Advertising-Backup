@@ -26,7 +26,11 @@ export class MetricsProcess {
     const activeAdmins = this.dataLoader.admins.filter(a => a.status === "Active").length;
     const totalActive = activeUsers + activeAdmins;
 
-    const configuredPermCount = Object.keys(this.dataLoader.permissions).length;
+    const configuredPermCount = Object.values(this.dataLoader.permissions).filter(userMatrix =>
+      userMatrix && Object.values(userMatrix).some(modActions =>
+        modActions && Object.values(modActions).some(Boolean)
+      )
+    ).length;
 
     if (this.kpiTotalUsers) this.kpiTotalUsers.textContent = totalUsers;
     if (this.kpiTotalAdmins) this.kpiTotalAdmins.textContent = totalAdmins;

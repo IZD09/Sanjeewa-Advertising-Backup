@@ -5,14 +5,23 @@ namespace Modules\Admin\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Modules\Admin\Models\Admin;
 use Modules\Admin\Models\AdminLogin;
 use Modules\Admin\Models\AdminStatus;
 use Modules\Admin\Models\AdminType;
+use Modules\Core\Models\ActivityType;
+use Modules\Core\Services\ActivityService;
 
 class AdminService
 {
+    public function __construct(
+        protected ?ActivityService $activityService = null
+    ) {
+        $this->activityService = $activityService ?? app(ActivityService::class);
+    }
+
     /**
      * Build the query for admins with search and filters.
      *
@@ -94,18 +103,18 @@ class AdminService
     }
 
     /**
-     * Create a new admin.
+     * Create a new admin and log the activity via Core ActivityService.
      *
      * @param  array<string, mixed>  $data
      */
-    public function createAdmin(array $data): Admin
+    public function createAdmin(array $data, ?int $actingAdminId = null): Admin
     {
         $password = (string) ($data['password'] ?? '');
         if (Hash::info($password)['algo'] === null) {
             $password = Hash::make($password);
         }
 
-        return Admin::create([
+        $admin = Admin::create([
             'first_name' => trim((string) ($data['first_name'] ?? '')),
             'last_name' => trim((string) ($data['last_name'] ?? '')),
             'username' => trim((string) ($data['username'] ?? '')),
@@ -117,6 +126,19 @@ class AdminService
             'admin_statuses_id' => (int) ($data['admin_statuses_id'] ?? 1),
             'admin_types_id' => (int) ($data['admin_types_id'] ?? 1),
         ])->load(['status', 'type']);
+
+        $this->logAdminActivity('Create Admin', [
+            'action' => 'create_admin',
+            'admin_id' => $admin->id,
+            'username' => $admin->username,
+            'name' => "{$admin->first_name} {$admin->last_name}",
+            'email' => $admin->email,
+            'type' => $admin->type?->admin_type ?? 'Administrator',
+            'status' => $admin->status?->admin_statas ?? 'Active',
+            'message' => "Created new administrator '{$admin->username}' (ID: #{$admin->id}).",
+        ], $actingAdminId ?? $admin->id);
+
+        return $admin;
     }
 
     /**
@@ -124,7 +146,7 @@ class AdminService
      *
      * @param  array<string, mixed>  $data
      */
-    public function updateAdmin(Admin $admin, array $data): Admin
+    public function updateAdmin(Admin $admin, array $data, ?int $actingAdminId = null): Admin
     {
         $attributes = [];
 
@@ -159,27 +181,90 @@ class AdminService
 
         $admin->update($attributes);
 
+        $this->logAdminActivity('Update Admin', [
+            'action' => 'update_admin',
+            'admin_id' => $admin->id,
+            'username' => $admin->username,
+            'message' => "Updated administrator profile for '{$admin->username}' (ID: #{$admin->id}).",
+        ], $actingAdminId);
+
         return $admin->fresh(['status', 'type']);
     }
 
     /**
      * Delete an admin record.
      */
-    public function deleteAdmin(Admin $admin): bool
+    public function deleteAdmin(Admin $admin, ?int $actingAdminId = null): bool
     {
-        return (bool) $admin->delete();
+        $adminId = $admin->id;
+        $username = $admin->username;
+
+        $deleted = (bool) $admin->delete();
+
+        if ($deleted) {
+            $this->logAdminActivity('Delete Admin', [
+                'action' => 'delete_admin',
+                'admin_id' => $adminId,
+                'username' => $username,
+                'message' => "Deleted administrator account '{$username}' (ID: #{$adminId}).",
+            ], $actingAdminId);
+        }
+
+        return $deleted;
     }
 
     /**
      * Update admin status.
      */
-    public function updateAdminStatus(Admin $admin, int $statusId): Admin
+    public function updateAdminStatus(Admin $admin, int $statusId, ?int $actingAdminId = null): Admin
     {
         $admin->update([
             'admin_statuses_id' => $statusId,
         ]);
 
+        $this->logAdminActivity('Update Admin Status', [
+            'action' => 'update_admin_status',
+            'admin_id' => $admin->id,
+            'username' => $admin->username,
+            'new_status_id' => $statusId,
+            'message' => "Changed status for administrator '{$admin->username}' (ID: #{$admin->id}) to status #{$statusId}.",
+        ], $actingAdminId);
+
         return $admin->fresh(['status', 'type']);
+    }
+
+    /**
+     * Record an administrative activity log via Core ActivityService.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function logAdminActivity(string $type, array $payload, ?int $actingAdminId = null): void
+    {
+        try {
+            $activityType = ActivityType::firstOrCreate(['activity_type' => $type]);
+
+            $resolvedAdminId = $actingAdminId;
+            if (! $resolvedAdminId && Auth::guard('admin')->check()) {
+                $resolvedAdminId = (int) Auth::guard('admin')->id();
+            }
+
+            $logData = [
+                'activity_time' => now(),
+                'activity_types_id' => $activityType->id,
+                'activity' => $payload,
+                'user_or_admin' => 2, // 2 = Admin
+            ];
+
+            if ($resolvedAdminId && Admin::whereKey($resolvedAdminId)->exists()) {
+                $logData['admins_id'] = $resolvedAdminId;
+            } elseif (Auth::guard('web')->check()) {
+                $logData['users_id'] = (int) Auth::guard('web')->id();
+            }
+
+            $this->activityService->logActivity($logData);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**

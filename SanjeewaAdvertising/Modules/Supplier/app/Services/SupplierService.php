@@ -278,7 +278,7 @@ class SupplierService
             }
 
             if ($searchTerm !== '') {
-                $searchable = strtolower($sup['code'].' '.$sup['name'].' '.$sup['contact_person'].' '.$sup['phone'].' '.$sup['address'].' '.$sup['category']);
+                $searchable = strtolower($sup['code'] . ' ' . $sup['name'] . ' ' . $sup['contact_person'] . ' ' . $sup['phone'] . ' ' . $sup['address'] . ' ' . $sup['category']);
                 if (! str_contains($searchable, $searchTerm)) {
                     return false;
                 }

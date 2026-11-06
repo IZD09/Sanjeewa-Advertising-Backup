@@ -32,7 +32,6 @@ class AdminUserService
         $query = User::query()->with([
             'status',
             'userPermissions.systemModule',
-            'userPermissions.permisionState',
         ]);
 
         $search = $filters['search'] ?? $filters['q'] ?? null;
@@ -95,7 +94,6 @@ class AdminUserService
             ->with([
                 'status',
                 'userPermissions.systemModule',
-                'userPermissions.permisionState',
             ])
             ->find($id);
     }
@@ -160,7 +158,7 @@ class AdminUserService
     /**
      * Synchronize user module permissions in bulk as an administrator.
      *
-     * @param  array<int, array{system_modules_id: int, permision_stateses_id: int}>  $permissions
+     * @param  array<int, array{system_modules_id: int, view?: bool|int, create?: bool|int, edit?: bool|int, delete?: bool|int, export?: bool|int}>  $permissions
      */
     public function syncUserPermissions(int $userId, array $permissions, ?int $adminId = null): void
     {
@@ -171,11 +169,15 @@ class AdminUserService
 
             $records = [];
             foreach ($permissions as $perm) {
-                if (! empty($perm['system_modules_id']) && ! empty($perm['permision_stateses_id'])) {
+                if (! empty($perm['system_modules_id'])) {
                     $records[] = [
                         'users_id' => $user->id,
                         'system_modules_id' => (int) $perm['system_modules_id'],
-                        'permision_stateses_id' => (int) $perm['permision_stateses_id'],
+                        'view' => (int) (bool) ($perm['view'] ?? 0),
+                        'create' => (int) (bool) ($perm['create'] ?? 0),
+                        'edit' => (int) (bool) ($perm['edit'] ?? 0),
+                        'delete' => (int) (bool) ($perm['delete'] ?? 0),
+                        'export' => (int) (bool) ($perm['export'] ?? 0),
                     ];
                 }
             }
