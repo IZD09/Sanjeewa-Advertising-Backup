@@ -60,7 +60,7 @@
               <div class="grn-kpi-card">
                 <div class="grn-kpi-meta">
                   <span class="grn-kpi-label">Total GRNs</span>
-                  <div class="grn-kpi-val" id="grnKpiTotal">3</div>
+                  <div class="grn-kpi-val" id="grnKpiTotal">0</div>
                   <span class="grn-kpi-desc"><i class="fa-solid fa-layer-group" style="color: #1677ff;"></i> Logged Consignments</span>
                 </div>
                 <div class="grn-kpi-icon blue">
@@ -72,7 +72,7 @@
               <div class="grn-kpi-card">
                 <div class="grn-kpi-meta">
                   <span class="grn-kpi-label">Completed GRNs</span>
-                  <div class="grn-kpi-val" id="grnKpiCompleted" style="color: #52c41a;">2</div>
+                  <div class="grn-kpi-val" id="grnKpiCompleted" style="color: #52c41a;">0</div>
                   <span class="grn-kpi-desc"><i class="fa-solid fa-circle-check" style="color: #52c41a;"></i> Stock Batches Created</span>
                 </div>
                 <div class="grn-kpi-icon green">
@@ -84,7 +84,7 @@
               <div class="grn-kpi-card">
                 <div class="grn-kpi-meta">
                   <span class="grn-kpi-label">Total Value Received</span>
-                  <div class="grn-kpi-val" id="grnKpiValue">Rs. 195,500.00</div>
+                  <div class="grn-kpi-val" id="grnKpiValue">Rs. 0.00</div>
                   <span class="grn-kpi-desc"><i class="fa-solid fa-vault" style="color: #1677ff;"></i> Total Inward Inflow</span>
                 </div>
                 <div class="grn-kpi-icon purple">
@@ -96,7 +96,7 @@
               <div class="grn-kpi-card">
                 <div class="grn-kpi-meta">
                   <span class="grn-kpi-label">Draft GRNs</span>
-                  <div class="grn-kpi-val" id="grnKpiDraft" style="color: #faad14;">1</div>
+                  <div class="grn-kpi-val" id="grnKpiDraft" style="color: #faad14;">0</div>
                   <span class="grn-kpi-desc"><i class="fa-solid fa-clock" style="color: #faad14;"></i> Pending Stock Finalization</span>
                 </div>
                 <div class="grn-kpi-icon yellow">
@@ -175,6 +175,12 @@
                       <!-- Dynamically populated via js/grn.js -->
                     </tbody>
                   </table>
+                </div>
+
+                <!-- GRN Table Pagination -->
+                <div class="grn-pagination-bar">
+                  <div class="grn-pagination-info" id="grnPaginationInfo">Showing 0 records</div>
+                  <div class="grn-pagination-controls" id="grnPaginationControls"></div>
                 </div>
               </div>
             </div>
@@ -414,6 +420,12 @@
                     </tbody>
                   </table>
                 </div>
+
+                <!-- PO Table Pagination -->
+                <div class="grn-pagination-bar">
+                  <div class="grn-pagination-info" id="poPaginationInfo">Showing 0 records</div>
+                  <div class="grn-pagination-controls" id="poPaginationControls"></div>
+                </div>
               </div>
             </div>
 
@@ -449,6 +461,12 @@
                 <!-- Supplier Grid Cards -->
                 <div class="supplier-grid" id="suppliersCardsContainer">
                   <!-- Dynamically populated via js/grn.js -->
+                </div>
+
+                <!-- Suppliers Pagination -->
+                <div class="grn-pagination-bar">
+                  <div class="grn-pagination-info" id="supplierPaginationInfo">Showing 0 records</div>
+                  <div class="grn-pagination-controls" id="supplierPaginationControls"></div>
                 </div>
               </div>
             </div>

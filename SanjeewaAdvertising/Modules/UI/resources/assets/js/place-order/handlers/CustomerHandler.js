@@ -4,6 +4,8 @@
  * selection binding, and quick customer registration modal.
  */
 
+import { RequestHandler } from "../../core/RequestHandler.js";
+
 export class CustomerHandler {
   /**
    * @param {Object} options
@@ -24,6 +26,8 @@ export class CustomerHandler {
     this.openModal = options.openModal || (() => {});
     this.closeModal = options.closeModal || (() => {});
     this.saveCustomers = options.saveCustomers || (() => {});
+
+    this.http = new RequestHandler();
 
     this.bindEvents();
   }
@@ -145,7 +149,7 @@ export class CustomerHandler {
     this.onCustomerSelected(null);
   }
 
-  handleSaveNewCustomer() {
+  async handleSaveNewCustomer() {
     const nameInput = document.getElementById("newCustName");
     const mobileInput = document.getElementById("newCustMobile");
     const addressInput = document.getElementById("newCustAddress");
@@ -164,7 +168,7 @@ export class CustomerHandler {
     }
 
     // Check duplicate mobile
-    const existing = (this.customers || []).find(c => c.mobile === mobile);
+    const existing = (this.customers || []).find((c) => c.mobile === mobile);
     if (existing) {
       this.showToast(`Customer with mobile ${mobile} already exists (${existing.name})`, "warning");
       this.selectCustomer(existing);
@@ -172,26 +176,56 @@ export class CustomerHandler {
       return;
     }
 
-    const newCust = {
-      id: `CUST-${String((this.customers || []).length + 1).padStart(3, "0")}`,
-      name,
-      mobile,
-      address,
-      type
-    };
+    const saveBtn = document.getElementById("saveNewCustomerBtn");
+    const origText = saveBtn ? saveBtn.innerHTML : "";
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
 
-    this.customers.unshift(newCust);
-    this.saveCustomers(this.customers);
-    this.selectCustomer(newCust);
-    this.closeModal("addCustomerModal");
-    this.showToast(`Customer "${name}" added successfully!`, "success");
+    try {
+      const response = await this.http.post("/api/v1/customers", {
+        name,
+        mobile,
+        email: null,
+        register_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+      });
 
-    // Clear form
-    nameInput.value = "";
-    mobileInput.value = "";
-    if (addressInput) addressInput.value = "";
+      const created = response?.data || response;
+      const newCust = {
+        id: created.id,
+        name: created.name || name,
+        mobile: created.mobile || mobile,
+        address,
+        type,
+      };
 
-    this.onCustomerCreated(newCust, this.customers);
+      this.customers.unshift(newCust);
+      this.saveCustomers(this.customers);
+      this.selectCustomer(newCust);
+      this.closeModal("addCustomerModal");
+      this.showToast(`Customer "${name}" registered successfully via Customer Module!`, "success");
+
+      // Clear form
+      nameInput.value = "";
+      mobileInput.value = "";
+      if (addressInput) addressInput.value = "";
+
+      this.onCustomerCreated(newCust, this.customers);
+    } catch (err) {
+      console.error("[CustomerHandler] API registration error:", err);
+      const errMsg =
+        err?.data?.message ||
+        (err?.data?.errors ? Object.values(err.data.errors).flat().join(" ") : null) ||
+        err?.message ||
+        "Failed to register customer in Customer Module.";
+      this.showToast(errMsg, "error");
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = origText;
+      }
+    }
   }
 }
 

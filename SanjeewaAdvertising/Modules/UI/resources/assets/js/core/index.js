@@ -2,6 +2,7 @@
  * SanjeewaAdvertising - Core Module Exports
  */
 
+export { BasePaginationHandler } from "./BasePaginationHandler.js";
 export { BaseTableLoader, TableLoader, BaseTableHandler } from "./BaseTableLoader.js";
 export { BaseTableRowBuilder, TableRowBuilder } from "./BaseTableRowBuilder.js";
 export { BaseModalHandler } from "./BaseModalHandler.js";

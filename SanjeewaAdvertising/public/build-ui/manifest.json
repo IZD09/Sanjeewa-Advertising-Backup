@@ -1,7 +1,14 @@
 {
-  "_BaseModalHandler-B66nnguH.js": {
-    "file": "assets/BaseModalHandler-B66nnguH.js",
-    "name": "BaseModalHandler"
+  "_BaseModalHandler-V4j1PE7d.js": {
+    "file": "assets/BaseModalHandler-V4j1PE7d.js",
+    "name": "BaseModalHandler",
+    "imports": [
+      "_BasePaginationHandler-CxkMXfSO.js"
+    ]
+  },
+  "_BasePaginationHandler-CxkMXfSO.js": {
+    "file": "assets/BasePaginationHandler-CxkMXfSO.js",
+    "name": "BasePaginationHandler"
   },
   "_RequestHandler-DGIgTA7N.js": {
     "file": "assets/RequestHandler-DGIgTA7N.js",
@@ -66,7 +73,7 @@
     "isEntry": true
   },
   "resources/assets/css/grn.css": {
-    "file": "assets/grn-J8qCUudv.css",
+    "file": "assets/grn-BqsbN4E_.css",
     "name": "grn",
     "names": [
       "grn.css"
@@ -120,7 +127,7 @@
     "isEntry": true
   },
   "resources/assets/js/admin/admin-login.js": {
-    "file": "assets/admin-login-BnGlhJBS.js",
+    "file": "assets/admin-login-CV2my-a1.js",
     "name": "admin-login",
     "src": "resources/assets/js/admin/admin-login.js",
     "isEntry": true,
@@ -139,7 +146,7 @@
     ]
   },
   "resources/assets/js/admin/login.js": {
-    "file": "assets/login-CTcbkSQq.js",
+    "file": "assets/login-DR7GPFq8.js",
     "name": "login",
     "src": "resources/assets/js/admin/login.js",
     "isEntry": true,
@@ -185,13 +192,23 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-BE21KgTt.js",
+    "file": "assets/core-BHRiNANq.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-B66nnguH.js",
+      "_BaseModalHandler-V4j1PE7d.js",
       "_ValidatBuilder-DPg4PYww.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
+  },
+  "resources/assets/js/customers.js": {
+    "file": "assets/customers-irvBXnP_.js",
+    "name": "customers",
+    "src": "resources/assets/js/customers.js",
+    "isEntry": true,
+    "imports": [
+      "_BasePaginationHandler-CxkMXfSO.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
@@ -206,27 +223,27 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-DR7ungLf.js",
+    "file": "assets/grn-CWT8WTGN.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-B66nnguH.js",
+      "_BaseModalHandler-V4j1PE7d.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-BadAWTlo.js",
+    "file": "assets/inventory-Dx7eDeeS.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-B66nnguH.js",
+      "_BaseModalHandler-V4j1PE7d.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-0sGLovUs.js",
+    "file": "assets/login-DHULc1YM.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
     "isEntry": true,
@@ -236,22 +253,22 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-HKPbILQK.js",
+    "file": "assets/payments-D1Yy571d.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-B66nnguH.js",
+      "_BaseModalHandler-V4j1PE7d.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-50oOY-bF.js",
+    "file": "assets/place-order-BVsCIIjA.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-B66nnguH.js",
+      "_BaseModalHandler-V4j1PE7d.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },

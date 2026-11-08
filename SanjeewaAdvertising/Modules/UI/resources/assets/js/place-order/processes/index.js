@@ -5,4 +5,5 @@
 export { FilterProcess } from "./FilterProcess.js";
 export { ExportProcess } from "./ExportProcess.js";
 export { MetricsProcess } from "./MetricsProcess.js";
+export { PlaceOrderProcess } from "./PlaceOrderProcess.js";
 

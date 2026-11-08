@@ -2,7 +2,7 @@
  * SanjeewaAdvertising - GRN Table Handler
  *
  * Extends BaseTableLoader core class, utilizing GrnRowBuilder
- * to filter, format, and render Goods Received Notes records.
+ * to filter, paginate (max 20 rows per page), and render Goods Received Notes records.
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
@@ -21,7 +21,7 @@ export class GRNTableHandler extends BaseTableLoader {
       tbodyId: "grnTableBody",
       paginationInfoId: "grnPaginationInfo",
       paginationControlsId: "grnPaginationControls",
-      pageSize: options.pageSize || 10,
+      pageSize: options.pageSize || 20,
       colspan: 9,
       emptyIcon: "fa-file-invoice",
       emptyMessage: "No Goods Received Notes found",
@@ -61,37 +61,73 @@ export class GRNTableHandler extends BaseTableLoader {
   }
 
   /**
-   * Render table body rows for Goods Received Notes using GrnRowBuilder.
+   * Render table body rows and pagination for Goods Received Notes (max 20 rows per page).
    *
    * @param {Array} grnRecords
    * @param {string} searchTerm
    * @param {string} statusFilter
    * @param {string} supplierFilter
+   * @param {Object|null} [serverPagination=null]
    */
-  render(grnRecords = [], searchTerm = "", statusFilter = "ALL", supplierFilter = "ALL") {
+  render(grnRecords = [], searchTerm = "", statusFilter = "ALL", supplierFilter = "ALL", serverPagination = null) {
     const tbody = this.getTbody();
     if (!tbody) return;
 
+    const countEl = document.getElementById("grnTableCount");
     const filtered = this.getFilteredRecords(grnRecords, searchTerm, statusFilter, supplierFilter);
 
-    if (filtered.length === 0) {
+    const useServerMeta = serverPagination &&
+      typeof serverPagination.total === "number" &&
+      serverPagination.total > grnRecords.length;
+
+    let pageItems = [];
+    let total = 0;
+    let totalPages = 1;
+    let activePage = this.currentPage;
+    const pageSize = this.pageSize || 20;
+
+    if (useServerMeta) {
+      pageItems = filtered.slice(0, pageSize);
+      total = serverPagination.total;
+      totalPages = Math.max(1, serverPagination.last_page || Math.ceil(total / pageSize));
+      activePage = serverPagination.current_page || this.currentPage;
+      this.currentPage = activePage;
+    } else {
+      const paginated = this.paginate(filtered, this.currentPage, pageSize);
+      pageItems = paginated.pageItems;
+      total = paginated.total;
+      totalPages = paginated.totalPages;
+      activePage = paginated.activePage;
+      this.currentPage = activePage;
+    }
+
+    if (pageItems.length === 0) {
       this.renderEmptyState(
         "No Goods Received Notes found. Create your first GRN by clicking '+ Create New GRN'",
         "fa-file-invoice"
       );
+      this.renderPagination(0, 1, 1, pageSize);
+      if (countEl) countEl.textContent = "Showing 0 GRNs";
       return;
     }
 
     tbody.innerHTML = "";
 
-    filtered.forEach(item => {
+    pageItems.forEach(item => {
       const entity = item instanceof GrnEntity
         ? item
         : new GrnRowBuilder(item).build();
       tbody.appendChild(entity.render());
     });
+
+    this.renderPagination(total, totalPages, activePage, pageSize);
+
+    if (countEl) {
+      const start = (activePage - 1) * pageSize + 1;
+      const end = Math.min(activePage * pageSize, total);
+      countEl.textContent = `Showing ${start}-${end} of ${total} GRNs`;
+    }
   }
 }
 
 export default GRNTableHandler;
-

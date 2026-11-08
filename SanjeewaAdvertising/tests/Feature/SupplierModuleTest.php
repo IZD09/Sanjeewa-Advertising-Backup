@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Modules\Supplier\Models\Grn;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\Supplier;
 use Tests\TestCase;
@@ -17,8 +18,8 @@ class SupplierModuleTest extends TestCase
     public function test_can_manage_suppliers(): void
     {
         // 1. Create Supplier
-        $mobile = '077' . rand(1000000, 9999999);
-        $email = 'sup_' . uniqid() . '@example.com';
+        $mobile = '077'.rand(1000000, 9999999);
+        $email = 'sup_'.uniqid().'@example.com';
         $response = $this->postJson('/api/v1/suppliers', [
             'name' => 'Acme Supplies',
             'mobile' => $mobile,
@@ -57,8 +58,8 @@ class SupplierModuleTest extends TestCase
     {
         $supplier = Supplier::create([
             'name' => 'PO Supplier',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'email' => 'posup_' . uniqid() . '@example.com',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'posup_'.uniqid().'@example.com',
             'register_at' => now(),
         ]);
 
@@ -92,8 +93,8 @@ class SupplierModuleTest extends TestCase
     {
         $supplier = Supplier::create([
             'name' => 'GRN Supplier',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'email' => 'grnsup_' . uniqid() . '@example.com',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'grnsup_'.uniqid().'@example.com',
             'register_at' => now(),
         ]);
 
@@ -122,5 +123,49 @@ class SupplierModuleTest extends TestCase
         // Delete
         $this->deleteJson("/api/v1/grns/{$grnId}")->assertStatus(200);
         $this->assertDatabaseMissing('grn', ['id' => $grnId]);
+    }
+
+    public function test_grn_and_po_data_endpoints_load_from_database_with_20_rows_pagination(): void
+    {
+        $supplier = Supplier::create([
+            'name' => 'Paginated Supplier',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'pagsup_'.uniqid().'@example.com',
+        ]);
+
+        for ($i = 1; $i <= 25; $i++) {
+            $po = PurchaseOrder::create([
+                'suppliers_id' => $supplier->id,
+                'add_date' => now(),
+            ]);
+
+            Grn::create([
+                'at_time' => now(),
+            ])->purchaseOrders()->attach($po->id, ['supplyer_invoice' => "INV-{$i}"]);
+        }
+
+        // Page 1 of GRN data should return max 20 rows
+        $grnPage1 = $this->getJson('/api/v1/grns/data?page=1&per_page=20')
+            ->assertStatus(200)
+            ->assertJsonPath('data.pagination.per_page', 20)
+            ->assertJsonPath('data.pagination.current_page', 1);
+
+        $this->assertCount(20, $grnPage1->json('data.grns'));
+        $this->assertGreaterThanOrEqual(25, $grnPage1->json('data.pagination.total'));
+
+        // Page 2 of GRN data should return the remaining rows without reload
+        $grnPage2 = $this->getJson('/api/v1/grns/data?page=2&per_page=20')
+            ->assertStatus(200)
+            ->assertJsonPath('data.pagination.current_page', 2);
+
+        $this->assertNotEmpty($grnPage2->json('data.grns'));
+
+        // Page 1 of Purchase Orders data should return max 20 rows
+        $poPage1 = $this->getJson('/api/v1/purchase-orders/data?page=1&per_page=20')
+            ->assertStatus(200)
+            ->assertJsonPath('data.pagination.per_page', 20)
+            ->assertJsonPath('data.pagination.current_page', 1);
+
+        $this->assertCount(20, $poPage1->json('data.purchase_orders'));
     }
 }

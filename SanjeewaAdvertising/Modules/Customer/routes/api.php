@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Modules\Customer\Http\Controllers\CustomerController;
 
 Route::prefix('v1')->group(function () {
-    // Dedicated search & all endpoints
+    // Dedicated directory data, search & all endpoints
+    Route::get('customers/data', [CustomerController::class, 'customersData'])->name('customer.data');
     Route::get('customers/all', [CustomerController::class, 'all'])->name('customer.all');
     Route::get('customers/search', [CustomerController::class, 'search'])->name('customer.search');
 

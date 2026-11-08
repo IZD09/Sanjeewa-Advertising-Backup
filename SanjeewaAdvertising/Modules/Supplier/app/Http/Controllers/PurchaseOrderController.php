@@ -15,8 +15,7 @@ class PurchaseOrderController extends BaseApiController
 {
     public function __construct(
         protected PurchaseOrderService $purchaseOrderService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of purchase orders.
@@ -32,7 +31,7 @@ class PurchaseOrderController extends BaseApiController
             );
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
         $orders = $this->purchaseOrderService->getPurchaseOrders($request->query(), $perPage);
 
         $orders->through(fn ($item) => new PurchaseOrderResource($item));

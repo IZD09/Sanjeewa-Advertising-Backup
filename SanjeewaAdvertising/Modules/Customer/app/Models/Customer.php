@@ -4,8 +4,10 @@ namespace Modules\Customer\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Invoice\Models\Invoice;
 use Modules\PrintJob\Models\PrintJob;
+use Modules\Transaction\Models\Payment;
 
 class Customer extends Model
 {
@@ -68,5 +70,36 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'customer_id', 'id');
+    }
+
+    /**
+     * Get payments made by this customer through their print jobs.
+     */
+    public function payments(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Payment::class,
+            PrintJob::class,
+            'customer_id',
+            'print_jobs_id',
+            'id',
+            'id'
+        );
+    }
+
+    /**
+     * Determine customer membership badge based on orders count.
+     */
+    public function getBadgeAttribute(): string
+    {
+        $ordersCount = $this->print_jobs_count ?? $this->printJobs()->count();
+        if ($ordersCount >= 10) {
+            return 'VIP';
+        }
+        if ($ordersCount >= 5) {
+            return 'Corporate';
+        }
+
+        return 'Regular';
     }
 }

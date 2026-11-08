@@ -2,6 +2,7 @@
 
 namespace Modules\Customer\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Core\Http\Controllers\BaseApiController;
@@ -15,14 +16,17 @@ class CustomerController extends BaseApiController
 {
     public function __construct(
         protected CustomerService $customerService
-    ) {
-    }
+    ) {}
 
     /**
-     * Display a listing of customers with optional search and pagination.
+     * Display a listing of customers with optional search and pagination (or view for browser).
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|View
     {
+        if (! $request->wantsJson() && ! $request->ajax()) {
+            return view('ui::layouts.pages.customers.customers');
+        }
+
         if ($request->boolean('all') || $request->query('per_page') === 'all') {
             $customers = $this->customerService->getAllCustomers($request->query());
 
@@ -32,12 +36,25 @@ class CustomerController extends BaseApiController
             );
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
         $customers = $this->customerService->getCustomers($request->query(), $perPage);
 
         $customers->through(fn ($customer) => new CustomerResource($customer));
 
         return $this->paginated($customers, 'Customers retrieved successfully.');
+    }
+
+    /**
+     * Retrieve customer accounts directory data and KPIs for UI views.
+     */
+    public function customersData(Request $request): JsonResponse
+    {
+        $data = $this->customerService->getCustomersData($request->all());
+
+        return $this->success(
+            $data,
+            'Customers directory data retrieved successfully.'
+        );
     }
 
     /**

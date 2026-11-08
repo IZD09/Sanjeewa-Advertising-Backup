@@ -19,7 +19,9 @@ class GrnService
      */
     public function buildQuery(array $filters = []): Builder
     {
-        $query = Grn::query()->with(['purchaseOrders.supplier', 'stocks.stockItem'])->withCount('stocks');
+        $query = Grn::query()
+            ->with(['purchaseOrders.supplier', 'stocks.stockItem'])
+            ->withCount('stocks');
 
         if (! empty($filters['from_date'])) {
             $query->whereDate('at_time', '>=', $filters['from_date']);
@@ -29,11 +31,52 @@ class GrnService
             $query->whereDate('at_time', '<=', $filters['to_date']);
         }
 
+        $statusFilter = (string) ($filters['status'] ?? 'ALL');
+        if ($statusFilter !== '' && strcasecmp($statusFilter, 'ALL') !== 0) {
+            if (strcasecmp($statusFilter, 'Completed') === 0) {
+                $query->whereHas('stocks');
+            } elseif (strcasecmp($statusFilter, 'Draft') === 0) {
+                $query->whereDoesntHave('stocks');
+            }
+        }
+
+        if (! empty($filters['suppliers_id'])) {
+            $supplierId = (int) $filters['suppliers_id'];
+            $query->whereHas('purchaseOrders', function (Builder $q) use ($supplierId) {
+                $q->where('suppliers_id', $supplierId);
+            });
+        } elseif (! empty($filters['supplier']) && strcasecmp((string) $filters['supplier'], 'ALL') !== 0) {
+            $supplierName = trim((string) $filters['supplier']);
+            $query->whereHas('purchaseOrders.supplier', function (Builder $q) use ($supplierName) {
+                $q->where('name', $supplierName);
+            });
+        }
+
+        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
+        if ($search !== '') {
+            $numericId = preg_replace('/\D+/', '', $search);
+            $query->where(function (Builder $q) use ($search, $numericId) {
+                if ($numericId !== '') {
+                    $q->where('id', (int) $numericId)
+                        ->orWhereHas('purchaseOrders', function (Builder $poQuery) use ($numericId) {
+                            $poQuery->where('purchase_orders.id', (int) $numericId);
+                        });
+                }
+
+                $q->orWhereHas('purchaseOrders', function (Builder $poQuery) use ($search) {
+                    $poQuery->where('grn_has_puches_order.supplyer_invoice', 'like', "%{$search}%");
+                })->orWhereHas('purchaseOrders.supplier', function (Builder $supQuery) use ($search) {
+                    $supQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('mobile', 'like', "%{$search}%");
+                });
+            });
+        }
+
         return $query->orderByDesc('id');
     }
 
     /**
-     * Retrieve all GRNs.
+     * Retrieve all GRNs from database.
      *
      * @param  array<string, mixed>  $filters
      * @return Collection<int, Grn>
@@ -44,15 +87,16 @@ class GrnService
     }
 
     /**
-     * Retrieve paginated GRNs.
+     * Retrieve paginated GRNs from database.
      *
      * @param  array<string, mixed>  $filters
      */
-    public function getGrns(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function getGrns(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $perPage = max(1, min(100, $perPage));
+        $page = isset($filters['page']) ? max(1, (int) $filters['page']) : null;
 
-        return $this->buildQuery($filters)->paginate($perPage);
+        return $this->buildQuery($filters)->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**
@@ -115,241 +159,110 @@ class GrnService
     }
 
     /**
-     * Retrieve Goods Received Notes (GRN) demo data and KPIs for UI views.
+     * Retrieve Goods Received Notes (GRN) database records, pagination, and KPIs for UI views.
      *
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
     public function getGrnData(array $filters = []): array
     {
-        $grns = $this->resolveGrnDemoData($filters);
-        $kpis = $this->resolveGrnKpis($grns);
+        $perPage = isset($filters['per_page']) ? max(1, min(100, (int) $filters['per_page'])) : 20;
+        $paginator = $this->getGrns($filters, $perPage);
+
+        $grns = collect($paginator->items())
+            ->map(fn (Grn $grn) => $this->formatGrnRecord($grn))
+            ->values()
+            ->all();
+
+        $kpis = $this->resolveDatabaseGrnKpis();
 
         return [
             'grns' => $grns,
             'records' => $grns,
             'kpis' => $kpis,
+            'pagination' => [
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'from' => $paginator->firstItem() ?? 0,
+                'to' => $paginator->lastItem() ?? 0,
+            ],
         ];
     }
 
     /**
-     * Resolve demo GRN records with optional search, status, and supplier filtering.
+     * Format a Grn Eloquent model into the UI array representation.
      *
-     * @param  array<string, mixed>  $filters
-     * @return array<int, array<string, mixed>>
-     */
-    protected function resolveGrnDemoData(array $filters = []): array
-    {
-        $today = now();
-
-        $allGrns = [
-            [
-                'grn_id' => 'GRN-2610-001',
-                'grn_number' => 'GRN-2610-001',
-                'purchase_order_no' => 'PO-2026-088',
-                'supplier_id' => 'SUP-001',
-                'supplier_name' => 'PaperPro Lanka',
-                'supplier_contact' => '077 123 4567',
-                'supplier_invoice_no' => 'INV-PP-8821',
-                'received_date' => $today->copy()->subDays(2)->toDateString(),
-                'sub_total' => 97000.00,
-                'discount' => 9500.00,
-                'net_total' => 87500.00,
-                'received_by' => 'Admin User',
-                'status' => 'Completed',
-                'created_at' => $today->copy()->subDays(2)->toDateTimeString(),
-                'remarks' => 'Consignment delivery via lorry WP-DA-5520. All paper packs inspected and verified without water damage.',
-                'items' => [
-                    [
-                        'item_id' => 'PAP-001',
-                        'item_name' => '300gsm Art Board SRA3',
-                        'unit' => 'Sheets',
-                        'qty_received' => 1500,
-                        'unit_cost' => 42.00,
-                        'item_total' => 63000.00,
-                        'batch_id' => 'BAT-101',
-                    ],
-                    [
-                        'item_id' => 'PAP-003',
-                        'item_name' => '150gsm Glossy Art Paper A4',
-                        'unit' => 'Sheets',
-                        'qty_received' => 2000,
-                        'unit_cost' => 17.00,
-                        'item_total' => 34000.00,
-                        'batch_id' => 'BAT-102',
-                    ],
-                ],
-            ],
-            [
-                'grn_id' => 'GRN-2610-002',
-                'grn_number' => 'GRN-2610-002',
-                'purchase_order_no' => 'PO-2026-092',
-                'supplier_id' => 'SUP-002',
-                'supplier_name' => 'Flora Tech International',
-                'supplier_contact' => '071 889 2233',
-                'supplier_invoice_no' => 'FTI-2026-441',
-                'received_date' => $today->copy()->subDays(5)->toDateString(),
-                'sub_total' => 68000.00,
-                'discount' => 4000.00,
-                'net_total' => 64000.00,
-                'received_by' => 'Nuwan Silva',
-                'status' => 'Completed',
-                'created_at' => $today->copy()->subDays(5)->toDateTimeString(),
-                'remarks' => 'Flora solvent inks delivered. Batch expiry verified up to 2028.',
-                'items' => [
-                    [
-                        'item_id' => 'INK-101',
-                        'item_name' => 'Flora Solvent Cyan Ink (5L)',
-                        'unit' => 'Liters',
-                        'qty_received' => 4,
-                        'unit_cost' => 8500.00,
-                        'item_total' => 34000.00,
-                        'batch_id' => 'BAT-201',
-                    ],
-                    [
-                        'item_id' => 'INK-102',
-                        'item_name' => 'Flora Solvent Magenta Ink (5L)',
-                        'unit' => 'Liters',
-                        'qty_received' => 4,
-                        'unit_cost' => 8500.00,
-                        'item_total' => 34000.00,
-                        'batch_id' => 'BAT-202',
-                    ],
-                ],
-            ],
-            [
-                'grn_id' => 'GRN-2610-003',
-                'grn_number' => 'GRN-2610-003',
-                'purchase_order_no' => 'PO-2026-092',
-                'supplier_id' => 'SUP-003',
-                'supplier_name' => 'MegaFlex Imports',
-                'supplier_contact' => '076 554 9988',
-                'supplier_invoice_no' => 'MF-7729',
-                'received_date' => $today->copy()->subDays(8)->toDateString(),
-                'sub_total' => 46000.00,
-                'discount' => 2000.00,
-                'net_total' => 44000.00,
-                'received_by' => 'Admin User',
-                'status' => 'Completed',
-                'created_at' => $today->copy()->subDays(8)->toDateTimeString(),
-                'remarks' => 'Banner rolls inspected on warehouse arrival.',
-                'items' => [
-                    [
-                        'item_id' => 'FLX-201',
-                        'item_name' => 'Star Flex Heavy Banner 380gsm (10ft × 50m)',
-                        'unit' => 'Rolls',
-                        'qty_received' => 2,
-                        'unit_cost' => 22000.00,
-                        'item_total' => 44000.00,
-                        'batch_id' => 'BAT-301',
-                    ],
-                ],
-            ],
-            [
-                'grn_id' => 'GRN-2610-004',
-                'grn_number' => 'GRN-2610-004',
-                'purchase_order_no' => 'PO-2026-095',
-                'supplier_id' => 'SUP-004',
-                'supplier_name' => 'Avery Dennison Lanka',
-                'supplier_contact' => '077 334 1122',
-                'supplier_invoice_no' => 'AD-99102',
-                'received_date' => $today->copy()->subDays(12)->toDateString(),
-                'sub_total' => 100800.00,
-                'discount' => 4800.00,
-                'net_total' => 96000.00,
-                'received_by' => 'Nuwan Silva',
-                'status' => 'Completed',
-                'created_at' => $today->copy()->subDays(12)->toDateTimeString(),
-                'remarks' => 'Self-adhesive vinyl rolls in protective cartons.',
-                'items' => [
-                    [
-                        'item_id' => 'VIN-301',
-                        'item_name' => 'Glossy Self-Adhesive Vinyl (4ft × 50m)',
-                        'unit' => 'Rolls',
-                        'qty_received' => 6,
-                        'unit_cost' => 16800.00,
-                        'item_total' => 100800.00,
-                        'batch_id' => 'BAT-401',
-                    ],
-                ],
-            ],
-            [
-                'grn_id' => 'GRN-2610-005',
-                'grn_number' => 'GRN-2610-005',
-                'purchase_order_no' => 'PO-2026-068',
-                'supplier_id' => 'SUP-006',
-                'supplier_name' => 'SignBoard Supplies',
-                'supplier_contact' => '075 443 2211',
-                'supplier_invoice_no' => 'SB-3310',
-                'received_date' => $today->copy()->subDays(1)->toDateString(),
-                'sub_total' => 44200.00,
-                'discount' => 2200.00,
-                'net_total' => 42000.00,
-                'received_by' => 'Chamara Bandara',
-                'status' => 'Draft',
-                'created_at' => $today->copy()->subDays(1)->toDateTimeString(),
-                'remarks' => '5mm foam boards received in good shape. Pending final barcode tags.',
-                'items' => [
-                    [
-                        'item_id' => 'RIG-401',
-                        'item_name' => '5mm White Foam Board (4ft × 8ft)',
-                        'unit' => 'Sheets',
-                        'qty_received' => 13,
-                        'unit_cost' => 3400.00,
-                        'item_total' => 44200.00,
-                        'batch_id' => 'BAT-501',
-                    ],
-                ],
-            ],
-        ];
-
-        $searchTerm = strtolower(trim((string) ($filters['search'] ?? $filters['q'] ?? '')));
-        $statusFilter = (string) ($filters['status'] ?? 'ALL');
-        $supplierFilter = (string) ($filters['supplier'] ?? 'ALL');
-
-        return array_values(array_filter($allGrns, function ($grn) use ($searchTerm, $statusFilter, $supplierFilter) {
-            if ($statusFilter !== 'ALL' && strcasecmp($grn['status'], $statusFilter) !== 0) {
-                return false;
-            }
-
-            if ($supplierFilter !== 'ALL' && strcasecmp($grn['supplier_name'], $supplierFilter) !== 0) {
-                return false;
-            }
-
-            if ($searchTerm !== '') {
-                $searchable = strtolower(
-                    $grn['grn_number'] . ' ' . $grn['purchase_order_no'] . ' ' . $grn['supplier_name'] . ' ' . $grn['supplier_contact']
-                );
-                if (! str_contains($searchable, $searchTerm)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
-    }
-
-    /**
-     * Calculate summary metrics / KPIs for GRNs.
-     *
-     * @param  array<int, array<string, mixed>>  $grns
      * @return array<string, mixed>
      */
-    protected function resolveGrnKpis(array $grns): array
+    public function formatGrnRecord(Grn $grn): array
     {
-        $totalCount = count($grns);
-        $completedCount = 0;
-        $draftCount = 0;
-        $totalValue = 0.0;
+        $po = $grn->purchaseOrders->first();
+        $supplier = $po?->supplier;
+        $supplierInvoice = $po?->pivot?->supplyer_invoice ?? '';
 
-        foreach ($grns as $rec) {
-            if (($rec['status'] ?? '') === 'Completed') {
-                $completedCount++;
-                $totalValue += (float) ($rec['net_total'] ?? 0);
-            } else {
-                $draftCount++;
-            }
+        $items = [];
+        $subTotal = 0.0;
+
+        foreach ($grn->stocks as $stock) {
+            $qty = (int) $stock->qty;
+            $unitCost = (float) $stock->buy;
+            $itemTotal = $qty * $unitCost;
+            $subTotal += $itemTotal;
+
+            $items[] = [
+                'item_id' => $stock->stockItem?->code ?? ('ITM-'.$stock->stock_items_id),
+                'stock_items_id' => $stock->stock_items_id,
+                'item_name' => $stock->stockItem?->name ?? ('Item #'.$stock->stock_items_id),
+                'unit' => 'Units',
+                'qty_received' => $qty,
+                'unit_cost' => $unitCost,
+                'item_total' => $itemTotal,
+                'batch_id' => 'BAT-'.str_pad((string) $stock->id, 3, '0', STR_PAD_LEFT),
+            ];
         }
+
+        $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
+        $poCode = $po ? ('PO-'.str_pad((string) $po->id, 4, '0', STR_PAD_LEFT)) : 'N/A';
+        $status = count($items) > 0 ? 'Completed' : 'Draft';
+
+        return [
+            'id' => $grn->id,
+            'grn_id' => $grnCode,
+            'grn_number' => $grnCode,
+            'purchase_order_id' => $po?->id,
+            'purchase_order_no' => $poCode,
+            'supplier_id' => $supplier ? ('SUP-'.str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT)) : null,
+            'supplier_name' => $supplier?->name ?? 'Direct Consignment',
+            'supplier_contact' => $supplier?->mobile ?? ($supplierInvoice !== '' ? $supplierInvoice : 'N/A'),
+            'supplier_invoice_no' => $supplierInvoice,
+            'received_date' => $grn->at_time?->toDateString() ?? '',
+            'sub_total' => $subTotal,
+            'discount' => 0.00,
+            'net_total' => $subTotal,
+            'received_by' => 'Admin User',
+            'status' => $status,
+            'created_at' => $grn->at_time?->toDateTimeString() ?? '',
+            'remarks' => $supplierInvoice !== '' ? "Supplier Invoice: {$supplierInvoice}" : '',
+            'items' => $items,
+        ];
+    }
+
+    /**
+     * Calculate summary metrics / KPIs for GRNs from the database.
+     *
+     * @return array<string, mixed>
+     */
+    protected function resolveDatabaseGrnKpis(): array
+    {
+        $totalCount = Grn::query()->count();
+        $completedCount = Grn::query()->whereHas('stocks')->count();
+        $draftCount = max(0, $totalCount - $completedCount);
+        $totalValue = (float) Stock::query()
+            ->whereNotNull('grn_id')
+            ->selectRaw('COALESCE(SUM(qty * buy), 0) as total_val')
+            ->value('total_val');
 
         return [
             'total' => $totalCount,

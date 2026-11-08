@@ -320,8 +320,10 @@ export class LoginManager {
           this.submitLabel.textContent = "Redirecting…";
         }
 
+        const targetUrl = data?.data?.redirect_url || data?.redirect_url || redirectUrl;
+
         setTimeout(() => {
-          window.location.href = redirectUrl;
+          window.location.href = targetUrl;
         }, 600);
         return;
       }

@@ -2,8 +2,8 @@
  * SanjeewaAdvertising - GRN Data Loader
  *
  * Handles API communication via RequestHandler to the Supplier module,
- * client-side caching (localStorage), and code/number generators.
- * All demo and production records originate from backend Supplier service classes.
+ * pagination metadata tracking, and code/number generators.
+ * All records originate directly from database-backed Supplier service classes.
  */
 
 import { RequestHandler } from "../core/RequestHandler.js";
@@ -19,9 +19,23 @@ export class GRNDataLoader {
     this.purchaseOrders = [];
     this.suppliers = [];
 
+    this.grnKpis = { total: 0, completed: 0, draft: 0, total_value: 0 };
+    this.poKpis = { total: 0, pending: 0, partial: 0, completed: 0, open: 0, total_value: 0 };
+
+    this.grnPagination = { total: 0, per_page: 20, current_page: 1, last_page: 1, from: 0, to: 0 };
+    this.poPagination = { total: 0, per_page: 20, current_page: 1, last_page: 1, from: 0, to: 0 };
+    this.supplierPagination = { total: 0, per_page: 20, current_page: 1, last_page: 1, from: 0, to: 0 };
+
     this.poLoaded = false;
     this.grnLoaded = false;
     this.suppliersLoaded = false;
+
+    // Clear any legacy demo data cached in localStorage
+    try {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem(this.poStorageKey);
+      localStorage.removeItem(this.supplierStorageKey);
+    } catch (e) {}
   }
 
   /**
@@ -37,27 +51,30 @@ export class GRNDataLoader {
     }
 
     try {
-      const response = await this.http.get("/api/v1/suppliers/data", filters);
+      const params = { per_page: 20, ...filters };
+      const response = await this.http.get("/api/v1/suppliers/data", params);
       const data = response?.data || response;
-      const list = data?.suppliers || (Array.isArray(data) ? data : null);
+      const list = data?.suppliers ?? (Array.isArray(data) ? data : []);
 
-      if (Array.isArray(list) && list.length > 0) {
+      if (Array.isArray(list)) {
         this.suppliers = list;
-        this.saveSupplierData();
+        if (data?.pagination) {
+          this.supplierPagination = data.pagination;
+        } else {
+          this.supplierPagination = {
+            total: list.length,
+            per_page: 20,
+            current_page: 1,
+            last_page: Math.max(1, Math.ceil(list.length / 20)),
+            from: list.length > 0 ? 1 : 0,
+            to: list.length
+          };
+        }
         this.suppliersLoaded = true;
         return this.suppliers;
       }
     } catch (e) {
-      console.warn("[GRNDataLoader] Failed to fetch suppliers from API, checking local storage:", e);
-    }
-
-    const saved = localStorage.getItem(this.supplierStorageKey);
-    if (saved) {
-      try {
-        this.suppliers = JSON.parse(saved);
-      } catch (err) {
-        this.suppliers = [];
-      }
+      console.warn("[GRNDataLoader] Failed to fetch suppliers from API:", e);
     }
 
     this.suppliersLoaded = true;
@@ -65,19 +82,10 @@ export class GRNDataLoader {
   }
 
   /**
-   * Synchronously load suppliers from localStorage or trigger async fetch.
+   * Trigger async fetch for suppliers from database.
    * @returns {Array}
    */
   loadSuppliers() {
-    const saved = localStorage.getItem(this.supplierStorageKey);
-    if (saved) {
-      try {
-        this.suppliers = JSON.parse(saved);
-      } catch (e) {
-        this.suppliers = [];
-      }
-    }
-    // Also trigger background fetch to ensure fresh server data
     this.fetchSuppliers().catch(() => {});
     return this.suppliers;
   }
@@ -95,27 +103,33 @@ export class GRNDataLoader {
     }
 
     try {
-      const response = await this.http.get("/api/v1/purchase-orders/data", filters);
+      const params = { per_page: 20, ...filters };
+      const response = await this.http.get("/api/v1/purchase-orders/data", params);
       const data = response?.data || response;
-      const orders = data?.purchase_orders || data?.orders || (Array.isArray(data) ? data : null);
+      const orders = data?.purchase_orders ?? data?.orders ?? (Array.isArray(data) ? data : []);
 
-      if (Array.isArray(orders) && orders.length > 0) {
+      if (Array.isArray(orders)) {
         this.purchaseOrders = orders;
-        this.savePOData();
+        if (data?.kpis) {
+          this.poKpis = data.kpis;
+        }
+        if (data?.pagination) {
+          this.poPagination = data.pagination;
+        } else {
+          this.poPagination = {
+            total: orders.length,
+            per_page: 20,
+            current_page: 1,
+            last_page: Math.max(1, Math.ceil(orders.length / 20)),
+            from: orders.length > 0 ? 1 : 0,
+            to: orders.length
+          };
+        }
         this.poLoaded = true;
         return this.purchaseOrders;
       }
     } catch (e) {
-      console.warn("[GRNDataLoader] Failed to fetch POs from API, checking local storage:", e);
-    }
-
-    const savedPOs = localStorage.getItem(this.poStorageKey);
-    if (savedPOs) {
-      try {
-        this.purchaseOrders = JSON.parse(savedPOs);
-      } catch (err) {
-        this.purchaseOrders = [];
-      }
+      console.warn("[GRNDataLoader] Failed to fetch POs from API:", e);
     }
 
     this.poLoaded = true;
@@ -135,27 +149,33 @@ export class GRNDataLoader {
     }
 
     try {
-      const response = await this.http.get("/api/v1/grns/data", filters);
+      const params = { per_page: 20, ...filters };
+      const response = await this.http.get("/api/v1/grns/data", params);
       const data = response?.data || response;
-      const grns = data?.grns || data?.records || (Array.isArray(data) ? data : null);
+      const grns = data?.grns ?? data?.records ?? (Array.isArray(data) ? data : []);
 
-      if (Array.isArray(grns) && grns.length > 0) {
+      if (Array.isArray(grns)) {
         this.grnRecords = grns;
-        this.saveData();
+        if (data?.kpis) {
+          this.grnKpis = data.kpis;
+        }
+        if (data?.pagination) {
+          this.grnPagination = data.pagination;
+        } else {
+          this.grnPagination = {
+            total: grns.length,
+            per_page: 20,
+            current_page: 1,
+            last_page: Math.max(1, Math.ceil(grns.length / 20)),
+            from: grns.length > 0 ? 1 : 0,
+            to: grns.length
+          };
+        }
         this.grnLoaded = true;
         return this.grnRecords;
       }
     } catch (e) {
-      console.warn("[GRNDataLoader] Failed to fetch GRNs from API, checking local storage:", e);
-    }
-
-    const savedGrns = localStorage.getItem(this.storageKey);
-    if (savedGrns) {
-      try {
-        this.grnRecords = JSON.parse(savedGrns);
-      } catch (err) {
-        this.grnRecords = [];
-      }
+      console.warn("[GRNDataLoader] Failed to fetch GRNs from API:", e);
     }
 
     this.grnLoaded = true;
@@ -163,29 +183,10 @@ export class GRNDataLoader {
   }
 
   /**
-   * Load data from localStorage or initialize empty arrays.
+   * Return current in-memory state.
    */
   loadData() {
     this.loadSuppliers();
-
-    const savedGrns = localStorage.getItem(this.storageKey);
-    if (savedGrns) {
-      try {
-        this.grnRecords = JSON.parse(savedGrns);
-      } catch (e) {
-        this.grnRecords = [];
-      }
-    }
-
-    const savedPOs = localStorage.getItem(this.poStorageKey);
-    if (savedPOs) {
-      try {
-        this.purchaseOrders = JSON.parse(savedPOs);
-      } catch (e) {
-        this.purchaseOrders = [];
-      }
-    }
-
     return {
       suppliers: this.suppliers,
       grnRecords: this.grnRecords,
@@ -193,17 +194,11 @@ export class GRNDataLoader {
     };
   }
 
-  saveData() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.grnRecords));
-  }
+  saveData() {}
 
-  savePOData() {
-    localStorage.setItem(this.poStorageKey, JSON.stringify(this.purchaseOrders));
-  }
+  savePOData() {}
 
-  saveSupplierData() {
-    localStorage.setItem(this.supplierStorageKey, JSON.stringify(this.suppliers));
-  }
+  saveSupplierData() {}
 
   formatCurrency(amount) {
     return `Rs. ${(parseFloat(amount) || 0).toLocaleString("en-LK", {
@@ -213,33 +208,33 @@ export class GRNDataLoader {
   }
 
   generateNextGrnNumber() {
-    let maxNum = 5;
+    let maxNum = 0;
     this.grnRecords.forEach(r => {
-      const match = r.grn_number && r.grn_number.match(/GRN-\d+-(\d+)/);
+      const match = r.grn_number && r.grn_number.match(/GRN-(?:\d+-)?(\d+)/);
       if (match) {
         const num = parseInt(match[1], 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
       }
     });
     const nextNum = maxNum + 1;
-    return `GRN-2610-${String(nextNum).padStart(3, "0")}`;
+    return `GRN-${String(nextNum).padStart(4, "0")}`;
   }
 
   generateNextPONumber() {
-    let maxNum = 98;
+    let maxNum = 0;
     this.purchaseOrders.forEach(p => {
-      const match = p.po_number && p.po_number.match(/PO-\d+-(\d+)/);
+      const match = p.po_number && p.po_number.match(/PO-(?:\d+-)?(\d+)/);
       if (match) {
         const num = parseInt(match[1], 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
       }
     });
     const nextNum = maxNum + 1;
-    return `PO-2026-${String(nextNum).padStart(3, "0")}`;
+    return `PO-${String(nextNum).padStart(4, "0")}`;
   }
 
   generateNextSupplierCode() {
-    let maxNum = 8;
+    let maxNum = 0;
     this.suppliers.forEach(s => {
       const match = s.code && s.code.match(/SUP-(\d+)/);
       if (match) {

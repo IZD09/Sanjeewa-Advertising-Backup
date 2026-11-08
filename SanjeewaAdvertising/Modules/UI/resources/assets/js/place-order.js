@@ -24,6 +24,7 @@ import {
   OrderTableHandler,
   OrderModalHandler,
   OrderPlacementProcess,
+  PlaceOrderProcess,
   PaymentHandler,
   FilterProcess,
   ExportProcess,
@@ -46,7 +47,7 @@ class PlaceOrderManager {
 
     // Table pagination & filtering
     this.currentPage = 1;
-    this.pageSize = 8;
+    this.pageSize = 20;
 
     // Initialize process handler classes
     this.pricingCalculator = new PricingCalculator(this.products);
@@ -74,7 +75,7 @@ class PlaceOrderManager {
       }
     });
 
-    this.orderPlacementProcess = new OrderPlacementProcess({
+    this.orderPlacementProcess = new PlaceOrderProcess({
       products: this.products,
       employees: this.employees,
       currentUser: this.currentUser,

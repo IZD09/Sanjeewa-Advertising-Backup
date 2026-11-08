@@ -201,4 +201,31 @@ class User extends Authenticatable
             || (bool) $assignment->delete
             || (bool) $assignment->export;
     }
+
+    /**
+     * Determine the user's default landing URL based on their assigned module permissions.
+     */
+    public function getDefaultLandingRoute(): string
+    {
+        $priorityModules = [
+            'Dashboard' => 'ui.dashboard',
+            'Place Order' => 'ui.place-order',
+            'Customers' => 'ui.customers',
+            'Print Jobs' => 'ui.print-jobs',
+            'Inventory' => 'ui.inventory',
+            'GRN & Purchase Orders' => 'ui.grn',
+            'Payments & Financials' => 'ui.payments',
+            'Reports' => 'ui.reports',
+            'Settings' => 'ui.settings',
+            'User Control' => 'admin.user-control',
+        ];
+
+        foreach ($priorityModules as $module => $routeName) {
+            if ($this->canAccessModule($module)) {
+                return route($routeName);
+            }
+        }
+
+        return route('login');
+    }
 }

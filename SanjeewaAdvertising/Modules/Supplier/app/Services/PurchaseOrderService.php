@@ -19,24 +19,71 @@ class PurchaseOrderService
      */
     public function buildQuery(array $filters = []): Builder
     {
-        $query = PurchaseOrder::query()->with(['supplier', 'items.stockItem', 'grns'])->withCount('items');
+        $query = PurchaseOrder::query()
+            ->with(['supplier', 'items.stockItem', 'grns'])
+            ->withCount('items');
 
-        $search = $filters['search'] ?? $filters['q'] ?? null;
-        if (! empty($search)) {
-            $search = trim((string) $search);
-            $query->where(function (Builder $q) use ($search) {
-                if (is_numeric($search)) {
-                    $q->where('id', (int) $search);
+        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
+        if ($search !== '') {
+            $numericId = preg_replace('/\D+/', '', $search);
+            $query->where(function (Builder $q) use ($search, $numericId) {
+                if ($numericId !== '') {
+                    $q->where('id', (int) $numericId);
                 }
+
                 $q->orWhereHas('supplier', function (Builder $sq) use ($search) {
                     $sq->where('name', 'like', "%{$search}%")
                         ->orWhere('mobile', 'like', "%{$search}%");
+                })->orWhereHas('items.stockItem', function (Builder $iq) use ($search) {
+                    $iq->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
                 });
             });
         }
 
         if (! empty($filters['suppliers_id'])) {
             $query->where('suppliers_id', (int) $filters['suppliers_id']);
+        } elseif (! empty($filters['supplier']) && strcasecmp((string) $filters['supplier'], 'ALL') !== 0) {
+            $supplierName = trim((string) $filters['supplier']);
+            $query->whereHas('supplier', function (Builder $q) use ($supplierName) {
+                $q->where('name', $supplierName);
+            });
+        }
+
+        $statusFilter = (string) ($filters['status'] ?? 'ALL');
+        if ($statusFilter !== '' && strcasecmp($statusFilter, 'ALL') !== 0) {
+            if (strcasecmp($statusFilter, 'Completed') === 0) {
+                $query->whereHas('items')
+                    ->whereNotExists(function ($sub) {
+                        $sub->select(DB::raw(1))
+                            ->from('purchase_order_items')
+                            ->whereColumn('purchase_order_items.purchase_orders_id', 'purchase_orders.id')
+                            ->whereColumn('purchase_order_items.qty_received', '<', 'purchase_order_items.qty_ordered');
+                    });
+            } elseif (strcasecmp($statusFilter, 'Pending') === 0) {
+                $query->whereDoesntHave('grns')
+                    ->whereNotExists(function ($sub) {
+                        $sub->select(DB::raw(1))
+                            ->from('purchase_order_items')
+                            ->whereColumn('purchase_order_items.purchase_orders_id', 'purchase_orders.id')
+                            ->where('purchase_order_items.qty_received', '>', 0);
+                    });
+            } elseif (strcasecmp($statusFilter, 'Partial') === 0) {
+                $query->where(function (Builder $q) {
+                    $q->whereHas('grns')
+                        ->orWhereExists(function ($sub) {
+                            $sub->select(DB::raw(1))
+                                ->from('purchase_order_items')
+                                ->whereColumn('purchase_order_items.purchase_orders_id', 'purchase_orders.id')
+                                ->where('purchase_order_items.qty_received', '>', 0);
+                        });
+                })->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('purchase_order_items')
+                        ->whereColumn('purchase_order_items.purchase_orders_id', 'purchase_orders.id')
+                        ->whereColumn('purchase_order_items.qty_received', '<', 'purchase_order_items.qty_ordered');
+                });
+            }
         }
 
         if (! empty($filters['from_date'])) {
@@ -51,7 +98,7 @@ class PurchaseOrderService
     }
 
     /**
-     * Retrieve all purchase orders.
+     * Retrieve all purchase orders from database.
      *
      * @param  array<string, mixed>  $filters
      * @return Collection<int, PurchaseOrder>
@@ -62,15 +109,16 @@ class PurchaseOrderService
     }
 
     /**
-     * Retrieve paginated purchase orders.
+     * Retrieve paginated purchase orders from database.
      *
      * @param  array<string, mixed>  $filters
      */
-    public function getPurchaseOrders(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function getPurchaseOrders(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $perPage = max(1, min(100, $perPage));
+        $page = isset($filters['page']) ? max(1, (int) $filters['page']) : null;
 
-        return $this->buildQuery($filters)->paginate($perPage);
+        return $this->buildQuery($filters)->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**
@@ -164,209 +212,103 @@ class PurchaseOrderService
     }
 
     /**
-     * Retrieve Purchase Orders demo data and KPIs for UI views.
+     * Retrieve Purchase Orders database records, pagination, and KPIs for UI views.
      *
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
     public function getPurchaseOrdersData(array $filters = []): array
     {
-        $orders = $this->resolvePurchaseOrdersDemoData($filters);
-        $kpis = $this->resolvePurchaseOrdersKpis($orders);
+        $perPage = isset($filters['per_page']) ? max(1, min(100, (int) $filters['per_page'])) : 20;
+        $paginator = $this->getPurchaseOrders($filters, $perPage);
+
+        $orders = collect($paginator->items())
+            ->map(fn (PurchaseOrder $po) => $this->formatPurchaseOrderRecord($po))
+            ->values()
+            ->all();
+
+        $allOrdersFormatted = $this->getAllPurchaseOrders([])
+            ->map(fn (PurchaseOrder $po) => $this->formatPurchaseOrderRecord($po))
+            ->values()
+            ->all();
+
+        $kpis = $this->resolvePurchaseOrdersKpis($allOrdersFormatted);
 
         return [
             'purchase_orders' => $orders,
             'orders' => $orders,
             'kpis' => $kpis,
+            'pagination' => [
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'from' => $paginator->firstItem() ?? 0,
+                'to' => $paginator->lastItem() ?? 0,
+            ],
         ];
     }
 
     /**
-     * Resolve demo Purchase Orders records with optional search, status, and supplier filtering.
+     * Format a PurchaseOrder Eloquent model into the UI array representation.
      *
-     * @param  array<string, mixed>  $filters
-     * @return array<int, array<string, mixed>>
+     * @return array<string, mixed>
      */
-    protected function resolvePurchaseOrdersDemoData(array $filters = []): array
+    public function formatPurchaseOrderRecord(PurchaseOrder $po): array
     {
-        $today = now();
+        $items = [];
+        $totalAmount = 0.0;
+        $totalOrdered = 0;
+        $totalReceived = 0;
 
-        $allOrders = [
-            [
-                'po_number' => 'PO-2026-098',
-                'order_date' => $today->copy()->subDays(1)->toDateString(),
-                'expected_date' => $today->copy()->addDays(4)->toDateString(),
-                'supplier_name' => 'PaperPro Lanka',
-                'supplier_contact' => '077 123 4567',
-                'status' => 'Pending',
-                'total_amount' => 55000.00,
-                'created_by' => 'Admin User',
-                'remarks' => 'Urgent restocking for premium brochure printing job.',
-                'items' => [
-                    [
-                        'item_id' => 'PAP-001',
-                        'item_name' => '300gsm Art Board SRA3',
-                        'unit' => 'Sheets',
-                        'qty_ordered' => 800,
-                        'qty_received' => 0,
-                        'unit_cost' => 45.00,
-                        'item_total' => 36000.00,
-                    ],
-                    [
-                        'item_id' => 'PAP-002',
-                        'item_name' => '250gsm Ivory Board A3',
-                        'unit' => 'Sheets',
-                        'qty_ordered' => 500,
-                        'qty_received' => 0,
-                        'unit_cost' => 38.00,
-                        'item_total' => 19000.00,
-                    ],
-                ],
-            ],
-            [
-                'po_number' => 'PO-2026-096',
-                'order_date' => $today->copy()->subDays(4)->toDateString(),
-                'expected_date' => $today->copy()->addDays(2)->toDateString(),
-                'supplier_name' => 'Flora Tech International',
-                'supplier_contact' => '071 889 2233',
-                'status' => 'Partial',
-                'total_amount' => 85000.00,
-                'created_by' => 'Admin User',
-                'remarks' => 'Regular monthly ink batch for wide-format printer.',
-                'items' => [
-                    [
-                        'item_id' => 'INK-101',
-                        'item_name' => 'Flora Solvent Cyan Ink (5L)',
-                        'unit' => 'Liters',
-                        'qty_ordered' => 6,
-                        'qty_received' => 4,
-                        'unit_cost' => 8500.00,
-                        'item_total' => 51000.00,
-                    ],
-                    [
-                        'item_id' => 'INK-102',
-                        'item_name' => 'Flora Solvent Magenta Ink (5L)',
-                        'unit' => 'Liters',
-                        'qty_ordered' => 4,
-                        'qty_received' => 0,
-                        'unit_cost' => 8500.00,
-                        'item_total' => 34000.00,
-                    ],
-                ],
-            ],
-            [
-                'po_number' => 'PO-2026-095',
-                'order_date' => $today->copy()->subDays(7)->toDateString(),
-                'expected_date' => $today->copy()->subDays(2)->toDateString(),
-                'supplier_name' => 'Avery Dennison Lanka',
-                'supplier_contact' => '077 334 1122',
-                'status' => 'Completed',
-                'total_amount' => 100800.00,
-                'created_by' => 'Nuwan Silva',
-                'remarks' => 'Self-adhesive vinyl rolls for corporate branding.',
-                'items' => [
-                    [
-                        'item_id' => 'VIN-301',
-                        'item_name' => 'Glossy Self-Adhesive Vinyl (4ft × 50m)',
-                        'unit' => 'Rolls',
-                        'qty_ordered' => 6,
-                        'qty_received' => 6,
-                        'unit_cost' => 16800.00,
-                        'item_total' => 100800.00,
-                    ],
-                ],
-            ],
-            [
-                'po_number' => 'PO-2026-092',
-                'order_date' => $today->copy()->subDays(10)->toDateString(),
-                'expected_date' => $today->copy()->subDays(5)->toDateString(),
-                'supplier_name' => 'MegaFlex Imports',
-                'supplier_contact' => '076 554 9988',
-                'status' => 'Completed',
-                'total_amount' => 66000.00,
-                'created_by' => 'Admin User',
-                'remarks' => 'Outdoor billboard flex rolls.',
-                'items' => [
-                    [
-                        'item_id' => 'FLX-201',
-                        'item_name' => 'Star Flex Heavy Banner 380gsm (10ft × 50m)',
-                        'unit' => 'Rolls',
-                        'qty_ordered' => 3,
-                        'qty_received' => 3,
-                        'unit_cost' => 22000.00,
-                        'item_total' => 66000.00,
-                    ],
-                ],
-            ],
-            [
-                'po_number' => 'PO-2026-088',
-                'order_date' => $today->copy()->subDays(14)->toDateString(),
-                'expected_date' => $today->copy()->subDays(9)->toDateString(),
-                'supplier_name' => 'SignBoard Supplies',
-                'supplier_contact' => '075 443 2211',
-                'status' => 'Completed',
-                'total_amount' => 68000.00,
-                'created_by' => 'Chamara Bandara',
-                'remarks' => 'Foam boards for exhibition backdrop signage.',
-                'items' => [
-                    [
-                        'item_id' => 'RIG-401',
-                        'item_name' => '5mm White Foam Board (4ft × 8ft)',
-                        'unit' => 'Sheets',
-                        'qty_ordered' => 20,
-                        'qty_received' => 20,
-                        'unit_cost' => 3400.00,
-                        'item_total' => 68000.00,
-                    ],
-                ],
-            ],
-            [
-                'po_number' => 'PO-2026-085',
-                'order_date' => $today->copy()->subDays(18)->toDateString(),
-                'expected_date' => $today->copy()->subDays(12)->toDateString(),
-                'supplier_name' => 'DisplayTech Hardware',
-                'supplier_contact' => '077 998 7766',
-                'status' => 'Pending',
-                'total_amount' => 48000.00,
-                'created_by' => 'Admin User',
-                'remarks' => 'Exhibition hardware display stands order.',
-                'items' => [
-                    [
-                        'item_id' => 'DSP-501',
-                        'item_name' => 'Rollup Banner Stand Aluminium (2.5ft × 6ft)',
-                        'unit' => 'Units',
-                        'qty_ordered' => 15,
-                        'qty_received' => 0,
-                        'unit_cost' => 3200.00,
-                        'item_total' => 48000.00,
-                    ],
-                ],
-            ],
+        foreach ($po->items as $item) {
+            $qtyOrdered = (int) $item->qty_ordered;
+            $qtyReceived = (int) $item->qty_received;
+            $unitCost = (float) $item->unit_cost;
+            $itemTotal = $qtyOrdered * $unitCost;
+
+            $totalOrdered += $qtyOrdered;
+            $totalReceived += $qtyReceived;
+            $totalAmount += $itemTotal;
+
+            $items[] = [
+                'item_id' => $item->stockItem?->code ?? ('ITM-'.$item->stock_items_id),
+                'stock_items_id' => $item->stock_items_id,
+                'item_name' => $item->stockItem?->name ?? ('Item #'.$item->stock_items_id),
+                'unit' => 'Units',
+                'qty_ordered' => $qtyOrdered,
+                'qty_received' => $qtyReceived,
+                'unit_cost' => $unitCost,
+                'item_total' => $itemTotal,
+            ];
+        }
+
+        if ($totalOrdered > 0 && $totalReceived >= $totalOrdered) {
+            $status = 'Completed';
+        } elseif ($totalReceived > 0 || $po->grns->isNotEmpty()) {
+            $status = ($totalOrdered === 0) ? 'Completed' : 'Partial';
+        } else {
+            $status = 'Pending';
+        }
+
+        $poCode = 'PO-'.str_pad((string) $po->id, 4, '0', STR_PAD_LEFT);
+        $orderDate = $po->add_date?->toDateString() ?? '';
+        $expectedDate = $po->add_date?->copy()->addDays(7)->toDateString() ?? 'N/A';
+
+        return [
+            'id' => $po->id,
+            'po_number' => $poCode,
+            'order_date' => $orderDate,
+            'expected_date' => $expectedDate,
+            'suppliers_id' => $po->suppliers_id,
+            'supplier_name' => $po->supplier?->name ?? 'Unknown Supplier',
+            'supplier_contact' => $po->supplier?->mobile ?? '-',
+            'status' => $status,
+            'total_amount' => $totalAmount,
+            'created_by' => 'Admin User',
+            'remarks' => '',
+            'items' => $items,
         ];
-
-        $searchTerm = strtolower(trim((string) ($filters['search'] ?? $filters['q'] ?? '')));
-        $statusFilter = (string) ($filters['status'] ?? 'ALL');
-        $supplierFilter = (string) ($filters['supplier'] ?? 'ALL');
-
-        return array_values(array_filter($allOrders, function ($po) use ($searchTerm, $statusFilter, $supplierFilter) {
-            if ($statusFilter !== 'ALL' && strcasecmp($po['status'], $statusFilter) !== 0) {
-                return false;
-            }
-
-            if ($supplierFilter !== 'ALL' && strcasecmp($po['supplier_name'], $supplierFilter) !== 0) {
-                return false;
-            }
-
-            if ($searchTerm !== '') {
-                $itemNames = implode(' ', array_column($po['items'] ?? [], 'item_name'));
-                $searchable = strtolower($po['po_number'] . ' ' . $po['supplier_name'] . ' ' . $po['supplier_contact'] . ' ' . $itemNames);
-                if (! str_contains($searchable, $searchTerm)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
     }
 
     /**

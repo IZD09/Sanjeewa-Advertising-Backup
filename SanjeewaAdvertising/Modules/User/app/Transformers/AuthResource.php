@@ -14,10 +14,16 @@ class AuthResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $user = $this->resource['user'];
+        $redirectUrl = method_exists($user, 'getDefaultLandingRoute')
+            ? $user->getDefaultLandingRoute()
+            : route('ui.dashboard');
+
         return [
-            'user' => new UserResource($this->resource['user']),
+            'user' => new UserResource($user),
             'login_id' => $this->resource['login_id'] ?? null,
             'login_at' => $this->resource['login_at'] ?? null,
+            'redirect_url' => $redirectUrl,
         ];
     }
 }

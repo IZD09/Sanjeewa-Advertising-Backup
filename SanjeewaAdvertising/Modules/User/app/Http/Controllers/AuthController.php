@@ -19,8 +19,7 @@ class AuthController extends BaseApiController
 {
     public function __construct(
         protected AuthService $authService
-    ) {
-    }
+    ) {}
 
     /**
      * Register a new user account.
@@ -64,7 +63,13 @@ class AuthController extends BaseApiController
             );
         }
 
-        return redirect()->intended(route('ui.dashboard'));
+        /** @var User $user */
+        $user = Auth::guard('web')->user() ?? $authData['user'];
+        $landingUrl = method_exists($user, 'getDefaultLandingRoute')
+            ? $user->getDefaultLandingRoute()
+            : route('ui.dashboard');
+
+        return redirect()->intended($landingUrl);
     }
 
     /**

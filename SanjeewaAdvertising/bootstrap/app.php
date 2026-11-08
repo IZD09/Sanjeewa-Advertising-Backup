@@ -9,11 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Modules\User\Http\Middleware\CheckModulePermission;
+use Modules\User\Models\User;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -30,7 +31,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('admin.dashboard');
             }
 
-            return route('ui.dashboard');
+            /** @var User|null $user */
+            $user = Auth::guard('web')->user();
+
+            return $user && method_exists($user, 'getDefaultLandingRoute')
+                ? $user->getDefaultLandingRoute()
+                : route('ui.dashboard');
         });
 
         $middleware->alias([
@@ -44,9 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(prepend: [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

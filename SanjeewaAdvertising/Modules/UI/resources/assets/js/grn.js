@@ -67,20 +67,25 @@ export class GRNManager {
       saveNewSupplier: () => this.modalHandler.saveNewSupplier(),
       showToast: (msg, type) => this.modalHandler.showToast(msg, type),
       switchView: (view) => this.switchView(view),
-      clearSelectedPO: () => this.clearSelectedPO()
+      clearSelectedPO: () => this.clearSelectedPO(),
+      onPageChange: (page) => this.onSupplierPageChange(page)
     });
 
-    // 3. Table Render Handlers
+    // 3. Table Render Handlers (max 20 rows per page, AJAX pagination without page reload)
     this.grnTableHandler = new GRNTableHandler({
+      pageSize: 20,
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt),
       viewGRN: (num) => this.viewGRN(num),
-      finalizeDraftGRN: (num) => this.finalizeDraftGRN(num)
+      finalizeDraftGRN: (num) => this.finalizeDraftGRN(num),
+      onPageChange: (page) => this.onGrnPageChange(page)
     });
 
     this.poTableHandler = new POTableHandler({
+      pageSize: 20,
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt),
       viewPO: (num) => this.viewPO(num),
-      createGrnForPO: (num) => this.createGrnForPO(num)
+      createGrnForPO: (num) => this.createGrnForPO(num),
+      onPageChange: (page) => this.onPoPageChange(page)
     });
 
     // 4. Form Business Logic Process
@@ -107,14 +112,24 @@ export class GRNManager {
       renderPOTable: () => this.renderPOTable(),
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
       loadAndRenderGRN: () => this.loadAndRenderGRN(),
+      loadAndRenderSuppliers: () => this.loadAndRenderSuppliers(),
       renderSuppliersGrid: () => this.renderSuppliersGrid(),
       render: () => this.render()
     });
 
     this.filterProcess = new FilterProcess({
-      renderTable: () => this.renderTable(),
-      renderPOTable: () => this.renderPOTable(),
-      renderSuppliersGrid: () => this.renderSuppliersGrid()
+      renderTable: () => {
+        this.grnTableHandler.currentPage = 1;
+        this.renderTable();
+      },
+      renderPOTable: () => {
+        this.poTableHandler.currentPage = 1;
+        this.renderPOTable();
+      },
+      renderSuppliersGrid: () => {
+        this.supplierHandler.currentPage = 1;
+        this.renderSuppliersGrid();
+      }
     });
 
     this.formButtonProcess = new FormButtonProcess({
@@ -135,6 +150,8 @@ export class GRNManager {
     this.metricsProcess = new MetricsProcess({
       getGrnRecords: () => this.dataLoader.grnRecords,
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
+      getGrnKpis: () => this.dataLoader.grnKpis,
+      getPoKpis: () => this.dataLoader.poKpis,
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt)
     });
 
@@ -167,12 +184,13 @@ export class GRNManager {
   get activeGrnContext() { return this.modalHandler.activeGrnContext; }
 
   async init() {
-    this.dataLoader.loadSuppliers();
-    this.supplierHandler.populateAllSupplierDropdowns();
     this.navigationProcess.bindEvents();
     this.filterProcess.bindEvents();
     this.formButtonProcess.bindEvents();
     this.exportProcess.bindEvents();
+
+    await this.dataLoader.fetchSuppliers({ page: 1, per_page: 20 });
+    this.supplierHandler.populateAllSupplierDropdowns();
 
     // Check initial active view from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -181,12 +199,72 @@ export class GRNManager {
     if (viewParam === "po") {
       await this.loadAndRenderPO();
     } else if (viewParam === "suppliers") {
-      this.supplierHandler.renderSuppliersGrid();
+      await this.loadAndRenderSuppliers();
     } else if (viewParam === "form") {
+      await this.dataLoader.fetchPurchaseOrders({ page: 1, per_page: 20 });
       this.grnFormProcess.initNewGrnForm();
     } else {
       await this.loadAndRenderGRN();
     }
+  }
+
+  /**
+   * Handle GRN table page change without reloading the browser page.
+   *
+   * @param {number} page
+   */
+  async onGrnPageChange(page) {
+    this.grnTableHandler.currentPage = page;
+    const pagination = this.dataLoader.grnPagination;
+    if (pagination && pagination.total > this.dataLoader.grnRecords.length) {
+      await this.dataLoader.fetchGrns({
+        page,
+        per_page: 20,
+        search: this.searchTerm,
+        status: this.statusFilter,
+        supplier: this.supplierFilter
+      }, true);
+    }
+    this.renderTable();
+  }
+
+  /**
+   * Handle PO table page change without reloading the browser page.
+   *
+   * @param {number} page
+   */
+  async onPoPageChange(page) {
+    this.poTableHandler.currentPage = page;
+    const pagination = this.dataLoader.poPagination;
+    if (pagination && pagination.total > this.dataLoader.purchaseOrders.length) {
+      await this.dataLoader.fetchPurchaseOrders({
+        page,
+        per_page: 20,
+        search: this.poSearchTerm,
+        status: this.poStatusFilter,
+        supplier: this.poSupplierFilter
+      }, true);
+    }
+    this.renderPOTable();
+  }
+
+  /**
+   * Handle Supplier directory page change without reloading the browser page.
+   *
+   * @param {number} page
+   */
+  async onSupplierPageChange(page) {
+    this.supplierHandler.currentPage = page;
+    const pagination = this.dataLoader.supplierPagination;
+    if (pagination && pagination.total > this.dataLoader.suppliers.length) {
+      await this.dataLoader.fetchSuppliers({
+        page,
+        per_page: 20,
+        search: this.supplierSearchTerm,
+        category: this.supplierCategoryFilter
+      }, true);
+    }
+    this.renderSuppliersGrid();
   }
 
   /**
@@ -196,7 +274,7 @@ export class GRNManager {
    * @param {boolean} [forceRefresh=false]
    */
   async loadAndRenderPO(forceRefresh = false) {
-    await this.dataLoader.fetchPurchaseOrders({}, forceRefresh);
+    await this.dataLoader.fetchPurchaseOrders({ page: this.poTableHandler.currentPage || 1, per_page: 20 }, forceRefresh);
     this.renderPOTable();
     this.supplierHandler.populatePOSupplierFilter();
     this.metricsProcess.renderOpenPoBadge();
@@ -209,9 +287,21 @@ export class GRNManager {
    * @param {boolean} [forceRefresh=false]
    */
   async loadAndRenderGRN(forceRefresh = false) {
-    await this.dataLoader.fetchGrns({}, forceRefresh);
+    await this.dataLoader.fetchGrns({ page: this.grnTableHandler.currentPage || 1, per_page: 20 }, forceRefresh);
     this.renderTable();
+    this.supplierHandler.populateSupplierFilter();
     this.metricsProcess.renderKPIs();
+  }
+
+  /**
+   * On-demand data loading & rendering for Suppliers Directory tab.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderSuppliers(forceRefresh = false) {
+    await this.dataLoader.fetchSuppliers({ page: this.supplierHandler.currentPage || 1, per_page: 20 }, forceRefresh);
+    this.supplierHandler.populateAllSupplierDropdowns();
+    this.renderSuppliersGrid();
   }
 
   render() {
@@ -238,14 +328,31 @@ export class GRNManager {
   populatePOSupplierFilter() { this.supplierHandler.populatePOSupplierFilter(); }
   renderSuppliersGrid() {
     this.supplierHandler.setFilters(this.supplierSearchTerm, this.supplierCategoryFilter);
-    this.supplierHandler.renderSuppliersGrid();
+    this.supplierHandler.renderSuppliersGrid(this.dataLoader.supplierPagination);
   }
   createGrnForSupplier(name) { this.supplierHandler.createGrnForSupplier(name); }
   deleteSupplier(code) { this.supplierHandler.deleteSupplier(code); }
 
   // Table Render Delegations
-  renderTable() { this.grnTableHandler.render(this.dataLoader.grnRecords, this.searchTerm, this.statusFilter, this.supplierFilter); }
-  renderPOTable() { this.poTableHandler.render(this.dataLoader.purchaseOrders, this.poSearchTerm, this.poStatusFilter, this.poSupplierFilter); }
+  renderTable() {
+    this.grnTableHandler.render(
+      this.dataLoader.grnRecords,
+      this.searchTerm,
+      this.statusFilter,
+      this.supplierFilter,
+      this.dataLoader.grnPagination
+    );
+  }
+
+  renderPOTable() {
+    this.poTableHandler.render(
+      this.dataLoader.purchaseOrders,
+      this.poSearchTerm,
+      this.poStatusFilter,
+      this.poSupplierFilter,
+      this.dataLoader.poPagination
+    );
+  }
 
   // GRN Form Process Delegations
   populatePOSelect(po) { this.grnFormProcess.populatePOSelect(po); }
@@ -298,6 +405,8 @@ export class GRNManager {
 if (typeof window !== "undefined") {
   window.GRNManager = GRNManager;
   document.addEventListener("DOMContentLoaded", () => {
-    window.grnManager = new GRNManager();
+    if (document.getElementById("module-grn") && !window.grnManager) {
+      window.grnManager = new GRNManager();
+    }
   });
 }

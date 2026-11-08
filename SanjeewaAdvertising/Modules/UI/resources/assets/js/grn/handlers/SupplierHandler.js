@@ -27,9 +27,15 @@ export class SupplierHandler {
     this.editingSupplierCode = null;
     this.supplierSearchTerm = "";
     this.supplierCategoryFilter = "ALL";
+    this.currentPage = 1;
+    this.pageSize = 20;
+    this.onPageChange = context.onPageChange || null;
   }
 
   setFilters(searchTerm = "", categoryFilter = "ALL") {
+    if (this.supplierSearchTerm !== searchTerm || this.supplierCategoryFilter !== categoryFilter) {
+      this.currentPage = 1;
+    }
     this.supplierSearchTerm = searchTerm;
     this.supplierCategoryFilter = categoryFilter;
   }
@@ -105,29 +111,54 @@ export class SupplierHandler {
     });
   }
 
-  renderSuppliersGrid() {
+  renderSuppliersGrid(serverPagination = null) {
     const container = document.getElementById("suppliersCardsContainer");
     if (!container) return;
 
     const suppliers = this.ctx.getSuppliers() || [];
     const filtered = suppliers.filter(s => {
       const matchesSearch = !this.supplierSearchTerm ||
-        s.name.toLowerCase().includes(this.supplierSearchTerm) ||
-        s.code.toLowerCase().includes(this.supplierSearchTerm) ||
-        s.contact_person.toLowerCase().includes(this.supplierSearchTerm) ||
-        s.phone.includes(this.supplierSearchTerm) ||
+        (s.name && s.name.toLowerCase().includes(this.supplierSearchTerm)) ||
+        (s.code && s.code.toLowerCase().includes(this.supplierSearchTerm)) ||
+        (s.contact_person && s.contact_person.toLowerCase().includes(this.supplierSearchTerm)) ||
+        (s.phone && s.phone.includes(this.supplierSearchTerm)) ||
         (s.email && s.email.toLowerCase().includes(this.supplierSearchTerm)) ||
         (s.address && s.address.toLowerCase().includes(this.supplierSearchTerm)) ||
-        s.category.toLowerCase().includes(this.supplierSearchTerm);
+        (s.category && s.category.toLowerCase().includes(this.supplierSearchTerm));
 
       const matchesCategory = this.supplierCategoryFilter === "ALL" || s.category === this.supplierCategoryFilter;
 
       return matchesSearch && matchesCategory;
     });
 
+    const pageSize = this.pageSize || 20;
+    const useServerMeta = serverPagination &&
+      typeof serverPagination.total === "number" &&
+      serverPagination.total > suppliers.length;
+
+    let pageItems = [];
+    let total = 0;
+    let totalPages = 1;
+    let activePage = this.currentPage;
+
+    if (useServerMeta) {
+      pageItems = filtered.slice(0, pageSize);
+      total = serverPagination.total;
+      totalPages = Math.max(1, serverPagination.last_page || Math.ceil(total / pageSize));
+      activePage = serverPagination.current_page || this.currentPage;
+      this.currentPage = activePage;
+    } else {
+      total = filtered.length;
+      totalPages = Math.max(1, Math.ceil(total / pageSize));
+      activePage = Math.max(1, Math.min(this.currentPage, totalPages));
+      this.currentPage = activePage;
+      const start = (activePage - 1) * pageSize;
+      pageItems = filtered.slice(start, start + pageSize);
+    }
+
     container.innerHTML = "";
 
-    if (filtered.length === 0) {
+    if (pageItems.length === 0) {
       container.innerHTML = `
         <div class="inv-empty-state" style="grid-column: 1 / -1; padding: 40px;">
           <i class="fa-solid fa-truck-field"></i>
@@ -138,10 +169,11 @@ export class SupplierHandler {
           </button>
         </div>
       `;
+      this.renderSupplierPagination(0, 1, 1, pageSize);
       return;
     }
 
-    filtered.forEach(s => {
+    pageItems.forEach(s => {
       const card = document.createElement("div");
       card.className = "supplier-card";
       card.innerHTML = `
@@ -150,7 +182,7 @@ export class SupplierHandler {
             <div class="supplier-brand-info">
               <h4><i class="fa-solid fa-truck-ramp-box"></i> ${s.name}</h4>
               <div class="supplier-contact-person">
-                <i class="fa-solid fa-user-tie"></i> ${s.contact_person}
+                <i class="fa-solid fa-user-tie"></i> ${s.contact_person || s.name}
               </div>
             </div>
             <span class="grn-code-badge" style="background: #e6f4ff; color: #1677ff; border-color: #91caff;">${s.code}</span>
@@ -179,7 +211,7 @@ export class SupplierHandler {
 
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="supplier-category-pill">${s.category}</span>
+            <span class="supplier-category-pill">${s.category || "General Printing Media"}</span>
             <span class="supplier-terms-badge">${s.payment_terms || "COD"}</span>
           </div>
 
@@ -201,6 +233,68 @@ export class SupplierHandler {
       `;
       container.appendChild(card);
     });
+
+    this.renderSupplierPagination(total, totalPages, activePage, pageSize);
+  }
+
+  renderSupplierPagination(totalCount, totalPages, currentPage, pageSize) {
+    const infoElem = document.getElementById("supplierPaginationInfo");
+    const controlsElem = document.getElementById("supplierPaginationControls");
+    if (!infoElem || !controlsElem) return;
+
+    if (totalCount === 0) {
+      infoElem.textContent = "Showing 0 records";
+      controlsElem.innerHTML = "";
+      return;
+    }
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalCount);
+    infoElem.textContent = `Showing ${start}-${end} of ${totalCount} records`;
+    controlsElem.innerHTML = "";
+
+    const handlePageSelect = (newPage) => {
+      this.currentPage = newPage;
+      if (typeof this.onPageChange === "function") {
+        this.onPageChange(newPage);
+      } else {
+        this.renderSuppliersGrid();
+      }
+    };
+
+    const prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "page-btn";
+    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage > 1) handlePageSelect(currentPage - 1);
+    });
+    controlsElem.appendChild(prevBtn);
+
+    for (let p = 1; p <= totalPages; p++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.type = "button";
+      pageBtn.className = `page-btn ${p === currentPage ? "active" : ""}`;
+      pageBtn.textContent = String(p);
+      pageBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (p !== currentPage) handlePageSelect(p);
+      });
+      controlsElem.appendChild(pageBtn);
+    }
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "page-btn";
+    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage < totalPages) handlePageSelect(currentPage + 1);
+    });
+    controlsElem.appendChild(nextBtn);
   }
 
   openEditSupplierModal(supplierCode) {

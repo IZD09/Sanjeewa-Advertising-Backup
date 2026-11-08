@@ -15,8 +15,7 @@ class SupplierController extends BaseApiController
 {
     public function __construct(
         protected SupplierService $supplierService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of suppliers.
@@ -32,7 +31,7 @@ class SupplierController extends BaseApiController
             );
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
         $suppliers = $this->supplierService->getSuppliers($request->query(), $perPage);
 
         $suppliers->through(fn ($item) => new SupplierResource($item));
@@ -80,7 +79,7 @@ class SupplierController extends BaseApiController
             );
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
         $suppliers = $this->supplierService->getSuppliers($request->query(), $perPage);
 
         $suppliers->through(fn ($item) => new SupplierResource($item));

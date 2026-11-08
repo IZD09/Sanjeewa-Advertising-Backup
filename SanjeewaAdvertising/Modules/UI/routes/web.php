@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Modules\UI\Http\Controllers\DashboardController;
 use Modules\UI\Http\Controllers\UIController;
+use Modules\User\Models\User;
 
 // =========================================================================
 // PUBLIC AUTHENTICATION ROUTES (Accessible to guests)
@@ -14,7 +15,10 @@ Route::get('/login', function () {
         return redirect()->route('admin.dashboard');
     }
     if (Auth::guard('web')->check()) {
-        return redirect()->route('ui.dashboard');
+        /** @var User|null $user */
+        $user = Auth::guard('web')->user();
+
+        return redirect($user && method_exists($user, 'getDefaultLandingRoute') ? $user->getDefaultLandingRoute() : route('ui.dashboard'));
     }
 
     return view('ui::layouts.pages.login.login');
@@ -25,7 +29,10 @@ Route::get('/admin/login', function () {
         return redirect()->route('admin.dashboard');
     }
     if (Auth::guard('web')->check()) {
-        return redirect()->route('ui.dashboard');
+        /** @var User|null $user */
+        $user = Auth::guard('web')->user();
+
+        return redirect($user && method_exists($user, 'getDefaultLandingRoute') ? $user->getDefaultLandingRoute() : route('ui.dashboard'));
     }
 
     return view('ui::layouts.admin.pages.login.login');
@@ -55,10 +62,6 @@ Route::middleware(['auth:web,admin'])->group(function () {
     Route::view('/place-order', 'ui::layouts.pages.place-order.place-order')
         ->middleware('module.permission:Place Order')
         ->name('ui.place-order');
-
-    Route::view('/customers', 'ui::layouts.pages.customers.customers')
-        ->middleware('module.permission:Customers')
-        ->name('ui.customers');
 
     Route::view('/print-jobs', 'ui::layouts.pages.print-jobs.print-jobs')
         ->middleware('module.permission:Print Jobs')

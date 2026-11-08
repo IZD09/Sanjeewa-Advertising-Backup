@@ -33,6 +33,7 @@ export default defineConfig({
                 'resources/assets/js/components/sidebar.js',
                 'resources/assets/js/components/topbar.js',
                 'resources/assets/js/place-order.js',
+                'resources/assets/js/customers.js',
                 'resources/assets/js/inventory.js',
                 'resources/assets/js/grn.js',
                 'resources/assets/js/payments.js',

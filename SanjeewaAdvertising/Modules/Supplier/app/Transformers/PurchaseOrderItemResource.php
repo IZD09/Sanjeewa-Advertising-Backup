@@ -25,8 +25,10 @@ class PurchaseOrderItemResource extends JsonResource
             'stock_item' => $this->whenLoaded('stockItem', function () {
                 return [
                     'id' => $this->stockItem->id,
-                    'item_name' => $this->stockItem->item_name,
-                    'item_code' => $this->stockItem->item_code,
+                    'name' => $this->stockItem->name,
+                    'code' => $this->stockItem->code,
+                    'item_name' => $this->stockItem->name,
+                    'item_code' => $this->stockItem->code,
                 ];
             }),
         ];

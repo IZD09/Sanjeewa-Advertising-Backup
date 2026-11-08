@@ -275,8 +275,9 @@ export class AdminLoginManager {
 
       if (response && (response.success || response.status === "success" || response.data)) {
         this.setStatus("Authentication successful! Loading administrator console...", "success");
+        const targetUrl = response?.data?.redirect_url || response?.redirect_url || redirectUrl;
         setTimeout(() => {
-          window.location.href = redirectUrl;
+          window.location.href = targetUrl;
         }, 600);
       } else {
         const errorMsg = response?.message || response?.error || "Invalid administrator credentials or access denied.";

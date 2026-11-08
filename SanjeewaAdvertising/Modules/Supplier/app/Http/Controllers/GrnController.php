@@ -13,8 +13,7 @@ class GrnController extends BaseApiController
 {
     public function __construct(
         protected GrnService $grnService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of GRNs.
@@ -30,7 +29,7 @@ class GrnController extends BaseApiController
             );
         }
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 15)));
+        $perPage = max(1, min(100, (int) $request->query('per_page', 20)));
         $grns = $this->grnService->getGrns($request->query(), $perPage);
 
         $grns->through(fn ($item) => new GrnResource($item));

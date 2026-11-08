@@ -2,34 +2,41 @@
  * SanjeewaAdvertising - Base Table Loader
  *
  * Universal foundation class for loading, filtering, paginating, and rendering data tables.
+ * Extends BasePaginationHandler core class.
  * Used across modules (Orders, Payments, Inventory, GRN).
  */
 
-export class BaseTableLoader {
+import { BasePaginationHandler } from "./BasePaginationHandler.js";
+
+export class BaseTableLoader extends BasePaginationHandler {
   /**
    * @param {Object} [options={}]
    * @param {string} [options.tbodyId=""] - DOM ID of <tbody> element
    * @param {string} [options.paginationInfoId="paginationInfo"] - DOM ID of pagination info container
    * @param {string} [options.paginationControlsId="paginationControls"] - DOM ID of pagination controls container
-   * @param {number} [options.pageSize=8] - Default rows per page
+   * @param {number} [options.pageSize=20] - Default rows per page (default: 20)
    * @param {number} [options.colspan=10] - Default colspan for empty/loading rows
    * @param {string} [options.emptyIcon="fa-folder-open"] - FontAwesome icon class for empty state
    * @param {string} [options.emptyMessage="No records matching your criteria"]
+   * @param {string} [options.itemLabel="records"] - Noun for records in info display
    * @param {Function} [options.onPageChange] - Callback invoked when page is changed
    * @param {Function} [options.rowBuilder] - Subclass of BaseTableRowBuilder or row render function
    */
   constructor(options = {}) {
+    super({
+      paginationInfoId: options.paginationInfoId || "paginationInfo",
+      paginationControlsId: options.paginationControlsId || "paginationControls",
+      pageSize: options.pageSize || 20,
+      itemLabel: options.itemLabel || "records",
+      onPageChange: options.onPageChange || (() => {}),
+    });
+
     this.tbodyId = options.tbodyId || "";
-    this.paginationInfoId = options.paginationInfoId || "paginationInfo";
-    this.paginationControlsId = options.paginationControlsId || "paginationControls";
-    this.pageSize = options.pageSize || 8;
     this.colspan = options.colspan || 10;
     this.emptyIcon = options.emptyIcon || "fa-folder-open";
     this.emptyMessage = options.emptyMessage || "No records matching your criteria";
-    this.onPageChange = options.onPageChange || (() => {});
     this.rowBuilder = options.rowBuilder || null;
 
-    this.currentPage = 1;
     this.searchTerm = "";
     this.filters = {};
   }
@@ -39,7 +46,9 @@ export class BaseTableLoader {
    * @returns {HTMLElement|null}
    */
   getTbody() {
-    return typeof document !== "undefined" && this.tbodyId ? document.getElementById(this.tbodyId) : null;
+    return typeof document !== "undefined" && this.tbodyId
+      ? document.getElementById(this.tbodyId)
+      : null;
   }
 
   /**
@@ -84,85 +93,9 @@ export class BaseTableLoader {
   }
 
   /**
-   * Slice array for active page view.
-   * @param {Array} items
-   * @param {number} [page=this.currentPage]
-   * @param {number} [size=this.pageSize]
-   * @returns {{pageItems: Array, total: number, totalPages: number, activePage: number, pageSize: number}}
-   */
-  paginate(items = [], page = this.currentPage, size = this.pageSize) {
-    const total = items.length;
-    const totalPages = Math.ceil(total / size) || 1;
-    const activePage = Math.max(1, Math.min(page, totalPages));
-    const start = (activePage - 1) * size;
-    const pageItems = items.slice(start, start + size);
-
-    return {
-      pageItems,
-      total,
-      totalPages,
-      activePage,
-      pageSize: size
-    };
-  }
-
-  /**
-   * Render pagination summary text and page buttons.
-   * @param {number} totalCount
-   * @param {number} totalPages
-   * @param {number} currentPage
-   * @param {number} pageSize
-   */
-  renderPagination(totalCount, totalPages, currentPage, pageSize) {
-    const infoElem = document.getElementById(this.paginationInfoId);
-    const controlsElem = document.getElementById(this.paginationControlsId);
-    if (!infoElem || !controlsElem) return;
-
-    if (totalCount === 0) {
-      infoElem.textContent = "Showing 0 records";
-      controlsElem.innerHTML = "";
-      return;
-    }
-
-    const start = (currentPage - 1) * pageSize + 1;
-    const end = Math.min(currentPage * pageSize, totalCount);
-    infoElem.textContent = `Showing ${start}-${end} of ${totalCount} records`;
-    controlsElem.innerHTML = "";
-
-    // Previous Page Button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "page-btn";
-    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.addEventListener("click", () => {
-      if (currentPage > 1) this.onPageChange(currentPage - 1);
-    });
-    controlsElem.appendChild(prevBtn);
-
-    // Numbered Buttons
-    for (let p = 1; p <= totalPages; p++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = `page-btn ${p === currentPage ? "active" : ""}`;
-      pageBtn.textContent = String(p);
-      pageBtn.addEventListener("click", () => {
-        this.onPageChange(p);
-      });
-      controlsElem.appendChild(pageBtn);
-    }
-
-    // Next Page Button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "page-btn";
-    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.addEventListener("click", () => {
-      if (currentPage < totalPages) this.onPageChange(currentPage + 1);
-    });
-    controlsElem.appendChild(nextBtn);
-  }
-
-  /**
    * Load and render table items with pagination and row creation.
+   * Prevents browser reload on page navigation.
+   *
    * @param {Array} items
    * @param {Function} [renderRow=null] - Optional custom row renderer function (item, index) => HTMLElement|string
    * @param {number} [page=this.currentPage]
@@ -214,4 +147,3 @@ export class BaseTableLoader {
 export const TableLoader = BaseTableLoader;
 export const BaseTableHandler = BaseTableLoader;
 export default BaseTableLoader;
-

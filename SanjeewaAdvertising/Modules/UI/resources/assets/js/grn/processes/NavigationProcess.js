@@ -75,7 +75,11 @@ export class NavigationProcess {
     } else if (viewName === "suppliers") {
       if (views.suppliers) views.suppliers.style.display = "block";
       if (tabs.suppliers) tabs.suppliers.classList.add("active");
-      if (this.ctx.renderSuppliersGrid) this.ctx.renderSuppliersGrid();
+      if (this.ctx.loadAndRenderSuppliers) {
+        this.ctx.loadAndRenderSuppliers();
+      } else if (this.ctx.renderSuppliersGrid) {
+        this.ctx.renderSuppliersGrid();
+      }
     } else {
       if (views.list) views.list.style.display = "block";
       if (tabs.list) tabs.list.classList.add("active");

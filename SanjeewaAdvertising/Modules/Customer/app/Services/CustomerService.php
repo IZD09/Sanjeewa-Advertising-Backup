@@ -5,7 +5,9 @@ namespace Modules\Customer\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Modules\Customer\Models\Customer;
+use Modules\Customer\Transformers\CustomerResource;
 
 class CustomerService
 {
@@ -51,6 +53,27 @@ class CustomerService
     public function getAllCustomers(array $filters = []): Collection
     {
         return $this->buildQuery($filters)->get();
+    }
+
+    /**
+     * Retrieve customer directory data with aggregated KPIs.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function getCustomersData(array $filters = []): array
+    {
+        $customers = $this->getAllCustomers($filters);
+        $totalCustomers = Customer::count();
+        $totalOrders = DB::table('print_jobs')->count();
+
+        return [
+            'customers' => CustomerResource::collection($customers),
+            'kpis' => [
+                'totalCustomers' => $totalCustomers,
+                'totalOrders' => $totalOrders,
+            ],
+        ];
     }
 
     /**

@@ -19,7 +19,8 @@ export class OrderTableHandler extends BaseTableLoader {
       tbodyId: "ordersTableBody",
       paginationInfoId: "paginationInfo",
       paginationControlsId: "paginationControls",
-      pageSize: 8,
+      pageSize: 20,
+      itemLabel: "orders",
       colspan: 10,
       emptyIcon: "fa-folder-open",
       emptyMessage: "No orders matching your criteria",
@@ -67,7 +68,7 @@ export class OrderTableHandler extends BaseTableLoader {
    * @param {number} currentPage
    * @param {number} pageSize
    */
-  render(orders = [], searchTerm = "", statusFilter = "ALL", paymentFilter = "ALL", currentPage = 1, pageSize = 8) {
+  render(orders = [], searchTerm = "", statusFilter = "ALL", paymentFilter = "ALL", currentPage = 1, pageSize = 20) {
     this.currentPage = currentPage;
     this.pageSize = pageSize;
 

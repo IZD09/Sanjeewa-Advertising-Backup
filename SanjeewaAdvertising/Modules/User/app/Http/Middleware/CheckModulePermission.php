@@ -65,7 +65,16 @@ class CheckModulePermission
             ], 403);
         }
 
-        return redirect()->route('ui.dashboard')
+        $fallbackRoute = $user && method_exists($user, 'getDefaultLandingRoute')
+            ? $user->getDefaultLandingRoute()
+            : route('login');
+
+        // Prevent infinite redirect loop if current URL is already the fallback URL
+        if ($fallbackRoute === $request->url() || $fallbackRoute === url()->current()) {
+            abort(403, "Access denied. You do not have permission to access the '{$module}' module.");
+        }
+
+        return redirect($fallbackRoute)
             ->with('error', "Access denied. You do not have permission to access the '{$module}' module.");
     }
 }
