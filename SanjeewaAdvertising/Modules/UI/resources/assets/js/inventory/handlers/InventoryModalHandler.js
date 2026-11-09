@@ -5,7 +5,6 @@
  * - ViewStockModal: Item stock details, batches table & transactions timeline
  * - AdjustStockModal: Live stock ADD/DEDUCT batch adjustments
  * - AddStockModal: Receive stock shipment & SKU registration
- * - CategoriesModal: Stock categories cards grid & category addition
  *
  * Extends BaseModalHandler core class.
  */
@@ -14,8 +13,7 @@ import { BaseModalHandler } from "../../core/BaseModalHandler.js";
 import {
   ViewStockModal,
   AdjustStockModal,
-  AddStockModal,
-  CategoriesModal
+  AddStockModal
 } from "../modals/index.js";
 
 export class InventoryModalHandler extends BaseModalHandler {
@@ -37,7 +35,6 @@ export class InventoryModalHandler extends BaseModalHandler {
     this.viewStockModal = new ViewStockModal(this.ctx);
     this.adjustStockModal = new AdjustStockModal(this.ctx);
     this.addStockModal = new AddStockModal(this.ctx);
-    this.categoriesModal = new CategoriesModal(this.ctx);
   }
 
   get currentContextItem() {
@@ -59,12 +56,6 @@ export class InventoryModalHandler extends BaseModalHandler {
   onAddStockItemSelect(val) { this.addStockModal.onAddStockItemSelect(val); }
   onAddStockCalcChange() { this.addStockModal.onAddStockCalcChange(); }
   saveAddStockShipment() { this.addStockModal.saveAddStockShipment(); }
-
-  // Categories Modal Delegations
-  openCategoriesModal() { this.categoriesModal.openCategoriesModal(); }
-  saveNewCategory() { this.categoriesModal.saveNewCategory(); }
-  selectCategoryFilter(cat) { this.categoriesModal.selectCategoryFilter(cat); }
 }
 
 export default InventoryModalHandler;
-

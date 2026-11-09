@@ -16,8 +16,7 @@ class ExpencesessController extends BaseApiController
 {
     public function __construct(
         protected ExpencesessService $expensesService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of operating expenses with pagination or all.

@@ -40,6 +40,8 @@ class StockItem extends Model
         'name',
         'subcategories_id',
         'code',
+        'low_stock_qty',
+        'reorder_qty',
     ];
 
     /**
@@ -51,6 +53,8 @@ class StockItem extends Model
     {
         return [
             'subcategories_id' => 'integer',
+            'low_stock_qty' => 'integer',
+            'reorder_qty' => 'integer',
         ];
     }
 
@@ -89,5 +93,13 @@ class StockItem extends Model
     public function purchaseOrderItems(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class, 'stock_items_id', 'id');
+    }
+
+    /**
+     * Get the batches for this stock item.
+     */
+    public function batches(): HasMany
+    {
+        return $this->hasMany(ItemBatch::class, 'stock_items_id', 'id');
     }
 }

@@ -5,5 +5,3 @@
 export { ViewStockModal } from "./ViewStockModal.js";
 export { AdjustStockModal } from "./AdjustStockModal.js";
 export { AddStockModal } from "./AddStockModal.js";
-export { CategoriesModal } from "./CategoriesModal.js";
-

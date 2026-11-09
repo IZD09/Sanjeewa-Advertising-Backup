@@ -21,8 +21,7 @@ class AdminController extends BaseApiController
 {
     public function __construct(
         protected AdminService $adminService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of admins with optional search and pagination.
@@ -307,8 +306,8 @@ class AdminController extends BaseApiController
         $validated = $request->validate([
             'first_name' => ['sometimes', 'required', 'string', 'max:50'],
             'last_name' => ['sometimes', 'required', 'string', 'max:50'],
-            'email' => ['sometimes', 'required', 'email', 'max:100', 'unique:admins,email,' . $admin->id],
-            'mobile' => ['sometimes', 'required', 'string', 'max:15', 'unique:admins,mobile,' . $admin->id],
+            'email' => ['sometimes', 'required', 'email', 'max:100', 'unique:admins,email,'.$admin->id],
+            'mobile' => ['sometimes', 'required', 'string', 'max:15', 'unique:admins,mobile,'.$admin->id],
             'current_password' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:6', 'max:255', 'confirmed'],
         ]);

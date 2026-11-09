@@ -13,8 +13,7 @@ class PrintJobStatusController extends BaseApiController
 {
     public function __construct(
         protected PrintJobStatusService $statusService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of all available print job statuses.

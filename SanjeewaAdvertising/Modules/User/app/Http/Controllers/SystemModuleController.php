@@ -14,8 +14,7 @@ class SystemModuleController extends BaseApiController
 {
     public function __construct(
         protected SystemModuleService $moduleService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of system modules.

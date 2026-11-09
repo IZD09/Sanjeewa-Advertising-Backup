@@ -19,8 +19,7 @@ class PrintJobController extends BaseApiController
 {
     public function __construct(
         protected PrintJobService $printJobService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of print jobs with search and filter capabilities.

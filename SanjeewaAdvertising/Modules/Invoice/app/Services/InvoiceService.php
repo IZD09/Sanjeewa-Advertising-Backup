@@ -354,7 +354,7 @@ class InvoiceService
         }
 
         $models = array_map(function ($attributes) {
-            $invoice = new Invoice();
+            $invoice = new Invoice;
             $invoice->forceFill($attributes);
 
             return $invoice;

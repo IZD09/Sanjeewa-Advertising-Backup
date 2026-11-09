@@ -5,6 +5,8 @@ namespace Modules\Supplier\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Inventory\Models\GrmItem;
+use Modules\Inventory\Models\ItemBatch;
 use Modules\Inventory\Models\Stock;
 use Modules\Transaction\Models\GrnPayment;
 
@@ -79,5 +81,34 @@ class Grn extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(GrnPayment::class, 'grn_id', 'id');
+    }
+
+    /**
+     * Get the GRN items associated with this GRN.
+     */
+    public function grmItems(): HasMany
+    {
+        return $this->hasMany(GrmItem::class, 'grn_id', 'id');
+    }
+
+    /**
+     * Alias for GRN items.
+     */
+    public function grnItems(): HasMany
+    {
+        return $this->grmItems();
+    }
+
+    /**
+     * Get the item batches associated with this GRN.
+     */
+    public function itemBatches(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ItemBatch::class,
+            'grm_items',
+            'grn_id',
+            'item_batches_id'
+        )->withPivot(['stock_id', 'qty']);
     }
 }

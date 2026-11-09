@@ -45,23 +45,42 @@ export class InventoryEntity {
     const formatCurrency = helpers.formatCurrency || ((amt) => this.formatCurrency(amt));
 
     const availQty = getItemAvailableQty(this);
-    const totalVal = availQty * (this.unitPrice || 0);
+    const totalVal = this.totalValue || (availQty * (this.unitPrice || 0));
     const status = getItemStatus(this);
 
+    // Format batches string if present
+    let batchInfo = "";
+    if (Array.isArray(this.batches) && this.batches.length > 0) {
+      const batchNames = this.batches.map(b => b.batch_no || (b.batch_id ? `BAT-${b.batch_id}` : (b.id || "Batch"))).join(", ");
+      batchInfo = `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"><i class="fa-solid fa-boxes-stacked" style="color: #1677ff;"></i> ${batchNames}</div>`;
+    }
+
     const tr = document.createElement("tr");
-    tr.id = `invRow_${this.code || ""}`;
+    tr.id = `invRow_${this.code || this.id || ""}`;
+    tr.dataset.stockId = String(this.id || "");
+    tr.dataset.itemCode = this.code || "";
     tr.innerHTML = `
-      <td><span class="inv-item-code">${this.code}</span></td>
       <td>
-        <div class="inv-item-title">${this.name}</div>
+        <span class="inv-item-code" style="font-weight: 700; color: #1677ff;">${this.code}</span>
+        ${this.id ? `<div style="font-size: 10.5px; color: var(--text-muted); font-family: monospace;">Stock #${this.id}</div>` : ""}
       </td>
-      <td><span class="inv-cat-pill"><i class="fa-solid fa-tag"></i> ${this.category}</span></td>
-      <td><span class="inv-supplier-pill"><i class="fa-solid fa-truck-field"></i> ${this.supplier || "PaperPro Lanka"}</span></td>
+      <td>
+        <div class="inv-item-title" style="font-weight: 600;">${this.name}</div>
+        ${batchInfo}
+      </td>
+      <td>
+        <span class="inv-cat-pill"><i class="fa-solid fa-tag"></i> ${this.category}</span>
+        ${this.subcategory && this.subcategory !== this.category ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${this.subcategory}</div>` : ""}
+      </td>
+      <td>
+        <span class="inv-supplier-pill"><i class="fa-solid fa-truck-field"></i> ${this.supplier || "General Supplier"}</span>
+        ${this.brand && this.brand !== "Generic" ? `<div style="margin-top: 2px;"><span class="ant-tag ant-tag-blue" style="font-size: 10.5px; padding: 1px 6px;">${this.brand}</span></div>` : ""}
+      </td>
       <td class="text-right">${formatCurrency(this.unitPrice)}</td>
       <td class="text-right">
-        <strong>${availQty.toLocaleString()}</strong>
+        <strong style="font-size: 13.5px; color: var(--text);">${availQty.toLocaleString()}</strong>
       </td>
-      <td><span class="inv-unit-badge">${this.unit}</span></td>
+      <td><span class="inv-unit-badge">${this.unit || "Units"}</span></td>
       <td class="text-right" style="font-weight: 700; color: var(--text);">
         ${formatCurrency(totalVal)}
       </td>
@@ -105,6 +124,10 @@ export class InventoryRowBuilder extends BaseTableRowBuilder {
 
   build() {
     return new InventoryEntity(this._data);
+  }
+
+  render(helpers = {}) {
+    return this.build().render(helpers);
   }
 
   static from(data) {

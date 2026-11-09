@@ -15,8 +15,7 @@ class AdminUserController extends BaseApiController
 {
     public function __construct(
         protected AdminUserService $adminUserService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of users managed by administrators.

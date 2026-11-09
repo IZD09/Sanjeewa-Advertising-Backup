@@ -28,7 +28,7 @@ class GrnPaymentResource extends JsonResource
             'paid_amount' => $paid,
             'paidAmount' => $paid,
             'grn_id' => $this->grn_id,
-            'grn_number' => $this->grn_number ?? ($this->grn?->id ? 'GRN-2610-' . str_pad((string) $this->grn->id, 3, '0', STR_PAD_LEFT) : 'GRN-2610-001'),
+            'grn_number' => $this->grn_number ?? ($this->grn?->id ? 'GRN-2610-'.str_pad((string) $this->grn->id, 3, '0', STR_PAD_LEFT) : 'GRN-2610-001'),
             'po_number' => $this->po_number ?? 'PO-2026-088',
             'supplier_id' => $this->supplier_id ?? 'SUP-001',
             'supplier_name' => $this->supplier_name ?? $this->grn?->supplier?->name ?? 'PaperPro Lanka',

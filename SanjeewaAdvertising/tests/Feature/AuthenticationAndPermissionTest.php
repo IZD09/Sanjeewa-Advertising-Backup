@@ -102,7 +102,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'John',
             'last_name' => 'Doe',
             'mobile' => '0779998877',
-            'username' => 'johndoe_' . uniqid(),
+            'username' => 'johndoe_'.uniqid(),
             'password' => Hash::make('secret123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -123,7 +123,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'Jane',
             'last_name' => 'Doe',
             'mobile' => '0779998866',
-            'username' => 'janedoe_' . uniqid(),
+            'username' => 'janedoe_'.uniqid(),
             'password' => Hash::make('secret123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -153,7 +153,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'Bob',
             'last_name' => 'Smith',
             'mobile' => '0779998855',
-            'username' => 'bobsmith_' . uniqid(),
+            'username' => 'bobsmith_'.uniqid(),
             'password' => Hash::make('secret123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -190,7 +190,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'Unauthorized',
             'last_name' => 'User',
             'mobile' => '0771112233',
-            'username' => 'unauth_' . uniqid(),
+            'username' => 'unauth_'.uniqid(),
             'password' => 'Secret123',
             'user_statuses_id' => 1,
         ]);
@@ -205,7 +205,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'Staff',
             'last_name' => 'Member',
             'mobile' => '0772223344',
-            'username' => 'staff_' . uniqid(),
+            'username' => 'staff_'.uniqid(),
             'password' => Hash::make('secret123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -216,7 +216,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'first_name' => 'Unauthorized',
             'last_name' => 'User',
             'mobile' => '0773334455',
-            'username' => 'unauth2_' . uniqid(),
+            'username' => 'unauth2_'.uniqid(),
             'password' => 'Secret123',
             'user_statuses_id' => 1,
         ]);
@@ -232,8 +232,8 @@ class AuthenticationAndPermissionTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->postJson('/api/v1/users', [
             'first_name' => 'AdminCreated',
             'last_name' => 'User',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'username' => 'created_' . $unique,
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'created_'.$unique,
             'password' => 'Secret123',
             'user_statuses_id' => 1,
         ]);
@@ -245,7 +245,7 @@ class AuthenticationAndPermissionTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('users', [
-            'username' => 'created_' . $unique,
+            'username' => 'created_'.$unique,
         ]);
 
         // Verify Core Module activity logger captured the event

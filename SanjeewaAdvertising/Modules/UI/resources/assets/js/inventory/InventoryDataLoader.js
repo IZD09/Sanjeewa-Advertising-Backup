@@ -11,7 +11,9 @@ export class InventoryDataLoader {
   constructor() {
     this.http = new RequestHandler();
     this.storageKey = "sa_advertising_inventory_stock";
+    this.aggregatedStorageKey = "sa_advertising_inventory_aggregated";
     this.items = [];
+    this.aggregatedItems = [];
   }
 
   loadData() {
@@ -29,6 +31,15 @@ export class InventoryDataLoader {
       "RIG-401": "SignBoard Supplies",
       "RIG-402": "DisplayTech Hardware"
     };
+
+    const savedAgg = localStorage.getItem(this.aggregatedStorageKey);
+    if (savedAgg) {
+      try {
+        this.aggregatedItems = JSON.parse(savedAgg);
+      } catch (e) {
+        this.aggregatedItems = [];
+      }
+    }
 
     const saved = localStorage.getItem(this.storageKey);
     if (saved) {
@@ -48,6 +59,29 @@ export class InventoryDataLoader {
       }
     }
     this.seedDefaultInventory();
+    return this.items;
+  }
+
+  /**
+   * Fetch live stock inventory from backend database.
+   * @returns {Promise<Array>}
+   */
+  async fetchFromBackend() {
+    try {
+      const response = await this.http.get("/api/v1/inventory/stocks?per_page=100");
+      if (response && response.success && response.data) {
+        if (Array.isArray(response.data.items) && response.data.items.length > 0) {
+          this.items = response.data.items;
+        }
+        if (Array.isArray(response.data.aggregated_items) && response.data.aggregated_items.length > 0) {
+          this.aggregatedItems = response.data.aggregated_items;
+        }
+        this.saveData();
+        return this.items;
+      }
+    } catch (e) {
+      console.warn("Backend stocks fetch fallback:", e);
+    }
     return this.items;
   }
 
@@ -241,6 +275,9 @@ export class InventoryDataLoader {
 
   saveData() {
     localStorage.setItem(this.storageKey, JSON.stringify(this.items));
+    if (Array.isArray(this.aggregatedItems) && this.aggregatedItems.length > 0) {
+      localStorage.setItem(this.aggregatedStorageKey, JSON.stringify(this.aggregatedItems));
+    }
   }
 
   getItemAvailableQty(item) {

@@ -1,4 +1,4 @@
-import{n as e,r as t,t as n}from"./BaseModalHandler-V4j1PE7d.js";import{t as r}from"./RequestHandler-DGIgTA7N.js";var i=class{constructor(e={}){Object.assign(this,e)}render(){let e=String(this.paymentStatus||`unpaid`).toLowerCase().replace(/\s+/g,`-`),t=String(this.orderStatus||`pending`).toLowerCase().replace(/\s+/g,`-`),n=`${this.width} × ${this.height} ${this.unit}`,r=`Rs. ${Number(this.totalAmount||0).toLocaleString(`en-LK`,{minimumFractionDigits:2})}`,i=`
+import{n as e,r as t,t as n}from"./BaseModalHandler-DKqsRYH-.js";import{t as r}from"./RequestHandler-DGIgTA7N.js";var i=class{constructor(e={}){Object.assign(this,e)}render(){let e=String(this.paymentStatus||`unpaid`).toLowerCase().replace(/\s+/g,`-`),t=String(this.orderStatus||`pending`).toLowerCase().replace(/\s+/g,`-`),n=`${this.width} × ${this.height} ${this.unit}`,r=`Rs. ${Number(this.totalAmount||0).toLocaleString(`en-LK`,{minimumFractionDigits:2})}`,i=`
       <td class="order-id-cell">${this.id}</td>
       <td class="customer-cell">
         <strong>${this.customerName}</strong>

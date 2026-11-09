@@ -272,7 +272,7 @@ class PrintJobModuleTest extends TestCase
     {
         // 1. Create status
         $response = $this->postJson('/api/v1/print-job-statuses', [
-            'print_job_states' => 'Archived_' . uniqid(),
+            'print_job_states' => 'Archived_'.uniqid(),
         ]);
 
         $response->assertStatus(201);
@@ -284,7 +284,7 @@ class PrintJobModuleTest extends TestCase
 
         // 3. Update status
         $updateResponse = $this->putJson("/api/v1/print-job-statuses/{$statusId}", [
-            'print_job_states' => 'ReadyForDelivery_' . uniqid(),
+            'print_job_states' => 'ReadyForDelivery_'.uniqid(),
         ]);
         $updateResponse->assertStatus(200);
 

@@ -13,8 +13,7 @@ class ExpencesessTypeController extends BaseApiController
 {
     public function __construct(
         protected ExpencesessService $expensesService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of expense types.

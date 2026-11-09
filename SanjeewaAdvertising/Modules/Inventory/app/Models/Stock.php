@@ -109,4 +109,20 @@ class Stock extends Model
             'print_jobs_id'
         )->withPivot('qty');
     }
+
+    /**
+     * Get the GRN items associated with this stock entry.
+     */
+    public function grmItems(): HasMany
+    {
+        return $this->hasMany(GrmItem::class, 'stock_id', 'id');
+    }
+
+    /**
+     * Alias for GRN items.
+     */
+    public function grnItems(): HasMany
+    {
+        return $this->grmItems();
+    }
 }

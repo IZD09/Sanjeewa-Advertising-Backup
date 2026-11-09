@@ -59,6 +59,14 @@ export class BaseTableRowBuilder {
     return this[key] !== undefined ? this[key] : (this._data[key] ?? defaultValue);
   }
 
+  /**
+   * Export builder attributes as a plain object.
+   * @returns {Object}
+   */
+  toJSON() {
+    return { ...this._data };
+  }
+
   // ==========================================
   // FORMATTING & HTML HELPERS
   // ==========================================
@@ -162,6 +170,9 @@ export class BaseTableRowBuilder {
     const entity = this.build();
     if (typeof entity?.render === "function") {
       return entity.render();
+    }
+    if (entity instanceof HTMLElement || typeof entity === "string") {
+      return entity;
     }
     throw new Error("Constructed entity must implement 'render()' method.");
   }

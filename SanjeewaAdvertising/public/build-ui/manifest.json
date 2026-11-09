@@ -1,6 +1,6 @@
 {
-  "_BaseModalHandler-V4j1PE7d.js": {
-    "file": "assets/BaseModalHandler-V4j1PE7d.js",
+  "_BaseModalHandler-DKqsRYH-.js": {
+    "file": "assets/BaseModalHandler-DKqsRYH-.js",
     "name": "BaseModalHandler",
     "imports": [
       "_BasePaginationHandler-CxkMXfSO.js"
@@ -9,6 +9,10 @@
   "_BasePaginationHandler-CxkMXfSO.js": {
     "file": "assets/BasePaginationHandler-CxkMXfSO.js",
     "name": "BasePaginationHandler"
+  },
+  "_FormValidator-DavQ7TG5.js": {
+    "file": "assets/FormValidator-DavQ7TG5.js",
+    "name": "FormValidator"
   },
   "_RequestHandler-DGIgTA7N.js": {
     "file": "assets/RequestHandler-DGIgTA7N.js",
@@ -82,7 +86,7 @@
     "isEntry": true
   },
   "resources/assets/css/inventory.css": {
-    "file": "assets/inventory-ueYq9VB9.css",
+    "file": "assets/inventory-y468Ap37.css",
     "name": "inventory",
     "names": [
       "inventory.css"
@@ -192,12 +196,13 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-BHRiNANq.js",
+    "file": "assets/core-BMe2BnE8.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-V4j1PE7d.js",
+      "_BaseModalHandler-DKqsRYH-.js",
+      "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
@@ -223,22 +228,24 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-CWT8WTGN.js",
+    "file": "assets/grn-CDMoyafj.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-V4j1PE7d.js",
+      "_BaseModalHandler-DKqsRYH-.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-Dx7eDeeS.js",
+    "file": "assets/inventory-pg0qiTNN.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-V4j1PE7d.js",
+      "_BaseModalHandler-DKqsRYH-.js",
+      "_FormValidator-DavQ7TG5.js",
+      "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
@@ -253,22 +260,22 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-D1Yy571d.js",
+    "file": "assets/payments-jjPO_JAn.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-V4j1PE7d.js",
+      "_BaseModalHandler-DKqsRYH-.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-BVsCIIjA.js",
+    "file": "assets/place-order-BbgBC747.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-V4j1PE7d.js",
+      "_BaseModalHandler-DKqsRYH-.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },

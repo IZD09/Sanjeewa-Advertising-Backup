@@ -55,7 +55,7 @@ class UserPermissionTest extends TestCase
 
     public function test_can_create_system_module(): void
     {
-        $name = 'Custom Module ' . uniqid();
+        $name = 'Custom Module '.uniqid();
         $response = $this->postJson('/api/v1/system-modules', [
             'system_module' => $name,
         ]);

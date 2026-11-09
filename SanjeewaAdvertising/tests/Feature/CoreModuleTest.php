@@ -15,7 +15,7 @@ class CoreModuleTest extends TestCase
 
     public function test_can_manage_activities(): void
     {
-        $type = ActivityType::firstOrCreate(['activity_type' => 'System Log ' . uniqid()]);
+        $type = ActivityType::firstOrCreate(['activity_type' => 'System Log '.uniqid()]);
 
         // 1. Create activity
         $response = $this->postJson('/api/v1/activities', [
