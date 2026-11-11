@@ -2,13 +2,17 @@
 
 namespace Modules\PrintJob\Services;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Design\Models\PrintType;
+use Modules\Inventory\Models\Stock;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\PrintJob\Models\PrintJobCost;
+use Modules\PrintJob\Models\PrintJobStatus;
 use Modules\PrintJob\Models\PrintJobStatusHistory;
 use Modules\Transaction\Models\Payment;
 use Modules\User\Models\User;
@@ -315,6 +319,207 @@ class PrintJobService
 
             return $cost->load('printCosts.printCostType');
         });
+    }
+
+    /**
+     * Retrieve comprehensive live Print Job Production Floor data
+     * including KPIs, Kanban stage columns, jobs list, statuses, and stock items.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function getPrintJobFloorData(array $filters = []): array
+    {
+        // 1. Load statuses & print types
+        $statuses = PrintJobStatus::query()->orderBy('id')->get();
+        $printTypes = PrintType::query()->orderBy('id')->get();
+
+        // 2. Load available stocks with stock item name and brand
+        $availableStocks = Stock::query()
+            ->with(['stockItem', 'brand'])
+            ->where('qty', '>', 0)
+            ->orderBy('id')
+            ->get()
+            ->map(function ($s) {
+                return [
+                    'id' => (int) $s->id,
+                    'name' => $s->stockItem?->name ?? 'Stock #'.$s->id,
+                    'brand' => $s->brand?->brand ?? '',
+                    'qty' => (int) $s->qty,
+                    'price' => (float) $s->price,
+                ];
+            });
+
+        // 3. Query all print jobs with relations
+        $jobsQuery = PrintJob::query()->with([
+            'customer',
+            'printType',
+            'user',
+            'statusHistory.status',
+            'cost.printCosts',
+            'payments',
+            'stockItems.stockItem',
+            'stockItems.brand',
+        ]);
+
+        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
+        if ($search !== '') {
+            $jobsQuery->where(function (Builder $q) use ($search) {
+                if (is_numeric($search)) {
+                    $q->where('id', (int) $search);
+                }
+                $q->orWhereHas('customer', function (Builder $cq) use ($search) {
+                    $cq->where('name', 'like', "%{$search}%")
+                        ->orWhere('mobile', 'like', "%{$search}%");
+                })->orWhereHas('printType', function (Builder $ptq) use ($search) {
+                    $ptq->where('print_type', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if (! empty($filters['print_types_id'])) {
+            $jobsQuery->where('print_types_id', (int) $filters['print_types_id']);
+        }
+
+        if (! empty($filters['status_id'])) {
+            $statusFilterId = (int) $filters['status_id'];
+            $jobsQuery->whereHas('statusHistory', function (Builder $sq) use ($statusFilterId) {
+                $sq->where('print_job_statuses_id', $statusFilterId);
+            });
+        }
+
+        $allJobs = $jobsQuery->orderByDesc('id')->get();
+
+        // 4. Map jobs and compute KPI metrics
+        $formattedJobs = [];
+        $kpis = [
+            'total' => 0,
+            'active' => 0,
+            'prepress' => 0,
+            'printing' => 0,
+            'finishing' => 0,
+            'ready_completed' => 0,
+        ];
+
+        $kanban = [
+            'prepress' => [],
+            'printing' => [],
+            'finishing' => [],
+            'ready' => [],
+            'completed' => [],
+        ];
+
+        foreach ($allJobs as $job) {
+            $latestHistory = $job->statusHistory->sortByDesc('update_at')->first();
+            $statusId = (int) ($latestHistory?->print_job_statuses_id ?? 1);
+            $statusName = $latestHistory?->status?->print_job_states ?? 'Pending';
+
+            // Stage mapping
+            $stageKey = match ($statusId) {
+                1, 2, 3 => 'prepress',
+                4 => 'printing',
+                5 => 'finishing',
+                6 => 'ready',
+                7, 8 => 'completed',
+                default => 'prepress',
+            };
+
+            $badgeClass = match ($statusId) {
+                1 => 'pending',
+                2 => 'designing',
+                3 => 'approved',
+                4 => 'in-progress',
+                5 => 'finishing',
+                6 => 'ready',
+                7, 8 => 'completed',
+                9 => 'cancelled',
+                default => 'pending',
+            };
+
+            // Financials
+            $costSum = $job->cost?->printCosts?->sum('price') ?? 0;
+            $unitPrice = $costSum > 0 ? (float) $costSum : 150.00;
+            $qty = max(1, (int) $job->qty);
+            $discount = (float) ($job->cost?->discount ?? 0);
+            $totalAmount = max(0, ($unitPrice * $qty) - $discount);
+            $paidAmount = (float) $job->payments->sum('payment');
+            $balanceAmount = max(0, $totalAmount - $paidAmount);
+
+            if ($paidAmount >= $totalAmount && $totalAmount > 0) {
+                $paymentStatus = 'Paid';
+            } elseif ($paidAmount > 0) {
+                $paymentStatus = 'Partially Paid';
+            } else {
+                $paymentStatus = 'Unpaid';
+            }
+
+            // Assigned Materials
+            $materials = $job->stockItems->map(function ($stock) {
+                return [
+                    'stock_id' => (int) $stock->id,
+                    'name' => $stock->stockItem?->name ?? 'Material #'.$stock->id,
+                    'brand' => $stock->brand?->brand ?? '',
+                    'qty' => (int) ($stock->pivot?->qty ?? 1),
+                ];
+            })->values()->all();
+
+            $jobItem = [
+                'id' => (int) $job->id,
+                'job_number' => 'JOB-'.str_pad((string) $job->id, 4, '0', STR_PAD_LEFT),
+                'order_number' => 'ORD-2026-'.(1000 + $job->id),
+                'customer_id' => (int) $job->customer_id,
+                'customer_name' => $job->customer?->name ?? 'Walk-in Customer',
+                'customer_mobile' => $job->customer?->mobile ?? '—',
+                'customer_email' => $job->customer?->email ?? '',
+                'print_types_id' => (int) $job->print_types_id,
+                'print_type_name' => $job->printType?->print_type ?? 'Print Job',
+                'qty' => $qty,
+                'date_raw' => $job->add_date ? Carbon::parse($job->add_date)->toIso8601String() : null,
+                'date_formatted' => $job->add_date ? Carbon::parse($job->add_date)->format('M d, Y') : '—',
+                'status_id' => $statusId,
+                'status_name' => $statusName,
+                'stage_key' => $stageKey,
+                'badge_class' => $badgeClass,
+                'materials' => $materials,
+                'materials_count' => count($materials),
+                'total_amount' => $totalAmount,
+                'paid_amount' => $paidAmount,
+                'balance_amount' => $balanceAmount,
+                'payment_status' => $paymentStatus,
+                'operator_name' => $job->user ? trim("{$job->user->first_name} {$job->user->last_name}") : 'Production Team',
+            ];
+
+            $formattedJobs[] = $jobItem;
+
+            // Compute KPIs
+            $kpis['total']++;
+            if (! in_array($statusId, [7, 8, 9], true)) {
+                $kpis['active']++;
+            }
+            if (in_array($statusId, [1, 2, 3], true)) {
+                $kpis['prepress']++;
+            } elseif ($statusId === 4) {
+                $kpis['printing']++;
+            } elseif ($statusId === 5) {
+                $kpis['finishing']++;
+            } elseif (in_array($statusId, [6, 7, 8], true)) {
+                $kpis['ready_completed']++;
+            }
+
+            // Assign to kanban column
+            if (isset($kanban[$stageKey])) {
+                $kanban[$stageKey][] = $jobItem;
+            }
+        }
+
+        return [
+            'kpis' => $kpis,
+            'kanban' => $kanban,
+            'jobs' => $formattedJobs,
+            'statuses' => $statuses->map(fn ($s) => ['id' => (int) $s->id, 'name' => $s->print_job_states])->values()->all(),
+            'print_types' => $printTypes->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->values()->all(),
+            'available_stocks' => $availableStocks->values()->all(),
+        ];
     }
 
     /**

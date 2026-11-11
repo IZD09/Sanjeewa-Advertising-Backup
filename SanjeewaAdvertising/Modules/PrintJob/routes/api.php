@@ -10,6 +10,7 @@ Route::prefix('v1')->group(function () {
     Route::get('print-jobs/orders', [PrintJobController::class, 'placeOrderData'])->name('printjob.jobs.orders');
 
     // Dedicated search & all endpoints (defined before apiResource to avoid route collision with {id})
+    Route::get('print-jobs/floor-data', [PrintJobController::class, 'floorData'])->name('printjob.jobs.floor-data');
     Route::get('print-jobs/all', [PrintJobController::class, 'all'])->name('printjob.jobs.all');
     Route::get('print-jobs/search', [PrintJobController::class, 'search'])->name('printjob.jobs.search');
 

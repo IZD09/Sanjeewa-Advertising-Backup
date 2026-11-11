@@ -138,6 +138,15 @@
     "src": "resources/assets/css/place-order.css",
     "isEntry": true
   },
+  "resources/assets/css/print-jobs.css": {
+    "file": "assets/print-jobs-D-u0BLk2.css",
+    "name": "print-jobs",
+    "names": [
+      "print-jobs.css"
+    ],
+    "src": "resources/assets/css/print-jobs.css",
+    "isEntry": true
+  },
   "resources/assets/css/reports.css": {
     "file": "assets/reports-BtkKOyUt.css",
     "name": "reports",
@@ -314,6 +323,12 @@
       "_BaseModalHandler-BnBgy0Wh.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
+  },
+  "resources/assets/js/print-jobs.js": {
+    "file": "assets/print-jobs-BvxtfWgz.js",
+    "name": "print-jobs",
+    "src": "resources/assets/js/print-jobs.js",
+    "isEntry": true
   },
   "resources/assets/js/profile.js": {
     "file": "assets/profile-BvJS3fn0.js",

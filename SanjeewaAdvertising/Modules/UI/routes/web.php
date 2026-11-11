@@ -68,10 +68,6 @@ Route::middleware(['auth:web,admin'])->group(function () {
         ->middleware('module.permission:Place Order')
         ->name('ui.place-order');
 
-    Route::view('/print-jobs', 'ui::layouts.pages.print-jobs.print-jobs')
-        ->middleware('module.permission:Print Jobs')
-        ->name('ui.print-jobs');
-
     Route::view('/reports', 'ui::layouts.pages.reports.reports')
         ->middleware('module.permission:Reports')
         ->name('ui.reports');

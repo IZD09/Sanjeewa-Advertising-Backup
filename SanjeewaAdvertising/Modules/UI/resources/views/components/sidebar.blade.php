@@ -83,6 +83,7 @@
             'type' => 'group',
             'section' => 'SALES & ORDERS',
             'items' => [
+                ['component' => 'print-jobs'],
                 ['component' => 'customers'],
                 ['component' => 'payments'],
                 ['component' => 'reports'],

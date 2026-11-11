@@ -2,6 +2,7 @@
 
 namespace Modules\PrintJob\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Core\Http\Controllers\BaseApiController;
@@ -20,6 +21,37 @@ class PrintJobController extends BaseApiController
     public function __construct(
         protected PrintJobService $printJobService
     ) {}
+
+    /**
+     * Display the Print Jobs Production Floor view populated with real database datasets from PrintJob module.
+     */
+    public function productionFloor(Request $request): View
+    {
+        $floorData = $this->printJobService->getPrintJobFloorData($request->query());
+
+        return view('ui::layouts.pages.print-jobs.print-jobs', [
+            'initialPrintJobsData' => $floorData,
+            'kpis' => $floorData['kpis'],
+            'kanban' => $floorData['kanban'],
+            'jobs' => $floorData['jobs'],
+            'statuses' => $floorData['statuses'],
+            'printTypes' => $floorData['print_types'],
+            'availableStocks' => $floorData['available_stocks'],
+        ]);
+    }
+
+    /**
+     * Retrieve live Print Job Production Floor data (KPIs, Kanban stages, jobs list, statuses).
+     */
+    public function floorData(Request $request): JsonResponse
+    {
+        $data = $this->printJobService->getPrintJobFloorData($request->all());
+
+        return $this->success(
+            $data,
+            'Print job production floor data retrieved successfully.'
+        );
+    }
 
     /**
      * Display a listing of print jobs with search and filter capabilities.
