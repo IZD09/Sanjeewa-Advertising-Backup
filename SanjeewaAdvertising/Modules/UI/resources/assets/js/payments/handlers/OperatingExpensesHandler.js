@@ -1,14 +1,16 @@
 /**
  * SanjeewaAdvertising - Operating Expenses Handler
  *
- * Handles rendering for Operating Expenses (Monthly Overhead & Utility Bills):
+ * Coordinates Operating Expenses (Monthly Overhead & Utility Bills):
  * - Month navigation and selection
- * - Monthly KPI metric calculations (Billed, Paid, Pending, Settlement Progress %)
- * - Category totals (Electricity, Water, Internet, Rent, Maintenance)
- * - Operating expenses table rendering via OperatingExpenseRowBuilder
+ * - Top KPI metric calculations via PaymentKpiCardBuilder (Billed, Paid, Pending, Settlement Progress %)
+ * - Overhead Bills by Category via ExpenseCategoryCardBuilder (Electricity, Water, Internet, Rent, Maintenance)
+ * - Operating expenses table rendering via OperatingExpenseTableHandler (with BasePaginationHandler, 20 rows per page)
  */
 
-import { OperatingExpenseRowBuilder, OperatingExpenseEntity } from "../builders/OperatingExpenseRowBuilder.js";
+import { PaymentKpiCardBuilder } from "../builders/PaymentKpiCardBuilder.js";
+import { ExpenseCategoryCardBuilder } from "../builders/ExpenseCategoryCardBuilder.js";
+import { OperatingExpenseTableHandler } from "./OperatingExpenseTableHandler.js";
 
 export class OperatingExpensesHandler {
   /**
@@ -17,13 +19,23 @@ export class OperatingExpensesHandler {
    * @param {Function} context.onOpenAddModal
    * @param {Function} context.onOpenMarkPaidModal
    * @param {Function} context.onUndoPaid
+   * @param {Function} [context.onPageChange]
    */
-  constructor(context) {
+  constructor(context = {}) {
     this.ctx = context;
     this.expenseMonthFilter = "2026-10";
     this.expenseSearch = "";
     this.expenseCategoryFilter = "ALL";
     this.expenseStatusFilter = "ALL";
+
+    this.tableHandler = new OperatingExpenseTableHandler({
+      formatCurrency: context.formatCurrency,
+      onOpenAddModal: context.onOpenAddModal,
+      onOpenMarkPaidModal: context.onOpenMarkPaidModal,
+      onUndoPaid: context.onUndoPaid,
+      onPageChange: context.onPageChange,
+      pageSize: 20
+    });
   }
 
   setMonthFilter(month) {
@@ -42,9 +54,18 @@ export class OperatingExpensesHandler {
     this.expenseStatusFilter = status;
   }
 
-  render(expenses) {
-    const allExpenses = expenses || [];
-    const tbody = document.getElementById("payExpenseTableBody");
+  /**
+   * Render monthly bills tab:
+   * 1. Month selector & labels
+   * 2. Top KPI Cards via PaymentKpiCardBuilder
+   * 3. Overhead Bills by Category via ExpenseCategoryCardBuilder
+   * 4. Table with Pagination (max 20 rows) via OperatingExpenseTableHandler
+   *
+   * @param {Array} expenses
+   * @param {boolean} [resetPage=false]
+   */
+  render(expenses = [], resetPage = false) {
+    const allExpenses = Array.isArray(expenses) ? expenses : [];
     const monthSelect = document.getElementById("expMonthSelect");
     const monthLabel = document.getElementById("expCurrentMonthLabel");
 
@@ -54,7 +75,7 @@ export class OperatingExpensesHandler {
 
     if (monthLabel) {
       if (this.expenseMonthFilter === "ALL") {
-        monthLabel.textContent = "Billing Month: All Months (සියලු කාලසීමාවන්)";
+        monthLabel.textContent = "Billing Month: All Months";
       } else {
         const [year, month] = this.expenseMonthFilter.split("-");
         const monthNames = [
@@ -66,140 +87,40 @@ export class OperatingExpensesHandler {
       }
     }
 
-    // 1. Filter expenses by selected month
+    // 1. Top KPI Summary Cards via PaymentKpiCardBuilder
+    PaymentKpiCardBuilder.buildExpenseMetrics(allExpenses, this.expenseMonthFilter);
+
+    // 2. Overhead Bills by Category small cards via ExpenseCategoryCardBuilder
     const monthExpenses = allExpenses.filter(b => {
-      if (this.expenseMonthFilter === "ALL") return true;
+      if (!this.expenseMonthFilter || this.expenseMonthFilter === "ALL") return true;
       return b.month === this.expenseMonthFilter;
     });
 
-    // 2. Compute KPIs for this month
-    const totalBilled = monthExpenses.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-    const paidList = monthExpenses.filter(b => b.status === "Paid");
-    const pendingList = monthExpenses.filter(b => b.status === "Pending" || b.status === "Overdue");
-
-    const totalPaid = paidList.reduce((sum, b) => sum + (Number(b.paidAmount || b.amount) || 0), 0);
-    const totalPending = pendingList.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-
-    const paidCount = paidList.length;
-    const pendingCount = pendingList.length;
-    const progressPercent = totalBilled > 0
-      ? Math.round((totalPaid / totalBilled) * 100)
-      : (monthExpenses.length > 0 && pendingCount === 0 ? 100 : 0);
-
-    const elTotalBilled = document.getElementById("kpiExpTotalBilled");
-    const elTotalPaid = document.getElementById("kpiExpTotalPaid");
-    const elPaidCount = document.getElementById("kpiExpPaidCount");
-    const elTotalPending = document.getElementById("kpiExpTotalPending");
-    const elPendingCount = document.getElementById("kpiExpPendingCount");
-    const elProgressPercent = document.getElementById("kpiExpProgressPercent");
-    const elProgressBar = document.getElementById("kpiExpProgressBar");
-
-    if (elTotalBilled) elTotalBilled.textContent = this.formatCurrency(totalBilled);
-    if (elTotalPaid) elTotalPaid.textContent = this.formatCurrency(totalPaid);
-    if (elPaidCount) elPaidCount.textContent = `${paidCount} bills settled (${paidCount} ගෙවා ඇත)`;
-    if (elTotalPending) elTotalPending.textContent = this.formatCurrency(totalPending);
-    if (elPendingCount) elPendingCount.textContent = `${pendingCount} bills pending (ගෙවීමට ඉතිරි: ${pendingCount})`;
-    if (elProgressPercent) elProgressPercent.textContent = `${progressPercent}%`;
-    if (elProgressBar) elProgressBar.style.width = `${progressPercent}%`;
-
-    // 3. Category distribution
-    const catMap = {
-      Electricity: { billed: 0, paid: 0 },
-      "Water Board": { billed: 0, paid: 0 },
-      "Internet & Fiber": { billed: 0, paid: 0 },
-      "Shop Rent": { billed: 0, paid: 0 },
-      "Maintenance & Other": { billed: 0, paid: 0 }
-    };
-
-    monthExpenses.forEach(b => {
-      const catKey = catMap[b.category] ? b.category : "Maintenance & Other";
-      const amt = Number(b.amount) || 0;
-      catMap[catKey].billed += amt;
-      if (b.status === "Paid") {
-        catMap[catKey].paid += (Number(b.paidAmount || amt) || 0);
-      }
+    ExpenseCategoryCardBuilder.buildAll(monthExpenses, (categoryKey) => {
+      this.expenseCategoryFilter = categoryKey;
+      const catSelect = document.getElementById("payExpenseCategoryFilter");
+      if (catSelect) catSelect.value = categoryKey;
+      this.renderTable(allExpenses, true);
     });
 
-    const setCatUI = (billedId, paidId, catKey) => {
-      const elBilled = document.getElementById(billedId);
-      const elPaid = document.getElementById(paidId);
-      if (elBilled) elBilled.textContent = this.formatCurrency(catMap[catKey].billed);
-      if (elPaid) elPaid.textContent = `${this.formatCurrency(catMap[catKey].paid)} Paid`;
-    };
+    // 3. Render Table with BaseTableLoader and BasePaginationHandler
+    this.renderTable(allExpenses, resetPage);
+  }
 
-    setCatUI("catBilledElectricity", "catPaidElectricity", "Electricity");
-    setCatUI("catBilledWater", "catPaidWater", "Water Board");
-    setCatUI("catBilledInternet", "catPaidInternet", "Internet & Fiber");
-    setCatUI("catBilledRent", "catPaidRent", "Shop Rent");
-    setCatUI("catBilledMaintenance", "catPaidMaintenance", "Maintenance & Other");
-
-    // 4. Render Table
-    if (!tbody) return;
-
-    const term = (this.expenseSearch || "").toLowerCase().trim();
-    const tableFiltered = monthExpenses.filter(b => {
-      const matchesSearch = !term ||
-        (b.title && b.title.toLowerCase().includes(term)) ||
-        (b.provider && b.provider.toLowerCase().includes(term)) ||
-        (b.accountNo && b.accountNo.toLowerCase().includes(term)) ||
-        (b.id && b.id.toLowerCase().includes(term));
-
-      const matchesCat = this.expenseCategoryFilter === "ALL" || b.category === this.expenseCategoryFilter;
-      const matchesStatus = this.expenseStatusFilter === "ALL" || b.status === this.expenseStatusFilter;
-
-      return matchesSearch && matchesCat && matchesStatus;
-    });
-
-    if (tableFiltered.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-            <div style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">
-              <i class="fa-solid fa-receipt"></i>
-            </div>
-            <div style="font-size: 14px; font-weight: 600; color: var(--text);">
-              No operating expenses match the selected filters.
-            </div>
-            <div style="font-size: 12px; margin-top: 4px;">
-              Adjust month or search filter, or add a new utility bill for this month.
-            </div>
-            <button type="button" class="btn-filter-reset" id="btnEmptyAddExpense" style="margin-top: 14px; display: inline-flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-plus"></i> Add Monthly Bill
-            </button>
-          </td>
-        </tr>
-      `;
-
-      const btnEmptyAdd = document.getElementById("btnEmptyAddExpense");
-      if (btnEmptyAdd && this.ctx.onOpenAddModal) {
-        btnEmptyAdd.addEventListener("click", () => this.ctx.onOpenAddModal());
-      }
-      return;
-    }
-
-    tbody.innerHTML = "";
-
-    tableFiltered.forEach(b => {
-      const entity = b instanceof OperatingExpenseEntity
-        ? b
-        : new OperatingExpenseRowBuilder(b).build();
-      tbody.appendChild(entity.render());
-    });
-
-    // Bind action buttons in table
-    tbody.querySelectorAll("[data-mark-paid-id]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-mark-paid-id");
-        if (this.ctx.onOpenMarkPaidModal) this.ctx.onOpenMarkPaidModal(id);
-      });
-    });
-
-    tbody.querySelectorAll("[data-undo-paid-id]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-undo-paid-id");
-        if (this.ctx.onUndoPaid) this.ctx.onUndoPaid(id);
-      });
-    });
+  /**
+   * Render table only with pagination.
+   * @param {Array} expenses
+   * @param {boolean} [resetPage=false]
+   */
+  renderTable(expenses = [], resetPage = false) {
+    this.tableHandler.render(
+      expenses,
+      this.expenseSearch,
+      this.expenseCategoryFilter,
+      this.expenseStatusFilter,
+      this.expenseMonthFilter,
+      resetPage
+    );
   }
 
   formatCurrency(amt) {
@@ -209,4 +130,3 @@ export class OperatingExpensesHandler {
 }
 
 export default OperatingExpensesHandler;
-

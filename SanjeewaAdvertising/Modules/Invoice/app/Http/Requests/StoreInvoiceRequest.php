@@ -23,6 +23,12 @@ class StoreInvoiceRequest extends FormRequest
             'due_date' => ['nullable', 'date'],
             'print_job_ids' => ['nullable', 'array'],
             'print_job_ids.*' => ['integer', 'exists:print_jobs,id'],
+            'payment_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_types_id' => ['nullable', 'integer', 'exists:payment_types,id'],
+            'payment_statuses_id' => ['nullable', 'integer', 'exists:payment_statuses,id'],
+            'stage' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'allocations' => ['nullable', 'array'],
         ];
     }
 }

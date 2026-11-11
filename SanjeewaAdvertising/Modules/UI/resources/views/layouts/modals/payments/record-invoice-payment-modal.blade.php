@@ -1,5 +1,5 @@
 <div class="pay-modal-backdrop" id="modalRecordInvoicePayment">
-    <div class="pay-modal-card" style="max-width: 740px;">
+    <div class="pay-modal-card" style="max-width: 760px;">
       <div class="pay-modal-header pay-modal-header-invoice">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="width: 38px; height: 38px; border-radius: 9px; background: rgba(37, 99, 235, 0.12); color: #2563eb; display: grid; place-items: center; font-size: 18px;">
@@ -7,7 +7,7 @@
           </div>
           <div>
             <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text);">Record Invoice Payment</h3>
-            <p style="margin: 2px 0 0; font-size: 11px; color: var(--text-muted);">Customer &amp; Multi-Job Print Settlements (එකම Invoice එක සඳහා Print Jobs කිහිපයක්)</p>
+            <p style="margin: 2px 0 0; font-size: 11px; color: var(--text-muted);">Customer &amp; Multi-Job Print Settlements</p>
           </div>
         </div>
         <button type="button" class="pay-modal-close" data-close-pay-modal aria-label="Close modal">
@@ -19,28 +19,22 @@
         <!-- 1. Select & Add Print Jobs to Invoice -->
         <div class="pay-field" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <label class="pay-label" for="invModalJobIdInput" style="margin: 0; font-weight: 700;">
-              <i class="fa-solid fa-folder-plus" style="color: #2563eb; margin-right: 4px;"></i> Add Print Jobs to this Invoice (Job ID type කර Add කරන්න) *
+            <label class="pay-label" for="invModalJobSelect" style="margin: 0; font-weight: 700;">
+              <i class="fa-solid fa-folder-plus" style="color: #2563eb; margin-right: 4px;"></i> Select Print Jobs to Add to this Invoice *
             </label>
-            <span class="inv-job-badge" id="invModalJobCountPill">0 Jobs Selected</span>
+            <span class="inv-job-badge" id="invModalJobCountPill">0 Print Jobs Selected</span>
           </div>
 
           <div class="inv-add-job-controls" style="display: flex; gap: 10px; align-items: center;">
-            <!-- Type Job ID directly -->
             <div style="flex: 1; position: relative;">
-              <i class="fa-solid fa-barcode" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none;"></i>
-              <input type="text" id="invModalJobIdInput" class="pay-input" placeholder="Type Job ID (e.g. ORD-2026-1048 or 1048)..." style="height: 44px; font-weight: 700; font-size: 13.5px; padding-left: 38px; width: 100%; border-radius: 9px;" autocomplete="off" list="invJobsDatalist">
-              <datalist id="invJobsDatalist"></datalist>
+              <select id="invModalJobSelect" class="pay-select-field" style="height: 44px; font-weight: 700; font-size: 13.5px; width: 100%; border-radius: 9px;">
+                <option value="">-- Select Print Job to Add to this Invoice --</option>
+              </select>
             </div>
-
-            <!-- Add Job Button -->
-            <button type="button" class="po-btn pay-action-btn pay-btn-invoice" id="btnAddJobToInvoice" style="height: 44px; white-space: nowrap; padding: 0 22px; font-weight: 700; border-radius: 9px;">
-              <i class="fa-solid fa-plus"></i> Add Job
-            </button>
           </div>
           <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-keyboard" style="color: var(--blue);"></i>
-            <span>Job ID එක type කර <kbd style="background: var(--surface); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 600;">Enter</kbd> ඔබන්න, නැතහොත් <strong>Add Job</strong> button එක click කරන්න. (Barcode scanner සහාය දක්වයි)</span>
+            <i class="fa-solid fa-circle-check" style="color: var(--blue);"></i>
+            <span>Select a print job from the selector dropdown to immediately add it to this invoice. Multiple jobs can be consolidated into this single invoice.</span>
           </div>
 
           <!-- Included Print Jobs Table -->
@@ -50,7 +44,7 @@
                 Included Print Jobs on this Invoice:
               </span>
               <span style="font-size: 11px; color: var(--text-muted);">
-                Allocations can be customized per job
+                Allocations can be customized per print job
               </span>
             </div>
             <div class="inv-jobs-table-wrap">
@@ -69,7 +63,7 @@
                   <tr class="empty-jobs-row">
                     <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">
                       <i class="fa-solid fa-circle-info" style="color: #2563eb; margin-right: 6px;"></i>
-                      No print jobs added to this invoice yet. Select a job above and click "+ Add Job".
+                      No print jobs added to this invoice yet. Select a print job from the dropdown above.
                     </td>
                   </tr>
                 </tbody>
@@ -109,12 +103,12 @@
           </div>
           <div class="pay-field">
             <label class="pay-label" for="invModalStageSelect">
-              <i class="fa-solid fa-flag-checkered" style="color: #8b5cf6; margin-right: 4px;"></i> Payment Stage (අවස්ථාව) *
+              <i class="fa-solid fa-flag-checkered" style="color: #8b5cf6; margin-right: 4px;"></i> Payment Stage *
             </label>
             <select id="invModalStageSelect" class="pay-select-field">
-              <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
-              <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
-              <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
+              <option value="Complete Payment">Complete Payment</option>
+              <option value="Advance Payment">Advance Payment</option>
+              <option value="Pending Payment">Pending Payment</option>
             </select>
           </div>
         </div>
@@ -122,7 +116,7 @@
         <!-- 4. Payment Method -->
         <div class="pay-field">
           <label class="pay-label">
-            <i class="fa-solid fa-wallet" style="color: #2563eb; margin-right: 4px;"></i> Payment Method (ක්‍රමවේදය) *
+            <i class="fa-solid fa-wallet" style="color: #2563eb; margin-right: 4px;"></i> Payment Method *
           </label>
           <div class="pay-method-selector" id="invModalMethodSelector">
             <div class="method-choice selected" data-method="Cash">
@@ -141,6 +135,10 @@
               <i class="fa-solid fa-building-columns"></i>
               <span>Bank Transfer</span>
             </div>
+            <div class="method-choice" data-method="Online / QR">
+              <i class="fa-solid fa-qrcode"></i>
+              <span>Online / QR</span>
+            </div>
           </div>
         </div>
 
@@ -149,15 +147,21 @@
           <!-- Dynamically populated via js/payments.js -->
         </div>
 
-        <!-- 6. Payment Date -->
-        <div class="pay-field">
-          <label class="pay-label" for="invModalDate">Payment Date (ගෙවූ දිනය)</label>
-          <input type="date" id="invModalDate" class="pay-input">
+        <!-- 6. Payment Date & Authorized Officer -->
+        <div class="pay-form-grid">
+          <div class="pay-field">
+            <label class="pay-label" for="invModalDate">Payment Date</label>
+            <input type="date" id="invModalDate" class="pay-input">
+          </div>
+          <div class="pay-field">
+            <label class="pay-label">Authorized Officer</label>
+            <input type="text" class="pay-input" value="Cashier / Admin User" readonly style="opacity: 0.85;">
+          </div>
         </div>
 
         <!-- 7. Narration -->
         <div class="pay-field">
-          <label class="pay-label" for="invModalNotes">Narration / Internal Remarks (සටහන්)</label>
+          <label class="pay-label" for="invModalNotes">Narration / Internal Remarks</label>
           <input type="text" id="invModalNotes" class="pay-input" placeholder="E.g. Full settlement upon pickup / multi-job corporate print invoice">
         </div>
       </div>

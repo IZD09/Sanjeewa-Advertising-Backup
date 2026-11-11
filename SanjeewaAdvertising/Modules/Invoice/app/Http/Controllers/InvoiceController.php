@@ -52,6 +52,19 @@ class InvoiceController extends BaseApiController
     }
 
     /**
+     * Retrieve live available print jobs from database for invoice payment selection.
+     */
+    public function availableJobs(Request $request): JsonResponse
+    {
+        $jobs = $this->invoiceService->getAvailablePrintJobs($request->all());
+
+        return $this->success(
+            $jobs,
+            'Available print jobs retrieved successfully from database.'
+        );
+    }
+
+    /**
      * Retrieve invoice payments data and KPIs for UI views.
      */
     public function invoicesData(Request $request): JsonResponse

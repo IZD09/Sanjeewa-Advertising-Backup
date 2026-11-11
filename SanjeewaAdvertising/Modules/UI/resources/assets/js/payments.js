@@ -16,9 +16,12 @@ import {
   PaymentsDataLoader,
   InvoicePaymentTableHandler,
   GRNPaymentTableHandler,
+  OperatingExpenseTableHandler,
   OperatingExpensesHandler,
   PaymentsOverviewHandler,
   PaymentModalHandler,
+  PaymentKpiCardBuilder,
+  ExpenseCategoryCardBuilder,
   NavigationProcess,
   FilterProcess,
   MetricsProcess
@@ -78,9 +81,9 @@ export class PaymentsManager {
     });
 
     this.filterProcess = new FilterProcess({
-      renderInvoiceTable: () => this.renderInvoiceTable(),
-      renderGrnTable: () => this.renderGrnTable(),
-      renderExpenses: () => this.renderExpenses(),
+      renderInvoiceTable: (resetPage = false) => this.renderInvoiceTable(resetPage),
+      renderGrnTable: (resetPage = false) => this.renderGrnTable(resetPage),
+      renderExpenses: (resetPage = false) => this.renderExpenses(resetPage),
       setExpenseMonth: (m) => this.expensesHandler.setMonthFilter(m),
       setExpenseSearch: (s) => this.expensesHandler.setSearchFilter(s),
       setExpenseCategory: (c) => this.expensesHandler.setCategoryFilter(c),
@@ -250,28 +253,34 @@ export class PaymentsManager {
 
   updateKPIs() {
     this.metricsProcess.updateMetrics();
+    PaymentKpiCardBuilder.buildInvoiceMetrics(this.dataLoader.orderPayments);
+    PaymentKpiCardBuilder.buildGrnMetrics(this.dataLoader.grnPayments);
+    PaymentKpiCardBuilder.buildExpenseMetrics(this.dataLoader.expenses, this.expensesHandler.expenseMonthFilter);
+    PaymentKpiCardBuilder.buildOverviewMetrics(this.dataLoader.orderPayments, this.dataLoader.grnPayments);
   }
 
-  renderInvoiceTable() {
+  renderInvoiceTable(resetPage = false) {
     this.invoiceTableHandler.render(
       this.dataLoader.orderPayments,
       this.invoiceSearch,
       this.invoiceStatusFilter,
-      this.invoiceMethodFilter
+      this.invoiceMethodFilter,
+      resetPage
     );
   }
 
-  renderGrnTable() {
+  renderGrnTable(resetPage = false) {
     this.grnTableHandler.render(
       this.dataLoader.grnPayments,
       this.grnSearch,
       this.grnStatusFilter,
-      this.grnMethodFilter
+      this.grnMethodFilter,
+      resetPage
     );
   }
 
-  renderExpenses() {
-    this.expensesHandler.render(this.dataLoader.expenses);
+  renderExpenses(resetPage = false) {
+    this.expensesHandler.render(this.dataLoader.expenses, resetPage);
   }
 
   renderOverviewTab() {

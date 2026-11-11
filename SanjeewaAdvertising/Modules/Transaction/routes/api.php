@@ -20,6 +20,7 @@ Route::prefix('v1')->group(function () {
         ->names('transaction.payments');
 
     // Supplier GRN Payments
+    Route::get('grn-payments/available-pos', [GrnPaymentController::class, 'availablePurchaseOrders'])->name('transaction.grn-payments.available-pos');
     Route::get('grn-payments/data', [GrnPaymentController::class, 'grnPaymentsData'])->name('transaction.grn-payments.data');
     Route::get('grn-payments/all', [GrnPaymentController::class, 'all'])->name('transaction.grn-payments.all');
     Route::apiResource('grn-payments', GrnPaymentController::class)

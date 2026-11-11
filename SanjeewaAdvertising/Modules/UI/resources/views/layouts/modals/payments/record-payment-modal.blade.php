@@ -55,17 +55,17 @@
           <input type="number" id="modalPayAmount" class="pay-input" placeholder="0.00" min="0" step="100" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Payment Stage (අවස්ථාව) *</label>
+          <label class="pay-label">Payment Stage *</label>
           <select id="modalPayStageSelect" class="pay-select-field">
-            <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
-            <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
-            <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
+            <option value="Complete Payment">Complete Payment</option>
+            <option value="Advance Payment">Advance Payment</option>
+            <option value="Pending Payment">Pending Payment</option>
           </select>
         </div>
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Payment Method (ක්‍රමවේදය) *</label>
+        <label class="pay-label">Payment Method *</label>
         <div class="pay-method-selector">
           <div class="method-choice selected" data-method="Cash">
             <i class="fa-solid fa-money-bill-wave"></i>

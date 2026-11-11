@@ -10,6 +10,9 @@
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { RequestHandler } from "../../core/RequestHandler.js";
+import { InvoicePaymentBuilder } from "../builders/InvoicePaymentBuilder.js";
+import { InvoicePaymentProcessor } from "../processors/InvoicePaymentProcessor.js";
 
 export class RecordInvoicePaymentModal extends BaseModalHandler {
   /**
@@ -31,6 +34,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     });
 
     this.ctx = context;
+    this.http = new RequestHandler();
+    this.processor = new InvoicePaymentProcessor(this.ctx);
     this.selectedMethod = "Cash";
     this.selectedJobs = [];
 
@@ -48,18 +53,11 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         return;
       }
 
-      // Add Job Button click
-      const addJobBtn = e.target.closest("#btnAddJobToInvoice");
-      if (addJobBtn) {
-        e.preventDefault();
-        this.addJobFromInputOrDropdown();
-        return;
-      }
-
       // Remove Job Button click
       const removeBtn = e.target.closest(".btn-remove-job");
       if (removeBtn) {
         e.preventDefault();
+        e.stopPropagation();
         const jobId = removeBtn.getAttribute("data-job-id");
         if (jobId) {
           this.removeJob(jobId);
@@ -86,13 +84,14 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       }
     });
 
-    // Job ID Text Input - Add on Enter
-    const jobIdInput = document.getElementById("invModalJobIdInput");
-    if (jobIdInput) {
-      jobIdInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          this.addJobFromInput();
+    // Job Selector dropdown - automatically add job when selected
+    const jobSelect = document.getElementById("invModalJobSelect");
+    if (jobSelect) {
+      jobSelect.addEventListener("change", (e) => {
+        const val = e.target.value;
+        if (val) {
+          this.addJobById(val);
+          jobSelect.value = "";
         }
       });
     }
@@ -123,7 +122,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     }
   }
 
-  openRecordInvoicePaymentModal(prefillOrderId = null) {
+  async openRecordInvoicePaymentModal(prefillOrderId = null) {
     const modal = document.getElementById("modalRecordInvoicePayment");
     if (!modal) return;
 
@@ -135,7 +134,36 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
     this.selectedJobs = [];
 
-    const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
+    // Ensure live print jobs from database are loaded
+    let orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
+    if (orders.length === 0) {
+      try {
+        const res = await this.http.get("/api/v1/invoices/available-jobs");
+        const data = res?.data || res;
+        const liveJobs = Array.isArray(data) ? data : (data?.jobs || []);
+        if (Array.isArray(liveJobs) && liveJobs.length > 0) {
+          orders = liveJobs.map(j => ({
+            id: j.formattedId || j.orderId || `ORD-2026-${1000 + Number(j.id)}`,
+            jobId: j.job_id || j.id,
+            rawId: j.id,
+            customerId: j.customerId || 1,
+            customerName: j.customerName || "Customer",
+            customerMobile: j.customerMobile || "",
+            productName: j.productName || "Print Job",
+            totalAmount: Number(j.totalAmount) || 0,
+            paidAmount: Number(j.paidAmount) || 0,
+            balanceAmount: Number(j.balanceAmount) || 0,
+            paymentStatus: j.status || (j.balanceAmount <= 0 ? "Paid" : "Pending")
+          }));
+          if (this.ctx.saveOrders) {
+            this.ctx.saveOrders(orders);
+          }
+        }
+      } catch (err) {
+        console.warn("[RecordInvoicePaymentModal] Could not fetch live print jobs:", err);
+      }
+    }
+
     const payments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
 
     // If prefillOrderId passed, find and pre-add that job
@@ -156,12 +184,6 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
           });
         }
       }
-    } else {
-      // By default if no prefill, prefill the first pending/partial order if available
-      const pendingOrder = orders.find(o => (Number(o.balanceAmount) || (Number(o.totalAmount) - (Number(o.paidAmount) || 0))) > 0);
-      if (pendingOrder) {
-        this.addJobObject(pendingOrder);
-      }
     }
 
     this.updateDropdown();
@@ -174,10 +196,9 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     const noteInput = document.getElementById("invModalNotes");
     if (noteInput) noteInput.value = "";
 
-    const jobIdInput = document.getElementById("invModalJobIdInput");
-    if (jobIdInput) {
-      jobIdInput.value = "";
-      setTimeout(() => jobIdInput.focus(), 150);
+    const jobSelect = document.getElementById("invModalJobSelect");
+    if (jobSelect) {
+      jobSelect.value = "";
     }
 
     this.openModal("modalRecordInvoicePayment");
@@ -205,56 +226,57 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
   findOrderByIdOrQuery(query) {
     if (!query) return null;
-    const clean = query.trim().toLowerCase().replace(/^#/, "");
+    const clean = String(query).trim().toLowerCase().replace(/^#/, "");
     if (!clean) return null;
 
     const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
     const payments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
 
-    // 1. Exact match on ID (e.g. "ord-2026-1048")
-    let match = orders.find(o => (o.id || "").toLowerCase() === clean);
+    // 1. Exact match on ID (e.g. "ord-2026-1048" or "1048")
+    let match = orders.find(o => String(o.id ?? "").toLowerCase() === clean);
     if (match) return match;
 
     // 2. Suffix match on ID (e.g. "1048" matches "ORD-2026-1048")
-    match = orders.find(o => (o.id || "").toLowerCase().endsWith(clean));
+    match = orders.find(o => String(o.id ?? "").toLowerCase().endsWith(clean));
     if (match) return match;
 
     // 3. Substring match on ID
-    match = orders.find(o => (o.id || "").toLowerCase().includes(clean));
+    match = orders.find(o => String(o.id ?? "").toLowerCase().includes(clean));
     if (match) return match;
 
     // 4. Substring match on customer name
-    match = orders.find(o => (o.customerName || "").toLowerCase().includes(clean));
+    match = orders.find(o => String(o.customerName ?? o.customer_name ?? "").toLowerCase().includes(clean));
     if (match) return match;
 
     // 5. Fallback in payments records
-    let payMatch = payments.find(p => (p.orderId || "").toLowerCase() === clean);
+    let payMatch = payments.find(p => String(p.orderId ?? p.order_id ?? p.id ?? "").toLowerCase() === clean);
     if (!payMatch) {
-      payMatch = payments.find(p => (p.orderId || "").toLowerCase().endsWith(clean));
+      payMatch = payments.find(p => String(p.orderId ?? p.order_id ?? p.id ?? "").toLowerCase().endsWith(clean));
     }
     if (!payMatch) {
-      payMatch = payments.find(p => (p.orderId || "").toLowerCase().includes(clean));
+      payMatch = payments.find(p => String(p.orderId ?? p.order_id ?? p.id ?? "").toLowerCase().includes(clean));
     }
     if (!payMatch) {
-      payMatch = payments.find(p => (p.customerName || "").toLowerCase().includes(clean));
+      payMatch = payments.find(p => String(p.customerName ?? p.customer_name ?? "").toLowerCase().includes(clean));
     }
 
     if (payMatch) {
       return {
-        id: payMatch.orderId,
-        customerName: payMatch.customerName,
-        productName: "Print Order",
-        totalAmount: payMatch.totalBill,
-        paidAmount: payMatch.amount,
-        balanceAmount: payMatch.balance
+        id: payMatch.orderId || payMatch.order_id || payMatch.id,
+        customerName: payMatch.customerName || payMatch.customer_name || "Customer",
+        productName: payMatch.productName || payMatch.product_name || "Print Order",
+        totalAmount: Number(payMatch.totalBill ?? payMatch.total_amount ?? payMatch.totalAmount ?? 0),
+        paidAmount: Number(payMatch.amount ?? payMatch.paid_amount ?? payMatch.paidAmount ?? 0),
+        balanceAmount: Number(payMatch.balance ?? payMatch.balance_amount ?? payMatch.balanceAmount ?? 0)
       };
     }
 
     return null;
   }
 
-  updateJobDatalist() {
-    const datalist = document.getElementById("invJobsDatalist");
+  updateDropdown() {
+    const select = document.getElementById("invModalJobSelect");
+    if (!select) return;
 
     const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
     const payments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
@@ -264,7 +286,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     let available = [];
 
     orders.forEach(o => {
-      if (!this.selectedJobs.some(j => j.id === o.id)) {
+      const oId = String(o.id);
+      if (!this.selectedJobs.some(j => String(j.id).toLowerCase() === oId.toLowerCase())) {
         const bal = Number(o.balanceAmount !== undefined ? o.balanceAmount : (Number(o.totalAmount) - (Number(o.paidAmount) || 0))) || 0;
         const tot = Number(o.totalAmount) || 0;
         available.push({
@@ -279,11 +302,12 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     });
 
     payments.forEach(p => {
-      if (!this.selectedJobs.some(j => j.id === p.orderId) && !available.some(a => a.id === p.orderId)) {
+      const pId = String(p.orderId || p.id);
+      if (!this.selectedJobs.some(j => String(j.id).toLowerCase() === pId.toLowerCase()) && !available.some(a => String(a.id).toLowerCase() === pId.toLowerCase())) {
         const bal = Number(p.balance) || 0;
         const tot = Number(p.totalBill) || 0;
         available.push({
-          id: p.orderId,
+          id: p.orderId || p.id,
           customerName: p.customerName || "Customer",
           productName: "Print Order",
           total: tot,
@@ -296,79 +320,51 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     // Prioritize jobs belonging to the current primary customer
     if (primaryCustomer) {
       available.sort((a, b) => {
-        const aMatch = a.customerName.toLowerCase() === primaryCustomer.toLowerCase();
-        const bMatch = b.customerName.toLowerCase() === primaryCustomer.toLowerCase();
+        const aMatch = String(a.customerName || "").toLowerCase() === primaryCustomer.toLowerCase();
+        const bMatch = String(b.customerName || "").toLowerCase() === primaryCustomer.toLowerCase();
         if (aMatch && !bMatch) return -1;
         if (!aMatch && bMatch) return 1;
         return 0;
       });
     }
 
-    // Populate Datalist for autocomplete on typing
-    if (datalist) {
-      datalist.innerHTML = available.map(item => {
-        return `<option value="${item.id}">${item.id} - ${item.customerName} (${item.productName} - Due: Rs. ${item.balance.toLocaleString()})</option>`;
+    // Populate selector dropdown options
+    select.innerHTML = `<option value="">-- Select Print Job to Add to this Invoice --</option>` +
+      available.map(item => {
+        return `<option value="${item.id}">${item.id} | ${item.customerName} - ${item.productName} (Due: Rs. ${item.balance.toLocaleString()})</option>`;
       }).join("");
-    }
   }
 
-  updateDropdown() {
-    this.updateJobDatalist();
-  }
+  addJobById(jobId) {
+    if (!jobId) return;
+    const job = this.findOrderByIdOrQuery(jobId);
+    if (!job) return;
 
-  addJobFromInput() {
-    const input = document.getElementById("invModalJobIdInput");
-    const query = input ? input.value.trim() : "";
-
-    if (!query) {
-      this.showToast("Please type a Job ID (e.g. 1048 or ORD-2026-1048).", "warning");
-      if (input) input.focus();
-      return;
-    }
-
-    const job = this.findOrderByIdOrQuery(query);
-    if (!job) {
-      this.showToast(`No print job found matching "${query}". Please check the Job #.`, "warning");
-      if (input) input.select();
-      return;
-    }
-
-    const jobId = job.id || job.orderId;
-    if (this.selectedJobs.some(j => j.id === jobId)) {
-      this.showToast(`Job ${jobId} is already included in this invoice.`, "info");
-      if (input) {
-        input.value = "";
-        input.focus();
-      }
+    const cleanJobId = job.id || job.orderId;
+    if (this.selectedJobs.some(j => String(j.id).toLowerCase() === String(cleanJobId).toLowerCase())) {
+      this.showToast(`Job ${cleanJobId} is already included in this invoice.`, "info");
+      const select = document.getElementById("invModalJobSelect");
+      if (select) select.value = "";
       return;
     }
 
     this.addJobObject(job);
 
-    if (input) {
-      input.value = "";
-      input.focus();
-    }
+    const select = document.getElementById("invModalJobSelect");
+    if (select) select.value = "";
 
-    this.updateJobDatalist();
-    this.renderSelectedJobsTable();
-    this.recalculateSummary();
-    this.showToast(`Job ${jobId} added to this invoice!`);
-  }
-
-  addJobFromInputOrDropdown() {
-    this.addJobFromInput();
-  }
-
-  addSelectedJobFromDropdown() {
-    this.addJobFromInput();
-  }
-
-  removeJob(jobId) {
-    this.selectedJobs = this.selectedJobs.filter(j => j.id !== jobId);
     this.updateDropdown();
     this.renderSelectedJobsTable();
     this.recalculateSummary();
+    this.showToast(`Job ${cleanJobId} added to this invoice!`);
+  }
+
+  removeJob(jobId) {
+    this.selectedJobs = this.selectedJobs.filter(j => String(j.id).toLowerCase() !== String(jobId).toLowerCase());
+    this.updateDropdown();
+    this.renderSelectedJobsTable();
+    this.recalculateSummary();
+    this.showToast(`Job ${jobId} removed from invoice.`, "info");
   }
 
   renderSelectedJobsTable() {
@@ -378,7 +374,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
     const jobCount = this.selectedJobs.length;
     if (countPill) {
-      countPill.textContent = `${jobCount} ${jobCount === 1 ? 'Job' : 'Jobs'} Selected`;
+      countPill.textContent = `${jobCount} Print Job${jobCount === 1 ? "" : "s"} Selected`;
     }
 
     if (saveBtnText) {
@@ -394,7 +390,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         <tr class="empty-jobs-row">
           <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">
             <i class="fa-solid fa-circle-info" style="color: #2563eb; margin-right: 6px;"></i>
-            No print jobs added to this invoice yet. Type a Job # above or select from the list and click "+ Add Job".
+            No print jobs added to this invoice yet. Select a print job from the dropdown above.
           </td>
         </tr>`;
       return;
@@ -579,6 +575,18 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
             <input type="text" id="invTransferRef" class="pay-input" placeholder="Transaction ref #">
           </div>
         </div>`;
+    } else if (this.selectedMethod === "Online / QR") {
+      container.innerHTML = `
+        <div class="pay-form-grid">
+          <div class="pay-field">
+            <label class="pay-label">Payment App / Gateway</label>
+            <input type="text" id="invQrApp" class="pay-input" placeholder="e.g. ComBank Q+ / FriMi / LankaQR">
+          </div>
+          <div class="pay-field">
+            <label class="pay-label">Transaction Reference # *</label>
+            <input type="text" id="invQrRef" class="pay-input" placeholder="e.g. TXN-QR-990812">
+          </div>
+        </div>`;
     } else {
       container.innerHTML = `
         <div class="pay-field">
@@ -588,115 +596,46 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     }
   }
 
-  save() {
-    if (this.selectedJobs.length === 0) {
-      alert("Please add at least one Print Job to the invoice payment.");
-      return;
-    }
-
+  async save() {
     const amountInput = document.getElementById("invModalAmount");
     const totalAmount = parseFloat(amountInput ? amountInput.value : 0);
-
-    if (isNaN(totalAmount) || totalAmount < 0) {
-      alert("Please enter a valid payment amount.");
-      return;
-    }
-
-    const primaryJob = this.selectedJobs[0];
-    const primaryCustomer = primaryJob.customerName || "Customer";
-    const totalBill = this.selectedJobs.reduce((sum, j) => sum + j.totalAmount, 0);
-    const totalPrevPaid = this.selectedJobs.reduce((sum, j) => sum + j.paidAmount, 0);
-    const totalRemainingBalance = Math.max(0, (totalBill - totalPrevPaid) - totalAmount);
-
     const stage = document.getElementById("invModalStageSelect")?.value || "Advance Payment";
     const payDate = document.getElementById("invModalDate")?.value || new Date().toISOString().split("T")[0];
     const notes = document.getElementById("invModalNotes")?.value.trim() || "";
 
-    let methodRef = "";
+    const methodDetails = {};
     if (this.selectedMethod === "Card") {
-      const last4 = document.getElementById("invCardLast4")?.value || "";
-      const auth = document.getElementById("invCardAuth")?.value || "";
-      methodRef = `Card ****${last4} (${auth})`;
+      methodDetails.last4 = document.getElementById("invCardLast4")?.value || "";
+      methodDetails.auth = document.getElementById("invCardAuth")?.value || "";
     } else if (this.selectedMethod === "Check") {
-      const chq = document.getElementById("invCheckNo")?.value || "";
-      const bnk = document.getElementById("invCheckBank")?.value || "";
-      methodRef = `Cheque #${chq} - ${bnk}`;
+      methodDetails.chequeNo = document.getElementById("invCheckNo")?.value || "";
+      methodDetails.bank = document.getElementById("invCheckBank")?.value || "";
     } else if (this.selectedMethod === "Bank Transfer") {
-      const ref = document.getElementById("invTransferRef")?.value || "";
-      const bnk = document.getElementById("invTransferBank")?.value || "";
-      methodRef = `FT: ${bnk} ${ref}`;
+      methodDetails.ref = document.getElementById("invTransferRef")?.value || "";
+      methodDetails.bank = document.getElementById("invTransferBank")?.value || "";
+    } else if (this.selectedMethod === "Online / QR") {
+      methodDetails.app = document.getElementById("invQrApp")?.value || "LankaQR";
+      methodDetails.ref = document.getElementById("invQrRef")?.value || "";
     } else {
-      const tendered = document.getElementById("invCashTendered")?.value;
-      methodRef = tendered ? `Cash (Tendered: Rs. ${parseFloat(tendered).toLocaleString()})` : "Direct Cash";
+      methodDetails.tendered = document.getElementById("invCashTendered")?.value || "";
     }
 
-    const paymentId = `PAY-INV-${Date.now().toString().slice(-6)}`;
-    const jobIdsList = this.selectedJobs.map(j => j.id);
-    const invoiceNo = this.selectedJobs.length === 1
-      ? `INV-${primaryJob.id}`
-      : `INV-${primaryJob.id}-${this.selectedJobs.length}J`;
+    const builder = new InvoicePaymentBuilder();
+    builder.setJobs(this.selectedJobs)
+           .setAmount(totalAmount)
+           .setStage(stage)
+           .setMethod(this.selectedMethod, methodDetails)
+           .setDate(payDate)
+           .setNotes(notes);
 
-    const newPayment = {
-      paymentId,
-      orderId: jobIdsList.join(", "),
-      invoiceNo,
-      customerName: primaryCustomer,
-      date: payDate,
-      totalBill,
-      amount: totalAmount,
-      balance: totalRemainingBalance,
-      stage,
-      method: this.selectedMethod,
-      ref: methodRef,
-      note: notes || (this.selectedJobs.length > 1 ? `Multi-job invoice settlement for ${this.selectedJobs.length} jobs (${jobIdsList.join(", ")})` : "Payment received"),
-      jobsCount: this.selectedJobs.length,
-      jobIds: jobIdsList,
-      jobs: this.selectedJobs.map(j => ({
-        id: j.id,
-        productName: j.productName,
-        total: j.totalAmount,
-        paidBefore: j.paidAmount,
-        allocatedNow: j.allocatedAmount,
-        balanceRemaining: Math.max(0, j.balanceAmount - j.allocatedAmount)
-      }))
-    };
+    const paymentData = builder.build();
+    const result = await this.processor.process(paymentData);
 
-    const orderPayments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
-    orderPayments.unshift(newPayment);
-    if (this.ctx.saveOrderPayments) this.ctx.saveOrderPayments();
-
-    // Update each order in state
-    const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
-    this.selectedJobs.forEach(job => {
-      const matchedOrder = orders.find(o => o.id === job.id);
-      if (matchedOrder) {
-        matchedOrder.paidAmount = (Number(matchedOrder.paidAmount) || 0) + job.allocatedAmount;
-        const orderTotal = Number(matchedOrder.totalAmount) || 0;
-        const newBal = Math.max(0, orderTotal - (Number(matchedOrder.paidAmount) || 0));
-        matchedOrder.balanceAmount = newBal;
-        if (newBal <= 0) {
-          matchedOrder.paymentStatus = "Paid";
-        } else if (matchedOrder.paidAmount > 0) {
-          matchedOrder.paymentStatus = "Partial";
-        }
-      }
-    });
-
-    if (this.ctx.saveOrders) {
-      this.ctx.saveOrders(orders);
-    }
-
-    this.closeModal("modalRecordInvoicePayment");
-    if (this.ctx.render) this.ctx.render();
-
-    this.showToast(
-      this.selectedJobs.length > 1
-        ? `Invoice payment of Rs. ${totalAmount.toLocaleString()} recorded for ${this.selectedJobs.length} print jobs (${primaryCustomer})!`
-        : `Invoice payment of Rs. ${totalAmount.toLocaleString()} recorded for ${primaryCustomer}!`
-    );
-
-    if (this.ctx.openReceiptModal) {
-      this.ctx.openReceiptModal(paymentId, "invoice");
+    if (result.success) {
+      this.closeModal("modalRecordInvoicePayment");
+      this.selectedJobs = [];
+      this.renderSelectedJobsTable();
+      this.recalculateSummary();
     }
   }
 }

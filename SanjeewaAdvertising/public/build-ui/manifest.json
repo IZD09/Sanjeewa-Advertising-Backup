@@ -1,6 +1,6 @@
 {
-  "_BaseModalHandler-DKqsRYH-.js": {
-    "file": "assets/BaseModalHandler-DKqsRYH-.js",
+  "_BaseModalHandler-DQhuuqGK.js": {
+    "file": "assets/BaseModalHandler-DQhuuqGK.js",
     "name": "BaseModalHandler",
     "imports": [
       "_BasePaginationHandler-CxkMXfSO.js"
@@ -9,6 +9,10 @@
   "_BasePaginationHandler-CxkMXfSO.js": {
     "file": "assets/BasePaginationHandler-CxkMXfSO.js",
     "name": "BasePaginationHandler"
+  },
+  "_BaseTableRowBuilder-CrSEebSa.js": {
+    "file": "assets/BaseTableRowBuilder-CrSEebSa.js",
+    "name": "BaseTableRowBuilder"
   },
   "_FormValidator-DavQ7TG5.js": {
     "file": "assets/FormValidator-DavQ7TG5.js",
@@ -113,7 +117,7 @@
     "isEntry": true
   },
   "resources/assets/css/payments.css": {
-    "file": "assets/payments-Dxto6Z0Z.css",
+    "file": "assets/payments-BZufDr16.css",
     "name": "payments",
     "names": [
       "payments.css"
@@ -128,6 +132,15 @@
       "place-order.css"
     ],
     "src": "resources/assets/css/place-order.css",
+    "isEntry": true
+  },
+  "resources/assets/css/user-profile.css": {
+    "file": "assets/user-profile-D80BtEX9.css",
+    "name": "user-profile",
+    "names": [
+      "user-profile.css"
+    ],
+    "src": "resources/assets/css/user-profile.css",
     "isEntry": true
   },
   "resources/assets/js/admin/admin-login.js": {
@@ -196,12 +209,13 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-BMe2BnE8.js",
+    "file": "assets/core-B3tBO_L6.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DKqsRYH-.js",
+      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
@@ -228,22 +242,24 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-CDMoyafj.js",
+    "file": "assets/grn-tHlMS7oU.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DKqsRYH-.js",
+      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-WAHxtf7s.js",
+    "file": "assets/inventory-FPUaxgVl.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DKqsRYH-.js",
+      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
@@ -260,23 +276,46 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-jjPO_JAn.js",
+    "file": "assets/payments-CThpUNtE.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DKqsRYH-.js",
+      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-BbgBC747.js",
+    "file": "assets/place-order-Ctv016S2.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DKqsRYH-.js",
+      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
       "_RequestHandler-DGIgTA7N.js"
+    ]
+  },
+  "resources/assets/js/profile.js": {
+    "file": "assets/profile-BvJS3fn0.js",
+    "name": "profile",
+    "src": "resources/assets/js/profile.js",
+    "isEntry": true,
+    "imports": [
+      "_BaseTableRowBuilder-CrSEebSa.js",
+      "_ValidatBuilder-DPg4PYww.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
+  },
+  "resources/assets/js/profile/UserProfileManager.js": {
+    "file": "assets/UserProfileManager--CRozE-h.js",
+    "name": "UserProfileManager",
+    "src": "resources/assets/js/profile/UserProfileManager.js",
+    "isEntry": true,
+    "imports": [
+      "resources/assets/js/profile.js",
+      "resources/assets/js/profile.js"
     ]
   },
   "resources/assets/sass/app.scss": {

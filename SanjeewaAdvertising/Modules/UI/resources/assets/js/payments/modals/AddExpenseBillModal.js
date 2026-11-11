@@ -5,6 +5,7 @@
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { RequestHandler } from "../../core/RequestHandler.js";
 
 export class AddExpenseBillModal extends BaseModalHandler {
   /**
@@ -25,6 +26,7 @@ export class AddExpenseBillModal extends BaseModalHandler {
     });
 
     this.ctx = context;
+    this.http = new RequestHandler();
 
     this.bindEvents();
   }
@@ -80,7 +82,10 @@ export class AddExpenseBillModal extends BaseModalHandler {
   }
 
   save() {
-    const category = document.getElementById("modalExpCategory")?.value;
+    const catSelect = document.getElementById("modalExpCategory");
+    const categoryVal = catSelect?.value;
+    const typeId = parseInt(categoryVal, 10) || 1;
+    const categoryName = catSelect?.options[catSelect.selectedIndex]?.getAttribute("data-name") || "Electricity Utility";
     const month = document.getElementById("modalExpMonth")?.value;
     const title = document.getElementById("modalExpTitle")?.value.trim();
     const provider = document.getElementById("modalExpProvider")?.value.trim();
@@ -91,20 +96,21 @@ export class AddExpenseBillModal extends BaseModalHandler {
     const notes = document.getElementById("modalExpNotes")?.value.trim();
 
     if (!title) {
-      alert("Please enter a Bill / Service Title (බිල්පතේ නම ඇතුලත් කරන්න).");
+      alert("Please enter a Bill / Service Title.");
       return;
     }
 
     const amount = parseFloat(amountStr);
     if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid bill amount greater than 0 (වලංගු මුදලක් ඇතුලත් කරන්න).");
+      alert("Please enter a valid bill amount greater than 0.");
       return;
     }
 
     const newBill = {
       id: `EXP-${month || "2026-10"}-${Date.now().toString().slice(-4)}`,
       title,
-      category: category || "Electricity",
+      category: categoryName,
+      typeId,
       provider: provider || "",
       accountNo: accountNo || "",
       month: month || "2026-10",
@@ -124,6 +130,21 @@ export class AddExpenseBillModal extends BaseModalHandler {
     const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
     expenses.unshift(newBill);
     if (this.ctx.saveExpenses) this.ctx.saveExpenses();
+
+    // Persist to Database API (/api/v1/expenses)
+    const formattedDate = dueDate ? `${dueDate} 00:00:00` : new Date().toISOString().slice(0, 19).replace("T", " ");
+    this.http.post("/api/v1/expenses", {
+      expencesess_types_id: typeId,
+      price: amount,
+      expencesess_statuses_id: initialStatus === "Paid" ? 3 : 1,
+      add_date: formattedDate,
+      pay_at: initialStatus === "Paid" ? new Date().toISOString().slice(0, 19).replace("T", " ") : null
+    }).then(res => {
+      if (res?.data?.id) {
+        newBill.id = res.data.id;
+        if (this.ctx.saveExpenses) this.ctx.saveExpenses();
+      }
+    }).catch(err => console.warn("[AddExpenseBillModal] API sync error:", err));
 
     if (month && this.ctx.setCurrentMonth) {
       this.ctx.setCurrentMonth(month);

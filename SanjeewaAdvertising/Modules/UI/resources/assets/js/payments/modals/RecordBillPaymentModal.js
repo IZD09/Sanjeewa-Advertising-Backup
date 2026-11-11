@@ -6,6 +6,9 @@
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { RequestHandler } from "../../core/RequestHandler.js";
+import { BillPaymentBuilder } from "../builders/BillPaymentBuilder.js";
+import { BillPaymentProcessor } from "../processors/BillPaymentProcessor.js";
 
 export class RecordBillPaymentModal extends BaseModalHandler {
   /**
@@ -24,6 +27,8 @@ export class RecordBillPaymentModal extends BaseModalHandler {
     });
 
     this.ctx = context;
+    this.http = new RequestHandler();
+    this.processor = new BillPaymentProcessor(this.ctx);
 
     this.bindEvents();
   }
@@ -139,10 +144,9 @@ export class RecordBillPaymentModal extends BaseModalHandler {
     }
   }
 
-  save() {
+  async save() {
     const select = document.getElementById("billModalSelectExisting");
     const val = select ? select.value : "";
-    const selectedOpt = select ? select.options[select.selectedIndex] : null;
 
     if (!val) {
       alert("Please select a pending bill to settle or choose to enter a direct bill settlement.");
@@ -162,58 +166,33 @@ export class RecordBillPaymentModal extends BaseModalHandler {
     const paidRef = document.getElementById("billModalPaidRef")?.value.trim() || "";
     const paidNotes = document.getElementById("billModalPaidNotes")?.value.trim() || "";
 
-    const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
+    const builder = new BillPaymentBuilder();
+    builder.setAmount(paidAmount)
+           .setMethod(paidMethod)
+           .setReference(paidRef)
+           .setDate(paidDate)
+           .setNotes(paidNotes);
 
     if (val === "DIRECT_NEW") {
-      const cat = document.getElementById("billModalDirectCategory")?.value || "Electricity";
-      const month = document.getElementById("billModalDirectMonth")?.value || "2026-10";
-      const title = document.getElementById("billModalDirectTitle")?.value.trim() || "Operating Utility Bill";
+      const catSelect = document.getElementById("billModalDirectCategory");
+      const typeId = parseInt(catSelect?.value, 10) || 1;
+      const catName = catSelect?.options[catSelect.selectedIndex]?.getAttribute("data-name") || "Electricity Utility";
+      const month = document.getElementById("billModalDirectMonth")?.value || new Date().toISOString().slice(0, 7);
+      const title = document.getElementById("billModalDirectTitle")?.value.trim() || catName;
       const account = document.getElementById("billModalDirectAccount")?.value.trim() || "";
 
-      const newBill = {
-        id: `EXP-${month}-${Date.now().toString().slice(-4)}`,
-        title,
-        category: cat,
-        provider: "Direct Overhead Vendor",
-        accountNo: account || "DIRECT-SETTLED",
-        month,
-        dueDate: paidDate,
-        amount: paidAmount,
-        status: "Paid",
-        paidDate,
-        paidAmount,
-        paidMethod,
-        paidRef: paidRef || "DIRECT-PAY",
-        paidNote: paidNotes || "Direct month-end overhead expense"
-      };
-
-      expenses.unshift(newBill);
-      if (this.ctx.saveExpenses) this.ctx.saveExpenses();
-
-      this.closeModal("modalRecordBillPayment");
-      if (this.ctx.render) this.ctx.render();
-
-      this.showToast(`Operating expense "${title}" (Rs. ${paidAmount.toLocaleString()}) recorded as PAID!`);
+      builder.setDirectExpense({ typeId, category: catName, month, title, accountNo: account });
     } else {
+      const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
       const bill = expenses.find(b => b.id === val);
-      if (!bill) {
-        alert("Selected bill could not be found.");
-        return;
-      }
+      builder.setBill(bill);
+    }
 
-      bill.status = "Paid";
-      bill.paidDate = paidDate;
-      bill.paidAmount = paidAmount;
-      bill.paidMethod = paidMethod;
-      bill.paidRef = paidRef;
-      bill.paidNote = paidNotes;
+    const billData = builder.build();
+    const result = await this.processor.process(billData);
 
-      if (this.ctx.saveExpenses) this.ctx.saveExpenses();
-
+    if (result.success) {
       this.closeModal("modalRecordBillPayment");
-      if (this.ctx.render) this.ctx.render();
-
-      this.showToast(`Bill "${bill.title}" (Rs. ${paidAmount.toLocaleString()}) marked as PAID!`);
     }
   }
 }

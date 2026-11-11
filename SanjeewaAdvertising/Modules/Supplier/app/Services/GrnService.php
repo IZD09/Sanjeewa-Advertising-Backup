@@ -198,9 +198,33 @@ class GrnService
      */
     public function formatGrnRecord(Grn $grn): array
     {
-        $po = $grn->purchaseOrders->first();
-        $supplier = $po?->supplier;
-        $supplierInvoice = $po?->pivot?->supplyer_invoice ?? '';
+        $purchaseOrders = $grn->purchaseOrders;
+        $poCodes = [];
+        $supplierInvoices = [];
+        $poList = [];
+        $primarySupplier = null;
+
+        foreach ($purchaseOrders as $order) {
+            $code = 'PO-'.str_pad((string) $order->id, 4, '0', STR_PAD_LEFT);
+            $poCodes[] = $code;
+            if ($order->supplier && ! $primarySupplier) {
+                $primarySupplier = $order->supplier;
+            }
+            $inv = $order->pivot?->supplyer_invoice;
+            if (! empty($inv)) {
+                $supplierInvoices[] = $inv;
+            }
+            $poList[] = [
+                'id' => $order->id,
+                'po_number' => $code,
+                'supplier_invoice' => $inv ?? '',
+                'supplier_id' => $order->suppliers_id ?? $order->supplier_id,
+                'supplier_name' => $order->supplier?->name ?? 'Supplier',
+            ];
+        }
+
+        $supplier = $primarySupplier;
+        $supplierInvoice = implode(', ', array_unique($supplierInvoices));
 
         $items = [];
         $subTotal = 0.0;
@@ -224,15 +248,17 @@ class GrnService
         }
 
         $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
-        $poCode = $po ? ('PO-'.str_pad((string) $po->id, 4, '0', STR_PAD_LEFT)) : 'N/A';
+        $poCode = count($poCodes) > 0 ? implode(', ', $poCodes) : 'N/A';
         $status = count($items) > 0 ? 'Completed' : 'Draft';
 
         return [
             'id' => $grn->id,
             'grn_id' => $grnCode,
             'grn_number' => $grnCode,
-            'purchase_order_id' => $po?->id,
+            'purchase_order_id' => $purchaseOrders->first()?->id,
             'purchase_order_no' => $poCode,
+            'purchase_orders' => $poList,
+            'purchase_order_count' => count($poList),
             'supplier_id' => $supplier ? ('SUP-'.str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT)) : null,
             'supplier_name' => $supplier?->name ?? 'Direct Consignment',
             'supplier_contact' => $supplier?->mobile ?? ($supplierInvoice !== '' ? $supplierInvoice : 'N/A'),
@@ -244,7 +270,7 @@ class GrnService
             'received_by' => 'Admin User',
             'status' => $status,
             'created_at' => $grn->at_time?->toDateTimeString() ?? '',
-            'remarks' => $supplierInvoice !== '' ? "Supplier Invoice: {$supplierInvoice}" : '',
+            'remarks' => $supplierInvoice !== '' ? "Supplier Invoices: {$supplierInvoice}" : '',
             'items' => $items,
         ];
     }

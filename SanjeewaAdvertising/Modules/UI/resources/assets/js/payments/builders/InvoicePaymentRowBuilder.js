@@ -95,10 +95,11 @@ export class InvoicePaymentEntity {
 
     const stagePill = this.renderStageBadge();
     const methodPill = this.renderMethodBadge();
-    const jobsBadge = this.jobs_count > 1
-      ? `<span class="inv-job-badge" style="font-size: 10px; padding: 1px 6px; margin-left: 5px;">${this.jobs_count} Jobs</span>`
+    const jobsBadge = (this.jobs_count > 1 || (this.job_ids && this.job_ids.length > 1))
+      ? `<span class="inv-job-badge" style="font-size: 10px; padding: 1px 6px; margin-left: 5px;"><i class="fa-solid fa-layer-group" style="margin-right: 3px;"></i>${this.jobs_count || this.job_ids.length} Jobs</span>`
       : "";
     const primaryJobId = (this.job_ids && this.job_ids.length > 0) ? this.job_ids[0] : (this.order_id || this.id);
+    const displayJobRef = (this.job_ids && this.job_ids.length > 1) ? this.job_ids.join(", ") : (this.order_id || "");
     const totalFormatted = this.formatCurrency(this.total_bill);
     const paidFormatted = this.formatCurrency(this.paid_amount);
     const balanceFormatted = this.formatCurrency(this.balance);
@@ -112,8 +113,8 @@ export class InvoicePaymentEntity {
       </td>
       <td>
         <strong>${this.customer_name}</strong>
-        <div style="font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${this.order_id}">
-          Ref: ${this.order_id}${this.customer_mobile ? ` | ${this.customer_mobile}` : ""}
+        <div style="font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${displayJobRef}">
+          Ref: ${displayJobRef}${this.customer_mobile ? ` | ${this.customer_mobile}` : ""}
         </div>
       </td>
       <td>${stagePill}</td>

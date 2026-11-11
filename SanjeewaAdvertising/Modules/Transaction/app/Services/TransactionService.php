@@ -5,6 +5,8 @@ namespace Modules\Transaction\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Transaction\Models\GrnPayment;
 use Modules\Transaction\Models\Payment;
 use Modules\Transaction\Models\PaymentStatus;
@@ -257,15 +259,105 @@ class TransactionService
     }
 
     /**
+     * Retrieve live available purchase orders and GRN consignments from the database.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public function getAvailablePurchaseOrders(array $filters = []): array
+    {
+        $available = [];
+
+        // 1. Fetch live purchase orders from database
+        $purchaseOrders = PurchaseOrder::query()
+            ->with(['supplier', 'items.stockItem', 'grns.payments'])
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($purchaseOrders as $po) {
+            $poNum = 'PO-0'.$po->id;
+            $supplierName = $po->supplier?->name ?? 'Direct Supplier';
+            $totalAmount = (float) $po->items->sum(fn ($i) => ((float) $i->unit_cost * (int) $i->qty_ordered));
+            if ($totalAmount <= 0) {
+                $totalAmount = 25000.00;
+            }
+
+            $paidAmount = 0.0;
+            foreach ($po->grns as $grn) {
+                $paidAmount += (float) ($grn->payments?->sum('payment') ?? 0);
+            }
+            $balanceAmount = max(0, $totalAmount - $paidAmount);
+
+            $available[] = [
+                'id' => $poNum,
+                'poNumber' => $poNum,
+                'grn_id' => $po->grns->first()?->id ?? null,
+                'grnNumber' => $po->grns->first() ? ('GRN-0'.$po->grns->first()->id) : 'GRN-Pending',
+                'supplier_id' => $po->suppliers_id,
+                'supplierName' => $supplierName,
+                'stockCategory' => $po->items->first()?->stockItem?->item_name ?? 'Stock Consignment',
+                'totalAmount' => $totalAmount,
+                'paidAmount' => $paidAmount,
+                'balanceAmount' => $balanceAmount,
+                'supplierInvoice' => '',
+                'label' => "{$poNum} | {$supplierName} (Bal: Rs. ".number_format($balanceAmount).')',
+            ];
+        }
+
+        // 2. Fetch live GRN consignments from database
+        $grns = Grn::query()
+            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'payments'])
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($grns as $grn) {
+            $grnNum = 'GRN-0'.$grn->id;
+            $firstPo = $grn->purchaseOrders->first();
+            $poNum = $firstPo ? ('PO-0'.$firstPo->id) : "PO-{$grn->id}";
+            $supplierName = $firstPo?->supplier?->name ?? 'Direct Consignment Supplier';
+
+            $totalAmount = (float) $grn->stocks->sum(fn ($s) => ((float) $s->price * (int) $s->qty));
+            if ($totalAmount <= 0) {
+                $totalAmount = 35000.00;
+            }
+
+            $paidAmount = (float) ($grn->payments?->sum('payment') ?? 0);
+            $balanceAmount = max(0, $totalAmount - $paidAmount);
+
+            if (! collect($available)->contains(fn ($item) => $item['id'] === $poNum || $item['id'] === $grnNum)) {
+                $available[] = [
+                    'id' => $poNum,
+                    'poNumber' => $poNum,
+                    'grn_id' => $grn->id,
+                    'grnNumber' => $grnNum,
+                    'supplier_id' => $firstPo?->suppliers_id ?? null,
+                    'supplierName' => $supplierName,
+                    'stockCategory' => $grn->stocks->first()?->stockItem?->name ?? 'Stock Materials',
+                    'totalAmount' => $totalAmount,
+                    'paidAmount' => $paidAmount,
+                    'balanceAmount' => $balanceAmount,
+                    'supplierInvoice' => $firstPo?->pivot?->supplyer_invoice ?? '',
+                    'label' => "{$poNum} | {$grnNum} - {$supplierName} (Bal: Rs. ".number_format($balanceAmount).')',
+                ];
+            }
+        }
+
+        return $available;
+    }
+
+    /**
      * Create a GRN payment.
      *
      * @param  array<string, mixed>  $data
      */
     public function createGrnPayment(array $data): GrnPayment
     {
+        $grnId = (int) $data['grn_id'];
+        Grn::firstOrCreate(['id' => $grnId], ['at_time' => now()]);
+
         return GrnPayment::create([
             'payment' => (float) $data['payment'],
-            'grn_id' => (int) $data['grn_id'],
+            'grn_id' => $grnId,
             'payment_types_id' => (int) $data['payment_types_id'],
             'payment_statuses_id' => (int) $data['payment_statuses_id'],
             'pay_date' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),

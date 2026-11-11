@@ -244,6 +244,67 @@ class UserService
     }
 
     /**
+     * Update an authenticated user's personal profile details.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateProfile(User $user, array $data): User
+    {
+        $attributes = [];
+
+        if (isset($data['first_name'])) {
+            $attributes['first_name'] = trim((string) $data['first_name']);
+        }
+        if (isset($data['last_name'])) {
+            $attributes['last_name'] = trim((string) $data['last_name']);
+        }
+        if (isset($data['mobile'])) {
+            $attributes['mobile'] = trim((string) $data['mobile']);
+        }
+        if (! empty($data['password'])) {
+            $password = (string) $data['password'];
+            if (Hash::info($password)['algo'] === null) {
+                $password = Hash::make($password);
+            }
+            $attributes['password'] = $password;
+        }
+
+        if (! empty($attributes)) {
+            $user->update($attributes);
+        }
+
+        $this->logActivity('Update User Profile', [
+            'action' => 'update_profile',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'message' => "Updated user profile details for '{$user->username}' (ID: #{$user->id}).",
+        ]);
+
+        return $user->fresh('status');
+    }
+
+    /**
+     * Update an authenticated user's password credentials.
+     */
+    public function updatePassword(User $user, string $newPassword): User
+    {
+        $hashed = Hash::info($newPassword)['algo'] === null ? Hash::make($newPassword) : $newPassword;
+
+        $user->update([
+            'password' => $hashed,
+        ]);
+
+        $this->logActivity('Update User Password', [
+            'action' => 'update_password',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'message' => "Updated login password for '{$user->username}' (ID: #{$user->id}).",
+        ]);
+
+        return $user->fresh();
+    }
+
+    /**
      * Delete a user record.
      */
     public function deleteUser(User $user): bool

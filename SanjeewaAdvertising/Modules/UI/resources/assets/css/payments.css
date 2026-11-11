@@ -829,15 +829,15 @@
 }
 
 .page-btn:hover:not(:disabled) {
-    background: var(--blue-subtle, rgba(37, 99, 235, 0.08));
-    border-color: var(--blue, #2563eb);
-    color: var(--blue, #2563eb);
+    background: rgba(22, 119, 255, 0.08);
+    border-color: #1677ff;
+    color: #1677ff;
 }
 
 .page-btn.active {
-    background: var(--blue, #2563eb);
+    background: #1677ff;
     color: #ffffff;
-    border-color: var(--blue, #2563eb);
+    border-color: #1677ff;
 }
 
 .page-btn:disabled {
@@ -846,15 +846,15 @@
 }
 
 .grn-pagination .page-btn:hover:not(:disabled) {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: #10b981;
-    color: #10b981;
+    background: rgba(22, 119, 255, 0.08);
+    border-color: #1677ff;
+    color: #1677ff;
 }
 
 .grn-pagination .page-btn.active {
-    background: #10b981;
+    background: #1677ff;
     color: #ffffff;
-    border-color: #10b981;
+    border-color: #1677ff;
 }
 
 /* Modals */
@@ -1635,6 +1635,93 @@
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
+/* Multi-Purchase Order GRN Modal Styles */
+.grn-po-badge {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    display: inline-flex;
+    align-items: center;
+}
+
+.grn-po-table-wrap {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.grn-po-table {
+    width: 100%;
+    font-size: 12.5px;
+    border-collapse: collapse;
+}
+
+.grn-po-table th {
+    font-weight: 700;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.grn-po-table td {
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.grn-po-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.grn-po-table tbody tr:hover {
+    background: rgba(16, 185, 129, 0.03);
+}
+
+.btn-remove-po {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+}
+
+.btn-remove-po:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+.pay-po-allocation {
+    width: 100%;
+    max-width: 110px;
+    height: 32px;
+    padding: 2px 8px;
+    font-size: 12px;
+    text-align: right;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease;
+}
+
+.pay-po-allocation:focus {
+    border-color: #10b981;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+}
+
 /* ==========================================================================
    Place Order Style Table Pagination Controls
    ========================================================================== */
@@ -1670,8 +1757,9 @@
 }
 
 .page-btn:hover:not(:disabled) {
-    border-color: var(--po-orange, #ff6b00);
-    color: var(--po-orange, #ff6b00);
+    border-color: #1677ff;
+    color: #1677ff;
+    background: rgba(22, 119, 255, 0.08);
 }
 
 .page-btn:disabled {
@@ -1680,7 +1768,7 @@
 }
 
 .page-btn.active {
-    background: var(--po-orange, #ff6b00);
+    background: #1677ff;
     color: #ffffff;
-    border-color: var(--po-orange, #ff6b00);
+    border-color: #1677ff;
 }

@@ -5,6 +5,7 @@
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { RequestHandler } from "../../core/RequestHandler.js";
 
 export class MarkExpensePaidModal extends BaseModalHandler {
   /**
@@ -23,6 +24,7 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     });
 
     this.ctx = context;
+    this.http = new RequestHandler();
 
     this.bindEvents();
   }
@@ -85,6 +87,15 @@ export class MarkExpensePaidModal extends BaseModalHandler {
 
     if (this.ctx.saveExpenses) this.ctx.saveExpenses();
 
+    // Persist to Database API
+    const numericId = parseInt(String(bill.id).replace(/[^0-9]/g, ""), 10);
+    if (numericId && !isNaN(numericId)) {
+      this.http.put(`/api/v1/expenses/${numericId}`, {
+        expencesess_statuses_id: 3, // Paid
+        pay_at: `${paidDate} 12:00:00`
+      }).catch(err => console.warn("[MarkExpensePaidModal] API sync error:", err));
+    }
+
     this.closeModal("modalMarkExpensePaid");
     if (this.ctx.render) this.ctx.render();
 
@@ -96,7 +107,7 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     const bill = expenses.find(b => b.id === billId);
     if (!bill) return;
 
-    if (confirm(`Do you want to revert "${bill.title}" status back to Pending (මාසෙ අන්තිමට ගෙවීමට ඇති)?`)) {
+    if (confirm(`Do you want to revert "${bill.title}" status back to Pending?`)) {
       bill.status = "Pending";
       delete bill.paidDate;
       delete bill.paidAmount;
@@ -105,6 +116,16 @@ export class MarkExpensePaidModal extends BaseModalHandler {
       delete bill.paidNote;
 
       if (this.ctx.saveExpenses) this.ctx.saveExpenses();
+
+      // Persist status reversal to Database API
+      const numericId = parseInt(String(bill.id).replace(/[^0-9]/g, ""), 10);
+      if (numericId && !isNaN(numericId)) {
+        this.http.put(`/api/v1/expenses/${numericId}`, {
+          expencesess_statuses_id: 1, // Pending
+          pay_at: null
+        }).catch(err => console.warn("[MarkExpensePaidModal] API sync error:", err));
+      }
+
       if (this.ctx.render) this.ctx.render();
 
       this.showToast(`Bill "${bill.title}" status reverted to PENDING.`);

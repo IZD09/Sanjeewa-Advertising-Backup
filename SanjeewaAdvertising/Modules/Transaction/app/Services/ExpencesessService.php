@@ -103,8 +103,16 @@ class ExpencesessService
             $data['add_by'] = Auth::id() ?? 1;
         }
 
+        if (empty($data['pay_by'])) {
+            $data['pay_by'] = Auth::id() ?? 1;
+        }
+
         if (empty($data['add_date'])) {
             $data['add_date'] = now();
+        }
+
+        if (empty($data['pay_at'])) {
+            $data['pay_at'] = now();
         }
 
         $expense = Expencesess::create($data);

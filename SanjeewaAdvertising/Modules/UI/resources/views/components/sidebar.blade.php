@@ -12,6 +12,11 @@
      * 7. Cookie or session 'sa_portal' / 'active_portal' (for shared pages like /customers and /settings)
      * 8. Regular user authentication check
      */
+    $authAdmin = auth('admin')->check();
+    $authWeb = auth('web')->check();
+    $webUser = $authWeb ? auth('web')->user() : null;
+    $isSuperAdmin = $authAdmin || ($webUser && $webUser->username === 'admin');
+
     if (isset($role)) {
         $isAdmin = ($role === 'admin');
     } elseif (isset($isAdmin)) {
@@ -20,11 +25,19 @@
         $isAdmin = (request('role') === 'admin');
     } elseif (request()->has('portal')) {
         $isAdmin = (request('portal') === 'admin');
-    } elseif (auth('admin')->check()) {
+    } elseif ($authAdmin) {
+        $isAdmin = true;
+    } elseif ($authWeb && ! $isSuperAdmin) {
+        // Authenticated non-admin web user is always in staff portal
+        $isAdmin = false;
+        if (session()->isStarted()) {
+            session(['active_portal' => 'user']);
+        }
+    } elseif ($isSuperAdmin) {
         $isAdmin = true;
     } elseif (request()->is('admin*') || request()->routeIs('admin.*')) {
         $isAdmin = true;
-    } elseif (request()->is('place-order*') || request()->is('print-jobs*')) {
+    } elseif (request()->is('place-order*') || request()->is('print-jobs*') || request()->is('profile*')) {
         $isAdmin = false;
         if (session()->isStarted()) {
             session(['active_portal' => 'user']);
@@ -34,9 +47,15 @@
         if (session()->isStarted()) {
             session(['active_portal' => 'admin']);
         }
-    } elseif (request()->cookie('sa_portal') === 'user' || (session()->isStarted() && session('active_portal') === 'user')) {
+    } elseif (session()->isStarted() && session('active_portal') === 'admin') {
+        $isAdmin = true;
+    } elseif (request()->cookie('sa_portal') === 'admin') {
+        $isAdmin = true;
+    } elseif (session()->isStarted() && session('active_portal') === 'user') {
         $isAdmin = false;
-    } elseif (auth('web')->check() && !auth('admin')->check()) {
+    } elseif (request()->cookie('sa_portal') === 'user') {
+        $isAdmin = false;
+    } elseif ($authWeb && ! $authAdmin) {
         $isAdmin = false;
     } else {
         $isAdmin = true;
@@ -91,12 +110,13 @@
 
     /**
      * User Navigation:
-     * user[print-jobs, design-management, place-order, customers, quotations-invoices, settings]
+     * Full catalog of available modules for staff, dynamically filtered by database permissions
      */
     $userNavigation = [
         [
             'type' => 'group',
             'items' => [
+                ['component' => 'dashboard'],
                 ['component' => 'print-jobs'],
                 ['component' => 'design-management'],
             ],
@@ -108,12 +128,24 @@
                 ['component' => 'place-order'],
                 ['component' => 'customers'],
                 ['component' => 'quotations-invoices'],
+                ['component' => 'payments'],
+                ['component' => 'reports'],
+            ],
+        ],
+        [
+            'type' => 'group',
+            'section' => 'INVENTORY',
+            'items' => [
+                ['component' => 'purchase-orders'],
+                ['component' => 'stock-management'],
+                ['component' => 'goods-received'],
             ],
         ],
         [
             'type' => 'group',
             'section' => 'MANAGEMENT',
             'items' => [
+                ['component' => 'user-profile'],
                 ['component' => 'settings'],
             ],
         ],
@@ -122,19 +154,19 @@
     // Filter staff navigation based on database permissions
     if (! $isAdmin && ($authUser = auth('web')->user())) {
         $componentModuleMap = [
+            'dashboard' => 'Dashboard',
             'print-jobs' => 'Print Jobs',
             'design-management' => 'Design Management',
             'place-order' => 'Place Order',
             'customers' => 'Customers',
             'quotations-invoices' => 'Quotations & Invoices',
             'settings' => 'Settings',
-            'dashboard' => 'Dashboard',
             'inventory' => 'Inventory',
+            'stock-management' => 'Inventory',
             'goods-received' => 'GRN & Purchase Orders',
             'purchase-orders' => 'GRN & Purchase Orders',
             'payments' => 'Payments & Financials',
             'reports' => 'Reports',
-            'user-control' => 'User Control',
         ];
 
         $filteredUserNav = [];
@@ -142,6 +174,10 @@
             $filteredItems = [];
             foreach ($group['items'] ?? [] as $item) {
                 $comp = $item['component'] ?? '';
+                if ($comp === 'user-profile') {
+                    $filteredItems[] = $item;
+                    continue;
+                }
                 $modName = $componentModuleMap[$comp] ?? $comp;
                 if ($authUser->canAccessModule($modName)) {
                     $filteredItems[] = $item;

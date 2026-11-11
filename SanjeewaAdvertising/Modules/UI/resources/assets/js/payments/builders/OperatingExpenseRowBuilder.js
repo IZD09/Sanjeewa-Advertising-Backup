@@ -60,11 +60,11 @@ export class OperatingExpenseEntity {
     const isOverdue = !isPaid && this.dueDate && (new Date(this.dueDate) < new Date());
 
     if (isPaid) {
-      return `<span class="exp-badge exp-badge-paid"><i class="fa-solid fa-circle-check"></i> Paid (ගෙවා අවසන්)</span>`;
+      return `<span class="exp-badge exp-badge-paid"><i class="fa-solid fa-circle-check"></i> Paid</span>`;
     } else if (isOverdue) {
-      return `<span class="exp-badge exp-badge-overdue"><i class="fa-solid fa-triangle-exclamation"></i> Overdue (කල් ඉකුත් වූ)</span>`;
+      return `<span class="exp-badge exp-badge-overdue"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</span>`;
     } else {
-      return `<span class="exp-badge exp-badge-pending"><i class="fa-solid fa-clock"></i> Pending (ගෙවීමට ඇති)</span>`;
+      return `<span class="exp-badge exp-badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>`;
     }
   }
 
@@ -155,11 +155,11 @@ export class OperatingExpenseEntity {
       <td style="text-align: right;">
         <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
           ${!isPaid ? `
-            <button type="button" class="btn-mark-paid" data-mark-paid-id="${this.id}" title="Mark this bill as Paid (බිල්පත ගෙවූ බව සටහන් කරන්න)">
+            <button type="button" class="btn-mark-paid" data-mark-paid-id="${this.id}" title="Mark this bill as Paid">
               <i class="fa-solid fa-circle-check"></i> Mark as Paid
             </button>
           ` : `
-            <button type="button" class="btn-undo-paid" data-undo-paid-id="${this.id}" title="Revert status back to Pending (නැවත Pending තත්ත්වයට)">
+            <button type="button" class="btn-undo-paid" data-undo-paid-id="${this.id}" title="Revert status back to Pending">
               <i class="fa-solid fa-rotate-left"></i> Revert
             </button>
           `}

@@ -7,7 +7,7 @@
           </div>
           <div>
             <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text);">Record Bill Payment</h3>
-            <p style="margin: 2px 0 0; font-size: 11px; color: var(--text-muted);">Monthly Operating &amp; Overhead Utility Settlements (මෙහෙයුම් බිල්පත් ගෙවීම)</p>
+            <p style="margin: 2px 0 0; font-size: 11px; color: var(--text-muted);">Monthly Operating &amp; Overhead Utility Settlements</p>
           </div>
         </div>
         <button type="button" class="pay-modal-close" data-close-pay-modal aria-label="Close modal">
@@ -19,7 +19,7 @@
         <!-- 1. Select Bill Mode -->
         <div class="pay-field">
           <label class="pay-label" for="billModalSelectExisting">
-            <i class="fa-solid fa-receipt" style="color: #f59e0b; margin-right: 4px;"></i> Select Bill to Settle (ගෙවිය යුතු බිල්පත තෝරන්න) *
+            <i class="fa-solid fa-receipt" style="color: #f59e0b; margin-right: 4px;"></i> Select Bill to Settle *
           </label>
           <select id="billModalSelectExisting" class="pay-select-field">
             <!-- Dynamically populated with pending bills and '+ New Bill' option -->
@@ -50,12 +50,18 @@
             <div class="pay-field">
               <label class="pay-label" for="billModalDirectCategory">Expense Category *</label>
               <select id="billModalDirectCategory" class="pay-select-field">
-                <option value="Electricity">⚡ Electricity (විදුලි බිල)</option>
-                <option value="Water Board">💧 Water Board (ජල බිල)</option>
-                <option value="Internet & Fiber">📶 Internet &amp; Fiber (අන්තර්ජාල)</option>
-                <option value="Shop Rent">🏢 Shop Rent (කුලිය)</option>
-                <option value="Mobile & Telephone">📱 Mobile &amp; Telephone</option>
-                <option value="Maintenance & Other">🔧 Maintenance &amp; Other</option>
+                <option value="1" data-name="Electricity Utility" selected>⚡ Electricity Utility</option>
+                <option value="2" data-name="Water Utility">💧 Water Utility</option>
+                <option value="3" data-name="Internet & Telephone">📶 Internet &amp; Telephone</option>
+                <option value="4" data-name="Shop Rent / Lease">🏢 Shop Rent / Lease</option>
+                <option value="5" data-name="Machine Maintenance & Parts">🔧 Machine Maintenance &amp; Parts</option>
+                <option value="6" data-name="Staff Salary & Wages">👥 Staff Salary &amp; Wages</option>
+                <option value="7" data-name="Office Supplies & Stationery">📦 Office Supplies &amp; Stationery</option>
+                <option value="8" data-name="Transportation & Fuel">🚗 Transportation &amp; Fuel</option>
+                <option value="9" data-name="Marketing & Advertising">📢 Marketing &amp; Advertising</option>
+                <option value="10" data-name="Refreshments & Welfare">☕ Refreshments &amp; Welfare</option>
+                <option value="11" data-name="Municipal Taxes & Licenses">🏛️ Municipal Taxes &amp; Licenses</option>
+                <option value="12" data-name="Other Operating Expenses">📋 Other Operating Expenses</option>
               </select>
             </div>
             <div class="pay-field">
@@ -85,7 +91,7 @@
           </div>
           <div class="pay-field">
             <label class="pay-label" for="billModalPaidDate">
-              <i class="fa-solid fa-calendar-day" style="color: #f59e0b; margin-right: 4px;"></i> Payment Date (ගෙවූ දිනය) *
+              <i class="fa-solid fa-calendar-day" style="color: #f59e0b; margin-right: 4px;"></i> Payment Date *
             </label>
             <input type="date" id="billModalPaidDate" class="pay-input" required>
           </div>
@@ -94,25 +100,25 @@
         <!-- 3. Payment Method -->
         <div class="pay-field">
           <label class="pay-label" for="billModalPaidMethod">
-            <i class="fa-solid fa-wallet" style="color: #f59e0b; margin-right: 4px;"></i> Payment Method (ගෙවූ ක්‍රමවේදය) *
+            <i class="fa-solid fa-wallet" style="color: #f59e0b; margin-right: 4px;"></i> Payment Method *
           </label>
           <select id="billModalPaidMethod" class="pay-select-field">
-            <option value="Bank Transfer" selected>🏦 Bank Transfer / Online Banking (බැංකු හුවමාරු)</option>
-            <option value="Cash">💵 Cash (මුදල්)</option>
-            <option value="Online / QR">📱 Online / LankaQR (ඔන්ලයින්)</option>
-            <option value="Card">💳 Corporate Debit / Credit Card (කාඩ්පත්)</option>
-            <option value="Check">🧾 Cheque (චෙක්පත්)</option>
+            <option value="Bank Transfer" selected>🏦 Bank Transfer / Online Banking </option>
+            <option value="Cash">💵 Cash </option>
+            <option value="Online / QR">📱 Online / LankaQR </option>
+            <option value="Card">💳 Corporate Debit / Credit Card </option>
+            <option value="Check">🧾 Cheque </option>
           </select>
         </div>
 
         <!-- 4. Reference and Note -->
         <div class="pay-field">
-          <label class="pay-label" for="billModalPaidRef">Transaction Ref / Slip # (ස්ලිප් / Ref අංකය)</label>
+          <label class="pay-label" for="billModalPaidRef">Transaction Ref / Slip # </label>
           <input type="text" id="billModalPaidRef" class="pay-input" placeholder="E.g. BOC-TXN-99812 / SLT-SLIP-4521">
         </div>
 
         <div class="pay-field">
-          <label class="pay-label" for="billModalPaidNotes">Settlement Narration / Notes (සටහන්)</label>
+          <label class="pay-label" for="billModalPaidNotes">Settlement Narration / Notes </label>
           <input type="text" id="billModalPaidNotes" class="pay-input" placeholder="E.g. Paid online via Commercial Bank app">
         </div>
       </div>
@@ -120,7 +126,7 @@
       <div class="pay-modal-footer">
         <button type="button" class="po-btn po-btn-secondary" data-close-pay-modal>Cancel</button>
         <button type="button" class="po-btn pay-action-btn pay-btn-bill" id="btnConfirmSaveBillPayment">
-          <i class="fa-solid fa-check-double"></i> Confirm Bill Payment (ගෙවීම තහවුරු කරන්න)
+          <i class="fa-solid fa-check-double"></i> Confirm Bill Payment
         </button>
       </div>
     </div>

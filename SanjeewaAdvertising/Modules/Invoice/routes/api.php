@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Modules\Invoice\Http\Controllers\InvoiceController;
 
 Route::prefix('v1')->group(function () {
-    // Dedicated search & all
+    // Dedicated search, all & live available jobs
+    Route::get('invoices/available-jobs', [InvoiceController::class, 'availableJobs'])->name('invoice.available-jobs');
     Route::get('invoices/data', [InvoiceController::class, 'invoicesData'])->name('invoice.data');
     Route::get('invoices/all', [InvoiceController::class, 'all'])->name('invoice.all');
     Route::get('invoices/search', [InvoiceController::class, 'search'])->name('invoice.search');

@@ -5,8 +5,16 @@ use Modules\User\Http\Controllers\AuthController;
 use Modules\User\Http\Controllers\SystemModuleController;
 use Modules\User\Http\Controllers\UserController;
 use Modules\User\Http\Controllers\UserPermissionController;
+use Modules\User\Http\Controllers\UserProfileController;
 
 Route::prefix('v1')->group(function () {
+    // User profile & security endpoints
+    Route::prefix('user/profile')->middleware(['auth:web,admin'])->group(function () {
+        Route::get('data', [UserProfileController::class, 'data'])->name('api.user.profile.data');
+        Route::put('/', [UserProfileController::class, 'update'])->name('api.user.profile.update');
+        Route::put('password', [UserProfileController::class, 'updatePassword'])->name('api.user.profile.password.update');
+    });
+
     // Authentication endpoints
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register'])->name('user.auth.register');

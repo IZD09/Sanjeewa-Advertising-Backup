@@ -17,6 +17,10 @@ export class GrnPaymentEntity {
     this.grn_id = data.grn_id || data.grnId || this.id || "";
     this.grn_number = data.grn_number || data.grnNumber || (this.grn_id ? (String(this.grn_id).startsWith("GRN-") ? this.grn_id : `GRN-2610-${String(this.grn_id).padStart(3, "0")}`) : "GRN-2610-001");
     this.po_number = data.po_number || data.poNumber || data.purchase_order_no || "-";
+    this.po_numbers = data.po_numbers || data.poNumbers || (data.po_number && data.po_number !== "-" ? String(data.po_number).split(", ") : []);
+    this.po_count = data.po_count || data.poCount || (data.purchase_orders && data.purchase_orders.length) || (data.pos && data.pos.length) || (this.po_numbers.length > 0 ? this.po_numbers.length : 1);
+    this.supplier_invoice = data.supplier_invoice || data.supplierInvoice || data.supplyer_invoice || data.supplier_invoice_no || "";
+    this.pos = data.pos || [];
     this.supplier_id = data.supplier_id || data.supplierId || "";
     this.supplier_name = data.supplier_name || data.supplierName || "Supplier";
     this.stock_category = data.stock_category || data.stockCategory || "Stock Delivery";
@@ -47,6 +51,9 @@ export class GrnPaymentEntity {
     this.grnId = this.grn_id;
     this.grnNumber = this.grn_number;
     this.poNumber = this.po_number;
+    this.poNumbers = this.po_numbers;
+    this.poCount = this.po_count;
+    this.supplierInvoice = this.supplier_invoice;
     this.supplierName = this.supplier_name;
     this.stockCategory = this.stock_category;
     this.totalBill = this.total_bill;
@@ -90,15 +97,25 @@ export class GrnPaymentEntity {
 
     const stagePill = this.renderStageBadge();
     const methodPill = this.renderMethodBadge();
+    const poCountBadge = (this.po_count > 1 || (this.po_numbers && this.po_numbers.length > 1))
+      ? `<span class="grn-po-badge" style="font-size: 10px; padding: 1px 6px; margin-left: 5px;"><i class="fa-solid fa-layer-group" style="margin-right: 3px;"></i>${this.po_count || this.po_numbers.length} POs</span>`
+      : "";
+
     const totalFormatted = this.formatCurrency(this.total_bill);
     const paidFormatted = this.formatCurrency(this.paid_amount);
     const balanceFormatted = this.formatCurrency(this.balance);
     const balanceColor = this.balance > 0 ? "#ef4444" : "var(--text-muted)";
 
+    const displayPoList = (this.po_numbers && this.po_numbers.length > 0) ? this.po_numbers.join(", ") : (this.po_number || "-");
+
     tr.innerHTML = `
       <td>
         <strong style="color: #10b981;">${this.grn_number}</strong>
-        <div style="font-size: 11px; color: var(--text-muted);">PO: ${this.po_number || "-"}</div>
+        ${poCountBadge}
+        <div style="font-size: 11px; color: var(--text-muted);">
+          <i class="fa-solid fa-cart-flatbed" style="margin-right: 3px;"></i>PO: ${displayPoList}
+        </div>
+        ${this.supplier_invoice ? `<div style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-file-invoice" style="margin-right: 3px;"></i>Inv: ${this.supplier_invoice}</div>` : ""}
         <div style="font-size: 11px; color: var(--text-muted);">${this.date}</div>
       </td>
       <td>

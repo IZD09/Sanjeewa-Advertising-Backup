@@ -1,7 +1,7 @@
 <div class="pay-modal-backdrop" id="modalAddExpenseBill">
   <div class="pay-modal-card">
     <div class="pay-modal-header">
-      <h3><i class="fa-solid fa-bolt-lightning" style="color: #f59e0b;"></i> Add Operating Expense Bill (නව බිල්පතක්)</h3>
+      <h3><i class="fa-solid fa-bolt-lightning" style="color: #f59e0b;"></i> Add Operating Expense Bill</h3>
       <button type="button" class="pay-modal-close" data-close-pay-modal aria-label="Close modal">
         <i class="fa-solid fa-xmark"></i>
       </button>
@@ -9,67 +9,73 @@
     <div class="pay-modal-body">
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Expense Category (වියදම් වර්ගය) *</label>
+          <label class="pay-label">Expense Category *</label>
           <select id="modalExpCategory" class="pay-select-field" required>
-            <option value="Electricity" selected>⚡ Electricity (CEB / LECO විදුලි බිල)</option>
-            <option value="Water Board">💧 Water Board (NWSDB ජල බිල)</option>
-            <option value="Internet & Fiber">📶 Internet &amp; Fiber (SLT / Dialog අන්තර්ජාල)</option>
-            <option value="Shop Rent">🏢 Shop / Factory Rent (කුලිය)</option>
-            <option value="Mobile & Telephone">📱 Mobile &amp; Telephone (දුරකථන)</option>
-            <option value="Maintenance & Other">🔧 Machine Maintenance / Other (නඩත්තු)</option>
+            <option value="1" data-name="Electricity Utility" selected>⚡ Electricity Utility</option>
+            <option value="2" data-name="Water Utility">💧 Water Utility</option>
+            <option value="3" data-name="Internet & Telephone">📶 Internet &amp; Telephone</option>
+            <option value="4" data-name="Shop Rent / Lease">🏢 Shop Rent / Lease</option>
+            <option value="5" data-name="Machine Maintenance & Parts">🔧 Machine Maintenance &amp; Parts</option>
+            <option value="6" data-name="Staff Salary & Wages">👥 Staff Salary &amp; Wages</option>
+            <option value="7" data-name="Office Supplies & Stationery">📦 Office Supplies &amp; Stationery</option>
+            <option value="8" data-name="Transportation & Fuel">🚗 Transportation &amp; Fuel</option>
+            <option value="9" data-name="Marketing & Advertising">📢 Marketing &amp; Advertising</option>
+            <option value="10" data-name="Refreshments & Welfare">☕ Refreshments &amp; Welfare</option>
+            <option value="11" data-name="Municipal Taxes & Licenses">🏛️ Municipal Taxes &amp; Licenses</option>
+            <option value="12" data-name="Other Operating Expenses">📋 Other Operating Expenses</option>
           </select>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Billing Month (අදාළ මාසය) *</label>
+          <label class="pay-label">Billing Month *</label>
           <input type="month" id="modalExpMonth" class="pay-input" value="2026-10" required>
         </div>
       </div>
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Bill / Service Title (බිල්පතේ නම) *</label>
+          <label class="pay-label">Bill / Service Title *</label>
           <input type="text" id="modalExpTitle" class="pay-input" placeholder="E.g. CEB 3-Phase Workshop Electricity" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Provider / Institution (ආයතනය)</label>
+          <label class="pay-label">Provider / Institution</label>
           <input type="text" id="modalExpProvider" class="pay-input" placeholder="E.g. Ceylon Electricity Board">
         </div>
       </div>
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Account / Connection Number (ගිණුම් අංකය)</label>
+          <label class="pay-label">Account / Connection Number</label>
           <input type="text" id="modalExpAccountNo" class="pay-input" placeholder="E.g. 042-881-9921">
         </div>
         <div class="pay-field">
-          <label class="pay-label">Due Date (ගෙවිය යුතු අවසන් දිනය) *</label>
+          <label class="pay-label">Due Date *</label>
           <input type="date" id="modalExpDueDate" class="pay-input" required>
         </div>
       </div>
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Bill Amount (බිල්පත් මුදල - Rs.) *</label>
+          <label class="pay-label">Bill Amount (Rs.) *</label>
           <input type="number" id="modalExpAmount" class="pay-input" min="1" step="50" placeholder="0.00" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Initial Status (තත්ත්වය) *</label>
+          <label class="pay-label">Initial Status *</label>
           <select id="modalExpInitialStatus" class="pay-select-field">
-            <option value="Pending" selected>Pending (මාසේ අන්තිමට ගෙවීමට ඇති)</option>
-            <option value="Paid">Paid (දැනටමත් ගෙවා අවසන්)</option>
+            <option value="Pending" selected>Pending (Due at month-end)</option>
+            <option value="Paid">Paid (Already settled)</option>
           </select>
         </div>
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Notes / Meter Reading (සටහන්)</label>
+        <label class="pay-label">Notes / Meter Reading</label>
         <input type="text" id="modalExpNotes" class="pay-input" placeholder="E.g. Meter reading 45,210 units / Press room AC bill">
       </div>
     </div>
     <div class="pay-modal-footer">
       <button type="button" class="po-btn po-btn-secondary" data-close-pay-modal>Cancel</button>
       <button type="button" class="po-btn po-btn-primary" id="btnSaveExpenseBill" style="background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #d97706;">
-        <i class="fa-solid fa-save"></i> Save Bill (බිල්පත සුරකින්න)
+        <i class="fa-solid fa-save"></i> Save Bill
       </button>
     </div>
   </div>

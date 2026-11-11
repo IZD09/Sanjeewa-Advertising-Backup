@@ -52,6 +52,19 @@ class GrnPaymentController extends BaseApiController
     }
 
     /**
+     * Retrieve live available purchase orders and GRN consignments for payment selection.
+     */
+    public function availablePurchaseOrders(Request $request): JsonResponse
+    {
+        $pos = $this->transactionService->getAvailablePurchaseOrders($request->all());
+
+        return $this->success(
+            $pos,
+            'Available purchase orders and consignments retrieved successfully from database.'
+        );
+    }
+
+    /**
      * Retrieve GRN payments data and KPIs for UI views.
      */
     public function grnPaymentsData(Request $request): JsonResponse

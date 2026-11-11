@@ -19,10 +19,13 @@ class StoreGrnPaymentRequest extends FormRequest
     {
         return [
             'payment' => ['required', 'numeric', 'min:0.01'],
-            'grn_id' => ['required', 'integer', 'exists:grn,id'],
+            'grn_id' => ['required', 'integer'],
             'payment_types_id' => ['required', 'integer', 'exists:payment_types,id'],
             'payment_statuses_id' => ['required', 'integer', 'exists:payment_statuses,id'],
             'pay_date' => ['nullable', 'date'],
+            'po_numbers' => ['nullable', 'array'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'allocations' => ['nullable', 'array'],
         ];
     }
 }

@@ -34,7 +34,7 @@
       <div class="pay-title-wrap">
         <h2>
           <i class="fa-solid fa-money-bill-transfer"></i>
-          Payments &amp; Settlements Hub (ගෙවීම් කළමනාකරණය)
+          Payments &amp; Settlements Hub
         </h2>
         <p class="pay-subtitle">
           Three-Channel Settlements: <strong>1. Invoice Payments</strong> (Job Print Orders), <strong>2. GRN Payments</strong> (Stock Purchases) &amp; <strong>3. Operating Expenses</strong> (Monthly Utility Bills)
@@ -163,17 +163,17 @@
           </div>
           <div class="pay-filter-group">
             <select id="payInvoiceStatusFilter" class="pay-select" aria-label="Filter by Stage">
-              <option value="ALL">All Stages (සියලු අවස්ථා)</option>
-              <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
-              <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
-              <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
+              <option value="ALL">All Stages</option>
+              <option value="Complete Payment">Complete Payment</option>
+              <option value="Pending Payment">Pending Payment</option>
+              <option value="Advance Payment">Advance Payment</option>
             </select>
             <select id="payInvoiceMethodFilter" class="pay-select" aria-label="Filter by Method">
-              <option value="ALL">All Methods (සියලු ක්‍රමවේද)</option>
-              <option value="Card">Card (කාඩ්පත්)</option>
-              <option value="Cash">Cash (මුදල්)</option>
-              <option value="Check">Check (චෙක්පත්)</option>
-              <option value="Bank Transfer">Bank Transfer (බැංකු හුවමාරු)</option>
+              <option value="ALL">All Methods</option>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+              <option value="Bank Transfer">Bank Transfer</option>
             </select>
             <button type="button" class="pay-btn-reset" id="payInvoiceResetFilters">
               <i class="fa-solid fa-rotate-left"></i> Reset
@@ -200,6 +200,12 @@
               <tbody id="payInvoiceTableBody">
               </tbody>
             </table>
+          </div>
+
+          <!-- Invoice Payments Pagination -->
+          <div class="po-pagination" id="payInvoicePaginationBar">
+            <div class="pagination-info" id="payInvoicePaginationInfo">Showing 0 invoices</div>
+            <div class="pagination-controls" id="payInvoicePaginationControls"></div>
           </div>
         </div>
       </div>
@@ -292,17 +298,17 @@
           </div>
           <div class="pay-filter-group">
             <select id="payGrnStatusFilter" class="pay-select" aria-label="Filter by Stage">
-              <option value="ALL">All Stages (සියලු අවස්ථා)</option>
-              <option value="Complete Payment">Complete Payment (සම්පූර්ණ ගෙවීම්)</option>
-              <option value="Pending Payment">Pending Payment (පොරොත්තු ගෙවීම්)</option>
-              <option value="Advance Payment">Advance Payment (අත්තිකාරම් ගෙවීම්)</option>
+              <option value="ALL">All Stages</option>
+              <option value="Complete Payment">Complete Payment</option>
+              <option value="Pending Payment">Pending Payment</option>
+              <option value="Advance Payment">Advance Payment</option>
             </select>
             <select id="payGrnMethodFilter" class="pay-select" aria-label="Filter by Method">
-              <option value="ALL">All Methods (සියලු ක්‍රමවේද)</option>
-              <option value="Card">Card (කාඩ්පත්)</option>
-              <option value="Cash">Cash (මුදල්)</option>
-              <option value="Check">Check (චෙක්පත්)</option>
-              <option value="Bank Transfer">Bank Transfer (බැංකු හුවමාරු)</option>
+              <option value="ALL">All Methods</option>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+              <option value="Bank Transfer">Bank Transfer</option>
             </select>
             <button type="button" class="pay-btn-reset" id="payGrnResetFilters">
               <i class="fa-solid fa-rotate-left"></i> Reset
@@ -330,6 +336,12 @@
               </tbody>
             </table>
           </div>
+
+          <!-- GRN Payments Pagination -->
+          <div class="po-pagination" id="payGrnPaginationBar">
+            <div class="pagination-info" id="payGrnPaginationInfo">Showing 0 disbursements</div>
+            <div class="pagination-controls" id="payGrnPaginationControls"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -346,17 +358,17 @@
             <div class="month-selector-label">
               <i class="fa-regular fa-calendar-check" style="color: #f59e0b; font-size: 18px;"></i>
               <div>
-                <strong>මාසික මෙහෙයුම් වියදම් (Monthly Operating Bills)</strong>
+                <strong>Monthly Operating Bills</strong>
                 <span id="expCurrentMonthLabel">Billing Month: October 2026</span>
               </div>
             </div>
             <div class="month-controls">
               <select id="expMonthSelect" class="pay-select" style="min-width: 170px; font-weight: 700;">
-                <option value="2026-10" selected>October 2026 (වත්මන්)</option>
+                <option value="2026-10" selected>October 2026 (Current)</option>
                 <option value="2026-09">September 2026</option>
                 <option value="2026-08">August 2026</option>
                 <option value="2026-11">November 2026</option>
-                <option value="ALL">All Months (සියලු මාස)</option>
+                <option value="ALL">All Months</option>
               </select>
               <button type="button" class="po-btn po-btn-secondary" id="btnExpThisMonth" style="height: 38px; padding: 0 12px; font-size: 12px; border-radius: 8px;">
                 <i class="fa-solid fa-calendar-day"></i> This Month
@@ -386,7 +398,7 @@
 
           <div class="pay-metric-card metric-green">
             <div class="pay-metric-label">
-              <span>Paid Bills (ගෙවා අවසන්)</span>
+              <span>Paid Bills</span>
               <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
             </div>
             <div class="pay-metric-value" id="kpiExpTotalPaid" style="color: #10b981;">Rs. 0.00</div>
@@ -395,7 +407,7 @@
 
           <div class="pay-metric-card metric-amber" style="border-left: 4px solid #ef4444;">
             <div class="pay-metric-label">
-              <span>Due at Month-End (ගෙවීමට ඇති)</span>
+              <span>Due at Month-End</span>
               <i class="fa-solid fa-hourglass-start" style="color: #ef4444;"></i>
             </div>
             <div class="pay-metric-value" id="kpiExpTotalPending" style="color: #ef4444;">Rs. 0.00</div>
@@ -419,7 +431,7 @@
         <!-- Quick Categories Summary Cards -->
         <div class="methods-bar-card" style="background: var(--surface);">
           <div class="methods-bar-top">
-            <span><i class="fa-solid fa-layer-group" style="margin-right: 6px; color: #f59e0b;"></i> Overhead Bills by Category (කාණ්ඩ අනුව වියදම්)</span>
+            <span><i class="fa-solid fa-layer-group" style="margin-right: 6px; color: #f59e0b;"></i> Overhead Bills by Category</span>
             <span style="font-size: 11px; color: var(--text-muted);">Electricity • Water • Internet • Rent • Maintenance</span>
           </div>
           <div class="methods-badges-row">
@@ -469,19 +481,19 @@
           </div>
           <div class="pay-filter-group">
             <select id="payExpenseCategoryFilter" class="pay-select" aria-label="Filter by Category">
-              <option value="ALL">All Categories (සියලු කාණ්ඩ)</option>
-              <option value="Electricity">Electricity (විදුලි බිල්පත්)</option>
-              <option value="Water Board">Water Board (ජල බිල්පත්)</option>
-              <option value="Internet & Fiber">Internet &amp; Fiber (අන්තර්ජාල)</option>
-              <option value="Shop Rent">Shop Rent (කුලිය)</option>
+              <option value="ALL">All Categories</option>
+              <option value="Electricity">Electricity</option>
+              <option value="Water Board">Water Board</option>
+              <option value="Internet & Fiber">Internet &amp; Fiber</option>
+              <option value="Shop Rent">Shop Rent</option>
               <option value="Mobile & Telephone">Mobile &amp; Telephone</option>
               <option value="Maintenance & Other">Maintenance &amp; Other</option>
             </select>
             <select id="payExpenseStatusFilter" class="pay-select" aria-label="Filter by Status">
-              <option value="ALL">All Statuses (සියලු තත්ත්වයන්)</option>
-              <option value="Pending">Pending Only (ගෙවීමට ඇති බිල්පත්)</option>
-              <option value="Paid">Paid Only (ගෙවා අවසන් බිල්පත්)</option>
-              <option value="Overdue">Overdue (කල් ඉකුත් වූ)</option>
+              <option value="ALL">All Statuses</option>
+              <option value="Pending">Pending Only</option>
+              <option value="Paid">Paid Only</option>
+              <option value="Overdue">Overdue</option>
             </select>
             <button type="button" class="pay-btn-reset" id="payExpenseResetFilters">
               <i class="fa-solid fa-rotate-left"></i> Reset
@@ -508,6 +520,12 @@
               <tbody id="payExpenseTableBody">
               </tbody>
             </table>
+          </div>
+
+          <!-- Operating Expenses Pagination -->
+          <div class="po-pagination" id="payExpensePaginationBar">
+            <div class="pagination-info" id="payExpensePaginationInfo">Showing 0 bills</div>
+            <div class="pagination-controls" id="payExpensePaginationControls"></div>
           </div>
         </div>
 
@@ -557,7 +575,7 @@
           </div>
         </div>
 
-            <!-- Dual Structure Explanatory Cards (Sinhala & English Bilingual Concept Guide) -->
+    <!-- Explanatory Cards (Tri-Channel Financial Architecture Guide) -->
     <div class="payments-concept-banner">
       <!-- Part 1: Invoice Payment -->
       <div class="concept-card invoice-concept">
@@ -568,46 +586,46 @@
             </div>
             <div class="concept-heading">
               <h3>1. Invoice Payment</h3>
-              <p>Job / Customer Print Order Payments (Job වලට අදාල payments)</p>
+              <p>Job / Customer Print Order Payments</p>
             </div>
           </div>
           <span class="concept-part-badge">Part 1</span>
         </div>
         <div class="concept-desc-box">
           <i class="fa-solid fa-circle-info" style="color: var(--blue); margin-right: 4px;"></i>
-          <strong>Invoice payment කියන්නේ job වලට අදාල payment වලට.</strong>
+          <strong>Invoice payments refer to settlements received for customer print jobs.</strong>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
             Customer print orders (flex banners, vinyl stickers, lightboxes, leaflets) payments collected from clients.
           </div>
         </div>
         <div class="concept-breakdown-row">
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-flag-checkered"></i> අවස්ථා (Payment Stages) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-flag-checkered"></i> Payment Stages — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip stage-complete" data-filter-type="stage" data-filter-val="Complete Payment" data-target="invoice" title="Filter by Complete Payment (සම්පූර්ණ ගෙවීම්)">
+              <span class="concept-chip stage-complete" data-filter-type="stage" data-filter-val="Complete Payment" data-target="invoice" title="Filter by Complete Payment">
                 <i class="fa-solid fa-circle-check"></i> Complete Payment
               </span>
-              <span class="concept-chip stage-pending" data-filter-type="stage" data-filter-val="Pending Payment" data-target="invoice" title="Filter by Pending Payment (පොරොත්තු ගෙවීම්)">
+              <span class="concept-chip stage-pending" data-filter-type="stage" data-filter-val="Pending Payment" data-target="invoice" title="Filter by Pending Payment">
                 <i class="fa-solid fa-clock"></i> Pending Payment
               </span>
-              <span class="concept-chip stage-advance" data-filter-type="stage" data-filter-val="Advance Payment" data-target="invoice" title="Filter by Advance Payment (අත්තිකාරම් ගෙවීම්)">
+              <span class="concept-chip stage-advance" data-filter-type="stage" data-filter-val="Advance Payment" data-target="invoice" title="Filter by Advance Payment">
                 <i class="fa-solid fa-hourglass-half"></i> Advance Payment
               </span>
             </div>
           </div>
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-wallet"></i> Methods (ක්‍රමවේද) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-wallet"></i> Payment Methods — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip method-card" data-filter-type="method" data-filter-val="Card" data-target="invoice" title="Filter by Card (කාඩ්පත්)">
+              <span class="concept-chip method-card" data-filter-type="method" data-filter-val="Card" data-target="invoice" title="Filter by Card">
                 <i class="fa-solid fa-credit-card"></i> Card
               </span>
-              <span class="concept-chip method-cash" data-filter-type="method" data-filter-val="Cash" data-target="invoice" title="Filter by Cash (මුදල්)">
+              <span class="concept-chip method-cash" data-filter-type="method" data-filter-val="Cash" data-target="invoice" title="Filter by Cash">
                 <i class="fa-solid fa-money-bill-wave"></i> Cash
               </span>
-              <span class="concept-chip method-check" data-filter-type="method" data-filter-val="Check" data-target="invoice" title="Filter by Cheque (චෙක්පත්)">
+              <span class="concept-chip method-check" data-filter-type="method" data-filter-val="Check" data-target="invoice" title="Filter by Cheque">
                 <i class="fa-solid fa-money-check"></i> Check
               </span>
-              <span class="concept-chip method-transfer" data-filter-type="method" data-filter-val="Bank Transfer" data-target="invoice" title="Filter by Bank Transfer (බැංකු හුවමාරු)">
+              <span class="concept-chip method-transfer" data-filter-type="method" data-filter-val="Bank Transfer" data-target="invoice" title="Filter by Bank Transfer">
                 <i class="fa-solid fa-building-columns"></i> Bank Transfer
               </span>
             </div>
@@ -629,46 +647,46 @@
             </div>
             <div class="concept-heading">
               <h3>2. GRN Payment</h3>
-              <p>Stock Item Purchases &amp; Supplier Payments (Stock items payments)</p>
+              <p>Stock Item Purchases &amp; Supplier Payments</p>
             </div>
           </div>
           <span class="concept-part-badge">Part 2</span>
         </div>
         <div class="concept-desc-box">
           <i class="fa-solid fa-circle-info" style="color: #10b981; margin-right: 4px;"></i>
-          <strong>GRN payment කියන්නේ අවශ්‍යකරන stock items ලබා ගැනීමේ දී ආයතනය විසින් සිදු කරනු ලබන payments වලට.</strong>
+          <strong>GRN payments refer to disbursements made by the business for purchasing stock items and raw materials.</strong>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
             Commercial procurement settlements made by the business for procuring inks, paper boards, vinyl rolls, and display hardware.
           </div>
         </div>
         <div class="concept-breakdown-row">
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-flag-checkered"></i> අවස්ථා (Payment Stages) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-flag-checkered"></i> Payment Stages — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip stage-complete" data-filter-type="stage" data-filter-val="Complete Payment" data-target="grn" title="Filter by Complete Payment (සම්පූර්ණ ගෙවීම්)">
+              <span class="concept-chip stage-complete" data-filter-type="stage" data-filter-val="Complete Payment" data-target="grn" title="Filter by Complete Payment">
                 <i class="fa-solid fa-circle-check"></i> Complete Payment
               </span>
-              <span class="concept-chip stage-pending" data-filter-type="stage" data-filter-val="Pending Payment" data-target="grn" title="Filter by Pending Payment (පොරොත්තු ගෙවීම්)">
+              <span class="concept-chip stage-pending" data-filter-type="stage" data-filter-val="Pending Payment" data-target="grn" title="Filter by Pending Payment">
                 <i class="fa-solid fa-clock"></i> Pending Payment
               </span>
-              <span class="concept-chip stage-advance" data-filter-type="stage" data-filter-val="Advance Payment" data-target="grn" title="Filter by Advance Payment (අත්තිකාරම් ගෙවීම්)">
+              <span class="concept-chip stage-advance" data-filter-type="stage" data-filter-val="Advance Payment" data-target="grn" title="Filter by Advance Payment">
                 <i class="fa-solid fa-hourglass-half"></i> Advance Payment
               </span>
             </div>
           </div>
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-wallet"></i> Methods (ක්‍රමවේද) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-wallet"></i> Payment Methods — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip method-card" data-filter-type="method" data-filter-val="Card" data-target="grn" title="Filter by Card (කාඩ්පත්)">
+              <span class="concept-chip method-card" data-filter-type="method" data-filter-val="Card" data-target="grn" title="Filter by Card">
                 <i class="fa-solid fa-credit-card"></i> Card
               </span>
-              <span class="concept-chip method-cash" data-filter-type="method" data-filter-val="Cash" data-target="grn" title="Filter by Cash (මුදල්)">
+              <span class="concept-chip method-cash" data-filter-type="method" data-filter-val="Cash" data-target="grn" title="Filter by Cash">
                 <i class="fa-solid fa-money-bill-wave"></i> Cash
               </span>
-              <span class="concept-chip method-check" data-filter-type="method" data-filter-val="Check" data-target="grn" title="Filter by Cheque (චෙක්පත්)">
+              <span class="concept-chip method-check" data-filter-type="method" data-filter-val="Check" data-target="grn" title="Filter by Cheque">
                 <i class="fa-solid fa-money-check"></i> Check
               </span>
-              <span class="concept-chip method-transfer" data-filter-type="method" data-filter-val="Bank Transfer" data-target="grn" title="Filter by Bank Transfer (බැංකු හුවමාරු)">
+              <span class="concept-chip method-transfer" data-filter-type="method" data-filter-val="Bank Transfer" data-target="grn" title="Filter by Bank Transfer">
                 <i class="fa-solid fa-building-columns"></i> Bank Transfer
               </span>
             </div>
@@ -690,44 +708,44 @@
             </div>
             <div class="concept-heading">
               <h3>3. Operating Expenses</h3>
-              <p>Utility &amp; Monthly Overhead Bills (විදුලි, ජල, ඉන්ටර්නෙට්, කුලී බිල්පත්)</p>
+              <p>Utility &amp; Monthly Overhead Bills (Electricity, Water, Internet, Rent)</p>
             </div>
           </div>
           <span class="concept-part-badge" style="background: rgba(245, 158, 11, 0.12); color: #d97706; border-color: rgba(245, 158, 11, 0.3);">Part 3</span>
         </div>
         <div class="concept-desc-box">
           <i class="fa-solid fa-circle-info" style="color: #f59e0b; margin-right: 4px;"></i>
-          <strong>Operating expenses කියන්නේ මාසේ අන්තිමට ගෙවන්න තියෙන ආයතනික මෙහෙයුම් බිල්පත් වලටයි.</strong>
+          <strong>Operating expenses represent monthly operational overhead bills due at month-end.</strong>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
             Review all utility bills payable at month-end (Electricity, Water, Internet/Fiber, Rent) and mark status as <strong>Paid</strong> once settled.
           </div>
         </div>
         <div class="concept-breakdown-row">
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-tags"></i> බිල්පත් වර්ග (Bill Types) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-tags"></i> Bill Categories — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Electricity" data-target="expenses" title="Filter by Electricity Bills (විදුලි බිල)">
-                <i class="fa-solid fa-bolt-lightning" style="color: #f59e0b;"></i> Electricity (විදුලි)
+              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Electricity" data-target="expenses" title="Filter by Electricity Bills">
+                <i class="fa-solid fa-bolt-lightning" style="color: #f59e0b;"></i> Electricity
               </span>
-              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Water Board" data-target="expenses" title="Filter by Water Board Bills (ජල බිල)">
-                <i class="fa-solid fa-droplet" style="color: #0284c7;"></i> Water Board (ජල)
+              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Water Board" data-target="expenses" title="Filter by Water Board Bills">
+                <i class="fa-solid fa-droplet" style="color: #0284c7;"></i> Water Board
               </span>
-              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Internet & Fiber" data-target="expenses" title="Filter by Internet & Fiber Bills (අන්තර්ජාල)">
+              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Internet & Fiber" data-target="expenses" title="Filter by Internet & Fiber Bills">
                 <i class="fa-solid fa-wifi" style="color: #8b5cf6;"></i> Internet / SLT
               </span>
-              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Shop Rent" data-target="expenses" title="Filter by Shop Rent (කුලිය)">
+              <span class="concept-chip" data-filter-type="expense-category" data-filter-val="Shop Rent" data-target="expenses" title="Filter by Shop Rent">
                 <i class="fa-solid fa-building" style="color: #ec4899;"></i> Shop Rent
               </span>
             </div>
           </div>
           <div>
-            <div class="concept-group-title"><i class="fa-solid fa-clock-rotate-left"></i> තත්ත්වය (Status) — Click to Filter</div>
+            <div class="concept-group-title"><i class="fa-solid fa-clock-rotate-left"></i> Payment Status — Click to Filter</div>
             <div class="concept-chips">
-              <span class="concept-chip stage-pending" data-filter-type="expense-status" data-filter-val="Pending" data-target="expenses" title="Filter by Pending Bills due at Month-End (මාසේ අන්තිමට ගෙවීමට ඇති)">
-                <i class="fa-solid fa-hourglass-start"></i> Pending (ගෙවීමට ඇති)
+              <span class="concept-chip stage-pending" data-filter-type="expense-status" data-filter-val="Pending" data-target="expenses" title="Filter by Pending Bills due at Month-End">
+                <i class="fa-solid fa-hourglass-start"></i> Pending
               </span>
-              <span class="concept-chip stage-complete" data-filter-type="expense-status" data-filter-val="Paid" data-target="expenses" title="Filter by Paid Bills (ගෙවා අවසන්)">
-                <i class="fa-solid fa-circle-check"></i> Paid (ගෙවා අවසන්)
+              <span class="concept-chip stage-complete" data-filter-type="expense-status" data-filter-val="Paid" data-target="expenses" title="Filter by Paid Bills">
+                <i class="fa-solid fa-circle-check"></i> Paid
               </span>
             </div>
           </div>

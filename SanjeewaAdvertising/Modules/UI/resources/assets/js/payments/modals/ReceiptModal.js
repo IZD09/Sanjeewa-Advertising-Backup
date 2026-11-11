@@ -66,6 +66,7 @@ export class ReceiptModal extends BaseModalHandler {
 
     const isInvoice = (type === "invoice");
     const hasMultipleJobs = rec.jobs && Array.isArray(rec.jobs) && rec.jobs.length > 0;
+    const hasMultiplePos = !isInvoice && rec.pos && Array.isArray(rec.pos) && rec.pos.length > 0;
 
     container.innerHTML = `
       <div class="receipt-printable-card">
@@ -76,7 +77,7 @@ export class ReceiptModal extends BaseModalHandler {
           <div style="margin-top: 8px; font-weight: 800; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; color: ${isInvoice ? '#2563eb' : '#059669'};">
             ${isInvoice
               ? (hasMultipleJobs ? `INVOICE PAYMENT RECEIPT (${rec.jobs.length} PRINT JOBS)` : 'INVOICE PAYMENT RECEIPT (JOB SETTLEMENT)')
-              : 'GRN SUPPLIER PAYMENT VOUCHER (STOCK PURCHASE)'}
+              : (hasMultiplePos ? `GRN SUPPLIER PAYMENT VOUCHER (${rec.pos.length} PURCHASE ORDERS)` : 'GRN SUPPLIER PAYMENT VOUCHER (STOCK PURCHASE)')}
           </div>
         </div>
 
@@ -117,6 +118,47 @@ export class ReceiptModal extends BaseModalHandler {
                   </td>
                   <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; color: ${(Number(j.balanceRemaining) || 0) > 0 ? '#ef4444' : '#64748b'};">
                     Rs. ${(Number(j.balanceRemaining) || 0).toLocaleString()}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+        ${hasMultiplePos ? `
+        <div style="margin: 4px 0; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+          <div style="background: #f8fafc; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
+            Itemized Purchase Orders on this GRN (${rec.pos.length} POs):
+          </div>
+          <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f1f5f9; text-align: left; color: #64748b;">
+                <th style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">PO # / Supplier Inv</th>
+                <th style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left;">Supplier / Items</th>
+                <th style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">Total Bill</th>
+                <th style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">Disbursed Now</th>
+                <th style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rec.pos.map(p => `
+                <tr>
+                  <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9;">
+                    <strong style="color: #059669;">${p.poNumber || p.id}</strong>
+                    ${p.supplierInvoice ? `<div style="font-size: 10px; color: #64748b;">Inv: ${p.supplierInvoice}</div>` : ''}
+                  </td>
+                  <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9;">
+                    <div>${p.supplierName}</div>
+                    <div style="font-size: 10px; color: #64748b;">${p.stockCategory}</div>
+                  </td>
+                  <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: right;">
+                    Rs. ${(Number(p.total) || 0).toLocaleString()}
+                  </td>
+                  <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #059669; font-weight: 700;">
+                    Rs. ${(Number(p.allocatedNow) || 0).toLocaleString()}
+                  </td>
+                  <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: right; color: ${(Number(p.balanceRemaining) || 0) > 0 ? '#ef4444' : '#64748b'};">
+                    Rs. ${(Number(p.balanceRemaining) || 0).toLocaleString()}
                   </td>
                 </tr>
               `).join('')}

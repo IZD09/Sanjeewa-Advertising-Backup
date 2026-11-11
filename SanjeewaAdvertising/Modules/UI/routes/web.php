@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Modules\UI\Http\Controllers\DashboardController;
 use Modules\UI\Http\Controllers\UIController;
+use Modules\User\Http\Controllers\UserProfileController;
 use Modules\User\Models\User;
 
 // =========================================================================
@@ -31,6 +32,10 @@ Route::get('/admin/login', function () {
     if (Auth::guard('web')->check()) {
         /** @var User|null $user */
         $user = Auth::guard('web')->user();
+
+        if ($user && ($user->username === 'admin' || session('active_portal') === 'admin')) {
+            return redirect()->route('admin.dashboard');
+        }
 
         return redirect($user && method_exists($user, 'getDefaultLandingRoute') ? $user->getDefaultLandingRoute() : route('ui.dashboard'));
     }
@@ -95,6 +100,11 @@ Route::middleware(['auth:web,admin'])->group(function () {
     Route::view('/admin/profile', 'ui::layouts.admin.pages.profile.profile')
         ->middleware('module.permission:User Control')
         ->name('admin.profile.view');
+
+    Route::get('/profile', [UserProfileController::class, 'index'])
+        ->name('ui.user-profile');
+
+    Route::get('/user/profile', fn () => redirect()->route('ui.user-profile'));
 
     Route::get('/user-control', fn () => redirect()->route('admin.user-control'));
 
