@@ -1,14 +1,18 @@
 {
-  "_BaseModalHandler-DQhuuqGK.js": {
-    "file": "assets/BaseModalHandler-DQhuuqGK.js",
-    "name": "BaseModalHandler",
-    "imports": [
-      "_BasePaginationHandler-CxkMXfSO.js"
-    ]
+  "_BaseModalHandler-BnBgy0Wh.js": {
+    "file": "assets/BaseModalHandler-BnBgy0Wh.js",
+    "name": "BaseModalHandler"
   },
   "_BasePaginationHandler-CxkMXfSO.js": {
     "file": "assets/BasePaginationHandler-CxkMXfSO.js",
     "name": "BasePaginationHandler"
+  },
+  "_BaseTableLoader-DB2dbnJ4.js": {
+    "file": "assets/BaseTableLoader-DB2dbnJ4.js",
+    "name": "BaseTableLoader",
+    "imports": [
+      "_BasePaginationHandler-CxkMXfSO.js"
+    ]
   },
   "_BaseTableRowBuilder-CrSEebSa.js": {
     "file": "assets/BaseTableRowBuilder-CrSEebSa.js",
@@ -134,6 +138,15 @@
     "src": "resources/assets/css/place-order.css",
     "isEntry": true
   },
+  "resources/assets/css/reports.css": {
+    "file": "assets/reports-BtkKOyUt.css",
+    "name": "reports",
+    "names": [
+      "reports.css"
+    ],
+    "src": "resources/assets/css/reports.css",
+    "isEntry": true
+  },
   "resources/assets/css/user-profile.css": {
     "file": "assets/user-profile-D80BtEX9.css",
     "name": "user-profile",
@@ -209,13 +222,14 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-B3tBO_L6.js",
+    "file": "assets/core-CTKVjRIH.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
+      "_BaseModalHandler-BnBgy0Wh.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
@@ -242,24 +256,26 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-tHlMS7oU.js",
+    "file": "assets/grn-BoJMtubm.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
+      "_BaseModalHandler-BnBgy0Wh.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-FPUaxgVl.js",
+    "file": "assets/inventory-Cuz_ZwQh.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
+      "_BaseModalHandler-BnBgy0Wh.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
       "_RequestHandler-DGIgTA7N.js"
@@ -276,24 +292,26 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-CThpUNtE.js",
+    "file": "assets/payments-DvOCjaIQ.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
+      "_BaseModalHandler-BnBgy0Wh.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-Ctv016S2.js",
+    "file": "assets/place-order-DF65Q8RU.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_BaseModalHandler-DQhuuqGK.js",
+      "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
+      "_BaseModalHandler-BnBgy0Wh.js",
       "_RequestHandler-DGIgTA7N.js"
     ]
   },
@@ -316,6 +334,17 @@
     "imports": [
       "resources/assets/js/profile.js",
       "resources/assets/js/profile.js"
+    ]
+  },
+  "resources/assets/js/reports.js": {
+    "file": "assets/reports-BMbGmlzH.js",
+    "name": "reports",
+    "src": "resources/assets/js/reports.js",
+    "isEntry": true,
+    "imports": [
+      "_BaseTableLoader-DB2dbnJ4.js",
+      "_BaseTableRowBuilder-CrSEebSa.js",
+      "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/sass/app.scss": {

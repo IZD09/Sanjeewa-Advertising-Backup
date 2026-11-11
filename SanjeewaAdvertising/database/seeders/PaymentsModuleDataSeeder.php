@@ -202,5 +202,18 @@ class PaymentsModuleDataSeeder extends Seeder
                 ],
             ]);
         }
+
+        // 5. Seed Purchase Orders and link to GRNs if empty
+        if (DB::table('purchase_orders')->count() === 0) {
+            DB::table('purchase_orders')->insert([
+                ['id' => 1, 'add_date' => '2026-10-08 09:00:00', 'suppliers_id' => 1],
+                ['id' => 2, 'add_date' => '2026-10-20 10:00:00', 'suppliers_id' => 2],
+                ['id' => 3, 'add_date' => '2026-10-22 11:30:00', 'suppliers_id' => 3],
+            ]);
+            DB::table('grn_has_puches_order')->insert([
+                ['grn_id' => 101, 'purchase_orders_id' => 1, 'supplyer_invoice' => 'INV-PP-8821'],
+                ['grn_id' => 102, 'purchase_orders_id' => 2, 'supplyer_invoice' => 'INV-LV-9412'],
+            ]);
+        }
     }
 }
