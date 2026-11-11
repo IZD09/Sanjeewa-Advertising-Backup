@@ -31,6 +31,9 @@ class DatabaseSeeder extends Seeder
             ActivityTypeSeeder::class,
             SystemModuleSeeder::class,
             DefaultAdminSeeder::class,
+            CustomerSeeder::class,
+            StockMovementSeeder::class,
+            PrintJobSeeder::class,
         ]);
     }
 }
