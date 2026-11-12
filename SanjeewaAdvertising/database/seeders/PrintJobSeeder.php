@@ -48,12 +48,19 @@ class PrintJobSeeder extends Seeder
             $daysAgo = rand(0, 30);
             $addDate = now()->subDays($daysAgo);
 
+            $wtdth = rand(2, 12);
+            $hight = rand(2, 8);
+
             $job = PrintJob::create([
                 'users_id' => $user->id,
                 'customer_id' => $customer->id,
                 'print_types_id' => $printType->id,
                 'add_date' => $addDate,
                 'qty' => $qty,
+                'wtdth' => $wtdth,
+                'hight' => $hight,
+                'unit_id' => 1,
+                'delivery_method_id' => rand(1, 2),
             ]);
 
             $statusId = $statuses[array_rand($statuses)];

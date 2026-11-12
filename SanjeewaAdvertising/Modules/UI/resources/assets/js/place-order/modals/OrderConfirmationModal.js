@@ -32,12 +32,8 @@ export class OrderConfirmationModal extends BaseModalHandler {
   }
 
   bindEvents() {
-    const confirmBtn = document.getElementById("confirmPlaceOrderBtn");
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", () => {
-        if (this.ctx.saveNewOrder) this.ctx.saveNewOrder();
-      });
-    }
+    // Note: #confirmPlaceOrderBtn event handling is centrally owned by PlaceOrderProcess
+    // to prevent duplicate order submissions.
   }
 
   openOrderConfirmation() {

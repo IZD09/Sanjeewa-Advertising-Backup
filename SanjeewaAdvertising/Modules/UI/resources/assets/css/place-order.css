@@ -360,6 +360,11 @@ html[data-theme="dark"] .po-header-banner {
     border-radius: 9px;
 }
 
+#poPaymentMethodGroup.highlight-payment-active select {
+    border-color: #52c41a !important;
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2) !important;
+}
+
 .po-payment-right {
     display: flex;
     flex-direction: column;
@@ -443,16 +448,44 @@ html[data-theme="dark"] .po-header-banner {
 }
 
 .customer-search-input-group .po-input {
-    padding-left: 34px;
-    padding-right: 76px;
+    padding-left: 36px;
+    padding-right: 115px;
 }
 
-.customer-search-input-group .add-cust-btn {
+.customer-search-input-group .combo-actions {
     position: absolute;
     right: 5px;
     top: 5px;
     bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.customer-search-input-group .combo-arrow-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 11px;
+    transition: all 0.15s ease;
+}
+
+.customer-search-input-group .combo-arrow-btn:hover {
+    background: var(--surface-hover);
+    color: var(--po-primary);
+    border-color: var(--border);
+}
+
+.customer-search-input-group .add-cust-btn {
     padding: 0 10px;
+    height: 28px;
     border-radius: 5px;
     background: var(--po-primary-subtle);
     border: 1px solid var(--po-primary-border);
@@ -468,6 +501,18 @@ html[data-theme="dark"] .po-header-banner {
 .customer-search-input-group .add-cust-btn:hover {
     background: var(--po-primary);
     color: #ffffff;
+}
+
+.customer-dropdown-header {
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--surface-subtle);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .customer-dropdown-menu {
@@ -860,14 +905,17 @@ html[data-theme="dark"] .po-header-banner {
 }
 .status-badge.paid::before { background: var(--green); }
 
-.status-badge.partially-paid {
+.status-badge.partially-paid,
+.status-badge.partial {
     background: #fffbe6;
     color: #faad14;
     border: 1px solid #ffe58f;
 }
-.status-badge.partially-paid::before { background: #faad14; }
+.status-badge.partially-paid::before,
+.status-badge.partial::before { background: #faad14; }
 
-html[data-theme="dark"] .status-badge.partially-paid {
+html[data-theme="dark"] .status-badge.partially-paid,
+html[data-theme="dark"] .status-badge.partial {
     background: rgba(250, 173, 20, 0.15);
     border-color: rgba(250, 173, 20, 0.35);
     color: #ffc53d;

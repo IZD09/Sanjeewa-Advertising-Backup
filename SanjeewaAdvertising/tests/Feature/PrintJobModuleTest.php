@@ -6,8 +6,12 @@ use Modules\Customer\Models\Customer;
 use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintCostType;
 use Modules\Design\Models\PrintType;
+use Modules\PrintJob\Models\DeliveryMethod;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\PrintJob\Models\PrintJobStatus;
+use Modules\PrintJob\Models\Unit;
+use Modules\Transaction\Models\PaymentStatus;
+use Modules\Transaction\Models\PaymentType;
 use Modules\User\Models\User;
 use Modules\User\Models\UserStatus;
 use Tests\TestCase;
@@ -59,6 +63,11 @@ class PrintJobModuleTest extends TestCase
         $this->status = PrintJobStatus::firstOrCreate(
             ['print_job_states' => 'Designing']
         );
+
+        PaymentType::firstOrCreate(['id' => 1], ['payment_type' => 'Cash']);
+        PaymentStatus::firstOrCreate(['id' => 1], ['payment_status' => 'Pending']);
+        PaymentStatus::firstOrCreate(['id' => 2], ['payment_status' => 'Completed']);
+        PaymentStatus::firstOrCreate(['id' => 3], ['payment_status' => 'Partial']);
     }
 
     public function test_can_create_print_job(): void
@@ -328,5 +337,229 @@ class PrintJobModuleTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    public function test_can_create_print_job_with_dimensions_and_unit(): void
+    {
+        $unit = Unit::firstOrCreate(
+            ['id' => 1],
+            ['simble' => 'ft', 'name' => 'Feet']
+        );
+
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 3,
+            'wtdth' => 12,
+            'hight' => 8,
+            'unit_id' => $unit->id,
+            'print_job_statuses_id' => $this->status->id,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Print job created successfully.',
+            ]);
+
+        $this->assertDatabaseHas('print_jobs', [
+            'customer_id' => $this->customer->id,
+            'qty' => 3,
+            'wtdth' => 12,
+            'hight' => 8,
+            'unit_id' => $unit->id,
+        ]);
+
+        $job = PrintJob::where('customer_id', $this->customer->id)->where('qty', 3)->latest('id')->first();
+        $this->assertNotNull($job);
+        $this->assertEquals(12, $job->wtdth);
+        $this->assertEquals(8, $job->hight);
+        $this->assertEquals('ft', $job->unit->simble);
+    }
+
+    public function test_can_create_order_with_advance_payment_and_payment_method(): void
+    {
+        PaymentStatus::firstOrCreate(
+            ['id' => 2],
+            ['payment_status' => 'Completed']
+        );
+
+        $unit = Unit::firstOrCreate(
+            ['id' => 1],
+            ['simble' => 'ft', 'name' => 'Feet']
+        );
+
+        $paymentType = PaymentType::firstOrCreate(
+            ['id' => 1],
+            ['payment_type' => 'Cash']
+        );
+
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 2,
+            'wtdth' => 10,
+            'hight' => 4,
+            'unit_id' => $unit->id,
+            'unit_price' => 150.00,
+            'discount' => 100.00,
+            'paid_amount' => 500.00,
+            'payment_types_id' => $paymentType->id,
+            'print_job_statuses_id' => $this->status->id,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Print job created successfully.',
+            ]);
+
+        $job = PrintJob::where('customer_id', $this->customer->id)->where('qty', 2)->latest('id')->first();
+        $this->assertNotNull($job);
+        $this->assertEquals(10, $job->wtdth);
+        $this->assertEquals(4, $job->hight);
+
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $job->id,
+            'payment' => 500.00,
+            'payment_types_id' => $paymentType->id,
+        ]);
+    }
+
+    public function test_can_create_order_with_delivery_method(): void
+    {
+        $deliveryMethod = DeliveryMethod::firstOrCreate(
+            ['id' => 2],
+            ['methord' => 'Courier Delivery']
+        );
+
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 5,
+            'wtdth' => 8,
+            'hight' => 4,
+            'delivery_method_id' => $deliveryMethod->id,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.delivery_method_id', $deliveryMethod->id);
+
+        $job = PrintJob::where('customer_id', $this->customer->id)->where('qty', 5)->latest('id')->first();
+        $this->assertNotNull($job);
+        $this->assertEquals($deliveryMethod->id, $job->delivery_method_id);
+        $this->assertEquals('Courier Delivery', $job->deliveryMethod->methord);
+    }
+
+    public function test_order_creation_saves_pending_payment_status_when_unpaid(): void
+    {
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 1,
+            'wtdth' => 10,
+            'hight' => 4,
+            'unit_price' => 100.00,
+            'paid_amount' => 0.00,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response->assertStatus(201);
+
+        $jobId = $response->json('data.id');
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $jobId,
+            'payment' => 0.00,
+            'payment_statuses_id' => 1, // Pending
+        ]);
+    }
+
+    public function test_order_creation_saves_partial_payment_status_when_partially_paid(): void
+    {
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 1,
+            'wtdth' => 10,
+            'hight' => 4,
+            'unit_price' => 100.00,
+            'total_amount' => 4000.00,
+            'paid_amount' => 1000.00,
+            'payment_types_id' => 1,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response->assertStatus(201);
+
+        $jobId = $response->json('data.id');
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $jobId,
+            'payment' => 1000.00,
+            'payment_statuses_id' => 3, // Partial
+        ]);
+    }
+
+    public function test_order_creation_saves_completed_payment_status_when_fully_paid(): void
+    {
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 1,
+            'wtdth' => 10,
+            'hight' => 4,
+            'unit_price' => 100.00,
+            'total_amount' => 4000.00,
+            'paid_amount' => 4000.00,
+            'payment_types_id' => 1,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response->assertStatus(201);
+
+        $jobId = $response->json('data.id');
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $jobId,
+            'payment' => 4000.00,
+            'payment_statuses_id' => 2, // Completed
+        ]);
+    }
+
+    public function test_order_creation_saves_explicit_payment_status(): void
+    {
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 1,
+            'wtdth' => 10,
+            'hight' => 4,
+            'unit_price' => 100.00,
+            'total_amount' => 4000.00,
+            'paid_amount' => 500.00,
+            'payment_types_id' => 1,
+            'payment_statuses_id' => 2, // Manually marked as completed
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response->assertStatus(201);
+
+        $jobId = $response->json('data.id');
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $jobId,
+            'payment' => 500.00,
+            'payment_statuses_id' => 2,
+        ]);
     }
 }

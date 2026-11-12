@@ -208,6 +208,20 @@ class PlaceOrderManager {
     this.orderPlacementProcess.setProducts(this.products);
     if (this.orderModalHandler.setProducts) this.orderModalHandler.setProducts(this.products);
 
+    // Populate Order Creation Form dropdowns from database
+    this.orderPlacementProcess.populateDropdownsFromDatabase({
+      printTypes: data.printTypes,
+      units: data.units,
+      paymentTypes: data.paymentTypes,
+      statuses: data.statuses,
+      deliveryMethods: data.deliveryMethods,
+      users: data.users,
+    });
+
+    if (this.filterProcess && Array.isArray(data.statuses)) {
+      this.filterProcess.populateStatuses(data.statuses);
+    }
+
     // 2. Setup pickers and event listeners
     this.setupDatePickers();
     this.bindEvents();
@@ -228,7 +242,13 @@ class PlaceOrderManager {
   }
 
   updateCalculation() {
-    return this.orderPlacementProcess.updateCalculation();
+    if (this.orderPlacementProcess && typeof this.orderPlacementProcess.updateCalculation === "function") {
+      return this.orderPlacementProcess.updateCalculation();
+    }
+    if (this.pricingCalculator) {
+      return this.pricingCalculator.calculateMainForm();
+    }
+    return null;
   }
 
   resetForm() {

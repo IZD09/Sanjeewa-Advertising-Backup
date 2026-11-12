@@ -21,9 +21,11 @@
         <div class="info-item"><span class="info-label">Dimensions & Quantity</span><span class="info-value" id="confSpecs">-</span></div>
         <div class="info-item"><span class="info-label">Total Amount</span><span class="info-value" id="confTotal" style="color: var(--text);">-</span></div>
         <div class="info-item"><span class="info-label">Advance Deposit</span><span class="info-value" id="confPaid" style="color: var(--green);">-</span></div>
+        <div class="info-item" id="confPaymentMethodRow" style="display: none;"><span class="info-label">Payment Method</span><span class="info-value" id="confPaymentMethod" style="color: var(--po-primary, #1677ff); font-weight: 700;">-</span></div>
         <div class="info-item"><span class="info-label">Remaining Balance</span><span class="info-value" id="confBalance" style="color: var(--po-orange);">-</span></div>
         <div class="info-item"><span class="info-label">Payment Status</span><span class="info-value" id="confStatus">-</span></div>
         <div class="info-item"><span class="info-label">Required Deadline</span><span class="info-value" id="confDeadline">-</span></div>
+        <div class="info-item"><span class="info-label">Delivery Method</span><span class="info-value" id="confDeliveryMethod">-</span></div>
       </div>
     </div>
     <div class="po-modal-footer">

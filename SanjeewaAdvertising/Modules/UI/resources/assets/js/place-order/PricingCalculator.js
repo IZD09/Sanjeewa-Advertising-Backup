@@ -29,15 +29,31 @@ export class PricingCalculator {
       return 0;
     }
 
-    switch (unit) {
+    const u = String(unit || "").toLowerCase().trim();
+
+    switch (u) {
       case "feet":
+      case "ft":
+      case "1":
         return width * height;
       case "inches":
+      case "in":
+      case "2":
         return (width * height) / 144;
       case "cm":
+      case "3":
         return (width * height) / 929.0304;
       case "mm":
+      case "4":
         return (width * height) / 92903.04;
+      case "m":
+      case "meters":
+      case "5":
+        return (width * height) * 10.7639;
+      case "pcs":
+      case "pieces":
+      case "6":
+        return 1;
       default:
         return width * height;
     }
@@ -52,44 +68,46 @@ export class PricingCalculator {
    *   balanceAmount: number,
    *   paymentStatus: string,
    *   areaSqFt: number,
-   *   qty: number
+   *   qty: number,
+   *   discount: number,
+   *   subtotal: number
    * }}
    */
   calculateMainForm() {
-    const prodKey = document.getElementById("poProductType")?.value || "flex_normal";
     const width = parseFloat(document.getElementById("poWidth")?.value) || 0;
     const height = parseFloat(document.getElementById("poHeight")?.value) || 0;
-    const unit = document.getElementById("poUnit")?.value || "feet";
+    const unitEl = document.getElementById("poUnit");
+    const unitVal = unitEl?.value || "1";
+    const unitSymbol = unitEl?.selectedOptions?.[0]?.getAttribute("data-symbol") || "ft";
     const qty = parseInt(document.getElementById("poQty")?.value, 10) || 1;
     const unitPrice = parseFloat(document.getElementById("poUnitPrice")?.value) || 0;
+    const discount = parseFloat(document.getElementById("poDiscount")?.value) || 0;
     const designStatus = document.getElementById("poDesignStatus")?.value || "Customer Provides Design";
     let paidAmount = parseFloat(document.getElementById("poPaidAmount")?.value) || 0;
 
-    const prod = this.products[prodKey] || this.products.flex_normal || { category: "area", unitPrice: 95.00 };
-    let totalAmount = 0;
     let areaSqFt = 0;
+    let subtotal = 0;
 
-    if (prod.category === "area") {
-      areaSqFt = this.calculateAreaInSqFt(width, height, unit);
-      totalAmount = areaSqFt * unitPrice * qty;
+    if (unitSymbol === "pcs" || unitVal === "6") {
+      subtotal = qty * unitPrice;
     } else {
-      totalAmount = qty * unitPrice;
+      areaSqFt = this.calculateAreaInSqFt(width, height, unitSymbol || unitVal);
+      subtotal = areaSqFt * unitPrice * qty;
     }
 
-    // Add optional shop design fee if requested
+    // Optional design fee
+    let designFee = 0;
     if (designStatus === "Shop Creates Design") {
-      totalAmount += 500.00;
+      designFee = 500.00;
     }
 
-    // Rounding
-    totalAmount = Math.max(0, Math.round(totalAmount * 100) / 100);
+    // Round subtotal
+    subtotal = Math.round(subtotal * 100) / 100;
 
-    // Prevent paidAmount exceeding totalAmount or falling below 0
-    if (paidAmount > totalAmount) {
-      paidAmount = totalAmount;
-      const paidInput = document.getElementById("poPaidAmount");
-      if (paidInput) paidInput.value = totalAmount.toFixed(2);
-    }
+    // Total Amount = max(0, subtotal + designFee - discount)
+    let totalAmount = Math.max(0, Math.round((subtotal + designFee - discount) * 100) / 100);
+
+    // Validate paid amount
     if (paidAmount < 0) {
       paidAmount = 0;
       const paidInput = document.getElementById("poPaidAmount");
@@ -100,31 +118,48 @@ export class PricingCalculator {
 
     let paymentStatus = "Unpaid";
     let statusClass = "unpaid";
+    let paymentStatusId = 1; // Pending
     if (paidAmount >= totalAmount && totalAmount > 0) {
       paymentStatus = "Paid";
       statusClass = "paid";
+      paymentStatusId = 2; // Completed
     } else if (paidAmount > 0 && balanceAmount > 0) {
       paymentStatus = "Partially Paid";
       statusClass = "partially-paid";
+      paymentStatusId = 3; // Partial
+    }
+
+    // Sync poPaymentStatus dropdown if present
+    const payStatusSelect = document.getElementById("poPaymentStatus");
+    if (payStatusSelect && !payStatusSelect.dataset.manualOverride) {
+      payStatusSelect.value = String(paymentStatusId);
     }
 
     // Update UI elements
     const areaValElem = document.getElementById("liveAreaVal");
     const totalElem = document.getElementById("liveTotalAmount");
+    const paidElem = document.getElementById("livePaidAmount");
     const balanceElem = document.getElementById("liveBalanceAmount");
     const statusElem = document.getElementById("livePaymentStatus");
     const designFeeElem = document.getElementById("liveDesignFeeNotice");
 
     if (areaValElem) {
-      if (prod.category === "area") {
-        areaValElem.textContent = `${areaSqFt.toFixed(2)} sq.ft (${(areaSqFt * qty).toFixed(2)} total)`;
+      if (unitSymbol === "pcs" || unitVal === "6") {
+        areaValElem.textContent = `${qty} pcs`;
       } else {
-        areaValElem.textContent = `Unit Item (${qty} pcs)`;
+        areaValElem.textContent = `${areaSqFt.toFixed(2)} sq.ft (${(areaSqFt * qty).toFixed(2)} total)`;
       }
     }
 
-    if (totalElem) totalElem.textContent = `Rs. ${totalAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
-    if (balanceElem) balanceElem.textContent = `Rs. ${balanceAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+    if (totalElem) {
+      totalElem.textContent = `Rs. ${totalAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+    }
+    if (paidElem) {
+      paidElem.textContent = `Rs. ${paidAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+    }
+    if (balanceElem) {
+      balanceElem.textContent = `Rs. ${balanceAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+    }
     if (statusElem) {
       statusElem.textContent = paymentStatus;
       statusElem.className = `status-badge ${statusClass}`;
@@ -134,7 +169,25 @@ export class PricingCalculator {
       designFeeElem.style.display = (designStatus === "Shop Creates Design") ? "block" : "none";
     }
 
-    return { totalAmount, paidAmount, balanceAmount, paymentStatus, areaSqFt, qty };
+    // Toggle payment method requirement
+    const payMethodGroup = document.getElementById("poPaymentMethodGroup");
+    const payMethodReq = document.getElementById("poPaymentMethodReq");
+    const payMethodSelect = document.getElementById("poPaymentMethod");
+    const payNotice = document.getElementById("poPaymentNotice");
+
+    if (paidAmount > 0) {
+      if (payMethodGroup) payMethodGroup.classList.add("highlight-payment-active");
+      if (payMethodReq) payMethodReq.style.display = "inline";
+      if (payNotice) payNotice.style.display = "flex";
+      if (payMethodSelect) payMethodSelect.required = true;
+    } else {
+      if (payMethodGroup) payMethodGroup.classList.remove("highlight-payment-active");
+      if (payMethodReq) payMethodReq.style.display = "none";
+      if (payNotice) payNotice.style.display = "none";
+      if (payMethodSelect) payMethodSelect.required = false;
+    }
+
+    return { totalAmount, paidAmount, balanceAmount, paymentStatus, paymentStatusId, areaSqFt, qty, discount, subtotal };
   }
 
   /**

@@ -86,6 +86,10 @@ export class BaseModalHandler {
     const modal = this.getModalElement(modalIdOrEl);
     if (!modal) return null;
 
+    if (document.activeElement && modal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
     modal.classList.remove(this.activeModalClass);
     modal.setAttribute("aria-hidden", "true");
 

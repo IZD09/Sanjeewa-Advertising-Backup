@@ -81,4 +81,12 @@ class Payment extends Model
     {
         return $this->belongsTo(PaymentStatus::class, 'payment_statuses_id', 'id');
     }
+
+    /**
+     * Get the payment status (alias for paymentStatus).
+     */
+    public function status(): BelongsTo
+    {
+        return $this->paymentStatus();
+    }
 }

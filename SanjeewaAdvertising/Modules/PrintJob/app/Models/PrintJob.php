@@ -48,6 +48,10 @@ class PrintJob extends Model
         'print_types_id',
         'add_date',
         'qty',
+        'wtdth',
+        'hight',
+        'unit_id',
+        'delivery_method_id',
     ];
 
     /**
@@ -63,7 +67,27 @@ class PrintJob extends Model
             'print_types_id' => 'integer',
             'add_date' => 'datetime',
             'qty' => 'integer',
+            'wtdth' => 'integer',
+            'hight' => 'integer',
+            'unit_id' => 'integer',
+            'delivery_method_id' => 'integer',
         ];
+    }
+
+    /**
+     * Get the unit of measurement for this job's dimensions.
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
+
+    /**
+     * Get the delivery method for this print job.
+     */
+    public function deliveryMethod(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryMethod::class, 'delivery_method_id', 'id');
     }
 
     /**

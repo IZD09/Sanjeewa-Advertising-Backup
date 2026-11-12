@@ -126,7 +126,12 @@ export class AddPaymentModal extends BaseModalHandler {
     }
 
     // Recalculate order totals
-    const orderPayments = payments.filter(p => p.orderId === this.currentContextOrder.id && p.status === "Successful");
+    const orderPayments = payments.filter(p => {
+      if (p.orderId !== this.currentContextOrder.id) return false;
+      const amt = parseFloat(p.amount) || 0;
+      const st = String(p.status || "").toLowerCase();
+      return amt > 0 && st !== "failed" && st !== "reversed";
+    });
     const totalPaid = orderPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
     this.currentContextOrder.paidAmount = Math.round(totalPaid * 100) / 100;
     this.currentContextOrder.balanceAmount = Math.max(0, Math.round((this.currentContextOrder.totalAmount - this.currentContextOrder.paidAmount) * 100) / 100);

@@ -57,17 +57,32 @@ export class PaymentHandler {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    const orderPayments = (payments || []).filter(p => p.orderId === orderId && p.status === "Successful");
-    const totalPaid = orderPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const matchingPayments = (payments || []).filter(p => p.orderId === orderId);
+    if (matchingPayments.length === 0) {
+      // Do not overwrite backend calculated totals and status if no payments list is available
+      return;
+    }
+
+    const validPayments = matchingPayments.filter(p => {
+      const amt = parseFloat(p.amount) || 0;
+      if (amt <= 0) return false;
+      const st = String(p.status || "").toLowerCase().trim();
+      return st !== "failed" && st !== "reversed";
+    });
+
+    const totalPaid = validPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const totalAmount = parseFloat(order.totalAmount) || 0;
 
     if (typeof order.recalculateBalance === "function") {
       order.recalculateBalance(totalPaid);
     } else {
       order.paidAmount = Math.round(totalPaid * 100) / 100;
-      order.balanceAmount = Math.max(0, Math.round((order.totalAmount - order.paidAmount) * 100) / 100);
-      if (order.paidAmount >= order.totalAmount && order.totalAmount > 0) {
+      order.balanceAmount = Math.max(0, Math.round((totalAmount - order.paidAmount) * 100) / 100);
+      if (order.paidAmount >= totalAmount && totalAmount > 0) {
         order.paymentStatus = "Paid";
       } else if (order.paidAmount > 0 && order.balanceAmount > 0) {
+        order.paymentStatus = "Partially Paid";
+      } else if (order.paidAmount > 0) {
         order.paymentStatus = "Partially Paid";
       } else {
         order.paymentStatus = "Unpaid";
@@ -244,20 +259,31 @@ export class PaymentHandler {
         const tr = document.createElement("tr");
         if (p.status === "Reversed") tr.className = "reversed-row";
 
+        const isReversed = String(p.status || "").toLowerCase() === "reversed";
+        const isFailed = String(p.status || "").toLowerCase() === "failed";
+        const isSuccess = !isReversed && !isFailed && (parseFloat(p.amount) || 0) > 0;
+        const statusText = String(p.status || "Pending").trim();
+        let badgeClass = "paid";
+        if (isReversed || isFailed) {
+          badgeClass = "unpaid";
+        } else if (statusText.toLowerCase() === "partial") {
+          badgeClass = "partially-paid";
+        }
+
         tr.innerHTML = `
           <td><strong>${p.paymentId}</strong></td>
           <td>#${p.installmentNo}</td>
           <td>${p.date}</td>
-          <td style="font-weight: 700; color: ${p.status === 'Successful' ? 'var(--green)' : 'var(--red)'};">
+          <td style="font-weight: 700; color: ${isSuccess ? 'var(--green)' : 'var(--red)'};">
             Rs. ${Number(p.amount).toLocaleString("en-LK", { minimumFractionDigits: 2 })}
           </td>
           <td>${p.method}</td>
           <td>${p.receivedBy}</td>
-          <td><span class="status-badge ${p.status === 'Successful' ? 'paid' : 'unpaid'}">${p.status}</span></td>
+          <td><span class="status-badge ${badgeClass}">${statusText}</span></td>
           <td>${p.ref || "-"}</td>
           <td>
             <div class="po-action-group">
-              ${p.status === 'Successful' ? `
+              ${isSuccess ? `
                 <button class="action-btn print-action" title="Print Receipt" onclick="window.placeOrderApp.printSpecificReceipt('${p.paymentId}')">
                   <i class="fa-solid fa-print"></i>
                 </button>
@@ -265,7 +291,7 @@ export class PaymentHandler {
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
               ` : `
-                <span style="font-size: 10px; color: var(--red); font-weight: 700;">Reversed</span>
+                <span style="font-size: 10px; color: var(--red); font-weight: 700;">${statusText}</span>
               `}
             </div>
           </td>
@@ -326,7 +352,12 @@ export class PaymentHandler {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    const successfulPayments = (payments || []).filter(p => p.orderId === orderId && p.status === "Successful");
+    const successfulPayments = (payments || []).filter(p => {
+      if (p.orderId !== orderId) return false;
+      const amt = parseFloat(p.amount) || 0;
+      const st = String(p.status || "").toLowerCase();
+      return amt > 0 && st !== "failed" && st !== "reversed";
+    });
     if (successfulPayments.length === 0) {
       this.showToast("No successful payments found to generate receipt", "warning");
       return;

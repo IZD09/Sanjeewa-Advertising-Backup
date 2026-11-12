@@ -177,9 +177,9 @@
                   </table>
                 </div>
 
-                <!-- GRN Table Pagination -->
-                <div class="grn-pagination-bar">
-                  <div class="grn-pagination-info" id="grnPaginationInfo">Showing 0 records</div>
+                <!-- GRN Table Pagination (Visible only when results > 20) -->
+                <div class="grn-pagination-bar" id="grnPaginationBar" style="display: none;">
+                  <div class="grn-pagination-info" id="grnPaginationInfo"></div>
                   <div class="grn-pagination-controls" id="grnPaginationControls"></div>
                 </div>
               </div>
@@ -421,9 +421,9 @@
                   </table>
                 </div>
 
-                <!-- PO Table Pagination -->
-                <div class="grn-pagination-bar">
-                  <div class="grn-pagination-info" id="poPaginationInfo">Showing 0 records</div>
+                <!-- PO Table Pagination (Visible only when results > 20) -->
+                <div class="grn-pagination-bar" id="poPaginationBar" style="display: none;">
+                  <div class="grn-pagination-info" id="poPaginationInfo"></div>
                   <div class="grn-pagination-controls" id="poPaginationControls"></div>
                 </div>
               </div>
@@ -463,9 +463,9 @@
                   <!-- Dynamically populated via js/grn.js -->
                 </div>
 
-                <!-- Suppliers Pagination -->
-                <div class="grn-pagination-bar">
-                  <div class="grn-pagination-info" id="supplierPaginationInfo">Showing 0 records</div>
+                <!-- Suppliers Pagination (Visible only when results > 20) -->
+                <div class="grn-pagination-bar" id="supplierPaginationBar" style="display: none;">
+                  <div class="grn-pagination-info" id="supplierPaginationInfo"></div>
                   <div class="grn-pagination-controls" id="supplierPaginationControls"></div>
                 </div>
               </div>

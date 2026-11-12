@@ -102,18 +102,28 @@
                 <div class="po-filter-group">
                   <select id="orderStatusFilter" class="po-filter-select" aria-label="Filter by order status">
                     <option value="ALL">All Order Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Cancelled">Cancelled</option>
+                    @php
+                      $filterStatuses = \Modules\PrintJob\Models\PrintJobStatus::query()->orderBy('id')->get();
+                    @endphp
+                    @forelse($filterStatuses as $st)
+                      @php
+                        $stName = data_get($st, 'print_job_states') ?? data_get($st, 'name');
+                      @endphp
+                      <option value="{{ $stName }}">{{ $stName }}</option>
+                    @empty
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    @endforelse
                   </select>
 
                   <select id="orderPaymentFilter" class="po-filter-select" aria-label="Filter by payment status">
                     <option value="ALL">All Payment Statuses</option>
-                    <option value="Paid">Fully Paid</option>
+                    <option value="Paid">Fully Paid (Paid)</option>
                     <option value="Partially Paid">Partially Paid</option>
-                    <option value="Unpaid">Unpaid</option>
+                    <option value="Unpaid">Unpaid (Pending)</option>
                   </select>
                 </div>
               </div>
@@ -123,14 +133,14 @@
                 <table class="po-table">
                   <thead>
                     <tr>
-                      <th>Order ID</th>
-                      <th>Customer Name</th>
+                      <th style="cursor: pointer;" data-sort="id">Order ID <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
+                      <th style="cursor: pointer;" data-sort="customerName">Customer Name <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
                       <th>Product & Specs</th>
-                      <th>Qty</th>
-                      <th>Total (Rs.)</th>
-                      <th>Payment Status</th>
-                      <th>Deadline</th>
-                      <th>Order Status</th>
+                      <th style="cursor: pointer;" data-sort="quantity">Qty <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
+                      <th style="cursor: pointer;" data-sort="totalAmount">Total (Rs.) <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
+                      <th style="cursor: pointer;" data-sort="paymentStatus">Payment Status <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
+                      <th style="cursor: pointer;" data-sort="requiredDate">Deadline <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
+                      <th style="cursor: pointer;" data-sort="orderStatus">Order Status <i class="fa-solid fa-sort" style="font-size: 10px; opacity: 0.6; margin-left: 3px;"></i></th>
                       <th>Assigned</th>
                       <th style="text-align: center;">Actions</th>
                     </tr>

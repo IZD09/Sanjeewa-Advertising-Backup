@@ -117,7 +117,12 @@ export class PaymentHistoryModal extends BaseModalHandler {
     // Recalculate order totals
     const order = orders.find(o => o.id === p.orderId);
     if (order) {
-      const orderPayments = payments.filter(pay => pay.orderId === order.id && pay.status === "Successful");
+      const orderPayments = payments.filter(pay => {
+        if (pay.orderId !== order.id) return false;
+        const amt = parseFloat(pay.amount) || 0;
+        const st = String(pay.status || "").toLowerCase();
+        return amt > 0 && st !== "failed" && st !== "reversed";
+      });
       const totalPaid = orderPayments.reduce((acc, pay) => acc + (parseFloat(pay.amount) || 0), 0);
       order.paidAmount = Math.round(totalPaid * 100) / 100;
       order.balanceAmount = Math.max(0, Math.round((order.totalAmount - order.paidAmount) * 100) / 100);

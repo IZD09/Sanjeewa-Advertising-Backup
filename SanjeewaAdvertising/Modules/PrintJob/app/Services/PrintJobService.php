@@ -8,13 +8,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintType;
 use Modules\Inventory\Models\Stock;
+use Modules\PrintJob\Models\DeliveryMethod;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\PrintJob\Models\PrintJobCost;
 use Modules\PrintJob\Models\PrintJobStatus;
 use Modules\PrintJob\Models\PrintJobStatusHistory;
+use Modules\PrintJob\Models\Unit;
 use Modules\Transaction\Models\Payment;
+use Modules\Transaction\Models\PaymentStatus;
+use Modules\Transaction\Models\PaymentType;
 use Modules\User\Models\User;
 
 class PrintJobService
@@ -31,6 +36,8 @@ class PrintJobService
             'user',
             'customer',
             'printType',
+            'unit',
+            'deliveryMethod',
             'statusHistory.status',
             'cost.printCosts.printCostType',
             'stockItems.stockItem',
@@ -128,6 +135,7 @@ class PrintJobService
                 'user',
                 'customer',
                 'printType',
+                'unit',
                 'statusHistory.status',
                 'cost.printCosts.printCostType',
                 'stockItems.stockItem',
@@ -155,6 +163,12 @@ class PrintJobService
                 'print_types_id' => (int) $data['print_types_id'],
                 'add_date' => ! empty($data['add_date']) ? $data['add_date'] : now(),
                 'qty' => (int) $data['qty'],
+                'wtdth' => (int) round((float) ($data['wtdth'] ?? 0)),
+                'hight' => (int) round((float) ($data['hight'] ?? 0)),
+                'unit_id' => ! empty($data['unit_id']) ? (int) $data['unit_id'] : 1,
+                'delivery_method_id' => ! empty($data['delivery_method_id'])
+                    ? (int) $data['delivery_method_id']
+                    : (! empty($data['delivery_method']) && is_numeric($data['delivery_method']) ? (int) $data['delivery_method'] : 1),
             ]);
 
             // Create initial status history entry (default to 1: Pending/New)
@@ -168,15 +182,31 @@ class PrintJobService
                 'update_at' => now(),
             ]);
 
-            // Create cost record if discount or print costs provided
-            if (isset($data['discount']) || ! empty($data['print_cost_ids'])) {
-                $cost = PrintJobCost::create([
-                    'print_jobs_id' => $printJob->id,
-                    'discount' => (float) ($data['discount'] ?? 0),
-                ]);
+            // Create cost record if discount, unit_price, or print costs provided
+            if (isset($data['discount']) || isset($data['unit_price']) || ! empty($data['print_cost_ids'])) {
+                $cost = PrintJobCost::firstOrCreate(
+                    ['print_jobs_id' => $printJob->id],
+                    ['discount' => (float) ($data['discount'] ?? 0)]
+                );
 
-                if (! empty($data['print_cost_ids']) && is_array($data['print_cost_ids'])) {
-                    $cost->printCosts()->sync($data['print_cost_ids']);
+                $costIds = ! empty($data['print_cost_ids']) && is_array($data['print_cost_ids'])
+                    ? $data['print_cost_ids']
+                    : [];
+
+                if (! empty($data['unit_price']) && (float) $data['unit_price'] > 0) {
+                    $costType = DB::table('print_cost_type')->where('print_types_id', (int) $data['print_types_id'])->first();
+                    if ($costType) {
+                        $printCost = PrintCost::create([
+                            'print_cost_type_id' => $costType->id,
+                            'price' => (float) $data['unit_price'],
+                            'add_at' => now(),
+                        ]);
+                        $costIds[] = $printCost->id;
+                    }
+                }
+
+                if (! empty($costIds)) {
+                    $cost->printCosts()->sync($costIds);
                 }
             }
 
@@ -191,6 +221,69 @@ class PrintJobService
                 if (! empty($syncData)) {
                     $printJob->stockItems()->sync($syncData);
                 }
+            }
+
+            // Calculate total amount for this print job
+            $unitPrice = (float) ($data['unit_price'] ?? 0);
+            $qty = max(1, (int) ($data['qty'] ?? 1));
+            $width = (float) ($data['wtdth'] ?? 0);
+            $height = (float) ($data['hight'] ?? 0);
+            $unit = ! empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
+            $unitSymbol = $unit?->simble ?? 'ft';
+
+            if ($unitSymbol === 'pcs') {
+                $subtotal = $unitPrice * $qty;
+            } else {
+                $areaSqFt = match ($unitSymbol) {
+                    'in' => ($width * $height) / 144,
+                    'cm' => ($width * $height) / 929.0304,
+                    'mm' => ($width * $height) / 92903.04,
+                    'm' => ($width * $height) * 10.7639,
+                    default => ($width * $height),
+                };
+                $subtotal = $areaSqFt * $unitPrice * $qty;
+            }
+
+            $discount = (float) ($data['discount'] ?? 0);
+            $totalAmount = max(0, $subtotal - $discount);
+            if (! empty($data['total_amount']) && (float) $data['total_amount'] > 0) {
+                $totalAmount = (float) $data['total_amount'];
+            }
+
+            $paidAmount = (float) ($data['payment_amount'] ?? $data['paid_amount'] ?? 0);
+
+            // Determine payment_statuses_id (1: Pending, 2: Completed, 3: Partial)
+            if (! empty($data['payment_statuses_id'])) {
+                $paymentStatusId = (int) $data['payment_statuses_id'];
+            } elseif ($paidAmount >= $totalAmount && $totalAmount > 0) {
+                $paymentStatusId = 2; // Completed
+            } elseif ($paidAmount > 0) {
+                $paymentStatusId = 3; // Partial
+            } else {
+                $paymentStatusId = 1; // Pending
+            }
+
+            $paymentTypeId = ! empty($data['payment_types_id'])
+                ? (int) $data['payment_types_id']
+                : (int) (PaymentType::query()->value('id') ?? 1);
+
+            if (! DB::table('payment_types')->where('id', $paymentTypeId)->exists()) {
+                $paymentTypeId = (int) (DB::table('payment_types')->value('id') ?? 0);
+            }
+
+            if (! DB::table('payment_statuses')->where('id', $paymentStatusId)->exists()) {
+                $paymentStatusId = (int) (DB::table('payment_statuses')->value('id') ?? 0);
+            }
+
+            // Record payment transaction when valid payment types and statuses exist in database
+            if ($paymentTypeId > 0 && $paymentStatusId > 0) {
+                Payment::create([
+                    'payment' => $paidAmount,
+                    'print_jobs_id' => $printJob->id,
+                    'payment_types_id' => $paymentTypeId,
+                    'pay_date' => ! empty($data['add_date']) ? $data['add_date'] : now(),
+                    'payment_statuses_id' => $paymentStatusId,
+                ]);
             }
 
             return $this->getPrintJobById($printJob->id) ?? $printJob;
@@ -220,6 +313,18 @@ class PrintJobService
         }
         if (isset($data['qty'])) {
             $attributes['qty'] = (int) $data['qty'];
+        }
+        if (isset($data['wtdth'])) {
+            $attributes['wtdth'] = (int) $data['wtdth'];
+        }
+        if (isset($data['hight'])) {
+            $attributes['hight'] = (int) $data['hight'];
+        }
+        if (isset($data['unit_id'])) {
+            $attributes['unit_id'] = (int) $data['unit_id'];
+        }
+        if (isset($data['delivery_method_id'])) {
+            $attributes['delivery_method_id'] = (int) $data['delivery_method_id'];
         }
 
         $printJob->update($attributes);
@@ -354,6 +459,7 @@ class PrintJobService
         $jobsQuery = PrintJob::query()->with([
             'customer',
             'printType',
+            'unit',
             'user',
             'statusHistory.status',
             'cost.printCosts',
@@ -474,6 +580,16 @@ class PrintJobService
                 'print_types_id' => (int) $job->print_types_id,
                 'print_type_name' => $job->printType?->print_type ?? 'Print Job',
                 'qty' => $qty,
+                'wtdth' => (int) $job->wtdth,
+                'hight' => (int) $job->hight,
+                'unit_id' => (int) ($job->unit_id ?? 1),
+                'unit_simble' => $job->unit?->simble ?? 'ft',
+                'unit_name' => $job->unit?->name ?? 'Feet',
+                'dimensions' => ($job->wtdth > 0 && $job->hight > 0)
+                    ? "{$job->wtdth} × {$job->hight} ".($job->unit?->simble ?? 'ft')
+                    : '—',
+                'delivery_method_id' => (int) ($job->delivery_method_id ?? 1),
+                'delivery_method_name' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
                 'date_raw' => $job->add_date ? Carbon::parse($job->add_date)->toIso8601String() : null,
                 'date_formatted' => $job->add_date ? Carbon::parse($job->add_date)->format('M d, Y') : '—',
                 'status_id' => $statusId,
@@ -518,6 +634,7 @@ class PrintJobService
             'jobs' => $formattedJobs,
             'statuses' => $statuses->map(fn ($s) => ['id' => (int) $s->id, 'name' => $s->print_job_states])->values()->all(),
             'print_types' => $printTypes->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->values()->all(),
+            'units' => Unit::all()->map(fn ($u) => ['id' => (int) $u->id, 'simble' => $u->simble, 'name' => $u->name])->values()->all(),
             'available_stocks' => $availableStocks->values()->all(),
         ];
     }
@@ -539,6 +656,13 @@ class PrintJobService
             'orders' => $orders,
             'payments' => $payments,
             'kpis' => $kpis,
+            'print_types' => PrintType::query()->orderBy('id')->get()->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->values()->all(),
+            'units' => Unit::query()->orderBy('id')->get()->map(fn ($u) => ['id' => (int) $u->id, 'simble' => $u->simble, 'name' => $u->name])->values()->all(),
+            'payment_types' => PaymentType::query()->orderBy('id')->get()->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->payment_type])->values()->all(),
+            'statuses' => PrintJobStatus::query()->orderBy('id')->get()->map(fn ($st) => ['id' => (int) $st->id, 'name' => $st->print_job_states])->values()->all(),
+            'delivery_methods' => DeliveryMethod::query()->orderBy('id')->get()->map(fn ($dm) => ['id' => (int) $dm->id, 'name' => $dm->methord])->values()->all(),
+            'users' => User::query()->orderBy('first_name')->get()->map(fn ($u) => ['id' => (int) $u->id, 'name' => trim("{$u->first_name} {$u->last_name}")])->values()->all(),
+            'payment_statuses' => PaymentStatus::query()->orderBy('id')->get()->map(fn ($ps) => ['id' => (int) $ps->id, 'name' => $ps->payment_status])->values()->all(),
         ];
     }
 
@@ -553,6 +677,8 @@ class PrintJobService
         $query = PrintJob::query()->with([
             'customer',
             'printType',
+            'unit',
+            'deliveryMethod',
             'user',
             'latestStatusHistory.status',
             'cost.printCosts',
@@ -588,7 +714,26 @@ class PrintJobService
             $costSum = $job->cost?->printCosts?->sum('price') ?? 0;
             $unitPrice = $costSum > 0 ? (float) $costSum : 120.00;
             $qty = max(1, (int) $job->qty);
-            $subtotal = $unitPrice * $qty;
+            $width = (float) ($job->wtdth > 0 ? $job->wtdth : 10);
+            $height = (float) ($job->hight > 0 ? $job->hight : 4);
+            $unitSymbol = $job->unit?->simble ?? 'ft';
+            $unitName = $job->unit?->name ?? 'Feet';
+
+            $areaSqFt = match ($unitSymbol) {
+                'ft', 'feet' => $width * $height,
+                'in', 'inches' => ($width * $height) / 144,
+                'cm' => ($width * $height) / 929.0304,
+                'mm' => ($width * $height) / 92903.04,
+                'm' => ($width * $height) * 10.7639,
+                default => ($width * $height),
+            };
+
+            if ($unitSymbol === 'pcs') {
+                $subtotal = $unitPrice * $qty;
+            } else {
+                $subtotal = $areaSqFt * $unitPrice * $qty;
+            }
+
             $discount = (float) ($job->cost?->discount ?? 0);
             $totalAmount = max(0, $subtotal - $discount);
 
@@ -596,7 +741,16 @@ class PrintJobService
             $paidAmount = (float) $job->payments->sum('payment');
             $balanceAmount = max(0, $totalAmount - $paidAmount);
 
-            if ($paidAmount >= $totalAmount && $totalAmount > 0) {
+            $lastPayment = $job->payments->sortByDesc('id')->first();
+            $dbPaymentStatusName = $lastPayment?->status?->payment_status;
+
+            if ($dbPaymentStatusName && in_array(strtolower(trim($dbPaymentStatusName)), ['partial', 'completed'], true)) {
+                $paymentStatus = match (strtolower(trim($dbPaymentStatusName))) {
+                    'completed' => 'Paid',
+                    'partial' => 'Partially Paid',
+                    default => $dbPaymentStatusName,
+                };
+            } elseif ($paidAmount >= $totalAmount && $totalAmount > 0) {
                 $paymentStatus = 'Paid';
             } elseif ($paidAmount > 0) {
                 $paymentStatus = 'Partially Paid';
@@ -622,18 +776,20 @@ class PrintJobService
                 'customerMobile' => $job->customer?->mobile ?? '',
                 'productKey' => strtolower(str_replace([' ', '/', '&'], ['_', '_', ''], $job->printType?->print_type ?? 'flex')),
                 'productName' => $job->printType?->print_type ?? 'Flex Banner',
-                'width' => 10,
-                'height' => 4,
-                'unit' => 'feet',
+                'width' => $width,
+                'height' => $height,
+                'unit' => $unitSymbol,
+                'unitName' => $unitName,
                 'quantity' => $qty,
-                'areaSqFt' => 40,
+                'areaSqFt' => round($areaSqFt, 2),
                 'unitPrice' => $unitPrice,
                 'designStatus' => 'Customer Provides Design',
-                'deliveryMethod' => 'Pickup',
+                'deliveryMethod' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
+                'deliveryMethodId' => (int) ($job->delivery_method_id ?? 1),
                 'requiredDate' => $addDate->copy()->addDays(2)->toDateString(),
-                'totalAmount' => $totalAmount,
-                'paidAmount' => $paidAmount,
-                'balanceAmount' => $balanceAmount,
+                'totalAmount' => round($totalAmount, 2),
+                'paidAmount' => round($paidAmount, 2),
+                'balanceAmount' => round($balanceAmount, 2),
                 'paymentStatus' => $paymentStatus,
                 'orderStatus' => $statusName,
                 'assignedEmployee' => $employeeName,

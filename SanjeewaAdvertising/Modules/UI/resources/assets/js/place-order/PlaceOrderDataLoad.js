@@ -113,12 +113,18 @@ export class PlaceOrderDataLoad {
    */
   async loadInitialData() {
     let customers = await this.loadCustomers();
-    let { orders, payments } = await this.loadOrdersAndPayments();
+    let res = await this.loadOrdersAndPayments();
 
     return {
       customers,
-      orders,
-      payments,
+      orders: res.orders || [],
+      payments: res.payments || [],
+      printTypes: res.printTypes || [],
+      units: res.units || [],
+      paymentTypes: res.paymentTypes || [],
+      statuses: res.statuses || [],
+      deliveryMethods: res.deliveryMethods || [],
+      users: res.users || [],
       products: this.productsCatalog
     };
   }
@@ -185,19 +191,25 @@ export class PlaceOrderDataLoad {
         ? payload.orders
         : (Array.isArray(payload) ? payload : null);
 
+      const rawPayments = Array.isArray(payload?.payments) ? payload.payments : [];
+
       if (rawOrders && rawOrders.length > 0) {
-        const rawPayments = Array.isArray(payload?.payments) ? payload.payments : [];
-
         this.saveOrders(rawOrders);
-        if (rawPayments.length > 0) {
-          this.savePayments(rawPayments);
-        }
-
-        return {
-          orders: PrintingOrder.fromArray(rawOrders),
-          payments: rawPayments
-        };
       }
+      if (rawPayments.length > 0) {
+        this.savePayments(rawPayments);
+      }
+
+      return {
+        orders: rawOrders ? PrintingOrder.fromArray(rawOrders) : [],
+        payments: rawPayments,
+        printTypes: Array.isArray(payload?.print_types) ? payload.print_types : [],
+        units: Array.isArray(payload?.units) ? payload.units : [],
+        paymentTypes: Array.isArray(payload?.payment_types) ? payload.payment_types : [],
+        statuses: Array.isArray(payload?.statuses) ? payload.statuses : [],
+        deliveryMethods: Array.isArray(payload?.delivery_methods) ? payload.delivery_methods : [],
+        users: Array.isArray(payload?.users) ? payload.users : [],
+      };
     } catch (err) {
       console.warn("[PlaceOrderDataLoad] PrintJob API fetch failed, trying local storage fallback:", err);
     }

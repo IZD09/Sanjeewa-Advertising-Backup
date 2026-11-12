@@ -13,6 +13,8 @@ class PrintJobDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            UnitSeeder::class,
+            DeliveryMethodSeeder::class,
             PrintJobStatusSeeder::class,
         ]);
     }

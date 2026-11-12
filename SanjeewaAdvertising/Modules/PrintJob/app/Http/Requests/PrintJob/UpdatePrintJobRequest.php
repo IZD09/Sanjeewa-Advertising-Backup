@@ -28,6 +28,11 @@ class UpdatePrintJobRequest extends FormRequest
             'print_types_id' => ['sometimes', 'required', 'integer', 'exists:print_types,id'],
             'add_date' => ['sometimes', 'required', 'date'],
             'qty' => ['sometimes', 'required', 'integer', 'min:1'],
+            'wtdth' => ['sometimes', 'required', 'integer', 'min:0'],
+            'hight' => ['sometimes', 'required', 'integer', 'min:0'],
+            'unit_id' => ['sometimes', 'required', 'integer', 'exists:unit,id'],
+            'delivery_method_id' => ['sometimes', 'required', 'integer', 'exists:delivery_method,id'],
+            'payment_statuses_id' => ['nullable', 'integer', 'exists:payment_statuses,id'],
         ];
     }
 }

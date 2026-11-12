@@ -128,6 +128,31 @@ export class GRNTableHandler extends BaseTableLoader {
       countEl.textContent = `Showing ${start}-${end} of ${total} GRNs`;
     }
   }
+
+  /**
+   * Render pagination summary and controls, hiding the pagination bar when results <= 20.
+   *
+   * @param {number} totalCount
+   * @param {number} totalPages
+   * @param {number} currentPage
+   * @param {number} pageSize
+   */
+  renderPagination(totalCount, totalPages, currentPage, pageSize) {
+    const paginationBar = document.getElementById("grnPaginationBar") ||
+      document.querySelector("#grnListView .grn-pagination-bar");
+
+    if (totalCount <= 20) {
+      if (paginationBar) paginationBar.style.display = "none";
+      const infoElem = document.getElementById(this.paginationInfoId);
+      const controlsElem = document.getElementById(this.paginationControlsId);
+      if (infoElem) infoElem.textContent = "";
+      if (controlsElem) controlsElem.innerHTML = "";
+      return;
+    }
+
+    if (paginationBar) paginationBar.style.display = "flex";
+    super.renderPagination(totalCount, totalPages, currentPage, pageSize, "GRNs");
+  }
 }
 
 export default GRNTableHandler;

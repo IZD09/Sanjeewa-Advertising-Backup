@@ -240,12 +240,21 @@ export class SupplierHandler {
   renderSupplierPagination(totalCount, totalPages, currentPage, pageSize) {
     const infoElem = document.getElementById("supplierPaginationInfo");
     const controlsElem = document.getElementById("supplierPaginationControls");
+    const paginationBar = document.getElementById("supplierPaginationBar") || (infoElem ? infoElem.closest(".grn-pagination-bar") : null);
     if (!infoElem || !controlsElem) return;
 
-    if (totalCount === 0) {
-      infoElem.textContent = "Showing 0 records";
+    // Only display pagination if results are strictly more than 20
+    if (totalCount <= 20) {
+      if (paginationBar) {
+        paginationBar.style.display = "none";
+      }
+      infoElem.textContent = "";
       controlsElem.innerHTML = "";
       return;
+    }
+
+    if (paginationBar) {
+      paginationBar.style.display = "flex";
     }
 
     const start = (currentPage - 1) * pageSize + 1;

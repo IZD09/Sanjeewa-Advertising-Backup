@@ -33,6 +33,23 @@ class PrintJobResource extends JsonResource
             'print_types_id' => $this->print_types_id,
             'add_date' => $this->add_date?->toIso8601String() ?? $this->add_date,
             'qty' => (int) $this->qty,
+            'wtdth' => (int) $this->wtdth,
+            'hight' => (int) $this->hight,
+            'unit_id' => (int) $this->unit_id,
+            'delivery_method_id' => (int) ($this->delivery_method_id ?? 1),
+            'unit' => $this->whenLoaded('unit', function () {
+                return [
+                    'id' => $this->unit->id,
+                    'simble' => $this->unit->simble,
+                    'name' => $this->unit->name,
+                ];
+            }),
+            'delivery_method' => $this->whenLoaded('deliveryMethod', function () {
+                return [
+                    'id' => $this->deliveryMethod->id,
+                    'methord' => $this->deliveryMethod->methord,
+                ];
+            }),
             'user' => $this->whenLoaded('user', function () {
                 return [
                     'id' => $this->user->id,

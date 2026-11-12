@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             SystemModuleSeeder::class,
             DefaultAdminSeeder::class,
             CustomerSeeder::class,
+            UnitSeeder::class,
+            DeliveryMethodSeeder::class,
             StockMovementSeeder::class,
             PrintJobSeeder::class,
         ]);
