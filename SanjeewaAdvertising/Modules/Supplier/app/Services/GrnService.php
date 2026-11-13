@@ -122,23 +122,77 @@ class GrnService
                 'at_time' => ! empty($data['at_time']) ? $data['at_time'] : now(),
             ]);
 
-            if (! empty($data['purchase_orders_id'])) {
-                $grn->purchaseOrders()->attach((int) $data['purchase_orders_id'], [
-                    'supplyer_invoice' => $data['supplyer_invoice'] ?? null,
-                ]);
+            $attachedPos = [];
+
+            if (! empty($data['purchase_orders']) && is_array($data['purchase_orders'])) {
+                foreach ($data['purchase_orders'] as $poItem) {
+                    $poId = is_array($poItem) ? (int) ($poItem['id'] ?? $poItem['purchase_orders_id'] ?? 0) : (int) $poItem;
+                    $inv = is_array($poItem) ? ($poItem['supplyer_invoice'] ?? ($data['supplyer_invoice'] ?? null)) : ($data['supplyer_invoice'] ?? null);
+                    if ($poId > 0) {
+                        $attachedPos[$poId] = ['supplyer_invoice' => $inv];
+                    }
+                }
+            } elseif (! empty($data['purchase_order_ids']) && is_array($data['purchase_order_ids'])) {
+                foreach ($data['purchase_order_ids'] as $poId) {
+                    $id = (int) $poId;
+                    if ($id > 0) {
+                        $attachedPos[$id] = ['supplyer_invoice' => $data['supplyer_invoice'] ?? null];
+                    }
+                }
+            } elseif (! empty($data['purchase_orders_id'])) {
+                $attachedPos[(int) $data['purchase_orders_id']] = ['supplyer_invoice' => $data['supplyer_invoice'] ?? null];
+            }
+
+            if (! empty($attachedPos)) {
+                $grn->purchaseOrders()->attach($attachedPos);
             }
 
             if (! empty($data['stocks']) && is_array($data['stocks'])) {
+                $defaultBrandId = DB::table('brands')->value('id') ?? 1;
+
                 foreach ($data['stocks'] as $stockItem) {
+                    $stockItemId = (int) $stockItem['stock_items_id'];
+                    $brandId = ! empty($stockItem['brands_id'])
+                        ? (int) $stockItem['brands_id']
+                        : (DB::table('stock_items_has_brands')->where('stock_items_id', $stockItemId)->value('brands_id') ?? $defaultBrandId);
+
+                    $buyCost = (float) ($stockItem['buy'] ?? 0);
+                    $price = isset($stockItem['price']) && (float) $stockItem['price'] > 0
+                        ? (float) $stockItem['price']
+                        : round($buyCost * 1.25, 2);
+
+                    $qty = (int) $stockItem['qty'];
+
                     Stock::create([
-                        'stock_items_id' => (int) $stockItem['stock_items_id'],
-                        'brands_id' => (int) $stockItem['brands_id'],
-                        'qty' => (int) $stockItem['qty'],
-                        'price' => (float) $stockItem['price'],
-                        'buy' => (float) $stockItem['buy'],
+                        'stock_items_id' => $stockItemId,
+                        'brands_id' => $brandId,
+                        'qty' => $qty,
+                        'price' => $price,
+                        'buy' => $buyCost,
                         'add_date' => now(),
                         'grn_id' => $grn->id,
                     ]);
+
+                    $poTargetId = ! empty($stockItem['purchase_orders_id'])
+                        ? (int) $stockItem['purchase_orders_id']
+                        : (! empty($data['purchase_orders_id']) ? (int) $data['purchase_orders_id'] : null);
+
+                    if (! $poTargetId && ! empty($attachedPos)) {
+                        $poTargetId = DB::table('purchase_order_items')
+                            ->whereIn('purchase_orders_id', array_keys($attachedPos))
+                            ->where('stock_items_id', $stockItemId)
+                            ->whereColumn('qty_received', '<', 'qty_ordered')
+                            ->value('purchase_orders_id') ?? array_key_first($attachedPos);
+                    }
+
+                    if ($poTargetId) {
+                        DB::table('purchase_order_items')
+                            ->where('purchase_orders_id', $poTargetId)
+                            ->where('stock_items_id', $stockItemId)
+                            ->increment('qty_received', $qty);
+
+                        app(PurchaseOrderService::class)->syncPurchaseOrderStatus($poTargetId);
+                    }
                 }
             }
 

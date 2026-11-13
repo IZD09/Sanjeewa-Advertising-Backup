@@ -337,11 +337,113 @@ class StockService
             ];
         });
 
-        $grns = Grn::orderByDesc('id')->limit(30)->get()->map(function (Grn $grn) {
+        $grns = Grn::with([
+            'purchaseOrders.supplier',
+            'purchaseOrders.items.stockItem.subcategory.category',
+            'purchaseOrders.items.stockItem.brands',
+            'purchaseOrders.items.stockItem.batches',
+            'purchaseOrders.items.stockItem.stocks.brand',
+            'stocks.stockItem.subcategory.category',
+            'stocks.stockItem.brands',
+            'stocks.stockItem.batches',
+            'stocks.stockItem.stocks.brand',
+        ])->orderByDesc('id')->limit(50)->get()->map(function (Grn $grn) {
+            $itemsMap = collect();
+
+            foreach ($grn->purchaseOrders as $po) {
+                foreach ($po->items as $poi) {
+                    $item = $poi->stockItem;
+                    if ($item && ! $itemsMap->has($item->id)) {
+                        $itemsMap->put($item->id, [
+                            'id' => $item->id,
+                            'name' => $item->name,
+                            'code' => $item->code,
+                            'subcategories_id' => $item->subcategories_id,
+                            'category_id' => $item->subcategory?->categories_id,
+                            'category_name' => $item->subcategory?->category?->category ?? 'General',
+                            'subcategory_name' => $item->subcategory?->subcategory ?? 'General',
+                            'unit_cost' => (float) $poi->unit_cost,
+                            'qty_ordered' => (int) $poi->qty_ordered,
+                            'qty_received' => (int) $poi->qty_received,
+                            'po_id' => $po->id,
+                            'compatible_brands' => $item->brands->map(fn ($b) => [
+                                'id' => $b->id,
+                                'brand' => $b->brand,
+                            ])->values()->all(),
+                            'existing_batches' => $item->batches->map(fn ($b) => [
+                                'id' => $b->id,
+                                'batch_no' => 'BAT-'.$b->id,
+                            ])->values()->all(),
+                            'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
+                                'id' => $st->id,
+                                'brands_id' => $st->brands_id,
+                                'brand_name' => $st->brand?->brand ?? 'Generic',
+                                'qty' => (int) $st->qty,
+                                'buy' => (float) $st->buy,
+                                'price' => (float) $st->price,
+                                'grn_id' => $st->grn_id,
+                            ])->values()->all(),
+                        ]);
+                    }
+                }
+            }
+
+            foreach ($grn->stocks as $stock) {
+                if ($stock->stockItem && ! $itemsMap->has($stock->stockItem->id)) {
+                    $item = $stock->stockItem;
+                    $itemsMap->put($item->id, [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'code' => $item->code,
+                        'subcategories_id' => $item->subcategories_id,
+                        'category_id' => $item->subcategory?->categories_id,
+                        'category_name' => $item->subcategory?->category?->category ?? 'General',
+                        'subcategory_name' => $item->subcategory?->subcategory ?? 'General',
+                        'unit_cost' => (float) $stock->buy,
+                        'qty_ordered' => (int) $stock->qty,
+                        'qty_received' => (int) $stock->qty,
+                        'po_id' => null,
+                        'compatible_brands' => $item->brands->map(fn ($b) => [
+                            'id' => $b->id,
+                            'brand' => $b->brand,
+                        ])->values()->all(),
+                        'existing_batches' => $item->batches->map(fn ($b) => [
+                            'id' => $b->id,
+                            'batch_no' => 'BAT-'.$b->id,
+                        ])->values()->all(),
+                        'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
+                            'id' => $st->id,
+                            'brands_id' => $st->brands_id,
+                            'brand_name' => $st->brand?->brand ?? 'Generic',
+                            'qty' => (int) $st->qty,
+                            'buy' => (float) $st->buy,
+                            'price' => (float) $st->price,
+                            'grn_id' => $st->grn_id,
+                        ])->values()->all(),
+                    ]);
+                }
+            }
+
+            $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
+            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
+            $labelParts = ['GRN #'.$grn->id];
+            if ($supplierNames) {
+                $labelParts[] = $supplierNames;
+            }
+            if ($poNumbers) {
+                $labelParts[] = '('.$poNumbers.')';
+            }
+            if ($grn->at_time) {
+                $labelParts[] = '['.$grn->at_time->format('Y-m-d').']';
+            }
+
             return [
                 'id' => $grn->id,
-                'label' => 'GRN #'.$grn->id.($grn->at_time ? ' ('.$grn->at_time->format('Y-m-d').')' : ''),
+                'label' => implode(' - ', array_filter($labelParts)),
                 'at_time' => $grn->at_time ? $grn->at_time->format('Y-m-d H:i') : null,
+                'supplier_name' => $supplierNames,
+                'po_numbers' => $poNumbers,
+                'items' => $itemsMap->values()->all(),
             ];
         });
 

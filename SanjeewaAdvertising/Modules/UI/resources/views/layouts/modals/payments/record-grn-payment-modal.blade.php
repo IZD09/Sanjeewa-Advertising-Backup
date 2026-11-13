@@ -27,7 +27,7 @@
 
           <div class="grn-add-po-controls" style="display: flex; gap: 10px; align-items: center;">
             <div style="flex: 1; position: relative;">
-              <select id="grnModalRefSelect" class="pay-select-field" style="height: 44px; font-weight: 700; font-size: 13.5px; width: 100%; border-radius: 9px;">
+              <select id="grnModalRefSelect" name="grn_modal_ref_select" class="pay-select-field" style="height: 44px; font-weight: 700; font-size: 13.5px; width: 100%; border-radius: 9px;">
                 <option value="">-- Select Purchase Order / Consignment to Add --</option>
               </select>
             </div>
@@ -99,13 +99,13 @@
                 Pay Full Balance
               </button>
             </div>
-            <input type="number" id="grnModalAmount" class="pay-input" placeholder="0.00" min="0" step="100" required>
+            <input type="number" id="grnModalAmount" name="grn_modal_amount" class="pay-input" placeholder="0.00" min="0" step="100" required>
           </div>
           <div class="pay-field">
             <label class="pay-label" for="grnModalStageSelect">
               <i class="fa-solid fa-flag-checkered" style="color: #8b5cf6; margin-right: 4px;"></i> Payment Stage *
             </label>
-            <select id="grnModalStageSelect" class="pay-select-field">
+            <select id="grnModalStageSelect" name="grn_modal_stage_select" class="pay-select-field">
               <option value="Complete Payment">Complete Payment</option>
               <option value="Advance Payment">Advance Payment</option>
               <option value="Pending Payment">Pending Payment</option>
@@ -115,10 +115,10 @@
 
         <!-- 4. Payment Method -->
         <div class="pay-field">
-          <label class="pay-label">
+          <div class="pay-label" id="grnModalMethodLabel">
             <i class="fa-solid fa-wallet" style="color: #10b981; margin-right: 4px;"></i> Payment Method *
-          </label>
-          <div class="pay-method-selector" id="grnModalMethodSelector">
+          </div>
+          <div class="pay-method-selector" id="grnModalMethodSelector" role="group" aria-labelledby="grnModalMethodLabel">
             <div class="method-choice selected" data-method="Cash">
               <i class="fa-solid fa-money-bill-wave"></i>
               <span>Cash / Petty</span>
@@ -151,18 +151,18 @@
         <div class="pay-form-grid">
           <div class="pay-field">
             <label class="pay-label" for="grnModalDate">Disbursement Date</label>
-            <input type="date" id="grnModalDate" class="pay-input">
+            <input type="date" id="grnModalDate" name="grn_disbursement_date" class="pay-input">
           </div>
           <div class="pay-field">
-            <label class="pay-label">Procurement Officer</label>
-            <input type="text" class="pay-input" value="Procurement Manager" readonly style="opacity: 0.85;">
+            <label class="pay-label" for="grnModalProcurementOfficer">Procurement Officer</label>
+            <input type="text" id="grnModalProcurementOfficer" name="grn_procurement_officer" class="pay-input" value="Procurement Manager" readonly style="opacity: 0.85;">
           </div>
         </div>
 
         <!-- 7. Narration -->
         <div class="pay-field">
           <label class="pay-label" for="grnModalNotes">Narration / Cheque Details / Remarks</label>
-          <input type="text" id="grnModalNotes" class="pay-input" placeholder="E.g. Full settlement upon paper delivery / advance for flex container">
+          <input type="text" id="grnModalNotes" name="grn_modal_notes" class="pay-input" placeholder="E.g. Full settlement upon paper delivery / advance for flex container">
         </div>
       </div>
 

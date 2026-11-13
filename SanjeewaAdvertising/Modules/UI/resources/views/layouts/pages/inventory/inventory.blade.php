@@ -140,11 +140,11 @@
                     <!-- Search Bar -->
                     <div class="inv-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="invSearchInput" class="inv-search-input" placeholder="Search by item code, name, category...">
+                      <input type="text" id="invSearchInput" name="inv_search" class="inv-search-input" placeholder="Search by item code, name, category..." aria-label="Search by item code, name, category">
                     </div>
 
                     <!-- Category Filter -->
-                    <select id="invCategoryFilter" class="inv-select" aria-label="Filter by Category">
+                    <select id="invCategoryFilter" name="inv_category_filter" class="inv-select" aria-label="Filter by Category">
                       <option value="ALL">All Categories</option>
                       <option value="Paper & Boards">Paper & Boards</option>
                       <option value="Inks & Toners">Inks & Toners</option>
@@ -292,11 +292,11 @@
                     <!-- Search Input -->
                     <div class="inv-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="invMovementsSearchInput" class="inv-search-input" placeholder="Search item code, name, movement type, source...">
+                      <input type="text" id="invMovementsSearchInput" name="movements_search" class="inv-search-input" placeholder="Search item code, name, movement type, source..." aria-label="Search stock movements">
                     </div>
 
                     <!-- Direction Filter -->
-                    <select id="invMovementsDirectionFilter" class="inv-select" aria-label="Filter by Direction">
+                    <select id="invMovementsDirectionFilter" name="movements_direction_filter" class="inv-select" aria-label="Filter by Direction">
                       <option value="ALL">All Directions</option>
                       <option value="IN">Inward / In (+)</option>
                       <option value="OUT">Outward / Out (-)</option>
@@ -304,7 +304,7 @@
                     </select>
 
                     <!-- Type Filter -->
-                    <select id="invMovementsTypeFilter" class="inv-select" aria-label="Filter by Movement Type">
+                    <select id="invMovementsTypeFilter" name="movements_type_filter" class="inv-select" aria-label="Filter by Movement Type">
                       <option value="ALL">All Movement Types</option>
                       <option value="1">GRN / Purchase Receipt</option>
                       <option value="2">Job Usage / Issue</option>
@@ -427,8 +427,8 @@
                       <button type="button" class="cat-close-btn" id="catCancelNewCategoryBtn">&times;</button>
                     </div>
                     <div class="po-field" style="margin-top: 8px;">
-                      <label class="po-label">Category Name <span class="req">*</span></label>
-                      <input type="text" id="newCategoryInput" class="inv-search-input" placeholder="E.g. Speciality Media">
+                      <label class="po-label" for="newCategoryInput">Category Name <span class="req">*</span></label>
+                      <input type="text" id="newCategoryInput" name="category_name" class="inv-search-input" placeholder="E.g. Speciality Media">
                       <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
@@ -443,7 +443,7 @@
                   <div class="cat-search-box" style="margin: 14px 0 10px;">
                     <div class="inv-search-wrap" style="width: 100%;">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="catFilterInput" class="inv-search-input" placeholder="Search categories...">
+                      <input type="text" id="catFilterInput" name="cat_filter_search" class="inv-search-input" placeholder="Search categories..." aria-label="Search categories">
                     </div>
                   </div>
 
@@ -476,15 +476,15 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; margin-top: 8px;">
                       <div class="po-field">
-                        <label class="po-label">Parent Category <span class="req">*</span></label>
-                        <select id="newSubcatCategorySelect" class="inv-select" style="width: 100%;">
+                        <label class="po-label" for="newSubcatCategorySelect">Parent Category <span class="req">*</span></label>
+                        <select id="newSubcatCategorySelect" name="parent_category" class="inv-select" style="width: 100%;">
                           <!-- Options dynamically populated -->
                         </select>
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                       <div class="po-field">
-                        <label class="po-label">Subcategory Name <span class="req">*</span></label>
-                        <input type="text" id="newSubcatNameInput" class="inv-search-input" placeholder="E.g. Matte Canvas 380gsm">
+                        <label class="po-label" for="newSubcatNameInput">Subcategory Name <span class="req">*</span></label>
+                        <input type="text" id="newSubcatNameInput" name="subcategory_name" class="inv-search-input" placeholder="E.g. Matte Canvas 380gsm">
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                     </div>
@@ -501,7 +501,7 @@
                     <div class="inv-toolbar-left" style="flex: 1;">
                       <div class="inv-search-wrap" style="width: 100%; max-width: 320px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="subcatSearchInput" class="inv-search-input" placeholder="Search subcategories...">
+                        <input type="text" id="subcatSearchInput" name="subcat_search" class="inv-search-input" placeholder="Search subcategories..." aria-label="Search subcategories">
                       </div>
                       <button type="button" class="ant-btn ant-btn-default" id="subcatRefreshBtn" title="Refresh list">
                         <i class="fa-solid fa-arrows-rotate"></i>
@@ -609,8 +609,8 @@
                       <button type="button" class="cat-close-btn" id="brandCancelFormBtn">&times;</button>
                     </div>
                     <div class="po-field" style="margin-top: 8px;">
-                      <label class="po-label">Brand Name <span class="req">*</span></label>
-                      <input type="text" id="brandFormInput" class="inv-search-input" placeholder="E.g. Avery Dennison">
+                      <label class="po-label" for="brandFormInput">Brand Name <span class="req">*</span></label>
+                      <input type="text" id="brandFormInput" name="brand_name" class="inv-search-input" placeholder="E.g. Avery Dennison">
                       <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
@@ -625,7 +625,7 @@
                   <div class="cat-search-box" style="margin: 14px 0 10px;">
                     <div class="inv-search-wrap" style="width: 100%;">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="catalogBrandSearchInput" class="inv-search-input" placeholder="Search brands...">
+                      <input type="text" id="catalogBrandSearchInput" name="catalog_brand_search" class="inv-search-input" placeholder="Search brands..." aria-label="Search brands">
                     </div>
                   </div>
 
@@ -658,27 +658,27 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 10px;">
                       <div class="po-field">
-                        <label class="po-label">Item Code / SKU <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">(System Generated)</span></label>
-                        <input type="text" id="itemFormCodeInput" class="inv-search-input" readonly placeholder="Auto Generated by System" style="background: var(--surface-3, #f5f5f5); cursor: not-allowed; color: #1677ff; font-weight: 600;">
+                        <label class="po-label" for="itemFormCodeInput">Item Code / SKU <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">(System Generated)</span></label>
+                        <input type="text" id="itemFormCodeInput" name="item_code" class="inv-search-input" readonly placeholder="Auto Generated by System" style="background: var(--surface-3, #f5f5f5); cursor: not-allowed; color: #1677ff; font-weight: 600;">
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                       <div class="po-field">
-                        <label class="po-label">Item Name <span class="req">*</span></label>
-                        <input type="text" id="itemFormNameInput" class="inv-search-input" placeholder="E.g. 380gsm Matte Canvas High Res">
+                        <label class="po-label" for="itemFormNameInput">Item Name <span class="req">*</span></label>
+                        <input type="text" id="itemFormNameInput" name="item_name" class="inv-search-input" placeholder="E.g. 380gsm Matte Canvas High Res">
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
                       <div class="po-field">
-                        <label class="po-label">Material Category <span class="req">*</span></label>
-                        <select id="itemFormCategorySelect" class="inv-select" style="width: 100%;">
+                        <label class="po-label" for="itemFormCategorySelect">Material Category <span class="req">*</span></label>
+                        <select id="itemFormCategorySelect" name="material_category" class="inv-select" style="width: 100%;">
                           <option value="">-- Select Category --</option>
                         </select>
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                       <div class="po-field">
-                        <label class="po-label">Material Subcategory <span class="req">*</span></label>
-                        <select id="itemFormSubcatSelect" class="inv-select" style="width: 100%;" disabled>
+                        <label class="po-label" for="itemFormSubcatSelect">Material Subcategory <span class="req">*</span></label>
+                        <select id="itemFormSubcatSelect" name="material_subcategory" class="inv-select" style="width: 100%;" disabled>
                           <option value="">-- Select Category First --</option>
                         </select>
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
@@ -686,19 +686,19 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
                       <div class="po-field">
-                        <label class="po-label">Low Stock Alert Threshold (Qty) <span class="req">*</span></label>
-                        <input type="number" id="itemFormLowStockInput" class="inv-search-input" style="padding-left: 12px; padding-right: 12px;" min="0" step="1" value="10" placeholder="E.g. 10">
+                        <label class="po-label" for="itemFormLowStockInput">Low Stock Alert Threshold (Qty) <span class="req">*</span></label>
+                        <input type="number" id="itemFormLowStockInput" name="low_stock_threshold" class="inv-search-input" style="padding-left: 12px; padding-right: 12px;" min="0" step="1" value="10" placeholder="E.g. 10">
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                       <div class="po-field">
-                        <label class="po-label">Reorder Quantity <span class="req">*</span></label>
-                        <input type="number" id="itemFormReorderInput" class="inv-search-input" style="padding-left: 12px; padding-right: 12px;" min="0" step="1" value="20" placeholder="E.g. 20">
+                        <label class="po-label" for="itemFormReorderInput">Reorder Quantity <span class="req">*</span></label>
+                        <input type="number" id="itemFormReorderInput" name="reorder_quantity" class="inv-search-input" style="padding-left: 12px; padding-right: 12px;" min="0" step="1" value="20" placeholder="E.g. 20">
                         <small class="err" style="color: #ff4d4f; font-size: 11px;"></small>
                       </div>
                     </div>
                     <div class="po-field" style="margin-top: 10px;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label class="po-label" style="margin-bottom: 0;">Compatible / Associated Brands <span class="req">*</span></label>
+                        <div class="po-label" style="margin-bottom: 0;">Compatible / Associated Brands <span class="req">*</span></div>
                         <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="itemOpenBrandSelectModalBtn" style="font-size: 12px; height: 28px; display: inline-flex; align-items: center; gap: 6px;">
                           <i class="fa-solid fa-plus"></i> Add Brand
                         </button>
@@ -724,14 +724,14 @@
                     <div class="inv-toolbar-left" style="flex: 1; flex-wrap: wrap; gap: 8px;">
                       <div class="inv-search-wrap" style="width: 100%; max-width: 240px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="catalogItemsSearchInput" class="inv-search-input" placeholder="Search SKU or name...">
+                        <input type="text" id="catalogItemsSearchInput" name="catalog_items_search" class="inv-search-input" placeholder="Search SKU or name..." aria-label="Search SKU or name">
                       </div>
 
-                      <select id="catalogCategoryFilter" class="inv-select" aria-label="Filter by Category" style="max-width: 180px;">
+                      <select id="catalogCategoryFilter" name="catalog_category_filter" class="inv-select" aria-label="Filter by Category" style="max-width: 180px;">
                         <option value="ALL">All Categories</option>
                       </select>
 
-                      <select id="catalogBrandFilter" class="inv-select" aria-label="Filter by Brand" style="max-width: 160px;">
+                      <select id="catalogBrandFilter" name="catalog_brand_filter" class="inv-select" aria-label="Filter by Brand" style="max-width: 160px;">
                         <option value="ALL">All Brands</option>
                       </select>
 
@@ -861,7 +861,7 @@
                 <!-- Search within modal -->
                 <div class="inv-search-wrap" style="width: 100%;">
                   <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="modalBrandSearchInput" class="inv-search-input" placeholder="Search brands in registry...">
+                  <input type="text" id="modalBrandSearchInput" name="modal_brand_search" class="inv-search-input" placeholder="Search brands in registry..." aria-label="Search brands in registry">
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); padding: 0 2px;">
@@ -905,14 +905,14 @@
                     <span>Select Batch <span class="req">*</span></span>
                     <span class="hint">Includes batch available quantity & unit cost</span>
                   </label>
-                  <select id="adjBatchSelect" class="inv-select" style="width: 100%;">
+                  <select id="adjBatchSelect" name="adj_batch" class="inv-select" style="width: 100%;">
                     <!-- Populated dynamically -->
                   </select>
                 </div>
 
                 <!-- 2. Adjustment Type: (+) Add or (-) Deduct -->
                 <div class="po-field">
-                  <label class="po-label"><span>Adjustment Type <span class="req">*</span></span></label>
+                  <div class="po-label"><span>Adjustment Type <span class="req">*</span></span></div>
                   <div class="inv-segmented-group">
                     <div class="inv-segmented-option active add" id="adjTypeAdd">
                       <i class="fa-solid fa-plus"></i> (+) Add Stock
@@ -926,7 +926,7 @@
                 <!-- 3. Quantity Number Input -->
                 <div class="po-field">
                   <label class="po-label" for="adjQtyInput"><span>Adjustment Quantity <span class="req">*</span></span></label>
-                  <input type="number" id="adjQtyInput" class="inv-search-input" min="1" step="1" placeholder="Enter quantity to adjust">
+                  <input type="number" id="adjQtyInput" name="adj_qty" class="inv-search-input" min="1" step="1" placeholder="Enter quantity to adjust">
                 </div>
 
                 <!-- 4. Read-Only Financial Impact Value -->
@@ -940,7 +940,7 @@
                 <!-- 5. Reason Dropdown -->
                 <div class="po-field">
                   <label class="po-label" for="adjReasonSelect"><span>Reason for Adjustment <span class="req">*</span></span></label>
-                  <select id="adjReasonSelect" class="inv-select" style="width: 100%;">
+                  <select id="adjReasonSelect" name="adj_reason" class="inv-select" style="width: 100%;">
                     <option value="Physical Count Mismatch">Physical Count Mismatch</option>
                     <option value="Damaged / Wasted">Damaged / Wasted</option>
                     <option value="Lost">Lost</option>
@@ -953,7 +953,7 @@
                 <!-- 6. Remarks Textarea -->
                 <div class="po-field">
                   <label class="po-label" for="adjRemarksInput"><span>Remarks / Extra Notes</span></label>
-                  <textarea id="adjRemarksInput" class="po-textarea" rows="2" placeholder="Additional audit notes or incident explanation..."></textarea>
+                  <textarea id="adjRemarksInput" name="adj_remarks" class="po-textarea" rows="2" placeholder="Additional audit notes or incident explanation..."></textarea>
                 </div>
               </div>
 
@@ -998,50 +998,33 @@
                   <!-- Existing Stock Dropdown (Visible only in UPDATE mode or when item has existing stocks) -->
                   <div id="addStockExistingSelectWrap" style="display: none; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <label class="po-label" for="addStockExistingSelect" style="margin-bottom: 6px;">
-                      <span>Select Existing Stock Record to Update <span class="req">*</span></span>
+                      <span>Select Existing Stock Record to Update <span class="req" style="color: #ff4d4f;">*</span></span>
                       <span class="hint">Choose which stock record's quantity will be incremented</span>
                     </label>
-                    <select id="addStockExistingSelect" class="inv-select" style="width: 100%;">
+                    <select id="addStockExistingSelect" name="add_stock_existing_item" class="inv-select" style="width: 100%;">
                       <option value="">-- Choose Existing Stock Record --</option>
                     </select>
                   </div>
                 </div>
 
-                <!-- 1. Classification & Brand Cascading Selectors (Category -> Subcategory -> Brand) -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockCategorySelect">
-                      <span>Category <span class="req">*</span></span>
-                    </label>
-                    <select id="addStockCategorySelect" class="inv-select" style="width: 100%;">
-                      <option value="">-- Select Category --</option>
-                    </select>
-                  </div>
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockSubcategorySelect">
-                      <span>Subcategory <span class="req">*</span></span>
-                    </label>
-                    <select id="addStockSubcategorySelect" class="inv-select" style="width: 100%;" disabled>
-                      <option value="">-- Choose Category First --</option>
-                    </select>
-                  </div>
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockBrandSelect">
-                      <span>Brand <span class="req">*</span></span>
-                    </label>
-                    <select id="addStockBrandSelect" class="inv-select" style="width: 100%;">
-                      <option value="">-- Select Brand --</option>
-                    </select>
-                  </div>
+                <!-- 1. GRN Reference Selection (Step 1) -->
+                <div class="po-field" style="margin: 0;">
+                  <label class="po-label" for="addStockGrnSelect" style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700;">
+                    <span>Select GRN Reference <span class="req" style="color: #ff4d4f;">*</span></span>
+                    <span class="hint" id="addStockGrnHint" style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 8px;">Select a GRN to filter Purchase Order items</span>
+                  </label>
+                  <select id="addStockGrnSelect" name="add_stock_grn" class="inv-select" style="width: 100%;">
+                    <option value="">-- Select GRN Reference --</option>
+                  </select>
                 </div>
 
-                <!-- 2. Material Stock Item with Interactive Search Selector -->
+                <!-- 2. Material Stock Item with Interactive Search Selector (Step 2) -->
                 <div class="po-field" style="margin: 0; position: relative;">
-                  <label class="po-label" for="addStockItemSearch">
-                    <span>Select Material Item (SKU) <span class="req">*</span></span>
-                    <span class="hint">Search by SKU code or item name</span>
+                  <label class="po-label" for="addStockItemSearch" style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700;">
+                    <span>Select Material Item (SKU) <span class="req" style="color: #ff4d4f;">*</span></span>
+                    <span class="hint" id="addStockItemHint" style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 8px;">Search or select items under this GRN's Purchase Orders</span>
                   </label>
-                  <input type="hidden" id="addStockSelectedItemId" value="">
+                  <input type="hidden" id="addStockSelectedItemId" name="add_stock_item_id" value="">
 
                   <!-- Selected Item Preview Card (Hidden until an item is picked) -->
                   <div id="addStockSelectedItemDisplay" style="display: none; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 6px; padding: 10px 14px; align-items: center; justify-content: space-between; margin-bottom: 6px;">
@@ -1060,7 +1043,7 @@
                   <!-- Live Search Input Box -->
                   <div id="addStockItemSearchBoxWrap" style="position: relative;">
                     <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                    <input type="text" id="addStockItemSearch" class="inv-search-input" style="padding-left: 34px; width: 100%;" placeholder="Type to search material item name or SKU code..." autocomplete="off">
+                    <input type="text" id="addStockItemSearch" name="add_stock_item_search" class="inv-search-input" style="padding-left: 34px; width: 100%;" placeholder="Search or pick stock items for this GRN..." autocomplete="off">
                     <!-- Dropdown Matches List -->
                     <div id="addStockItemResultsDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto; margin-top: 4px;">
                       <!-- Populated via JS -->
@@ -1068,7 +1051,35 @@
                   </div>
                 </div>
 
-                <!-- 3. Batch Number Selection (Existing Batch vs New Batch) -->
+                <!-- 3. Classification & Brand Selectors (Auto-selected on Item pick) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="addStockCategorySelect">
+                      <span>Category <span class="req" style="color: #ff4d4f;">*</span></span>
+                    </label>
+                    <select id="addStockCategorySelect" name="add_stock_category" class="inv-select" style="width: 100%;">
+                      <option value="">-- Select Category --</option>
+                    </select>
+                  </div>
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="addStockSubcategorySelect">
+                      <span>Subcategory <span class="req" style="color: #ff4d4f;">*</span></span>
+                    </label>
+                    <select id="addStockSubcategorySelect" name="add_stock_subcategory" class="inv-select" style="width: 100%;" disabled>
+                      <option value="">-- Choose Category First --</option>
+                    </select>
+                  </div>
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="addStockBrandSelect">
+                      <span>Brand <span class="req" style="color: #ff4d4f;">*</span></span>
+                    </label>
+                    <select id="addStockBrandSelect" name="add_stock_brand" class="inv-select" style="width: 100%;">
+                      <option value="">-- Select Brand --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 4. Batch Number Selection (Existing Batch vs New Batch) -->
                 <div style="background: var(--surface-2, #f5f5f5); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px;">
                   <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">
                     <i class="fa-solid fa-barcode" style="color: #722ed1;"></i> Batch Number Allocation
@@ -1088,49 +1099,40 @@
                     <label class="po-label" for="addStockBatchSelect" style="margin-bottom: 4px;">
                       <span>Existing Batch Number</span>
                     </label>
-                    <select id="addStockBatchSelect" class="inv-select" style="width: 100%;">
+                    <select id="addStockBatchSelect" name="add_stock_batch" class="inv-select" style="width: 100%;">
                       <option value="">-- Select Existing Batch No --</option>
                     </select>
                   </div>
                 </div>
 
-                <!-- 4. GRN Reference & Received Date -->
+                <!-- 5. Received Date, Quantity & Pricing (4 Fields with Red Asterisks) -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start;">
                   <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockGrnSelect" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-                      <span>GRN Reference <span class="req">*</span></span>
+                    <label class="po-label" for="addStockDate" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
+                      <span>Received Date <span class="req" style="color: #ff4d4f;">*</span></span>
                     </label>
-                    <select id="addStockGrnSelect" class="inv-select" style="width: 100%;">
-                      <option value="">-- Select GRN Reference --</option>
-                    </select>
+                    <input type="date" id="addStockDate" name="add_stock_date" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;">
                   </div>
                   <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockDate" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-                      <span>Received Date <span class="req">*</span></span>
+                    <label class="po-label" for="addStockQty" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700; white-space: nowrap;">
+                      <span>Quantity Received <span class="req" style="color: #ff4d4f;">*</span></span>
                     </label>
-                    <input type="date" id="addStockDate" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;">
+                    <input type="number" id="addStockQty" name="add_stock_qty" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="1" step="1" placeholder="Enter quantity">
                   </div>
                 </div>
 
-                <!-- 5. Quantity & Pricing -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: start;">
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="addStockQty" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700; white-space: nowrap;">
-                      <span>Quantity Received <span class="req">*</span></span>
-                    </label>
-                    <input type="number" id="addStockQty" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="1" step="1" placeholder="Enter quantity">
-                  </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start;">
                   <div class="po-field" style="margin: 0;">
                     <label class="po-label" for="addStockUnitCost" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700; white-space: nowrap;">
-                      <span>Unit Purchase Cost (LKR) <span class="req">*</span></span>
+                      <span>Unit Purchase Cost (LKR) <span class="req" style="color: #ff4d4f;">*</span></span>
                     </label>
-                    <input type="number" id="addStockUnitCost" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="0" step="0.01" placeholder="0.00">
+                    <input type="number" id="addStockUnitCost" name="add_stock_unit_cost" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="0" step="0.01" placeholder="0.00">
                   </div>
                   <div class="po-field" style="margin: 0;">
                     <label class="po-label" for="addStockSellingPrice" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700; white-space: nowrap;">
-                      <span>Standard Selling Price (LKR) <span class="req">*</span></span>
+                      <span>Standard Selling Price (LKR) <span class="req" style="color: #ff4d4f;">*</span></span>
                     </label>
-                    <input type="number" id="addStockSellingPrice" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="0" step="0.01" placeholder="0.00">
+                    <input type="number" id="addStockSellingPrice" name="add_stock_selling_price" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%;" min="0" step="0.01" placeholder="0.00">
                   </div>
                 </div>
 

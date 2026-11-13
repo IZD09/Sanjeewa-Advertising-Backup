@@ -266,10 +266,10 @@
               </div>
 
               <div class="po-field">
-                <label class="po-label">
+                <div class="po-label">
                   <span>Computed Area</span>
                   <span class="hint">Auto Calculated</span>
-                </label>
+                </div>
                 <div class="area-calc-pill" style="height: var(--input-height);">
                   <span><i class="fa-solid fa-calculator" style="color: var(--po-orange); margin-right: 6px;"></i> Area:</span>
                   <span class="area-val" id="liveAreaVal">40.00 sq.ft</span>

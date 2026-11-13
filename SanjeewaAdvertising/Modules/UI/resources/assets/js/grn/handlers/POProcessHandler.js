@@ -54,26 +54,11 @@ export class POProcessHandler {
     if (supplierInput) supplierInput.value = supName;
     if (contactInput) contactInput.value = foundSup ? foundSup.phone : "077 123 4567";
     if (remarksInput) remarksInput.value = "";
+    const searchInput = document.getElementById("newPoItemSearchInput");
+    if (searchInput) searchInput.value = "";
 
-    const catalog = this.ctx.getCatalogItems();
-    this.newPoItems = [
-      {
-        item_id: catalog[0]?.code || "PAP-001",
-        item_name: catalog[0]?.name || "300gsm Art Board SRA3",
-        unit: catalog[0]?.unit || "Sheets",
-        qty: 500,
-        unit_cost: catalog[0]?.unitPrice || 45.00,
-        total: (catalog[0]?.unitPrice || 45.00) * 500
-      },
-      {
-        item_id: catalog[3]?.code || "INK-101",
-        item_name: catalog[3]?.name || "Flora Solvent Cyan Ink (5L)",
-        unit: catalog[3]?.unit || "Liters",
-        qty: 4,
-        unit_cost: catalog[3]?.unitPrice || 8500.00,
-        total: (catalog[3]?.unitPrice || 8500.00) * 4
-      }
-    ];
+    // Initialize with empty item list (no default items)
+    this.newPoItems = [];
 
     this.renderNewPoItems();
     this.calculateNewPoTotal();
@@ -81,27 +66,13 @@ export class POProcessHandler {
   }
 
   addNewPoRow() {
-    const catalog = this.ctx.getCatalogItems();
-    const defaultItem = catalog[0] || { code: "PAP-001", name: "300gsm Art Board SRA3", unit: "Sheets", unitPrice: 45.00 };
-
-    this.newPoItems.push({
-      item_id: defaultItem.code,
-      item_name: defaultItem.name,
-      unit: defaultItem.unit,
-      qty: 10,
-      unit_cost: defaultItem.unitPrice || 0,
-      total: (defaultItem.unitPrice || 0) * 10
-    });
-
-    this.renderNewPoItems();
-    this.calculateNewPoTotal();
+    const searchInput = document.getElementById("newPoItemSearchInput");
+    if (searchInput) {
+      searchInput.focus();
+    }
   }
 
   removeNewPoRow(index) {
-    if (this.newPoItems.length <= 1) {
-      this.ctx.showToast("A Purchase Order must contain at least 1 item line", "warning");
-      return;
-    }
     this.newPoItems.splice(index, 1);
     this.renderNewPoItems();
     this.calculateNewPoTotal();
@@ -111,32 +82,69 @@ export class POProcessHandler {
     const tbody = document.getElementById("newPoItemsTbody");
     if (!tbody) return;
 
-    const catalog = this.ctx.getCatalogItems();
     tbody.innerHTML = "";
+
+    if (this.newPoItems.length === 0) {
+      const emptyRow = document.createElement("tr");
+      emptyRow.id = "newPoEmptyStateRow";
+      emptyRow.innerHTML = `
+        <td colspan="6" style="text-align: center; padding: 36px 20px; background: rgba(0, 0, 0, 0.015); border-radius: 8px;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(22, 119, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #1677ff; font-size: 22px;">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                No Materials Added Yet
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); max-width: 380px; line-height: 1.5;">
+                Use the <strong>Search &amp; Add Material Item</strong> selector above to search from database items and add them to this Purchase Order.
+              </div>
+            </div>
+            <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="margin-top: 4px;" onclick="window.grnManager.addNewPoRow()">
+              <i class="fa-solid fa-magnifying-glass"></i> Search &amp; Add Item
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(emptyRow);
+      return;
+    }
 
     this.newPoItems.forEach((row, index) => {
       const tr = document.createElement("tr");
 
-      const optionsHtml = catalog.map(item => `
-        <option value="${item.code}" ${item.code === row.item_id ? "selected" : ""}>
-          ${item.name} (${item.code})
-        </option>
-      `).join("");
-
       tr.innerHTML = `
         <td style="min-width: 250px;">
-          <select class="grn-inline-input" onchange="window.grnManager.onNewPoItemSelectChange(${index}, this.value)">
-            ${optionsHtml}
-          </select>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="inv-item-code" style="font-size: 11px; font-weight: 700; color: #1677ff;">${row.item_id}</span>
+            <span style="font-weight: 600; font-size: 12.5px; color: var(--text);">${row.item_name}</span>
+          </div>
         </td>
         <td style="width: 100px;">
           <span class="inv-unit-badge" style="font-size: 12px; font-weight: 600; color: var(--text);">${row.unit}</span>
         </td>
         <td style="width: 120px;">
-          <input type="number" class="grn-inline-input text-right" min="1" step="1" value="${row.qty}" oninput="window.grnManager.onNewPoQtyChange(${index}, this.value)">
+          <input type="number"
+                 id="poItemQty_${index}"
+                 name="po_items[${index}][qty]"
+                 aria-label="Order quantity for ${row.item_name}"
+                 class="grn-inline-input text-right"
+                 min="1"
+                 step="1"
+                 value="${row.qty}"
+                 oninput="window.grnManager.onNewPoQtyChange(${index}, this.value)">
         </td>
         <td style="width: 140px;">
-          <input type="number" class="grn-inline-input text-right" min="0" step="0.01" value="${row.unit_cost}" oninput="window.grnManager.onNewPoCostChange(${index}, this.value)">
+          <input type="number"
+                 id="poItemCost_${index}"
+                 name="po_items[${index}][cost]"
+                 aria-label="Unit cost for ${row.item_name}"
+                 class="grn-inline-input text-right"
+                 min="0"
+                 step="0.01"
+                 value="${row.unit_cost}"
+                 oninput="window.grnManager.onNewPoCostChange(${index}, this.value)">
         </td>
         <td class="text-right" style="width: 150px; font-weight: 700; color: #1677ff;">
           ${this.ctx.formatCurrency(row.total)}
@@ -201,6 +209,10 @@ export class POProcessHandler {
   }
 
   saveNewPurchaseOrder() {
+    if (this.ctx.modalHandler?.saveNewPurchaseOrder) {
+      return this.ctx.modalHandler.saveNewPurchaseOrder();
+    }
+
     const poNum = document.getElementById("newPoNumber")?.value || this.ctx.generateNextPONumber();
     const orderDate = document.getElementById("newPoDate")?.value;
     const expDate = document.getElementById("newPoExpectedDate")?.value;

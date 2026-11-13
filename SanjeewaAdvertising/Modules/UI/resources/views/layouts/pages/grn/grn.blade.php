@@ -110,9 +110,6 @@
               <button type="button" class="grn-tab-btn {{ (!request()->has('view') || request('view') === 'list') ? 'active' : '' }}" id="grnTabListBtn">
                 <i class="fa-solid fa-list-check"></i> All GRN Records
               </button>
-              <button type="button" class="grn-tab-btn {{ request('view') === 'form' ? 'active' : '' }}" id="grnTabCreateBtn">
-                <i class="fa-solid fa-file-circle-plus"></i> + Create New GRN
-              </button>
               <button type="button" class="grn-tab-btn {{ request('view') === 'po' ? 'active' : '' }}" id="grnTabPOBtn">
                 <i class="fa-solid fa-clipboard-list"></i> Purchase Orders (PO) <span class="tab-count-badge" id="grnOpenPoBadge">0</span>
               </button>
@@ -132,16 +129,16 @@
                     <!-- Search Bar -->
                     <div class="grn-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="grnSearchInput" class="grn-search-input" placeholder="Search by GRN #, PO #, supplier, contact...">
+                      <input type="text" id="grnSearchInput" name="grn_search" aria-label="Search GRN records" class="grn-search-input" placeholder="Search by GRN #, PO #, supplier, contact...">
                     </div>
 
                     <!-- Supplier Filter -->
-                    <select id="grnSupplierFilter" class="grn-select" aria-label="Filter by Supplier">
+                    <select id="grnSupplierFilter" name="grn_supplier_filter" class="grn-select" aria-label="Filter by Supplier">
                       <option value="ALL">All Suppliers</option>
                     </select>
 
                     <!-- Status Filter -->
-                    <select id="grnStatusFilter" class="grn-select" aria-label="Filter by Status">
+                    <select id="grnStatusFilter" name="grn_status_filter" class="grn-select" aria-label="Filter by Status">
                       <option value="ALL">All Statuses</option>
                       <option value="Completed">Completed</option>
                       <option value="Draft">Draft</option>
@@ -185,188 +182,8 @@
               </div>
             </div>
 
-            <!-- ======================================================================
-                 VIEW B: CREATE NEW GRN FORM VIEW
-                 ====================================================================== -->
-            <div id="grnFormView" style="{{ request('view') === 'form' ? '' : 'display: none;' }}">
-              <div class="grn-card">
-                
-                <!-- Part 1: Header Information (grn_main / grn_header) -->
-                <div class="grn-form-section">
-                  <h3 class="grn-section-title">
-                    <i class="fa-solid fa-file-lines"></i> 1. Goods Received Header Details
-                  </h3>
-                  <div class="grn-form-grid-5">
-                    <!-- GRN No (Auto Fill) -->
-                    <div class="po-field" style="margin: 0;">
-                      <label class="po-label" for="grnFormNumber">
-                        <span>GRN Number <span class="req">*</span></span>
-                        <span class="hint">Auto-generated</span>
-                      </label>
-                      <input type="text" id="grnFormNumber" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
-                    </div>
-
-                    <!-- Purchase Order Reference (Select Dropdown + Quick Add PO) -->
-                    <div class="po-field" style="margin: 0;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <label class="po-label" for="grnFormPOSelect" style="margin: 0;">
-                          <span>Purchase Order <span class="req">*</span></span>
-                        </label>
-                        <button type="button" id="grnQuickAddPOBtn" style="background: none; border: none; color: #1677ff; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0;" title="Create a new Purchase Order">
-                          <i class="fa-solid fa-plus"></i> New PO
-                        </button>
-                      </div>
-                      <select id="grnFormPOSelect" class="grn-inline-input" style="font-family: inherit; font-weight: 600;">
-                        <option value="">-- Select Approved / Pending Purchase Order --</option>
-                      </select>
-                      <input type="hidden" id="grnFormPO" value="">
-                    </div>
-
-                    <!-- Date (Calendar) -->
-                    <div class="po-field" style="margin: 0;">
-                      <label class="po-label" for="grnFormDate">
-                        <span>Received Date <span class="req">*</span></span>
-                      </label>
-                      <input type="date" id="grnFormDate" class="grn-inline-input" required>
-                    </div>
-
-                    <!-- Supplier (Dropdown / Autocomplete + Quick Add Supplier) -->
-                    <div class="po-field" style="margin: 0;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <label class="po-label" for="grnFormSupplier" style="margin: 0;">
-                          <span>Supplier / Vendor <span class="req">*</span></span>
-                        </label>
-                        <button type="button" id="grnQuickAddSupplierBtn" style="background: none; border: none; color: #1677ff; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0;" title="Register a new supplier">
-                          <i class="fa-solid fa-user-plus"></i> New Supplier
-                        </button>
-                      </div>
-                      <input type="text" id="grnFormSupplier" class="grn-inline-input" list="grnSupplierList" placeholder="Select or enter supplier" required>
-                      <datalist id="grnSupplierList">
-                        <!-- Dynamically populated from this.suppliers -->
-                      </datalist>
-                    </div>
-
-                    <!-- Supplier Contact -->
-                    <div class="po-field" style="margin: 0;">
-                      <label class="po-label" for="grnFormContact">
-                        <span>Supplier Contact <span class="req">*</span></span>
-                        <span class="hint">Phone / Mobile No</span>
-                      </label>
-                      <input type="text" id="grnFormContact" class="grn-inline-input" placeholder="E.g. 077 123 4567 / 011 234 5678">
-                    </div>
-                  </div>
-
-                  <!-- Linked PO Info Banner (Appears when a PO is chosen) -->
-                  <div id="grnPoInfoBanner" class="grn-po-banner" style="display: none;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(22, 119, 255, 0.12); display: flex; align-items: center; justify-content: center; color: #1677ff; font-size: 16px;">
-                        <i class="fa-solid fa-file-invoice"></i>
-                      </div>
-                      <div>
-                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px;">
-                          <span>Linked Purchase Order: <strong id="grnPoBannerCode" style="color: #1677ff;">PO-2026-088</strong></span>
-                          <span id="grnPoBannerStatus" class="grn-status-badge pending">Pending</span>
-                        </div>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="grnPoBannerSupplier">
-                          Supplier: PaperPro Lanka &bull; Ordered Date: 2026-10-20
-                        </div>
-                      </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <span id="grnPoBannerItemCount" style="font-size: 12px; font-weight: 600; color: var(--text);">
-                        0 items loaded
-                      </span>
-                      <button type="button" class="ant-btn ant-btn-default" id="grnResetPoBtn" style="font-size: 11px; padding: 2px 10px; height: 26px;">
-                        <i class="fa-solid fa-rotate-left"></i> Change / Clear PO
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Part 2: Dynamic Items Table (grn_items / grn_details) -->
-                <div class="grn-form-section" style="border-top: 1px solid var(--border); padding-top: 16px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h3 class="grn-section-title">
-                      <i class="fa-solid fa-boxes-stacked"></i> 2. Received Material Items List
-                    </h3>
-                    <span style="font-size: 12px; color: var(--text-muted);">
-                      Each line creates a new Batch in Stock Management upon completion.
-                    </span>
-                  </div>
-
-                  <div class="inv-table-responsive">
-                    <table class="grn-items-table">
-                      <thead>
-                        <tr>
-                          <th>Item Name (Select Material)</th>
-                          <th>Unit</th>
-                          <th class="text-right">Qty</th>
-                          <th class="text-right">Unit Cost (Rs.)</th>
-                          <th class="text-right">Total (Rs.)</th>
-                          <th class="text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody id="grnFormItemsTbody">
-                        <!-- Dynamically populated rows via js/grn.js -->
-                      </tbody>
-                    </table>
-                    <div class="grn-add-row-bar">
-                      <button type="button" class="ant-btn ant-btn-dashed" id="grnAddRowBtn">
-                        <i class="fa-solid fa-plus"></i> Add Item Row
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Part 3: Footer Financials & Notes -->
-                <div class="grn-footer-layout">
-                  <div>
-                    <div class="po-field" style="margin-bottom: 12px;">
-                      <label class="po-label" for="grnFormReceivedBy"><span>Received By / Cashier</span></label>
-                      <input type="text" id="grnFormReceivedBy" class="grn-inline-input" value="Admin User" readonly>
-                    </div>
-                    <div class="po-field" style="margin: 0;">
-                      <label class="po-label" for="grnFormRemarks"><span>Delivery Remarks & Storage Notes</span></label>
-                      <textarea id="grnFormRemarks" class="po-textarea" rows="3" placeholder="Condition of bundles/rolls, vehicle number, delivery remarks..."></textarea>
-                    </div>
-                  </div>
-
-                  <div class="grn-financial-summary-box">
-                    <div class="grn-fin-row">
-                      <span>Sub Total:</span>
-                      <strong id="grnFormSubTotal">Rs. 0.00</strong>
-                    </div>
-                    <div class="grn-fin-row">
-                      <label for="grnFormDiscount" style="cursor: pointer;">Discount (if any):</label>
-                      <div style="width: 140px;">
-                        <input type="number" id="grnFormDiscount" class="grn-inline-input text-right" min="0" step="0.01" value="0.00">
-                      </div>
-                    </div>
-                    <div class="grn-fin-row net-total">
-                      <span>Net Total:</span>
-                      <strong id="grnFormNetTotal">Rs. 0.00</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Part 4: Form Actions Bar -->
-                <div class="grn-form-actions-bar">
-                  <button type="button" class="ant-btn ant-btn-default" id="grnCancelFormBtn">
-                    Cancel
-                  </button>
-                  <button type="button" class="ant-btn ant-btn-default" id="grnSaveDraftBtn" style="border-color: #faad14; color: #faad14;">
-                    <i class="fa-solid fa-floppy-disk"></i> Save as Draft
-                  </button>
-                  <button type="button" class="ant-btn ant-btn-primary" id="grnCompleteBtn">
-                    <i class="fa-solid fa-circle-check"></i> Complete GRN & Update Stock
-                  </button>
-                </div>
-
-              </div>
-            </div>
-
             <!-- ==================================================================
-                 VIEW C: PURCHASE ORDERS (PO) DIRECTORY & TRACKING VIEW
+                 VIEW B: PURCHASE ORDERS (PO) DIRECTORY & TRACKING VIEW
                  ================================================================== -->
             <div id="grnPOView" style="{{ request('view') === 'po' ? '' : 'display: none;' }}">
               <div class="grn-card">
@@ -376,16 +193,16 @@
                     <!-- Search Bar -->
                     <div class="grn-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="poSearchInput" class="grn-search-input" placeholder="Search by PO #, supplier, materials...">
+                      <input type="text" id="poSearchInput" name="po_search" aria-label="Search Purchase Orders" class="grn-search-input" placeholder="Search by PO #, supplier, materials...">
                     </div>
 
                     <!-- Supplier Filter -->
-                    <select id="poSupplierFilter" class="grn-select" aria-label="Filter by Supplier">
+                    <select id="poSupplierFilter" name="po_supplier_filter" class="grn-select" aria-label="Filter by Supplier">
                       <option value="ALL">All Suppliers</option>
                     </select>
 
                     <!-- Status Filter -->
-                    <select id="poStatusFilter" class="grn-select" aria-label="Filter by Status">
+                    <select id="poStatusFilter" name="po_status_filter" class="grn-select" aria-label="Filter by Status">
                       <option value="ALL">All Statuses</option>
                       <option value="Pending">Pending (Awaiting GRN)</option>
                       <option value="Partial">Partial (Partially Received)</option>
@@ -439,9 +256,9 @@
                   <div class="grn-toolbar-left">
                     <div class="grn-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
-                      <input type="text" id="supplierSearchInput" class="grn-search-input" placeholder="Search suppliers by name, contact, city, category...">
+                      <input type="text" id="supplierSearchInput" name="supplier_search" aria-label="Search suppliers" class="grn-search-input" placeholder="Search suppliers by name, contact, city, category...">
                     </div>
-                    <select id="supplierCategoryFilter" class="grn-select" aria-label="Filter by Category">
+                    <select id="supplierCategoryFilter" name="supplier_category_filter" class="grn-select" aria-label="Filter by Category">
                       <option value="ALL">All Material Categories</option>
                       <option value="Paper & Boards">Paper & Boards</option>
                       <option value="Inks & Solvents">Inks & Solvents</option>
@@ -471,6 +288,186 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- ==========================================================================
+               CREATE NEW GRN MODAL (Multi-PO Support)
+               ========================================================================== -->
+          <div class="po-modal-overlay" id="createGrnModal">
+            <div class="po-modal po-modal-large" style="max-width: 1040px; max-height: 94vh;">
+              <!-- Modal Header -->
+              <div class="po-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(22, 119, 255, 0.1); color: #1677ff; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Receive &amp; Create Goods Received Note (GRN)</h3>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">Link one or more active Purchase Orders, record received quantities, and update stock</span>
+                  </div>
+                </div>
+                <button type="button" class="modal-close-btn" data-close-grn-modal="createGrnModal" aria-label="Close modal">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <!-- Modal Body -->
+              <div class="po-modal-body" style="gap: 16px; padding: 18px 24px; max-height: calc(94vh - 130px); overflow-y: auto;">
+                
+                <!-- Top Row: GRN Meta Details -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; background: var(--surface-2, #fafafa); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="grnModalNumber" style="margin-bottom: 2px;">
+                      <span>GRN Document Code</span>
+                      <span class="hint">System allocated</span>
+                    </label>
+                    <input type="text" id="grnModalNumber" name="grn_number" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
+                  </div>
+
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="grnCreateModalDate" style="margin-bottom: 2px;">
+                      <span>Received Date <span class="req" style="color: #ff4d4f;">*</span></span>
+                    </label>
+                    <input type="date" id="grnCreateModalDate" name="grn_received_date" class="grn-inline-input" required>
+                  </div>
+
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="grnModalReceivedBy" style="margin-bottom: 2px;">
+                      <span>Received By / Stock Custodian</span>
+                    </label>
+                    <input type="text" id="grnModalReceivedBy" name="received_by" class="grn-inline-input" value="Admin User" readonly>
+                  </div>
+                </div>
+
+                <!-- SECTION 1: SEARCH & LINK PURCHASE ORDERS -->
+                <div style="border-top: 1px solid var(--border); padding-top: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text);">
+                      <i class="fa-solid fa-clipboard-list" style="color: #1677ff;"></i> 1. Linked Purchase Orders (PO) <span class="tab-count-badge" id="grnModalPoCount" style="margin-left: 6px;">0</span>
+                    </div>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">
+                      A single GRN can receive items from multiple Purchase Orders
+                    </span>
+                  </div>
+
+                  <!-- Active PO Search Selector -->
+                  <div style="margin-bottom: 12px; position: relative;">
+                    <label class="po-label" for="grnModalPoSearchInput" style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                      <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Active Purchase Order <span class="req" style="color: #ff4d4f;">*</span></span>
+                      <span class="hint" id="grnModalPoSearchHint" style="font-size: 11px; color: var(--text-muted);">Type PO #, supplier name, or click to browse active POs</span>
+                    </label>
+                    <div style="position: relative;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
+                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
+                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      </span>
+                      <!-- Live Search Results Dropdown -->
+                      <div id="grnModalPoSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 250px; overflow-y: auto; margin-top: 4px;">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Table of Currently Linked Purchase Orders -->
+                  <div class="inv-table-responsive" style="margin-bottom: 8px;">
+                    <table class="ant-table" style="font-size: 12.5px;">
+                      <thead>
+                        <tr>
+                          <th style="width: 130px;">PO Number</th>
+                          <th style="min-width: 180px;">Supplier / Vendor</th>
+                          <th style="width: 110px;">Order Date</th>
+                          <th class="text-right" style="width: 130px;">PO Value (Rs.)</th>
+                          <th style="width: 100px;">Status</th>
+                          <th style="width: 180px;">Supplier Invoice #</th>
+                          <th class="text-center" style="width: 70px;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="grnModalPoTableBody">
+                        <!-- Dynamically populated via CreateGrnModal.js -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- SECTION 2: RECEIVED MATERIAL ITEMS LIST -->
+                <div style="border-top: 1px solid var(--border); padding-top: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text);">
+                      <i class="fa-solid fa-boxes-stacked" style="color: #1677ff;"></i> 2. Received Material Items List <span class="tab-count-badge" id="grnModalItemCount" style="margin-left: 6px;">0</span>
+                    </div>
+                    <span style="font-size: 11.5px; color: var(--text-muted);" id="grnModalItemHint">
+                      Items auto-loaded from linked Purchase Orders. Adjust receiving quantities or unit costs.
+                    </span>
+                  </div>
+
+                  <div class="inv-table-responsive">
+                    <table class="grn-items-table">
+                      <thead>
+                        <tr>
+                          <th style="min-width: 200px;">Material Item</th>
+                          <th style="width: 110px;">Linked PO</th>
+                          <th style="width: 70px;">Unit</th>
+                          <th class="text-right" style="width: 85px;">Ordered</th>
+                          <th class="text-right" style="width: 85px;">Prev Rec.</th>
+                          <th class="text-right" style="width: 115px;">Receiving Qty <span class="req" style="color: #ff4d4f;">*</span></th>
+                          <th class="text-right" style="width: 125px;">Unit Cost (Rs.) <span class="req" style="color: #ff4d4f;">*</span></th>
+                          <th class="text-right" style="width: 125px;">Line Total (Rs.)</th>
+                          <th class="text-center" style="width: 50px;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="grnModalItemsTbody">
+                        <!-- Dynamically populated via CreateGrnModal.js -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- SECTION 3: FINANCIAL CALCULATION SUMMARY & NOTES -->
+                <div style="display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: stretch; border-top: 1px solid var(--border); padding-top: 14px;">
+                  <div style="display: flex; flex-direction: column;">
+                    <div class="po-field" style="margin: 0; display: flex; flex-direction: column; height: 100%;">
+                      <label class="po-label" for="grnModalRemarks" style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-comment-dots" style="color: #1677ff; margin-right: 4px;"></i> Delivery Remarks &amp; Storage Notes</span>
+                        <span class="hint" style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Vehicle no, condition of packages, location</span>
+                      </label>
+                      <textarea id="grnModalRemarks"
+                                name="delivery_remarks"
+                                class="po-textarea grn-textarea"
+                                rows="4"
+                                placeholder="Condition of bundles/rolls, vehicle number, batch notes, warehouse rack/shelf location..."
+                                style="width: 100%; min-height: 108px; flex: 1; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); font-family: inherit; font-size: 12.5px; line-height: 1.5; color: var(--text); resize: vertical; box-sizing: border-box; outline: none;"></textarea>
+                    </div>
+                  </div>
+
+                  <div class="grn-financial-summary-box" style="margin: 0; padding: 14px 18px; border-radius: 8px;">
+                    <div class="grn-fin-row">
+                      <span>Sub Total:</span>
+                      <strong id="grnModalSubTotal">Rs. 0.00</strong>
+                    </div>
+                    <div class="grn-fin-row">
+                      <label for="grnModalDiscount" style="cursor: pointer; font-size: 13px;">Discount (LKR):</label>
+                      <div style="width: 130px;">
+                        <input type="number" id="grnModalDiscount" name="grn_discount" aria-label="GRN Discount" class="grn-inline-input text-right" min="0" step="0.01" value="0.00" style="height: 30px; font-weight: 600;">
+                      </div>
+                    </div>
+                    <div class="grn-fin-row net-total" style="border-top: 2px solid #1677ff; margin-top: 8px; padding-top: 8px;">
+                      <span style="font-weight: 700; color: #1677ff; font-size: 14px;">Net Total:</span>
+                      <strong id="grnModalNetTotal" style="color: #1677ff; font-size: 17px;">Rs. 0.00</strong>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Modal Footer -->
+              <div class="po-modal-footer">
+                <button type="button" class="ant-btn ant-btn-default" data-close-grn-modal="createGrnModal">Cancel</button>
+                <button type="button" class="ant-btn ant-btn-primary" id="saveNewGrnModalBtn">
+                  <i class="fa-solid fa-circle-check"></i> Complete &amp; Save GRN
+                </button>
+              </div>
+
+            </div>
           </div>
 
           <!-- ==========================================================================
@@ -521,7 +518,7 @@
                       <td style="color: #666;"><strong>Received By:</strong></td>
                       <td style="font-weight: bold;" id="grnDocReceivedBy">-</td>
                       <td style="color: #666;"><strong>Status:</strong></td>
-                      <td style="font-weight: bold;"><span id="grnDocStatus" class="grn-status-badge completed">Completed</span></td>
+                      <td style="font-weight: bold;"><span id="grnDocStatusTable" class="grn-status-badge completed">Completed</span></td>
                     </tr>
                   </table>
 
@@ -603,7 +600,7 @@
                     <label class="po-label" for="newPoNumber">
                       <span>PO Number <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newPoNumber" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
+                    <input type="text" id="newPoNumber" name="po_number" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
                   </div>
 
                   <!-- Order Date -->
@@ -611,7 +608,7 @@
                     <label class="po-label" for="newPoDate">
                       <span>Order Date <span class="req">*</span></span>
                     </label>
-                    <input type="date" id="newPoDate" class="grn-inline-input" required>
+                    <input type="date" id="newPoDate" name="po_date" class="grn-inline-input" required>
                   </div>
 
                   <!-- Expected Date -->
@@ -619,7 +616,7 @@
                     <label class="po-label" for="newPoExpectedDate">
                       <span>Expected Delivery <span class="req">*</span></span>
                     </label>
-                    <input type="date" id="newPoExpectedDate" class="grn-inline-input" required>
+                    <input type="date" id="newPoExpectedDate" name="po_expected_date" class="grn-inline-input" required>
                   </div>
 
                   <!-- Supplier (with Quick Add Supplier) -->
@@ -632,7 +629,8 @@
                         <i class="fa-solid fa-user-plus"></i> New
                       </button>
                     </div>
-                    <input type="text" id="newPoSupplier" class="grn-inline-input" list="grnSupplierList" placeholder="Select or enter supplier" required>
+                    <input type="text" id="newPoSupplier" name="po_supplier" class="grn-inline-input" list="grnSupplierList" placeholder="Select or enter supplier" required>
+                    <datalist id="grnSupplierList"></datalist>
                   </div>
                 </div>
 
@@ -642,7 +640,7 @@
                     <label class="po-label" for="newPoContact">
                       <span>Supplier Contact / Tel <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newPoContact" class="grn-inline-input" placeholder="E.g. 077 123 4567 / 011 234 5678">
+                    <input type="text" id="newPoContact" name="po_contact" class="grn-inline-input" placeholder="E.g. 077 123 4567 / 011 234 5678">
                   </div>
 
                   <!-- Remarks / Notes -->
@@ -650,19 +648,37 @@
                     <label class="po-label" for="newPoRemarks">
                       <span>Order Instructions / Notes</span>
                     </label>
-                    <input type="text" id="newPoRemarks" class="grn-inline-input" placeholder="Urgent order, standard packaging, batch requirement...">
+                    <input type="text" id="newPoRemarks" name="po_remarks" class="grn-inline-input" placeholder="Urgent order, standard packaging, batch requirement...">
                   </div>
                 </div>
 
                 <!-- Materials to Order Table -->
                 <div style="border-top: 1px solid var(--border); padding-top: 14px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <div style="font-size: 13px; font-weight: 700; color: var(--text);">
                       <i class="fa-solid fa-boxes-stacked" style="color: #1677ff;"></i> Materials to Order
                     </div>
                     <span style="font-size: 11.5px; color: var(--text-muted);">
-                      Specify items, quantity to order, and estimated unit cost
+                      Search and select items from database, then adjust quantity or cost
                     </span>
+                  </div>
+
+                  <!-- Database Item Search & Add Selector -->
+                  <div style="margin-bottom: 12px; position: relative;">
+                    <label class="po-label" for="newPoItemSearchInput" style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                      <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Material Item <span class="req" style="color: #ff4d4f;">*</span></span>
+                      <span class="hint" id="newPoItemSearchHint" style="font-size: 11px; color: var(--text-muted);">Type SKU code or material name to load &amp; add directly</span>
+                    </label>
+                    <div style="position: relative;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
+                      <input type="text" id="newPoItemSearchInput" name="po_item_search" aria-label="Search material items from database" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search material item from database by SKU code or name..." autocomplete="off">
+                      <span id="newPoItemSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      </span>
+                      <!-- Live Match Results Dropdown -->
+                      <div id="newPoItemSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; margin-top: 4px;">
+                      </div>
+                    </div>
                   </div>
 
                   <div class="inv-table-responsive">
@@ -678,7 +694,26 @@
                         </tr>
                       </thead>
                       <tbody id="newPoItemsTbody">
-                        <!-- Dynamically generated rows -->
+                        <tr id="newPoEmptyStateRow">
+                          <td colspan="6" style="text-align: center; padding: 36px 20px; background: rgba(0, 0, 0, 0.015); border-radius: 8px;">
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                              <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(22, 119, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #1677ff; font-size: 22px;">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                              </div>
+                              <div>
+                                <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                                  No Materials Added Yet
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); max-width: 380px; line-height: 1.5;">
+                                  Click the <strong>"Add Item Line"</strong> button below to select material items, enter quantities, and specify estimated unit costs.
+                                </div>
+                              </div>
+                              <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="margin-top: 4px;" onclick="window.grnManager.addNewPoRow()">
+                                <i class="fa-solid fa-plus"></i> Add First Item
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -829,7 +864,7 @@
                     <label class="po-label" for="newSupCode">
                       <span>Supplier Code <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupCode" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
+                    <input type="text" id="newSupCode" name="supplier_code" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
                   </div>
 
                   <!-- Supplier / Company Name -->
@@ -837,7 +872,7 @@
                     <label class="po-label" for="newSupName">
                       <span>Company / Business Name <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupName" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
+                    <input type="text" id="newSupName" name="supplier_name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
                   </div>
                 </div>
 
@@ -847,7 +882,7 @@
                     <label class="po-label" for="newSupPerson">
                       <span>Contact Person <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupPerson" class="grn-inline-input" placeholder="E.g. Samantha Perera" required>
+                    <input type="text" id="newSupPerson" name="contact_person" autocomplete="name" class="grn-inline-input" placeholder="E.g. Samantha Perera" required>
                   </div>
 
                   <!-- Phone Number -->
@@ -855,7 +890,7 @@
                     <label class="po-label" for="newSupPhone">
                       <span>Mobile / Phone No <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupPhone" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
+                    <input type="text" id="newSupPhone" name="phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
                   </div>
                 </div>
 
@@ -865,7 +900,7 @@
                     <label class="po-label" for="newSupAltPhone">
                       <span>Office Landline (Optional)</span>
                     </label>
-                    <input type="text" id="newSupAltPhone" class="grn-inline-input" placeholder="E.g. 011 234 5678">
+                    <input type="text" id="newSupAltPhone" name="alt_phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 011 234 5678">
                   </div>
 
                   <!-- Email -->
@@ -873,7 +908,7 @@
                     <label class="po-label" for="newSupEmail">
                       <span>Email Address</span>
                     </label>
-                    <input type="email" id="newSupEmail" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
+                    <input type="email" id="newSupEmail" name="email" autocomplete="email" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
                   </div>
                 </div>
 
@@ -883,7 +918,7 @@
                     <label class="po-label" for="newSupCategory">
                       <span>Primary Material Category <span class="req">*</span></span>
                     </label>
-                    <select id="newSupCategory" class="grn-inline-input">
+                    <select id="newSupCategory" name="category" class="grn-inline-input">
                       <option value="Paper & Boards">Paper & Boards</option>
                       <option value="Inks & Solvents">Inks & Solvents</option>
                       <option value="Flex & Banners">Flex & Banners</option>
@@ -899,7 +934,7 @@
                     <label class="po-label" for="newSupTerms">
                       <span>Payment Terms / Credit</span>
                     </label>
-                    <select id="newSupTerms" class="grn-inline-input">
+                    <select id="newSupTerms" name="payment_terms" class="grn-inline-input">
                       <option value="Cash on Delivery">Cash on Delivery (COD)</option>
                       <option value="7 Days Credit">7 Days Credit</option>
                       <option value="14 Days Credit">14 Days Credit</option>
@@ -915,7 +950,7 @@
                   <label class="po-label" for="newSupAddress">
                     <span>Warehouse Address / City</span>
                   </label>
-                  <input type="text" id="newSupAddress" class="grn-inline-input" placeholder="E.g. No. 54, Central Road, Colombo 11">
+                  <input type="text" id="newSupAddress" name="address" autocomplete="street-address" class="grn-inline-input" placeholder="E.g. No. 54, Central Road, Colombo 11">
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -924,7 +959,7 @@
                     <label class="po-label" for="newSupTaxNo">
                       <span>BRN / VAT No</span>
                     </label>
-                    <input type="text" id="newSupTaxNo" class="grn-inline-input" placeholder="E.g. PV-12345 / VAT-998811">
+                    <input type="text" id="newSupTaxNo" name="tax_no" class="grn-inline-input" placeholder="E.g. PV-12345 / VAT-998811">
                   </div>
 
                   <!-- Bank Account Details -->
@@ -932,7 +967,7 @@
                     <label class="po-label" for="newSupBank">
                       <span>Bank Payment Details</span>
                     </label>
-                    <input type="text" id="newSupBank" class="grn-inline-input" placeholder="Bank, Branch, Account No">
+                    <input type="text" id="newSupBank" name="bank_details" class="grn-inline-input" placeholder="Bank, Branch, Account No">
                   </div>
                 </div>
               </div>

@@ -3,12 +3,12 @@
     <div class="rep-tab-toolbar">
         <div class="rep-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="rep-table-search" data-target-table="suppliersTable" placeholder="Search supplier name or phone...">
+            <input type="text" id="searchSuppliersTable" name="searchSuppliersTable" class="rep-table-search" data-target-table="suppliersTable" placeholder="Search supplier name or phone..." aria-label="Search Suppliers">
         </div>
         <div class="rep-toolbar-controls">
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                <select class="rep-sort-select" data-target-table="suppliersTable">
+                <select id="sortSuppliersTable" name="sortSuppliersTable" class="rep-sort-select" data-target-table="suppliersTable" aria-label="Sort Suppliers">
                     <option value="6:desc:number">Pending Payable (High to Low)</option>
                     <option value="6:asc:number">Pending Payable (Low to High)</option>
                     <option value="4:desc:number">GRN Purchases (High to Low)</option>

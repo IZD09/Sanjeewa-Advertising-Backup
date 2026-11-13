@@ -12,19 +12,19 @@
     <div class="po-modal-body">
       <div class="po-field">
         <label class="po-label" for="newCustName"><span>Customer Name <span class="req">*</span></span></label>
-        <input type="text" id="newCustName" class="po-input" placeholder="E.g. Mahela Jayawardena" required>
+        <input type="text" id="newCustName" name="customer_name" autocomplete="name" class="po-input" placeholder="E.g. Mahela Jayawardena" required>
       </div>
       <div class="po-field">
         <label class="po-label" for="newCustMobile"><span>Mobile Number <span class="req">*</span></span></label>
-        <input type="text" id="newCustMobile" class="po-input" placeholder="E.g. 0771234567" required>
+        <input type="text" id="newCustMobile" name="mobile" autocomplete="tel" class="po-input" placeholder="E.g. 0771234567" required>
       </div>
       <div class="po-field">
         <label class="po-label" for="newCustAddress">Address / City</label>
-        <input type="text" id="newCustAddress" class="po-input" placeholder="E.g. Colombo 05">
+        <input type="text" id="newCustAddress" name="address" autocomplete="street-address" class="po-input" placeholder="E.g. Colombo 05">
       </div>
       <div class="po-field">
         <label class="po-label" for="newCustType">Customer Category</label>
-        <select id="newCustType" class="po-select">
+        <select id="newCustType" name="customer_type" class="po-select">
           <option value="Regular" selected>Regular Walk-in</option>
           <option value="Corporate">Corporate / Agency</option>
           <option value="VIP">VIP Client</option>

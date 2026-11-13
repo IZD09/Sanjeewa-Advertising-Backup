@@ -1112,4 +1112,11 @@ html[data-theme="dark"] .ant-tag-red {
     box-shadow: 0 1px 4px rgba(22, 119, 255, 0.15);
 }
 
+/* Required Form Field Astrix (Red) */
+.req, span.req {
+    color: #ff4d4f !important;
+    font-weight: 700 !important;
+    margin-left: 2px;
+}
+
 

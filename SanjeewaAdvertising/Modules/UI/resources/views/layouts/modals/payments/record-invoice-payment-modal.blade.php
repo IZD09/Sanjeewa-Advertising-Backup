@@ -27,7 +27,7 @@
 
           <div class="inv-add-job-controls" style="display: flex; gap: 10px; align-items: center;">
             <div style="flex: 1; position: relative;">
-              <select id="invModalJobSelect" class="pay-select-field" style="height: 44px; font-weight: 700; font-size: 13.5px; width: 100%; border-radius: 9px;">
+              <select id="invModalJobSelect" name="inv_job_select" class="pay-select-field" style="height: 44px; font-weight: 700; font-size: 13.5px; width: 100%; border-radius: 9px;">
                 <option value="">-- Select Print Job to Add to this Invoice --</option>
               </select>
             </div>
@@ -99,13 +99,13 @@
                 Pay Full Balance
               </button>
             </div>
-            <input type="number" id="invModalAmount" class="pay-input" placeholder="0.00" min="0" step="50" required>
+            <input type="number" id="invModalAmount" name="inv_modal_amount" class="pay-input" placeholder="0.00" min="0" step="50" required>
           </div>
           <div class="pay-field">
             <label class="pay-label" for="invModalStageSelect">
               <i class="fa-solid fa-flag-checkered" style="color: #8b5cf6; margin-right: 4px;"></i> Payment Stage *
             </label>
-            <select id="invModalStageSelect" class="pay-select-field">
+            <select id="invModalStageSelect" name="inv_stage_select" class="pay-select-field">
               <option value="Complete Payment">Complete Payment</option>
               <option value="Advance Payment">Advance Payment</option>
               <option value="Pending Payment">Pending Payment</option>
@@ -115,10 +115,10 @@
 
         <!-- 4. Payment Method -->
         <div class="pay-field">
-          <label class="pay-label">
+          <div class="pay-label" id="invModalMethodLabel">
             <i class="fa-solid fa-wallet" style="color: #2563eb; margin-right: 4px;"></i> Payment Method *
-          </label>
-          <div class="pay-method-selector" id="invModalMethodSelector">
+          </div>
+          <div class="pay-method-selector" id="invModalMethodSelector" role="group" aria-labelledby="invModalMethodLabel">
             <div class="method-choice selected" data-method="Cash">
               <i class="fa-solid fa-money-bill-wave"></i>
               <span>Cash</span>
@@ -151,18 +151,18 @@
         <div class="pay-form-grid">
           <div class="pay-field">
             <label class="pay-label" for="invModalDate">Payment Date</label>
-            <input type="date" id="invModalDate" class="pay-input">
+            <input type="date" id="invModalDate" name="inv_payment_date" class="pay-input">
           </div>
           <div class="pay-field">
-            <label class="pay-label">Authorized Officer</label>
-            <input type="text" class="pay-input" value="Cashier / Admin User" readonly style="opacity: 0.85;">
+            <label class="pay-label" for="invModalAuthorizedOfficer">Authorized Officer</label>
+            <input type="text" id="invModalAuthorizedOfficer" name="inv_authorized_officer" class="pay-input" value="Cashier / Admin User" readonly style="opacity: 0.85;">
           </div>
         </div>
 
         <!-- 7. Narration -->
         <div class="pay-field">
           <label class="pay-label" for="invModalNotes">Narration / Internal Remarks</label>
-          <input type="text" id="invModalNotes" class="pay-input" placeholder="E.g. Full settlement upon pickup / multi-job corporate print invoice">
+          <input type="text" id="invModalNotes" name="inv_modal_notes" class="pay-input" placeholder="E.g. Full settlement upon pickup / multi-job corporate print invoice">
         </div>
       </div>
 

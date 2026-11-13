@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use Modules\Inventory\Models\Category;
+use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Models\Subcategory;
 use Modules\Supplier\Models\Grn;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\Supplier;
@@ -167,5 +170,115 @@ class SupplierModuleTest extends TestCase
             ->assertJsonPath('data.pagination.current_page', 1);
 
         $this->assertCount(20, $poPage1->json('data.purchase_orders'));
+    }
+
+    public function test_can_place_and_save_purchase_order_with_items_and_supplier_name_or_id(): void
+    {
+        $cat = Category::firstOrCreate(['category' => 'Paper & Boards']);
+        $subcat = Subcategory::firstOrCreate(['subcategory' => 'Art Paper', 'categories_id' => $cat->id]);
+        $stock1 = StockItem::firstOrCreate(
+            ['code' => 'PAP-001'],
+            ['name' => '300gsm Art Board SRA3', 'subcategories_id' => $subcat->id]
+        );
+        $stock2 = StockItem::firstOrCreate(
+            ['code' => 'PAP-002'],
+            ['name' => '250gsm Ivory Board A3', 'subcategories_id' => $subcat->id]
+        );
+        $stock3 = StockItem::firstOrCreate(
+            ['code' => 'FLX-001'],
+            ['name' => 'Frontlit Flex 380gsm', 'subcategories_id' => $subcat->id]
+        );
+
+        $supplier = Supplier::create([
+            'name' => 'Apex Raw Materials Ltd',
+            'mobile' => '0778899001',
+            'email' => 'sales@apexraw.lk',
+            'register_at' => now(),
+        ]);
+
+        // Place PO using suppliers_id and line items
+        $response = $this->postJson('/api/v1/purchase-orders', [
+            'suppliers_id' => $supplier->id,
+            'add_date' => now()->toDateString(),
+            'expected_date' => now()->addDays(5)->toDateString(),
+            'remarks' => 'Urgent batch for banner production',
+            'items' => [
+                [
+                    'stock_items_id' => $stock1->id,
+                    'qty_ordered' => 20,
+                    'unit_cost' => 1500.00,
+                ],
+                [
+                    'stock_items_id' => $stock2->id,
+                    'qty_ordered' => 10,
+                    'unit_cost' => 2200.00,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.suppliers_id', $supplier->id)
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'po_number',
+                    'suppliers_id',
+                    'formatted' => [
+                        'po_number',
+                        'supplier_name',
+                        'total_amount',
+                        'items',
+                    ],
+                ],
+            ]);
+
+        $poId = $response->json('data.id');
+        $this->assertDatabaseHas('purchase_orders', [
+            'id' => $poId,
+            'suppliers_id' => $supplier->id,
+        ]);
+
+        $this->assertDatabaseHas('purchase_order_items', [
+            'purchase_orders_id' => $poId,
+            'stock_items_id' => $stock1->id,
+            'qty_ordered' => 20,
+            'unit_cost' => 1500.00,
+        ]);
+
+        $this->assertDatabaseHas('purchase_order_items', [
+            'purchase_orders_id' => $poId,
+            'stock_items_id' => $stock2->id,
+            'qty_ordered' => 10,
+            'unit_cost' => 2200.00,
+        ]);
+
+        // Place PO using auto-created supplier name
+        $newSupplierName = 'Direct Imported Flex Hub';
+        $responseNewSup = $this->postJson('/api/v1/purchase-orders', [
+            'supplier_name' => $newSupplierName,
+            'supplier_contact' => '0719988776',
+            'items' => [
+                [
+                    'id' => $stock3->id,
+                    'qty' => 15,
+                    'cost' => 850.00,
+                ],
+            ],
+        ]);
+
+        $responseNewSup->assertStatus(201);
+        $newPoId = $responseNewSup->json('data.id');
+
+        $this->assertDatabaseHas('suppliers', [
+            'name' => $newSupplierName,
+            'mobile' => '0719988776',
+        ]);
+
+        $this->assertDatabaseHas('purchase_order_items', [
+            'purchase_orders_id' => $newPoId,
+            'stock_items_id' => $stock3->id,
+            'qty_ordered' => 15,
+            'unit_cost' => 850.00,
+        ]);
     }
 }

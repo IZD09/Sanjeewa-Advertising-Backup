@@ -3,12 +3,12 @@
     <div class="rep-tab-toolbar">
         <div class="rep-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="rep-table-search" data-target-table="receivablesTable" placeholder="Search customer name or phone...">
+            <input type="text" id="searchReceivablesTable" name="searchReceivablesTable" class="rep-table-search" data-target-table="receivablesTable" placeholder="Search customer name or phone..." aria-label="Search customer name or phone">
         </div>
         <div class="rep-toolbar-controls">
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                <select class="rep-sort-select" data-target-table="receivablesTable">
+                <select id="sortReceivablesTable" name="sortReceivablesTable" class="rep-sort-select" data-target-table="receivablesTable" aria-label="Sort Receivables">
                     <option value="7:desc:number">Balance Due (High to Low)</option>
                     <option value="7:asc:number">Balance Due (Low to High)</option>
                     <option value="5:desc:number">Total Invoiced (High to Low)</option>

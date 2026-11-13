@@ -38,6 +38,7 @@ class PurchaseOrder extends Model
     protected $fillable = [
         'add_date',
         'suppliers_id',
+        'purchase_orders_status_id',
     ];
 
     /**
@@ -50,7 +51,24 @@ class PurchaseOrder extends Model
         return [
             'add_date' => 'datetime',
             'suppliers_id' => 'integer',
+            'purchase_orders_status_id' => 'integer',
         ];
+    }
+
+    /**
+     * Get the status of the purchase order.
+     */
+    public function status(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderStatus::class, 'purchase_orders_status_id', 'id');
+    }
+
+    /**
+     * Alias for purchase orders status.
+     */
+    public function purchaseOrdersStatus(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderStatus::class, 'purchase_orders_status_id', 'id');
     }
 
     /**

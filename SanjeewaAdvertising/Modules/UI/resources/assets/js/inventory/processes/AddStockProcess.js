@@ -55,6 +55,7 @@ export class AddStockProcess {
     this.itemSelector = new StockItemSelector({
       getItems: () => this.stockItems,
       getCategories: () => this.categories,
+      getBrands: () => this.brands,
       onItemSelected: (item) => {
         this.modeManager.populateExistingBatches(item.existing_batches || []);
         this.modeManager.populateExistingStocks(item.existing_stocks || []);
@@ -92,6 +93,14 @@ export class AddStockProcess {
       });
     }
 
+    // GRN change update (Step 1 -> Step 2)
+    const grnSelect = document.getElementById("addStockGrnSelect");
+    if (grnSelect) {
+      grnSelect.addEventListener("change", (e) => {
+        this.handleGrnChange(e.target.value);
+      });
+    }
+
     // Save button trigger
     const saveBtn = document.getElementById("saveNewStockBtn");
     if (saveBtn) {
@@ -124,6 +133,19 @@ export class AddStockProcess {
   }
 
   /**
+   * Handle GRN change to update item selector context and filter items.
+   * @param {string|number} grnId
+   */
+  handleGrnChange(grnId) {
+    if (!grnId) {
+      this.itemSelector.setGrnContext(null);
+      return;
+    }
+    const grn = this.grns.find((g) => String(g.id) === String(grnId));
+    this.itemSelector.setGrnContext(grn || null);
+  }
+
+  /**
    * Populate Category, Brand, and GRN options.
    */
   populateMasterDropdowns() {
@@ -149,7 +171,10 @@ export class AddStockProcess {
       this.grns.forEach((grn) => {
         grnSelect.insertAdjacentHTML("beforeend", `<option value="${grn.id}">${grn.label || `GRN #${grn.id}`}</option>`);
       });
-      if (this.grns.length > 0) grnSelect.value = String(this.grns[0].id);
+      if (this.grns.length > 0) {
+        grnSelect.value = String(this.grns[0].id);
+        this.handleGrnChange(this.grns[0].id);
+      }
     }
   }
 
@@ -160,6 +185,14 @@ export class AddStockProcess {
   async openModal(prefill = {}) {
     this.resetForm();
     await this.loadMasterData();
+
+    if (prefill.grn_id) {
+      const grnSelect = document.getElementById("addStockGrnSelect");
+      if (grnSelect) {
+        grnSelect.value = String(prefill.grn_id);
+        this.handleGrnChange(prefill.grn_id);
+      }
+    }
 
     if (prefill.stock_id) {
       const modeRadio = document.getElementById("addStockModeUpdate");
@@ -213,6 +246,12 @@ export class AddStockProcess {
 
     const dateInput = document.getElementById("addStockDate");
     if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+
+    const grnSelect = document.getElementById("addStockGrnSelect");
+    if (grnSelect && this.grns.length > 0) {
+      grnSelect.value = String(this.grns[0].id);
+      this.handleGrnChange(this.grns[0].id);
+    }
   }
 
   /**

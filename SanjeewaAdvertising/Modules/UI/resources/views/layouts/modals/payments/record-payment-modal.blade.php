@@ -9,17 +9,17 @@
 
     <div class="pay-modal-body">
       <div class="pay-field">
-        <label class="pay-label">1. Payment Category / Channel *</label>
+        <div class="pay-label">1. Payment Category / Channel *</div>
         <div class="pay-type-selector">
-          <label class="pay-type-option invoice-option selected">
-            <input type="radio" name="modalPayType" id="modalRadioInvoice" value="invoice" checked>
+          <label class="pay-type-option invoice-option selected" for="modalRadioInvoice">
+            <input type="radio" name="modalPayType" id="modalRadioInvoice" value="invoice" aria-label="Invoice Payment" checked>
             <div class="pay-type-meta">
               <strong>1. Invoice Payment</strong>
               <span>Job / Customer Print Order Payment</span>
             </div>
           </label>
-          <label class="pay-type-option grn-option">
-            <input type="radio" name="modalPayType" id="modalRadioGrn" value="grn">
+          <label class="pay-type-option grn-option" for="modalRadioGrn">
+            <input type="radio" name="modalPayType" id="modalRadioGrn" value="grn" aria-label="GRN Payment">
             <div class="pay-type-meta">
               <strong>2. GRN Payment</strong>
               <span>Stock Items / Supplier Procurement</span>
@@ -29,8 +29,8 @@
       </div>
 
       <div class="pay-field">
-        <label class="pay-label" id="modalPayRefLabel">Select Customer Job / Invoice *</label>
-        <select id="modalPayRefSelect" class="pay-select-field">
+        <label class="pay-label" for="modalPayRefSelect" id="modalPayRefLabel">Select Customer Job / Invoice *</label>
+        <select id="modalPayRefSelect" name="modal_pay_ref" class="pay-select-field">
         </select>
       </div>
 
@@ -51,12 +51,12 @@
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Payment Amount (Rs.) *</label>
-          <input type="number" id="modalPayAmount" class="pay-input" placeholder="0.00" min="0" step="100" required>
+          <label class="pay-label" for="modalPayAmount">Payment Amount (Rs.) *</label>
+          <input type="number" id="modalPayAmount" name="modal_pay_amount" class="pay-input" placeholder="0.00" min="0" step="100" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Payment Stage *</label>
-          <select id="modalPayStageSelect" class="pay-select-field">
+          <label class="pay-label" for="modalPayStageSelect">Payment Stage *</label>
+          <select id="modalPayStageSelect" name="modal_pay_stage" class="pay-select-field">
             <option value="Complete Payment">Complete Payment</option>
             <option value="Advance Payment">Advance Payment</option>
             <option value="Pending Payment">Pending Payment</option>
@@ -65,8 +65,8 @@
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Payment Method *</label>
-        <div class="pay-method-selector">
+        <div class="pay-label" id="modalGeneralMethodLabel">Payment Method *</div>
+        <div class="pay-method-selector" role="group" aria-labelledby="modalGeneralMethodLabel">
           <div class="method-choice selected" data-method="Cash">
             <i class="fa-solid fa-money-bill-wave"></i>
             <span>Cash</span>
@@ -91,18 +91,18 @@
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Payment Date</label>
-          <input type="date" id="modalPayDate" class="pay-input">
+          <label class="pay-label" for="modalPayDate">Payment Date</label>
+          <input type="date" id="modalPayDate" name="modal_pay_date" class="pay-input">
         </div>
         <div class="pay-field">
-          <label class="pay-label">Authorized Officer</label>
-          <input type="text" class="pay-input" value="Admin User" readonly style="opacity: 0.8;">
+          <label class="pay-label" for="modalPayOfficer">Authorized Officer</label>
+          <input type="text" id="modalPayOfficer" name="modal_pay_officer" class="pay-input" value="Admin User" readonly style="opacity: 0.8;">
         </div>
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Narration / Internal Remarks</label>
-        <input type="text" id="modalPayNotes" class="pay-input" placeholder="E.g. Paid in full upon pickup / advance for vinyl rolls">
+        <label class="pay-label" for="modalPayNotes">Narration / Internal Remarks</label>
+        <input type="text" id="modalPayNotes" name="modal_pay_notes" class="pay-input" placeholder="E.g. Paid in full upon pickup / advance for vinyl rolls">
       </div>
     </div>
 

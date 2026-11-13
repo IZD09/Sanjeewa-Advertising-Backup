@@ -9,8 +9,8 @@
     <div class="pay-modal-body">
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Expense Category *</label>
-          <select id="modalExpCategory" class="pay-select-field" required>
+          <label class="pay-label" for="modalExpCategory">Expense Category *</label>
+          <select id="modalExpCategory" name="exp_category" class="pay-select-field" required>
             <option value="1" data-name="Electricity Utility" selected>⚡ Electricity Utility</option>
             <option value="2" data-name="Water Utility">💧 Water Utility</option>
             <option value="3" data-name="Internet & Telephone">📶 Internet &amp; Telephone</option>
@@ -26,41 +26,41 @@
           </select>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Billing Month *</label>
-          <input type="month" id="modalExpMonth" class="pay-input" value="2026-10" required>
+          <label class="pay-label" for="modalExpMonth">Billing Month *</label>
+          <input type="month" id="modalExpMonth" name="exp_month" class="pay-input" value="2026-10" required>
         </div>
       </div>
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Bill / Service Title *</label>
-          <input type="text" id="modalExpTitle" class="pay-input" placeholder="E.g. CEB 3-Phase Workshop Electricity" required>
+          <label class="pay-label" for="modalExpTitle">Bill / Service Title *</label>
+          <input type="text" id="modalExpTitle" name="exp_title" class="pay-input" placeholder="E.g. CEB 3-Phase Workshop Electricity" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Provider / Institution</label>
-          <input type="text" id="modalExpProvider" class="pay-input" placeholder="E.g. Ceylon Electricity Board">
-        </div>
-      </div>
-
-      <div class="pay-form-grid">
-        <div class="pay-field">
-          <label class="pay-label">Account / Connection Number</label>
-          <input type="text" id="modalExpAccountNo" class="pay-input" placeholder="E.g. 042-881-9921">
-        </div>
-        <div class="pay-field">
-          <label class="pay-label">Due Date *</label>
-          <input type="date" id="modalExpDueDate" class="pay-input" required>
+          <label class="pay-label" for="modalExpProvider">Provider / Institution</label>
+          <input type="text" id="modalExpProvider" name="exp_provider" class="pay-input" placeholder="E.g. Ceylon Electricity Board">
         </div>
       </div>
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Bill Amount (Rs.) *</label>
-          <input type="number" id="modalExpAmount" class="pay-input" min="1" step="50" placeholder="0.00" required>
+          <label class="pay-label" for="modalExpAccountNo">Account / Connection Number</label>
+          <input type="text" id="modalExpAccountNo" name="exp_account_no" class="pay-input" placeholder="E.g. 042-881-9921">
         </div>
         <div class="pay-field">
-          <label class="pay-label">Initial Status *</label>
-          <select id="modalExpInitialStatus" class="pay-select-field">
+          <label class="pay-label" for="modalExpDueDate">Due Date *</label>
+          <input type="date" id="modalExpDueDate" name="exp_due_date" class="pay-input" required>
+        </div>
+      </div>
+
+      <div class="pay-form-grid">
+        <div class="pay-field">
+          <label class="pay-label" for="modalExpAmount">Bill Amount (Rs.) *</label>
+          <input type="number" id="modalExpAmount" name="exp_amount" class="pay-input" min="1" step="50" placeholder="0.00" required>
+        </div>
+        <div class="pay-field">
+          <label class="pay-label" for="modalExpInitialStatus">Initial Status *</label>
+          <select id="modalExpInitialStatus" name="exp_initial_status" class="pay-select-field">
             <option value="Pending" selected>Pending (Due at month-end)</option>
             <option value="Paid">Paid (Already settled)</option>
           </select>
@@ -68,8 +68,8 @@
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Notes / Meter Reading</label>
-        <input type="text" id="modalExpNotes" class="pay-input" placeholder="E.g. Meter reading 45,210 units / Press room AC bill">
+        <label class="pay-label" for="modalExpNotes">Notes / Meter Reading</label>
+        <input type="text" id="modalExpNotes" name="exp_notes" class="pay-input" placeholder="E.g. Meter reading 45,210 units / Press room AC bill">
       </div>
     </div>
     <div class="pay-modal-footer">

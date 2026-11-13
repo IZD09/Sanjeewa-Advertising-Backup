@@ -15,7 +15,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="supplierCharts" aria-label="Select Supplier Chart">
+        <select id="repSupplierChartSelect" name="supplier_chart_select" class="rep-chart-select-dropdown" data-tab-group="supplierCharts" aria-label="Select Supplier Chart">
             <option value="pane_chartSupplierPayables">Supplier Purchases vs Paid vs Payable</option>
             <option value="pane_chartSupplierShare">GRN Purchase Share by Supplier</option>
             <option value="pane_chartSupplierSettlementRate">Supplier Payment Settlement Rate (%)</option>

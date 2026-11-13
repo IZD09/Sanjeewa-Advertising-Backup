@@ -38,6 +38,7 @@ export class GRNManager {
       savePOData: () => this.dataLoader.savePOData(),
       generateNextPONumber: () => this.dataLoader.generateNextPONumber(),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
+      generateNextGrnNumber: () => this.dataLoader.generateNextGrnNumber(),
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt),
       getCatalogItems: () => this.grnFormProcess.getCatalogItems(),
       renderOpenPoBadge: () => this.renderOpenPoBadge(),
@@ -45,6 +46,10 @@ export class GRNManager {
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
       populateAllSupplierDropdowns: () => this.supplierHandler.populateAllSupplierDropdowns(),
       renderSuppliersGrid: () => this.renderSuppliersGrid(),
+      loadAndRenderGRN: (force) => this.loadAndRenderGRN(force),
+      loadAndRenderPO: (force) => this.loadAndRenderPO(force),
+      viewGRN: (num) => this.viewGRN(num),
+      showToast: (msg, type) => this.showToast(msg, type),
       createGrnForPO: (num) => this.createGrnForPO(num),
       populatePOSelect: (target) => this.grnFormProcess.populatePOSelect(target),
       onPurchaseOrderSelect: (num) => this.grnFormProcess.onPurchaseOrderSelect(num),
@@ -108,6 +113,7 @@ export class GRNManager {
     // 5. Button Processes (from grn/processes/)
     this.navigationProcess = new NavigationProcess({
       initNewGrnForm: (targetPo) => this.grnFormProcess.initNewGrnForm(targetPo),
+      openCreateGrnModal: (targetPo) => this.openCreateGrnModal(targetPo),
       loadAndRenderPO: () => this.loadAndRenderPO(),
       renderPOTable: () => this.renderPOTable(),
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
@@ -330,7 +336,7 @@ export class GRNManager {
     this.supplierHandler.setFilters(this.supplierSearchTerm, this.supplierCategoryFilter);
     this.supplierHandler.renderSuppliersGrid(this.dataLoader.supplierPagination);
   }
-  createGrnForSupplier(name) { this.supplierHandler.createGrnForSupplier(name); }
+  createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(); }
   deleteSupplier(code) { this.supplierHandler.deleteSupplier(code); }
 
   // Table Render Delegations
@@ -359,7 +365,8 @@ export class GRNManager {
   initNewGrnForm(po) { this.grnFormProcess.initNewGrnForm(po); }
   onPurchaseOrderSelect(po) { this.grnFormProcess.onPurchaseOrderSelect(po); }
   clearSelectedPO() { this.grnFormProcess.clearSelectedPO(); }
-  createGrnForPO(po) { this.grnFormProcess.createGrnForPO(po); }
+  createGrnForPO(po) { this.modalHandler.openCreateGrnModal(po); }
+  openCreateGrnModal(po = null) { this.modalHandler.openCreateGrnModal(po); }
   getCatalogItems() { return this.grnFormProcess.getCatalogItems(); }
   addNewRow() { this.grnFormProcess.addNewRow(); }
   removeRow(i) { this.grnFormProcess.removeRow(i); }
@@ -387,6 +394,7 @@ export class GRNManager {
 
   openCreatePOModal(defaultSupplier = null) { this.modalHandler.openCreatePOModal(defaultSupplier); }
   addNewPoRow() { this.modalHandler.addNewPoRow(); }
+  addItemToPo(item) { this.modalHandler.addItemToPo(item); }
   removeNewPoRow(index) { this.modalHandler.removeNewPoRow(index); }
   renderNewPoItems() { this.modalHandler.renderNewPoItems(); }
   onNewPoItemSelectChange(index, itemCode) { this.modalHandler.onNewPoItemSelectChange(index, itemCode); }

@@ -15,6 +15,7 @@ import {
   ViewGRNModal,
   ViewPOModal,
   CreatePOModal,
+  CreateGrnModal,
   SupplierModal
 } from "../modals/index.js";
 
@@ -37,6 +38,7 @@ export class GRNModalHandler extends BaseModalHandler {
     this.viewGrnModal = new ViewGRNModal(this.ctx);
     this.viewPoModal = new ViewPOModal(this.ctx);
     this.createPoModal = new CreatePOModal(this.ctx);
+    this.createGrnModal = new CreateGrnModal(this.ctx);
     this.supplierModal = new SupplierModal(this.ctx);
   }
 
@@ -54,9 +56,13 @@ export class GRNModalHandler extends BaseModalHandler {
   viewPO(poNumber) { this.viewPoModal.viewPO(poNumber); }
   triggerPrintPO() { this.viewPoModal.triggerPrintPO(); }
 
-  // 3. Create PO Modal
+  // 3. Create GRN Modal
+  openCreateGrnModal(targetPoNumber = null) { this.createGrnModal.openCreateGrnModal(targetPoNumber); }
+
+  // 4. Create PO Modal
   openCreatePOModal(defaultSupplier = null) { this.createPoModal.openCreatePOModal(defaultSupplier); }
   addNewPoRow() { this.createPoModal.addNewPoRow(); }
+  addItemToPo(item) { this.createPoModal.addItemToPo(item); }
   removeNewPoRow(index) { this.createPoModal.removeNewPoRow(index); }
   renderNewPoItems() { this.createPoModal.renderNewPoItems(); }
   onNewPoItemSelectChange(index, code) { this.createPoModal.onNewPoItemSelectChange(index, code); }

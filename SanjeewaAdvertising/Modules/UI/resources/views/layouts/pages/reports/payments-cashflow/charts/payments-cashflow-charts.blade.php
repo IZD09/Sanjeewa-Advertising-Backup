@@ -24,7 +24,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="paymentCharts" aria-label="Select Cash Flow Chart">
+        <select id="repCashFlowChartSelect" name="cashflow_chart_select" class="rep-chart-select-dropdown" data-tab-group="paymentCharts" aria-label="Select Cash Flow Chart">
             <option value="pane_chartCashFlowChannels">Cash Inflow vs Operating Expenses &amp; GRN Outflow</option>
             <option value="pane_chartOperatingExpenses">Operating Expenses by Utility / Overhead Category</option>
             <option value="pane_chartOperatingExpensesStatus">Operating Expenses Status (Paid vs Pending Bills)</option>

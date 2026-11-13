@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\PurchaseOrderItem;
+use Modules\Supplier\Models\PurchaseOrderStatus;
+use Modules\Supplier\Models\Supplier;
 
 class PurchaseOrderService
 {
@@ -20,7 +22,7 @@ class PurchaseOrderService
     public function buildQuery(array $filters = []): Builder
     {
         $query = PurchaseOrder::query()
-            ->with(['supplier', 'items.stockItem', 'grns'])
+            ->with(['supplier', 'items.stockItem', 'grns', 'status'])
             ->withCount('items');
 
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
@@ -140,18 +142,45 @@ class PurchaseOrderService
     public function createPurchaseOrder(array $data): PurchaseOrder
     {
         return DB::transaction(function () use ($data) {
+            $supplierId = ! empty($data['suppliers_id']) ? (int) $data['suppliers_id'] : null;
+
+            if (! $supplierId && ! empty($data['supplier_name'])) {
+                $supplier = Supplier::firstOrCreate(
+                    ['name' => trim((string) $data['supplier_name'])],
+                    [
+                        'mobile' => $data['supplier_contact'] ?? '077 000 0000',
+                        'email' => $data['supplier_email'] ?? ('supplier_'.uniqid().'@example.com'),
+                    ]
+                );
+                $supplierId = $supplier->id;
+            }
+
+            if (! $supplierId) {
+                throw new \InvalidArgumentException('A valid supplier ID or supplier name is required to create a purchase order.');
+            }
+
+            $statusId = isset($data['purchase_orders_status_id'])
+                ? (int) $data['purchase_orders_status_id']
+                : PurchaseOrderStatus::STATUS_PENDING;
+
             $po = PurchaseOrder::create([
-                'suppliers_id' => (int) $data['suppliers_id'],
+                'suppliers_id' => $supplierId,
                 'add_date' => ! empty($data['add_date']) ? $data['add_date'] : now(),
+                'purchase_orders_status_id' => $statusId,
             ]);
 
             if (! empty($data['items']) && is_array($data['items'])) {
                 foreach ($data['items'] as $item) {
+                    $stockItemId = (int) ($item['stock_items_id'] ?? $item['id'] ?? 0);
+                    if ($stockItemId <= 0) {
+                        continue;
+                    }
+
                     PurchaseOrderItem::create([
                         'purchase_orders_id' => $po->id,
-                        'stock_items_id' => (int) $item['stock_items_id'],
+                        'stock_items_id' => $stockItemId,
                         'unit_cost' => (float) ($item['unit_cost'] ?? 0),
-                        'qty_ordered' => (int) ($item['qty_ordered'] ?? 1),
+                        'qty_ordered' => (int) ($item['qty_ordered'] ?? $item['qty'] ?? 1),
                         'qty_received' => (int) ($item['qty_received'] ?? 0),
                     ]);
                 }
@@ -159,6 +188,32 @@ class PurchaseOrderService
 
             return $this->getPurchaseOrderById($po->id) ?? $po;
         });
+    }
+
+    /**
+     * Synchronize and persist the status of a purchase order based on received quantities.
+     */
+    public function syncPurchaseOrderStatus(int $poId): void
+    {
+        $totals = DB::table('purchase_order_items')
+            ->where('purchase_orders_id', $poId)
+            ->selectRaw('COALESCE(SUM(qty_ordered), 0) as total_ordered, COALESCE(SUM(qty_received), 0) as total_received')
+            ->first();
+
+        $ordered = (int) ($totals->total_ordered ?? 0);
+        $received = (int) ($totals->total_received ?? 0);
+
+        if ($ordered > 0 && $received >= $ordered) {
+            $statusId = PurchaseOrderStatus::STATUS_COMPLETED;
+        } elseif ($received > 0) {
+            $statusId = PurchaseOrderStatus::STATUS_PARTIAL;
+        } else {
+            $statusId = PurchaseOrderStatus::STATUS_PENDING;
+        }
+
+        DB::table('purchase_orders')
+            ->where('id', $poId)
+            ->update(['purchase_orders_status_id' => $statusId]);
     }
 
     /**
@@ -283,12 +338,16 @@ class PurchaseOrderService
             ];
         }
 
-        if ($totalOrdered > 0 && $totalReceived >= $totalOrdered) {
-            $status = 'Completed';
-        } elseif ($totalReceived > 0 || $po->grns->isNotEmpty()) {
-            $status = ($totalOrdered === 0) ? 'Completed' : 'Partial';
-        } else {
-            $status = 'Pending';
+        $statusName = $po->status?->purchase_orders_status;
+
+        if (empty($statusName)) {
+            if ($totalOrdered > 0 && $totalReceived >= $totalOrdered) {
+                $statusName = 'Completed';
+            } elseif ($totalReceived > 0 || $po->grns->isNotEmpty()) {
+                $statusName = ($totalOrdered === 0) ? 'Completed' : 'Partial';
+            } else {
+                $statusName = 'Pending';
+            }
         }
 
         $poCode = 'PO-'.str_pad((string) $po->id, 4, '0', STR_PAD_LEFT);
@@ -303,7 +362,8 @@ class PurchaseOrderService
             'suppliers_id' => $po->suppliers_id,
             'supplier_name' => $po->supplier?->name ?? 'Unknown Supplier',
             'supplier_contact' => $po->supplier?->mobile ?? '-',
-            'status' => $status,
+            'status' => $statusName,
+            'purchase_orders_status_id' => $po->purchase_orders_status_id ?? 1,
             'total_amount' => $totalAmount,
             'created_by' => 'Admin User',
             'remarks' => '',

@@ -50,6 +50,7 @@ export class ViewGRNModal extends BaseModalHandler {
     const docContact = document.getElementById("grnDocContact") || document.getElementById("grnDocInvoice");
     const docPO = document.getElementById("grnDocPO");
     const docStatus = document.getElementById("grnDocStatus");
+    const docStatusTable = document.getElementById("grnDocStatusTable");
     const docReceivedBy = document.getElementById("grnDocReceivedBy");
     const docRemarks = document.getElementById("grnDocRemarks");
     const docSubTotal = document.getElementById("grnDocSubTotal");
@@ -65,6 +66,10 @@ export class ViewGRNModal extends BaseModalHandler {
     if (docStatus) {
       docStatus.className = `grn-status-badge ${rec.status === "Completed" ? "completed" : "draft"}`;
       docStatus.textContent = rec.status;
+    }
+    if (docStatusTable) {
+      docStatusTable.className = `grn-status-badge ${rec.status === "Completed" ? "completed" : "draft"}`;
+      docStatusTable.textContent = rec.status;
     }
     if (docReceivedBy) docReceivedBy.textContent = rec.received_by;
     if (docRemarks) docRemarks.textContent = rec.remarks || "No additional notes provided.";

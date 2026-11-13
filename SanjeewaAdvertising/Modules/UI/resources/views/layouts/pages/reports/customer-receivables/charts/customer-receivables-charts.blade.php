@@ -15,7 +15,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="receivablesCharts" aria-label="Select Receivables Chart">
+        <select id="repReceivablesChartSelect" name="receivables_chart_select" class="rep-chart-select-dropdown" data-tab-group="receivablesCharts" aria-label="Select Receivables Chart">
             <option value="pane_chartReceivablesAging">Receivables Aging Analysis (Bar Chart)</option>
             <option value="pane_chartCustomerBalances">Top Customers: Invoiced vs Paid</option>
             <option value="pane_chartReceivablesStatus">Collection vs Overdue Share (Doughnut)</option>

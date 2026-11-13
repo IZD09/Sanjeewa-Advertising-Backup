@@ -15,7 +15,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="plCharts" aria-label="Select Profit and Loss Chart">
+        <select id="repProfitLossChartSelect" name="pl_chart_select" class="rep-chart-select-dropdown" data-tab-group="plCharts" aria-label="Select Profit and Loss Chart">
             <option value="pane_chartProfitLossSummary">P&amp;L Financial Performance Breakdown</option>
             <option value="pane_chartExpenseBreakdown">Operating Overhead Expenses Breakdown</option>
             <option value="pane_chartProfitMarginTrend">6-Month Net Profit &amp; Margin Trend</option>

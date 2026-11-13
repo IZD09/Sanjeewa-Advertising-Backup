@@ -26,16 +26,26 @@ export class NavigationProcess {
     };
 
     bindClick("grnTabListBtn", () => this.switchView("list"));
-    bindClick("grnTabCreateBtn", () => this.switchView("form"));
     bindClick("grnTabPOBtn", () => this.switchView("po"));
     bindClick("grnTabSuppliersBtn", () => this.switchView("suppliers"));
-    bindClick("grnHeaderCreateBtn", () => this.switchView("form"));
+    bindClick("grnHeaderCreateBtn", () => {
+      if (this.ctx.openCreateGrnModal) {
+        this.ctx.openCreateGrnModal();
+      } else {
+        this.switchView("form");
+      }
+    });
 
     // Check URL view parameter on load
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get("view");
-    if (viewParam === "suppliers" || viewParam === "po" || viewParam === "form") {
+    if (viewParam === "suppliers" || viewParam === "po") {
       this.switchView(viewParam);
+    } else if (viewParam === "form") {
+      this.switchView("list");
+      if (this.ctx.openCreateGrnModal) {
+        this.ctx.openCreateGrnModal();
+      }
     }
   }
 
@@ -60,9 +70,13 @@ export class NavigationProcess {
     Object.values(tabs).forEach(t => { if (t) t.classList.remove("active"); });
 
     if (viewName === "form") {
-      if (views.form) views.form.style.display = "block";
-      if (tabs.form) tabs.form.classList.add("active");
-      if (this.ctx.initNewGrnForm) this.ctx.initNewGrnForm(targetPoNumber);
+      if (this.ctx.openCreateGrnModal) {
+        this.ctx.openCreateGrnModal(targetPoNumber);
+      } else if (views.form) {
+        views.form.style.display = "block";
+        if (this.ctx.initNewGrnForm) this.ctx.initNewGrnForm(targetPoNumber);
+      }
+      return;
     } else if (viewName === "po") {
       if (views.po) views.po.style.display = "block";
       if (tabs.po) tabs.po.classList.add("active");

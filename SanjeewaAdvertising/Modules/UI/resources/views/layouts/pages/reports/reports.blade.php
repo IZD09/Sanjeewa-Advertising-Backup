@@ -94,11 +94,11 @@
                             <div class="rep-custom-date-group">
                                 <div class="rep-date-input-wrap">
                                     <label for="repDateFrom">From:</label>
-                                    <input type="date" id="repDateFrom" class="rep-date-input" value="{{ date('Y-m-01') }}">
+                                    <input type="date" id="repDateFrom" name="repDateFrom" class="rep-date-input" value="{{ date('Y-m-01') }}">
                                 </div>
                                 <div class="rep-date-input-wrap">
                                     <label for="repDateTo">To:</label>
-                                    <input type="date" id="repDateTo" class="rep-date-input" value="{{ date('Y-m-d') }}">
+                                    <input type="date" id="repDateTo" name="repDateTo" class="rep-date-input" value="{{ date('Y-m-d') }}">
                                 </div>
                                 <button type="button" class="rep-btn rep-btn-primary rep-btn-sm" id="btnApplyDateFilter">
                                     <i class="fa-solid fa-filter"></i> Apply Filter

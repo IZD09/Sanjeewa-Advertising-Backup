@@ -3,12 +3,12 @@
     <div class="rep-tab-toolbar">
         <div class="rep-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="rep-table-search" data-target-table="inventoryTable" placeholder="Search material name or code...">
+            <input type="text" id="searchInventoryTable" name="searchInventoryTable" class="rep-table-search" data-target-table="inventoryTable" placeholder="Search material name or code..." aria-label="Search material name or code">
         </div>
         <div class="rep-toolbar-controls">
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                <select class="rep-sort-select" data-target-table="inventoryTable">
+                <select id="sortInventoryTable" name="sortInventoryTable" class="rep-sort-select" data-target-table="inventoryTable" aria-label="Sort Inventory">
                     <option value="6:desc:number">Valuation (High to Low)</option>
                     <option value="6:asc:number">Valuation (Low to High)</option>
                     <option value="2:asc:number">In-Stock Qty (Low Stock First)</option>

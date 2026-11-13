@@ -4,10 +4,10 @@
     <div class="rep-tab-toolbar">
         <div class="rep-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="rep-table-search" data-target-table="salesTable" placeholder="Search customer, order #, or print type...">
+            <input type="text" id="searchSalesTable" name="searchSalesTable" class="rep-table-search" data-target-table="salesTable" placeholder="Search customer, order #, or print type..." aria-label="Search Sales Orders">
         </div>
         <div class="rep-toolbar-controls">
-            <select class="rep-filter-select" data-target-table="salesTable">
+            <select id="filterSalesPrintType" name="filterSalesPrintType" class="rep-filter-select" data-target-table="salesTable" aria-label="Filter Print Type">
                 <option value="all">All Print Types</option>
                 <option value="banner">Flex Banner</option>
                 <option value="vinyl">Vinyl Sticker</option>
@@ -16,7 +16,7 @@
             </select>
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                <select class="rep-sort-select" data-target-table="salesTable">
+                <select id="sortSalesTable" name="sortSalesTable" class="rep-sort-select" data-target-table="salesTable" aria-label="Sort Sales Table">
                     <option value="0:desc:text">Order # (Newest First)</option>
                     <option value="0:asc:text">Order # (Oldest First)</option>
                     <option value="7:desc:number">Total Amount (High to Low)</option>

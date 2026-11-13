@@ -15,7 +15,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="inventoryCharts" aria-label="Select Inventory Chart">
+        <select id="repInventoryChartSelect" name="inventory_chart_select" class="rep-chart-select-dropdown" data-tab-group="inventoryCharts" aria-label="Select Inventory Chart">
             <option value="pane_chartStockValuation">Stock Valuation by Material (Rs.)</option>
             <option value="pane_chartStockHealth">Inventory Reorder Health Status</option>
             <option value="pane_chartStockPriceComparison">Unit Buy Cost vs Selling Price Comparison</option>

@@ -18,7 +18,7 @@
                 </button>
             </div>
         </div>
-        <select class="rep-chart-select-dropdown" data-tab-group="salesCharts" aria-label="Select Sales Chart">
+        <select id="repSalesChartSelect" name="sales_chart_select" class="rep-chart-select-dropdown" data-tab-group="salesCharts" aria-label="Select Sales Chart">
             <option value="pane_chartSalesTrend">Monthly Revenue Trend (Line Chart)</option>
             <option value="pane_chartSalesByCategory">Print Category Share (Doughnut Chart)</option>
             <option value="pane_chartOrderStatus">Order Status Breakdown (Status Chart)</option>

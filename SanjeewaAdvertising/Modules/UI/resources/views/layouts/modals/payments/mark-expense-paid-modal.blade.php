@@ -20,18 +20,18 @@
 
       <div class="pay-form-grid">
         <div class="pay-field">
-          <label class="pay-label">Payment Date *</label>
-          <input type="date" id="markExpPaidDate" class="pay-input" required>
+          <label class="pay-label" for="markExpPaidDate">Payment Date *</label>
+          <input type="date" id="markExpPaidDate" name="mark_exp_paid_date" class="pay-input" required>
         </div>
         <div class="pay-field">
-          <label class="pay-label">Paid Amount (Rs.) *</label>
-          <input type="number" id="markExpPaidAmount" class="pay-input" min="1" step="50" required>
+          <label class="pay-label" for="markExpPaidAmount">Paid Amount (Rs.) *</label>
+          <input type="number" id="markExpPaidAmount" name="mark_exp_paid_amount" class="pay-input" min="1" step="50" required>
         </div>
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Payment Method *</label>
-        <select id="markExpPaidMethod" class="pay-select-field">
+        <label class="pay-label" for="markExpPaidMethod">Payment Method *</label>
+        <select id="markExpPaidMethod" name="mark_exp_paid_method" class="pay-select-field">
           <option value="Bank Transfer" selected>🏦 Bank Transfer / Online Banking</option>
           <option value="Cash">💵 Cash</option>
           <option value="Online / QR">📱 Online / LankaQR</option>
@@ -41,13 +41,13 @@
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Transaction Reference #</label>
-        <input type="text" id="markExpPaidRef" class="pay-input" placeholder="E.g. BOC-TXN-99812 / SLT-SLIP-4521">
+        <label class="pay-label" for="markExpPaidRef">Transaction Reference #</label>
+        <input type="text" id="markExpPaidRef" name="mark_exp_paid_ref" class="pay-input" placeholder="E.g. BOC-TXN-99812 / SLT-SLIP-4521">
       </div>
 
       <div class="pay-field">
-        <label class="pay-label">Settlement Note</label>
-        <input type="text" id="markExpPaidNote" class="pay-input" placeholder="E.g. Paid online via Commercial Bank app">
+        <label class="pay-label" for="markExpPaidNote">Settlement Note</label>
+        <input type="text" id="markExpPaidNote" name="mark_exp_paid_note" class="pay-input" placeholder="E.g. Paid online via Commercial Bank app">
       </div>
     </div>
     <div class="pay-modal-footer">

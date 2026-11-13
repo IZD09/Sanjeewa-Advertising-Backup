@@ -215,5 +215,15 @@ class PaymentsModuleDataSeeder extends Seeder
                 ['grn_id' => 102, 'purchase_orders_id' => 2, 'supplyer_invoice' => 'INV-LV-9412'],
             ]);
         }
+
+        if (DB::table('purchase_order_items')->count() === 0 && DB::table('stock_items')->whereIn('id', [1, 2, 4, 7, 9])->count() === 5) {
+            DB::table('purchase_order_items')->insert([
+                ['purchase_orders_id' => 1, 'stock_items_id' => 1, 'unit_cost' => 1250.00, 'qty_ordered' => 50, 'qty_received' => 50],
+                ['purchase_orders_id' => 1, 'stock_items_id' => 2, 'unit_cost' => 850.00, 'qty_ordered' => 30, 'qty_received' => 30],
+                ['purchase_orders_id' => 2, 'stock_items_id' => 4, 'unit_cost' => 3200.00, 'qty_ordered' => 20, 'qty_received' => 20],
+                ['purchase_orders_id' => 2, 'stock_items_id' => 7, 'unit_cost' => 4500.00, 'qty_ordered' => 15, 'qty_received' => 15],
+                ['purchase_orders_id' => 3, 'stock_items_id' => 9, 'unit_cost' => 2800.00, 'qty_ordered' => 40, 'qty_received' => 0],
+            ]);
+        }
     }
 }

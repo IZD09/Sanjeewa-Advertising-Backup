@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             PaymentTypeSeeder::class,
             AdminStatusSeeder::class,
             AdminTypeSeeder::class,
+            PurchaseOrderStatusSeeder::class,
             ActivityTypeSeeder::class,
             SystemModuleSeeder::class,
             DefaultAdminSeeder::class,

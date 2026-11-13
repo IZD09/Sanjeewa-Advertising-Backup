@@ -71,9 +71,13 @@ class PurchaseOrderController extends BaseApiController
     public function store(StorePurchaseOrderRequest $request): JsonResponse
     {
         $order = $this->purchaseOrderService->createPurchaseOrder($request->validated());
+        $formatted = $this->purchaseOrderService->formatPurchaseOrderRecord($order);
+
+        $resource = (new PurchaseOrderResource($order))->toArray($request);
+        $resource['formatted'] = $formatted;
 
         return $this->created(
-            new PurchaseOrderResource($order),
+            $resource,
             'Purchase order created successfully.'
         );
     }

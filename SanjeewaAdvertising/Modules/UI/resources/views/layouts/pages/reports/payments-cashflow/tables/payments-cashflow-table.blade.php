@@ -4,10 +4,10 @@
     <div class="rep-tab-toolbar">
         <div class="rep-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" class="rep-table-search" data-target-table="cashFlowTable" placeholder="Search transaction ID, operating expense, channel, or method...">
+            <input type="text" id="searchCashFlowTable" name="searchCashFlowTable" class="rep-table-search" data-target-table="cashFlowTable" placeholder="Search transaction ID, operating expense, channel, or method..." aria-label="Search Cash Flow Transactions">
         </div>
         <div class="rep-toolbar-controls">
-            <select class="rep-filter-select" data-target-table="cashFlowTable" aria-label="Filter Cash Flow Channel">
+            <select id="filterCashFlowChannel" name="filterCashFlowChannel" class="rep-filter-select" data-target-table="cashFlowTable" aria-label="Filter Cash Flow Channel">
                 <option value="all">All Channels (Inflow, Expenses &amp; GRN)</option>
                 <option value="operating expense">Operating Expenses Only</option>
                 <option value="customer inflow">Customer Inflows Only</option>
@@ -15,7 +15,7 @@
             </select>
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                <select class="rep-sort-select" data-target-table="cashFlowTable">
+                <select id="sortCashFlowTable" name="sortCashFlowTable" class="rep-sort-select" data-target-table="cashFlowTable" aria-label="Sort Cash Flow Table">
                     <option value="4:desc:date">Date (Newest First)</option>
                     <option value="4:asc:date">Date (Oldest First)</option>
                     <option value="6:desc:number">Amount (High to Low)</option>
@@ -102,17 +102,17 @@
         <div class="rep-tab-toolbar" style="margin-bottom: 6px;">
             <div class="rep-search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" class="rep-table-search" data-target-table="operatingExpensesTable" placeholder="Search expense category (Rent, Electricity, Water...), staff, or status...">
+                <input type="text" id="searchOperatingExpensesTable" name="searchOperatingExpensesTable" class="rep-table-search" data-target-table="operatingExpensesTable" placeholder="Search expense category (Rent, Electricity, Water...), staff, or status..." aria-label="Search Operating Expenses">
             </div>
             <div class="rep-toolbar-controls">
-                <select class="rep-filter-select" data-target-table="operatingExpensesTable" aria-label="Filter Operating Expense Status">
+                <select id="filterOperatingExpensesStatus" name="filterOperatingExpensesStatus" class="rep-filter-select" data-target-table="operatingExpensesTable" aria-label="Filter Operating Expense Status">
                     <option value="all">All Expense Statuses</option>
                     <option value="paid">Paid Bills Only</option>
                     <option value="pending">Pending Bills Only</option>
                 </select>
                 <div class="rep-sort-group">
                     <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
-                    <select class="rep-sort-select" data-target-table="operatingExpensesTable">
+                    <select id="sortOperatingExpensesTable" name="sortOperatingExpensesTable" class="rep-sort-select" data-target-table="operatingExpensesTable" aria-label="Sort Operating Expenses">
                         <option value="7:desc:number">Expense Amount (High to Low)</option>
                         <option value="7:asc:number">Expense Amount (Low to High)</option>
                         <option value="4:desc:date">Bill Date (Newest First)</option>
