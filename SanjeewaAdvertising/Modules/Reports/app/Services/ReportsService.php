@@ -2,6 +2,7 @@
 
 namespace Modules\Reports\Services;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Reports\Transactions\FetchReportDataTransaction;
 
 class ReportsService extends BaseReportService
@@ -133,8 +134,13 @@ class ReportsService extends BaseReportService
      */
     public function getAllData(array $filters = []): array
     {
+        $financials = $this->fetchAggregatedFinancials($filters);
+        $stockVal = (float) (DB::table('stock')->selectRaw('SUM(qty * buy) as total_val')->value('total_val') ?: 0);
+
         return [
             'success' => true,
+            'financials' => $financials,
+            'stockValue' => $stockVal,
             'kpis' => $this->getExecutiveKpis($filters),
             'charts' => $this->getChartPayload($filters),
             'tables' => [

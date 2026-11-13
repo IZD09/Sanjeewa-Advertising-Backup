@@ -106,10 +106,14 @@ export class ProfileManager {
 // Backward compatibility alias
 export const UserProfileManager = ProfileManager;
 
-document.addEventListener("DOMContentLoaded", () => {
+const bootProfile = () => {
   if (document.getElementById("module-user-profile")) {
     window.profileManager = new ProfileManager();
   }
-});
+};
+
+bootProfile();
+document.addEventListener("DOMContentLoaded", bootProfile);
+document.addEventListener("turbo:load", bootProfile);
 
 export default ProfileManager;

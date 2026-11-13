@@ -15,7 +15,6 @@
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
-    {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/user-profile.css') }}
 @endpush
 
@@ -111,23 +110,23 @@
                                                 <div class="up-form-grid">
                                                     <div class="up-form-group">
                                                         <label for="upFirstName">First Name *</label>
-                                                        <input type="text" id="upFirstName" name="first_name" value="{{ $firstName }}" required>
+                                                        <input type="text" id="upFirstName" name="first_name" value="{{ $firstName }}" required autocomplete="given-name">
                                                     </div>
                                                     <div class="up-form-group">
                                                         <label for="upLastName">Last Name *</label>
-                                                        <input type="text" id="upLastName" name="last_name" value="{{ $lastName }}" required>
+                                                        <input type="text" id="upLastName" name="last_name" value="{{ $lastName }}" required autocomplete="family-name">
                                                     </div>
                                                     <div class="up-form-group">
                                                         <label for="upUsername">Username (Immutable)</label>
-                                                        <input type="text" id="upUsername" value="{{ $username }}" readonly disabled>
+                                                        <input type="text" id="upUsername" name="username" value="{{ $username }}" readonly disabled autocomplete="username">
                                                     </div>
                                                     <div class="up-form-group">
                                                         <label for="upMobile">Mobile Phone *</label>
-                                                        <input type="tel" id="upMobile" name="mobile" value="{{ $currentUser->mobile ?? '' }}" required>
+                                                        <input type="tel" id="upMobile" name="mobile" value="{{ $currentUser->mobile ?? '' }}" required autocomplete="tel">
                                                     </div>
                                                     <div class="up-form-group full">
                                                         <label for="upStatus">Account Status</label>
-                                                        <input type="text" id="upStatus" value="{{ $currentUser->status?->user_status ?? 'Active' }}" readonly disabled>
+                                                        <input type="text" id="upStatus" name="status" value="{{ $currentUser->status?->user_status ?? 'Active' }}" readonly disabled>
                                                     </div>
                                                 </div>
 

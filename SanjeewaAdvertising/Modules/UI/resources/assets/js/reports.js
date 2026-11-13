@@ -424,6 +424,18 @@ export class ReportsManager {
     this.reanimateActiveCharts();
   }
 
+  destroy() {
+    if (this.chartRegistry) {
+      Object.keys(this.chartRegistry).forEach((key) => {
+        const chart = this.chartRegistry[key];
+        if (chart && typeof chart.destroy === "function") {
+          try { chart.destroy(); } catch (_) {}
+        }
+      });
+      this.chartRegistry = {};
+    }
+  }
+
   showToast(message, type = "success") {
     let toast = document.getElementById("repToast");
     if (!toast) {
@@ -462,7 +474,21 @@ export class ReportsManager {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  window.ReportsDataLoader = ReportsDataLoader;
-  window.reportsApp = new ReportsManager();
-});
+const bootReports = () => {
+  if (document.getElementById("module-reports")) {
+    if (window.reportsApp && typeof window.reportsApp.destroy === "function") {
+      try {
+        window.reportsApp.destroy();
+      } catch (_) {}
+    }
+    window.ReportsDataLoader = ReportsDataLoader;
+    window.reportsApp = new ReportsManager();
+  }
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootReports);
+} else {
+  bootReports();
+}
+document.addEventListener("turbo:load", bootReports);

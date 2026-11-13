@@ -160,11 +160,15 @@ export class CustomersManager {
 
 // Auto-instantiate when DOM is ready
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
+  const bootCustomers = () => {
     if (document.getElementById("module-customers")) {
       window.customersApp = new CustomersManager();
     }
-  });
+  };
+
+  bootCustomers();
+  document.addEventListener("DOMContentLoaded", bootCustomers);
+  document.addEventListener("turbo:load", bootCustomers);
 }
 
 export default CustomersManager;

@@ -319,6 +319,24 @@ class TopbarController {
     }
   }
 
+  refreshElements() {
+    this.topbar = document.getElementById("topbar");
+    this.hoverZone = document.getElementById("topbarHoverZone");
+    this.mainArea = document.getElementById("mainArea");
+    this.pinBtn = document.getElementById("topbarPinToggle");
+    this.peekPill = document.getElementById("topbarPeekPill");
+    this.themeToggleBtn = document.getElementById("themeToggle");
+    this.dateElem = document.getElementById("todayDate");
+    this.pageTitleElem = document.getElementById("pageTitle");
+    this.breadcrumbElem = document.getElementById("breadcrumbArea");
+    this.profileToggle = document.getElementById("profileDropdownToggle");
+    this.profileMenu = document.getElementById("profileDropdownMenu");
+    this.setDate();
+    this.updatePinUI();
+    this.bindEvents();
+    this.bindProfileDropdown();
+  }
+
   updateTitleAndBreadcrumb(title, breadcrumbHtml) {
     if (this.pageTitleElem && title) {
       this.pageTitleElem.textContent = title;
@@ -338,6 +356,8 @@ if (typeof window !== "undefined") {
     if (!window.topbarController) {
       window.topbarController = new TopbarController();
       window.topbarComponent = window.topbarController;
+    } else {
+      window.topbarController.refreshElements();
     }
   };
 
@@ -346,4 +366,5 @@ if (typeof window !== "undefined") {
   } else {
     bootTopbar();
   }
+  document.addEventListener("turbo:load", bootTopbar);
 }

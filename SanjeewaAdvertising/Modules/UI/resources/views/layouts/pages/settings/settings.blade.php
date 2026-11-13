@@ -49,21 +49,21 @@
               <div class="po-section-card">
                 <h3 style="font-size: 14px; margin: 0 0 10px; color: var(--text);">Printing Shop Details</h3>
                 <div class="po-field">
-                  <label class="po-label">Shop Name</label>
-                  <input type="text" class="po-input" value="Sanjeewa Advertising & Printing">
+                  <label for="settingShopName" class="po-label">Shop Name</label>
+                  <input type="text" id="settingShopName" name="shop_name" class="po-input" value="Sanjeewa Advertising & Printing" autocomplete="organization">
                 </div>
                 <div class="po-field">
-                  <label class="po-label">Address</label>
-                  <input type="text" class="po-input" value="No. 42 Main Street, Colombo 03, Sri Lanka">
+                  <label for="settingShopAddress" class="po-label">Address</label>
+                  <input type="text" id="settingShopAddress" name="shop_address" class="po-input" value="No. 42 Main Street, Colombo 03, Sri Lanka" autocomplete="street-address">
                 </div>
                 <div class="po-field-row">
                   <div class="po-field">
-                    <label class="po-label">Hotline Phone</label>
-                    <input type="text" class="po-input" value="+94 11 234 5678">
+                    <label for="settingShopPhone" class="po-label">Hotline Phone</label>
+                    <input type="tel" id="settingShopPhone" name="shop_phone" class="po-input" value="+94 11 234 5678" autocomplete="tel">
                   </div>
                   <div class="po-field">
-                    <label class="po-label">Currency Symbol</label>
-                    <input type="text" class="po-input" value="Rs. (Sri Lankan Rupees)">
+                    <label for="settingCurrencySymbol" class="po-label">Currency Symbol</label>
+                    <input type="text" id="settingCurrencySymbol" name="currency_symbol" class="po-input" value="Rs. (Sri Lankan Rupees)" autocomplete="off">
                   </div>
                 </div>
                 <button type="button" class="po-btn po-btn-primary" style="align-self: flex-start; margin-top: 10px;">

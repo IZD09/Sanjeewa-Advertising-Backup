@@ -252,14 +252,12 @@ export class UserControlManager {
 // Auto-boot when loaded on user-control view with safe readyState handling
 const bootUserControl = () => {
   const container = document.getElementById("module-user-control");
-  if (container && !window.userControlManager) {
+  if (container) {
     window.userControlManager = new UserControlManager();
   }
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootUserControl);
-} else {
-  bootUserControl();
-}
+bootUserControl();
+document.addEventListener("DOMContentLoaded", bootUserControl);
+document.addEventListener("turbo:load", bootUserControl);
 

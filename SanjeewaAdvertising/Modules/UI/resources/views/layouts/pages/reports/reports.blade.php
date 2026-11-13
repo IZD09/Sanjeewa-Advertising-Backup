@@ -5,14 +5,14 @@
     $chartPayload = $chartPayload ?? $initialPayload['charts'];
     $initialTables = $initialTables ?? $initialPayload['tables'];
 
-    $financials = $reportsService->fetchAggregatedFinancials([]);
-    $totalSales = $financials['totalSales'];
-    $totalCollected = $financials['totalCollected'];
-    $totalGrnPayments = $financials['totalGrnPayments'];
-    $totalExpenses = $financials['totalExpenses'];
-    $netProfit = $financials['netProfit'];
-    $uncollected = $financials['uncollected'];
-    $marginPercent = $financials['marginPercent'];
+    $financials = $initialPayload['financials'] ?? $reportsService->fetchAggregatedFinancials([]);
+    $totalSales = $financials['totalSales'] ?? 0;
+    $totalCollected = $financials['totalCollected'] ?? 0;
+    $totalGrnPayments = $financials['totalGrnPayments'] ?? 0;
+    $totalExpenses = $financials['totalExpenses'] ?? 0;
+    $netProfit = $financials['netProfit'] ?? 0;
+    $uncollected = $financials['uncollected'] ?? 0;
+    $marginPercent = $financials['marginPercent'] ?? 0;
 
     $paidExpensesTotal = $chartPayload['operatingExpensesStatus']['values'][0] ?? 0;
     $pendingExpensesTotal = $chartPayload['operatingExpensesStatus']['values'][1] ?? 0;
@@ -22,7 +22,7 @@
     $customers = $customers ?? ($initialTables['receivables']['data'] ?? []);
     $stockItems = $stockItems ?? ($initialTables['inventory']['data'] ?? []);
     $suppliers = $suppliers ?? ($initialTables['suppliers']['data'] ?? []);
-    $stockValue = $stockValue ?? (\Illuminate\Support\Facades\DB::table('stock')->selectRaw('SUM(qty * buy) as total_val')->value('total_val') ?: 0);
+    $stockValue = $stockValue ?? ($initialPayload['stockValue'] ?? 0);
     $profitLossData = $profitLossData ?? ($initialTables['profitLoss'] ?? []);
 @endphp
 @extends('ui::layouts.master')
@@ -33,7 +33,6 @@
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
-    {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/reports.css') }}
 @endpush
 

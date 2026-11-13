@@ -63,6 +63,7 @@ export class GRNManager {
     this.supplierHandler = new SupplierHandler({
       getSuppliers: () => this.dataLoader.suppliers,
       setSuppliers: (sups) => { this.dataLoader.suppliers = sups; },
+      getSupplierPagination: () => this.dataLoader.supplierPagination,
       getGrnRecords: () => this.dataLoader.grnRecords,
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
@@ -158,6 +159,8 @@ export class GRNManager {
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
       getGrnKpis: () => this.dataLoader.grnKpis,
       getPoKpis: () => this.dataLoader.poKpis,
+      getGrnPagination: () => this.dataLoader.grnPagination,
+      getPoPagination: () => this.dataLoader.poPagination,
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt)
     });
 
@@ -211,6 +214,10 @@ export class GRNManager {
       this.grnFormProcess.initNewGrnForm();
     } else {
       await this.loadAndRenderGRN();
+      // Also fetch PO in background so its tab badge and form dropdowns are warmed up
+      this.dataLoader.fetchPurchaseOrders({ page: 1, per_page: 20 }).then(() => {
+        this.metricsProcess.renderOpenPoBadge();
+      }).catch(() => {});
     }
   }
 
@@ -412,9 +419,14 @@ export class GRNManager {
 // Global initialization
 if (typeof window !== "undefined") {
   window.GRNManager = GRNManager;
-  document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("module-grn") && !window.grnManager) {
+
+  const bootGrn = () => {
+    if (document.getElementById("module-grn")) {
       window.grnManager = new GRNManager();
     }
-  });
+  };
+
+  bootGrn();
+  document.addEventListener("DOMContentLoaded", bootGrn);
+  document.addEventListener("turbo:load", bootGrn);
 }

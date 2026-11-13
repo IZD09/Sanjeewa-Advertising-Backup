@@ -378,10 +378,17 @@ class PlaceOrderManager {
 }
 
 // Global initialization
-document.addEventListener("DOMContentLoaded", () => {
-  window.PrintingOrder = PrintingOrder;
-  window.PrintingOrderBuilder = PrintingOrderBuilder;
-  window.PlaceOrderDataLoad = PlaceOrderDataLoad;
-  window.OrderPlacementProcess = OrderPlacementProcess;
-  window.placeOrderApp = new PlaceOrderManager();
-});
+window.PrintingOrder = PrintingOrder;
+window.PrintingOrderBuilder = PrintingOrderBuilder;
+window.PlaceOrderDataLoad = PlaceOrderDataLoad;
+window.OrderPlacementProcess = OrderPlacementProcess;
+
+const bootPlaceOrder = () => {
+  if (document.getElementById("module-place-order")) {
+    window.placeOrderApp = new PlaceOrderManager();
+  }
+};
+
+bootPlaceOrder();
+document.addEventListener("DOMContentLoaded", bootPlaceOrder);
+document.addEventListener("turbo:load", bootPlaceOrder);

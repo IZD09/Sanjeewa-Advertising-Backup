@@ -154,6 +154,16 @@ export class BaseReportChart {
     // Destroy existing instance if active
     this.destroy();
 
+    // Verify canvas is completely released by Chart.js
+    if (typeof window !== "undefined" && window.Chart && typeof window.Chart.getChart === "function") {
+      try {
+        const remaining = window.Chart.getChart(ctx) || (this.canvasId ? window.Chart.getChart(this.canvasId) : null);
+        if (remaining && typeof remaining.destroy === "function") {
+          remaining.destroy();
+        }
+      } catch (_) {}
+    }
+
     const instance = new window.Chart(ctx, config);
     this.instance = instance;
     if (this.chartRegistry) {
@@ -215,16 +225,20 @@ export class BaseReportChart {
    */
   destroy() {
     if (this.instance && typeof this.instance.destroy === "function") {
-      this.instance.destroy();
+      try {
+        this.instance.destroy();
+      } catch (_) {}
       this.instance = null;
-    } else {
-      const ctx = this.getCanvas();
-      if (ctx && window.Chart) {
-        const existing = window.Chart.getChart(ctx);
+    }
+
+    const ctx = this.getCanvas();
+    if (ctx && typeof window !== "undefined" && window.Chart && typeof window.Chart.getChart === "function") {
+      try {
+        const existing = window.Chart.getChart(ctx) || (this.canvasId ? window.Chart.getChart(this.canvasId) : null);
         if (existing && typeof existing.destroy === "function") {
           existing.destroy();
         }
-      }
+      } catch (_) {}
     }
 
     if (this.chartRegistry && this.chartRegistry[this.chartKey]) {

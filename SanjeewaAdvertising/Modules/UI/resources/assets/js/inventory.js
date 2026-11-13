@@ -317,15 +317,13 @@ if (typeof window !== "undefined") {
   window.InventoryManager = InventoryManager;
 
   const bootInventory = () => {
-    if (document.getElementById("module-inventory") && !window.inventoryManager) {
+    if (document.getElementById("module-inventory")) {
       window.inventoryManager = new InventoryManager();
       window.inventoryApp = window.inventoryManager;
     }
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bootInventory);
-  } else {
-    bootInventory();
-  }
+  bootInventory();
+  document.addEventListener("DOMContentLoaded", bootInventory);
+  document.addEventListener("turbo:load", bootInventory);
 }

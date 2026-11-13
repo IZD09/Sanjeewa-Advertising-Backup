@@ -351,8 +351,15 @@ export class PaymentsManager {
 // Global initialization
 if (typeof window !== "undefined") {
   window.PaymentsManager = PaymentsManager;
-  document.addEventListener("DOMContentLoaded", () => {
-    window.paymentsManager = new PaymentsManager();
-    window.paymentsApp = window.paymentsManager;
-  });
+
+  const bootPayments = () => {
+    if (document.getElementById("module-payments")) {
+      window.paymentsManager = new PaymentsManager();
+      window.paymentsApp = window.paymentsManager;
+    }
+  };
+
+  bootPayments();
+  document.addEventListener("DOMContentLoaded", bootPayments);
+  document.addEventListener("turbo:load", bootPayments);
 }

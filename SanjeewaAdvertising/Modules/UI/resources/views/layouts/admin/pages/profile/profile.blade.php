@@ -11,7 +11,6 @@
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
-    {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/admin-user-control.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/admin-profile.css') }}
 @endpush
@@ -108,31 +107,31 @@
                                                 <div class="ap-form-grid">
                                                     <div class="ap-form-group">
                                                         <label for="profFirstName">First Name</label>
-                                                        <input type="text" id="profFirstName" name="first_name" required>
+                                                        <input type="text" id="profFirstName" name="first_name" required autocomplete="given-name">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profLastName">Last Name</label>
-                                                        <input type="text" id="profLastName" name="last_name" required>
+                                                        <input type="text" id="profLastName" name="last_name" required autocomplete="family-name">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profUsername">Username (Immutable)</label>
-                                                        <input type="text" id="profUsername" readonly disabled>
+                                                        <input type="text" id="profUsername" name="username" readonly disabled autocomplete="username">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profEmail">Email Address</label>
-                                                        <input type="email" id="profEmail" name="email" required>
+                                                        <input type="email" id="profEmail" name="email" required autocomplete="email">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profMobile">Mobile Phone</label>
-                                                        <input type="tel" id="profMobile" name="mobile" required>
+                                                        <input type="tel" id="profMobile" name="mobile" required autocomplete="tel">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profRole">Privilege Role</label>
-                                                        <input type="text" id="profRole" readonly disabled>
+                                                        <input type="text" id="profRole" name="role" readonly disabled>
                                                     </div>
                                                     <div class="ap-form-group full">
                                                         <label for="profStatus">Account Status</label>
-                                                        <input type="text" id="profStatus" readonly disabled>
+                                                        <input type="text" id="profStatus" name="status" readonly disabled>
                                                     </div>
                                                 </div>
                                             </div>
@@ -142,15 +141,15 @@
                                                 <div class="ap-form-grid">
                                                     <div class="ap-form-group full">
                                                         <label for="profCurrentPassword">Current Password <span style="color: #64748b; font-weight: 400;">(Required only when changing password)</span></label>
-                                                        <input type="password" id="profCurrentPassword" placeholder="Enter current password">
+                                                        <input type="password" id="profCurrentPassword" name="current_password" placeholder="Enter current password" autocomplete="current-password">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profNewPassword">New Password</label>
-                                                        <input type="password" id="profNewPassword" placeholder="At least 6 characters" minlength="6">
+                                                        <input type="password" id="profNewPassword" name="new_password" placeholder="At least 6 characters" minlength="6" autocomplete="new-password">
                                                     </div>
                                                     <div class="ap-form-group">
                                                         <label for="profConfirmPassword">Confirm New Password</label>
-                                                        <input type="password" id="profConfirmPassword" placeholder="Confirm new password" minlength="6">
+                                                        <input type="password" id="profConfirmPassword" name="password_confirmation" placeholder="Confirm new password" minlength="6" autocomplete="new-password">
                                                     </div>
                                                 </div>
                                             </div>

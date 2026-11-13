@@ -32,7 +32,7 @@
                 <i class="fa-solid fa-rotate-left"></i> Reset
             </button>
             <div class="rep-stats-badges">
-                <span class="rep-stat-chip chip-blue"><i class="fa-solid fa-list-check"></i> {{ count($orders ?? []) }} Recent Orders</span>
+                <span class="rep-stat-chip chip-blue"><i class="fa-solid fa-list-check"></i> {{ is_countable($orders ?? null) ? count($orders) : 0 }} Recent Orders</span>
             </div>
         </div>
     </div>

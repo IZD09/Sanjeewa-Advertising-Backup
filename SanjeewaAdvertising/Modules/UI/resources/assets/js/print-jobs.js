@@ -262,6 +262,12 @@ export class PrintJobsManager {
 }
 
 // Global initialization
-document.addEventListener('DOMContentLoaded', () => {
-    window.printJobsManager = new PrintJobsManager();
-});
+const bootPrintJobs = () => {
+    if (document.getElementById('module-print-jobs')) {
+        window.printJobsManager = new PrintJobsManager();
+    }
+};
+
+bootPrintJobs();
+document.addEventListener('DOMContentLoaded', bootPrintJobs);
+document.addEventListener('turbo:load', bootPrintJobs);

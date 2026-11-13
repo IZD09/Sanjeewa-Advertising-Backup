@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="turbo-cache-control" content="no-preview">
 
     <title>@yield('title', 'Dashboard') - SanjeewaAdvertising</title>
 
@@ -17,6 +18,17 @@
 
     {{-- UI module assets --}}
     {{ module_vite('build-ui', 'resources/assets/sass/app.scss') }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    {{ module_vite('build-ui', 'resources/assets/js/app.js') }}
+
+    <style>
+        .turbo-progress-bar {
+            height: 3px !important;
+            background-color: #1677ff !important;
+            box-shadow: 0 0 10px rgba(22, 119, 255, 0.7) !important;
+            z-index: 999999 !important;
+        }
+    </style>
 
     @stack('styles')
 </head>
@@ -24,11 +36,7 @@
 <body>
     @yield('content')
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-
     @stack('scripts')
-
-    {{ module_vite('build-ui', 'resources/assets/js/app.js') }}
 </body>
 
 </html>

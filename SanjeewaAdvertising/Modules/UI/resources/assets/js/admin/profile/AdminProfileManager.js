@@ -345,13 +345,11 @@ export class AdminProfileManager {
 // Auto-boot when loaded on admin profile page
 const bootAdminProfile = () => {
   const container = document.getElementById("module-admin-profile");
-  if (container && !window.adminProfileManager) {
+  if (container) {
     window.adminProfileManager = new AdminProfileManager();
   }
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootAdminProfile);
-} else {
-  bootAdminProfile();
-}
+bootAdminProfile();
+document.addEventListener("DOMContentLoaded", bootAdminProfile);
+document.addEventListener("turbo:load", bootAdminProfile);

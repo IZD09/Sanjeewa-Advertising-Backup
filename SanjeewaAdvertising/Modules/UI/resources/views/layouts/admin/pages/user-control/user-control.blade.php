@@ -14,7 +14,6 @@
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
-    {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/admin-user-control.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/admin-profile.css') }}
 @endpush

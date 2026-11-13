@@ -1,7 +1,7 @@
 /**
  * Central Application Coordinator & Module Lifecycle Manager
  * Sanjeewa Advertising Printing Shop Management System
- * Handles: Route Detection, Page Lifecycle Management, Clean URL Navigation, and Deep Linking
+ * Handles: Turbo Drive SPA Navigation, Route Detection, Page Lifecycle Management, Clean URL Navigation
  *
  * Note: Topbar & Sidebar components are decoupled and managed by:
  * - components/topbar.js (TopbarController)
@@ -9,6 +9,8 @@
  */
 
 "use strict";
+
+import * as Turbo from "@hotwired/turbo";
 
 class AppRouter {
   constructor() {
@@ -146,10 +148,47 @@ class AppRouter {
     this.handleModuleLifecycle(this.currentRoute, targetView);
   }
 
+  onTurboLoad() {
+    this.currentRoute = this.detectCurrentRoute();
+    this.viewport = document.getElementById("mainContentViewport");
+    this.topbarController = window.topbarController || (window.TopbarController ? new window.TopbarController() : null);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const targetView = searchParams.get("view");
+
+    // 1. Update Title and Breadcrumbs via TopbarController if elements exist
+    const route = this.routes[this.currentRoute];
+    if (route) {
+      const pageTitle = document.getElementById("pageTitle");
+      const breadcrumbArea = document.getElementById("breadcrumbArea");
+      if (pageTitle && !pageTitle.textContent.trim()) {
+        pageTitle.textContent = route.title;
+      }
+      if (breadcrumbArea && !breadcrumbArea.textContent.trim()) {
+        breadcrumbArea.innerHTML = route.breadcrumb;
+      }
+      if (this.topbarController?.updateTitleAndBreadcrumb && pageTitle && breadcrumbArea) {
+        this.topbarController.updateTitleAndBreadcrumb(pageTitle.textContent, breadcrumbArea.innerHTML);
+      }
+    }
+
+    // 2. Update Sidebar active state
+    if (window.sidebarComponent) {
+      window.sidebarComponent.setActiveRoute(this.currentRoute, targetView);
+    }
+
+    // 3. Module-specific lifecycle management
+    this.handleModuleLifecycle(this.currentRoute, targetView);
+  }
+
   navigateTo(routeKey, targetView = null) {
     const route = this.routes[routeKey] ? routeKey : "dashboard";
     const url = targetView ? `/${route}?view=${encodeURIComponent(targetView)}` : `/${route}`;
-    window.location.href = url;
+    if (window.Turbo) {
+      window.Turbo.visit(url);
+    } else {
+      window.location.href = url;
+    }
   }
 
   handleModuleLifecycle(routeKey, targetView = null) {
@@ -157,6 +196,8 @@ class AppRouter {
       if (window.dashboardInstance) {
         window.dashboardInstance.startSlideshow();
         setTimeout(() => window.dashboardInstance.resizeVisibleCharts(), 60);
+      } else if (window.AdminDashboard) {
+        window.dashboardInstance = new window.AdminDashboard();
       }
     }
 
@@ -172,12 +213,17 @@ class AppRouter {
             setTimeout(() => ordersPanel.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
           }
         }
+      } else if (window.PlaceOrderManager && document.getElementById("module-place-order")) {
+        window.placeOrderApp = new window.PlaceOrderManager();
       }
     }
 
     if (routeKey === "inventory") {
       if (window.inventoryManager) {
         window.inventoryManager.render();
+      } else if (window.InventoryManager && document.getElementById("module-inventory")) {
+        window.inventoryManager = new window.InventoryManager();
+        window.inventoryApp = window.inventoryManager;
       }
     }
 
@@ -192,6 +238,8 @@ class AppRouter {
         } else {
           window.grnManager.render();
         }
+      } else if (window.GRNManager && document.getElementById("module-grn")) {
+        window.grnManager = new window.GRNManager();
       }
     }
 
@@ -206,18 +254,46 @@ class AppRouter {
         } else {
           window.paymentsManager.render();
         }
+      } else if (window.PaymentsManager && document.getElementById("module-payments")) {
+        window.paymentsManager = new window.PaymentsManager();
+        window.paymentsApp = window.paymentsManager;
+      }
+    }
+
+    if (routeKey === "reports") {
+      if (!window.reportsApp && window.ReportsManager && document.getElementById("module-reports")) {
+        window.reportsApp = new window.ReportsManager();
+      }
+    }
+
+    if (routeKey === "print-jobs") {
+      if (window.printJobsManager) {
+        window.printJobsManager.init();
+      } else if (window.PrintJobsManager && document.getElementById("module-print-jobs")) {
+        window.printJobsManager = new window.PrintJobsManager();
+      }
+    }
+
+    if (routeKey === "customers") {
+      if (window.customersApp) {
+        window.customersApp.init();
+      } else if (window.CustomersManager && document.getElementById("module-customers")) {
+        window.customersApp = new window.CustomersManager();
       }
     }
   }
 }
 
-// Global initialization with safe readyState handling
+// Global initialization & Turbo lifecycle management
 if (typeof window !== "undefined") {
+  window.Turbo = Turbo;
   window.AppRouter = AppRouter;
 
   const bootApp = () => {
     if (!window.appRouter) {
       window.appRouter = new AppRouter();
+    } else {
+      window.appRouter.onTurboLoad();
     }
   };
 
@@ -226,4 +302,31 @@ if (typeof window !== "undefined") {
   } else {
     bootApp();
   }
+
+  // Handle Turbo SPA navigation events
+  document.addEventListener("turbo:load", () => {
+    bootApp();
+  });
+
+  // Prevent Turbo from navigating when clicking the active URL (prevents UI blink/flash)
+  document.addEventListener("turbo:click", (e) => {
+    try {
+      const targetUrl = new URL(e.detail?.url || "", window.location.origin);
+      const normalizePath = (p) => (p.replace(/\/+$/, "") || "/");
+      const isSamePath = normalizePath(targetUrl.pathname) === normalizePath(window.location.pathname);
+      const isSameSearch = (targetUrl.search || "") === (window.location.search || "");
+      if (targetUrl.origin === window.location.origin && isSamePath && isSameSearch) {
+        e.preventDefault();
+      }
+    } catch (_) {}
+  });
+
+  // Clean up modals, overlays, and toasts before caching snapshot
+  document.addEventListener("turbo:before-cache", () => {
+    document.querySelectorAll(".sidebar-overlay.active, .modal-backdrop, .modal.show, .po-modal-container.active").forEach((el) => {
+      el.classList.remove("active", "show");
+    });
+    document.body.classList.remove("modal-open", "sidebar-open");
+    document.querySelectorAll(".po-toast, .rep-toast").forEach((el) => el.remove());
+  });
 }

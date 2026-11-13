@@ -16,10 +16,38 @@ class Navigation {
   }
 
   bindEvents() {
+    // Smart prefetch on hover for instant navigation
+    const prefetchedUrls = new Set();
+    const prefetchUrl = (url) => {
+      if (!url || prefetchedUrls.has(url) || url.startsWith("javascript:") || url.startsWith("#")) return;
+      try {
+        const parsed = new URL(url, window.location.origin);
+        if (parsed.origin !== window.location.origin || parsed.pathname === window.location.pathname) return;
+        prefetchedUrls.add(url);
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = url;
+        link.as = "document";
+        document.head.appendChild(link);
+      } catch (_) {}
+    };
+
+    document.addEventListener("mouseover", (e) => {
+      const navBtn = e.target.closest("#mainNavigation a.nav-link[href], #mainNavigation a.nav-sublink[href]");
+      if (navBtn && navBtn.href) {
+        prefetchUrl(navBtn.href);
+      }
+    }, { passive: true });
+
     document.addEventListener("click", (e) => {
       // Find button or link clicked within navigation
       const navBtn = e.target.closest("button.nav-link, button.nav-sublink, button[data-route], a.nav-link, a.nav-sublink, a[data-route]");
       if (!navBtn) return;
+
+      const nav = document.getElementById("mainNavigation");
+      if (nav) {
+        sessionStorage.setItem("sa-sidebar-scroll", nav.scrollTop);
+      }
 
       // 1. Handle dropdown toggle (Payments)
       const dropdownToggle = navBtn.classList.contains("nav-dropdown-toggle") ? navBtn : null;
@@ -35,6 +63,8 @@ class Navigation {
       // 2. Handle in-dashboard slide switches (e.g. Dashboard -> Slide 0, Sales & Revenue -> Slide 1)
       if (navBtn.hasAttribute("data-slide") && (window.location.pathname === "/admin/dashboard" || window.location.pathname === "/dashboard" || window.location.pathname === "/")) {
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         const slideIndex = parseInt(navBtn.getAttribute("data-slide"), 10);
         if (window.dashboardInstance && typeof window.dashboardInstance.showSlide === "function") {
           window.dashboardInstance.showSlide(slideIndex);
@@ -42,16 +72,22 @@ class Navigation {
         if (window.sidebarComponent) {
           window.sidebarComponent.setActiveRoute(navBtn.getAttribute("data-route") || "dashboard");
         }
-        return;
+        return false;
       }
 
-      // 3. For any regular link with an href, allow native browser navigation
+      // 3. For any regular link with an href, prevent re-fetching/blinking if already on that page
       if (navBtn.tagName === "A" && navBtn.hasAttribute("href")) {
         try {
           const targetUrl = new URL(navBtn.href, window.location.origin);
-          if (targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search) {
+          const normalizePath = (p) => (p.replace(/\/+$/, "") || "/");
+          const isSamePath = normalizePath(targetUrl.pathname) === normalizePath(window.location.pathname);
+          const isSameSearch = (targetUrl.search || "") === (window.location.search || "");
+
+          if (targetUrl.origin === window.location.origin && isSamePath && isSameSearch) {
             e.preventDefault();
-            return;
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
           }
         } catch (_) {}
         return;
@@ -64,7 +100,19 @@ class Navigation {
       if (navigateLocation) {
         this.navigate(navigateLocation, targetView);
       }
-    });
+    }, { capture: true });
+  }
+
+  goTo(url) {
+    const nav = document.getElementById("mainNavigation");
+    if (nav) {
+      sessionStorage.setItem("sa-sidebar-scroll", nav.scrollTop);
+    }
+    if (window.Turbo && typeof window.Turbo.visit === "function") {
+      window.Turbo.visit(url);
+    } else {
+      window.location.href = url;
+    }
   }
 
   navigate(navigateLocation, targetView = null) {
@@ -86,7 +134,7 @@ class Navigation {
           }
           return;
         }
-        window.location.href = "/admin/dashboard";
+        this.goTo("/admin/dashboard");
         break;
 
       case "sales-revenue":
@@ -99,91 +147,91 @@ class Navigation {
           }
           return;
         }
-        window.location.href = "/admin/dashboard?slide=1";
+        this.goTo("/admin/dashboard?slide=1");
         break;
 
       case "reports":
         if (window.location.pathname === "/reports") return;
-        window.location.href = "/reports";
+        this.goTo("/reports");
         break;
 
       case "print-jobs":
         if (targetView === "design") {
           if (window.location.pathname === "/print-jobs" && window.location.search.includes("view=design")) return;
-          window.location.href = "/print-jobs?view=design";
+          this.goTo("/print-jobs?view=design");
         } else {
           if (window.location.pathname === "/print-jobs" && (!window.location.search || !window.location.search.includes("view=design"))) return;
-          window.location.href = "/print-jobs";
+          this.goTo("/print-jobs");
         }
         break;
 
       case "place-order":
         if (targetView === "orders") {
           if (window.location.pathname === "/place-order" && window.location.search.includes("view=orders")) return;
-          window.location.href = "/place-order?view=orders";
+          this.goTo("/place-order?view=orders");
         } else {
           if (window.location.pathname === "/place-order" && (!window.location.search || window.location.search.includes("view=form"))) return;
-          window.location.href = "/place-order";
+          this.goTo("/place-order");
         }
         break;
 
       case "customers":
         if (window.location.pathname === "/customers") return;
-        window.location.href = "/customers";
+        this.goTo("/customers");
         break;
 
       case "payments":
         if (targetView === "invoice-payment") {
           if (window.location.pathname === "/payments" && window.location.search.includes("view=invoice-payment")) return;
-          window.location.href = "/payments?view=invoice-payment";
+          this.goTo("/payments?view=invoice-payment");
         } else if (targetView === "grn-payment") {
           if (window.location.pathname === "/payments" && window.location.search.includes("view=grn-payment")) return;
-          window.location.href = "/payments?view=grn-payment";
+          this.goTo("/payments?view=grn-payment");
         } else if (targetView === "expenses" || targetView === "expense") {
           if (window.location.pathname === "/payments" && (window.location.search.includes("view=expenses") || window.location.search.includes("view=expense"))) return;
-          window.location.href = "/payments?view=expenses";
+          this.goTo("/payments?view=expenses");
         } else {
           if (window.location.pathname === "/payments" && !window.location.search) return;
-          window.location.href = "/payments";
+          this.goTo("/payments");
         }
         break;
 
       case "inventory":
         if (targetView === "categories") {
           if (window.location.pathname === "/inventory" && window.location.search.includes("view=categories")) return;
-          window.location.href = "/inventory?view=categories";
+          this.goTo("/inventory?view=categories");
         } else {
           if (window.location.pathname === "/inventory" && !window.location.search) return;
-          window.location.href = "/inventory";
+          this.goTo("/inventory");
         }
         break;
 
       case "grn":
         if (targetView === "po") {
           if (window.location.pathname === "/grn" && window.location.search.includes("view=po")) return;
-          window.location.href = "/grn?view=po";
+          this.goTo("/grn?view=po");
         } else if (targetView === "suppliers") {
           if (window.location.pathname === "/grn" && window.location.search.includes("view=suppliers")) return;
-          window.location.href = "/grn?view=suppliers";
+          this.goTo("/grn?view=suppliers");
         } else {
           if (window.location.pathname === "/grn" && !window.location.search) return;
-          window.location.href = "/grn";
+          this.goTo("/grn");
         }
         break;
 
       case "user-control":
         if (window.location.pathname === "/admin/user-control" || window.location.pathname === "/user-control") return;
-        window.location.href = "/admin/user-control";
+        this.goTo("/admin/user-control");
         break;
 
       case "settings":
         if (window.location.pathname === "/settings") return;
-        window.location.href = "/settings";
+        this.goTo("/settings");
         break;
 
       default:
         if (window.location.pathname === "/" + navigateLocation) return;
-        window.location.href = "/" + navigateLocation;
+        this.goTo("/" + navigateLocation);
         break;
     }
   }
@@ -239,6 +287,48 @@ class SidebarComponent {
     this.closeBtn = document.getElementById("sidebarClose");
     this.navLinks = [...document.querySelectorAll(".sidebar .nav-link, .sidebar .nav-sublink")];
     this.dropdowns = [...document.querySelectorAll(".sidebar .nav-dropdown")];
+
+    // Restore scroll position
+    this.restoreScrollPosition();
+
+    // Attach real-time scroll listener to mainNavigation
+    const nav = document.getElementById("mainNavigation");
+    if (nav && !nav._hasScrollListener) {
+      nav._hasScrollListener = true;
+      nav.addEventListener("scroll", () => {
+        sessionStorage.setItem("sa-sidebar-scroll", nav.scrollTop);
+      }, { passive: true });
+    }
+  }
+
+  saveScrollPosition() {
+    const nav = document.getElementById("mainNavigation");
+    if (nav) {
+      sessionStorage.setItem("sa-sidebar-scroll", nav.scrollTop);
+    }
+  }
+
+  restoreScrollPosition() {
+    const nav = document.getElementById("mainNavigation");
+    if (!nav) return;
+    const saved = sessionStorage.getItem("sa-sidebar-scroll");
+    if (saved !== null) {
+      const top = parseInt(saved, 10);
+      if (!isNaN(top)) {
+        nav.scrollTop = top;
+        requestAnimationFrame(() => {
+          if (nav) nav.scrollTop = top;
+        });
+        setTimeout(() => {
+          if (nav) nav.scrollTop = top;
+        }, 60);
+      }
+    } else {
+      const activeLink = nav.querySelector(".nav-link.active, .nav-sublink.active");
+      if (activeLink) {
+        activeLink.scrollIntoView({ block: "nearest" });
+      }
+    }
   }
 
   initDesktopState() {
@@ -309,6 +399,24 @@ class SidebarComponent {
       if (e.key === "Escape" && this.isMobileOpen) {
         this.closeMobileDrawer();
       }
+    });
+
+    // Save scroll on clicking any navigation link or button
+    document.addEventListener("click", (e) => {
+      const navBtn = e.target.closest("#mainNavigation a, #mainNavigation button");
+      if (navBtn) {
+        this.saveScrollPosition();
+      }
+    }, { capture: true, passive: true });
+
+    // Save scroll before Turbo visits another page
+    document.addEventListener("turbo:before-visit", () => {
+      this.saveScrollPosition();
+    });
+
+    // Restore scroll when Turbo renders
+    document.addEventListener("turbo:render", () => {
+      this.restoreScrollPosition();
     });
   }
 
@@ -417,6 +525,8 @@ class SidebarComponent {
         }
       });
     }
+
+    this.restoreScrollPosition();
   }
 }
 
@@ -431,6 +541,11 @@ if (typeof window !== "undefined") {
     }
     if (!window.sidebarComponent) {
       window.sidebarComponent = new SidebarComponent();
+    } else {
+      window.sidebarComponent.refreshElements();
+    }
+    if (window.sidebarComponent) {
+      window.sidebarComponent.restoreScrollPosition();
     }
   };
 
@@ -439,4 +554,5 @@ if (typeof window !== "undefined") {
   } else {
     bootSidebar();
   }
+  document.addEventListener("turbo:load", bootSidebar);
 }

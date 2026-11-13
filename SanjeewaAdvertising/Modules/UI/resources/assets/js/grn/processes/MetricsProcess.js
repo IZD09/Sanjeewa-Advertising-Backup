@@ -20,6 +20,7 @@ export class MetricsProcess {
   renderKPIs() {
     const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
     const serverKpis = this.ctx.getGrnKpis ? this.ctx.getGrnKpis() : null;
+    const grnPagination = this.ctx.getGrnPagination ? this.ctx.getGrnPagination() : null;
 
     let totalGrns = grnRecords.length;
     let completedCount = 0;
@@ -31,6 +32,8 @@ export class MetricsProcess {
       completedCount = serverKpis.completed || 0;
       draftCount = serverKpis.draft || 0;
       totalValue = parseFloat(serverKpis.total_value) || 0;
+    } else if (grnPagination && typeof grnPagination.total === "number" && grnPagination.total >= grnRecords.length) {
+      totalGrns = grnPagination.total;
     } else {
       grnRecords.forEach(rec => {
         if (rec.status === "Completed") {
@@ -51,18 +54,22 @@ export class MetricsProcess {
     setEl("grnKpiCompleted", completedCount);
     setEl("grnKpiValue", this.ctx.formatCurrency ? this.ctx.formatCurrency(totalValue) : totalValue);
     setEl("grnKpiDraft", draftCount);
+    setEl("grnRecordCountBadge", totalGrns);
   }
 
   renderOpenPoBadge() {
-    const badge = document.getElementById("grnOpenPoBadge");
+    const badge = document.getElementById("grnPoCountBadge") || document.getElementById("grnOpenPoBadge");
     if (!badge) return;
     const poKpis = this.ctx.getPoKpis ? this.ctx.getPoKpis() : null;
+    const poPagination = this.ctx.getPoPagination ? this.ctx.getPoPagination() : null;
     const purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
 
-    if (poKpis && typeof poKpis.open === "number" && (poKpis.total || 0) >= purchaseOrders.length) {
-      badge.textContent = poKpis.open;
-    } else {
-      badge.textContent = purchaseOrders.filter(p => p.status === "Pending" || p.status === "Partial").length;
+    let totalPOs = purchaseOrders.length;
+    if (poKpis && typeof poKpis.total === "number" && poKpis.total >= purchaseOrders.length) {
+      totalPOs = poKpis.total;
+    } else if (poPagination && typeof poPagination.total === "number" && poPagination.total >= purchaseOrders.length) {
+      totalPOs = poPagination.total;
     }
+    badge.textContent = totalPOs;
   }
 }

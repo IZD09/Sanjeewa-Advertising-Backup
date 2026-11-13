@@ -1,3 +1,8 @@
+@php
+    $totalGrnCount = \Modules\Supplier\Models\Grn::count();
+    $totalPoCount = \Modules\Supplier\Models\PurchaseOrder::count();
+    $totalSupplierCount = \Modules\Supplier\Models\Supplier::count();
+@endphp
 @extends('ui::layouts.master')
 
 @section('title', request('view') === 'po' ? 'Purchase Orders (PO)' : (request('view') === 'suppliers' ? 'Suppliers Directory' : 'Goods Received Note (GRN)'))
@@ -6,7 +11,6 @@
 
 @push('styles')
     {{ module_vite('build-ui', 'resources/assets/css/core.css') }}
-    {{ module_vite('build-ui', 'resources/assets/css/modules.css') }}
     {{ module_vite('build-ui', 'resources/assets/css/grn.css') }}
 @endpush
 
@@ -108,13 +112,13 @@
             <!-- 3. Section Switcher Tabs -->
             <div class="grn-tabs-wrap">
               <button type="button" class="grn-tab-btn {{ (!request()->has('view') || request('view') === 'list') ? 'active' : '' }}" id="grnTabListBtn">
-                <i class="fa-solid fa-list-check"></i> All GRN Records
+                <i class="fa-solid fa-list-check"></i> All GRN Records <span class="tab-count-badge" id="grnRecordCountBadge">{{ $totalGrnCount }}</span>
               </button>
               <button type="button" class="grn-tab-btn {{ request('view') === 'po' ? 'active' : '' }}" id="grnTabPOBtn">
-                <i class="fa-solid fa-clipboard-list"></i> Purchase Orders (PO) <span class="tab-count-badge" id="grnOpenPoBadge">0</span>
+                <i class="fa-solid fa-clipboard-list"></i> Purchase Orders (PO) <span class="tab-count-badge" id="grnPoCountBadge">{{ $totalPoCount }}</span>
               </button>
               <button type="button" class="grn-tab-btn {{ request('view') === 'suppliers' ? 'active' : '' }}" id="grnTabSuppliersBtn">
-                <i class="fa-solid fa-truck-field"></i> Suppliers Directory <span class="tab-count-badge" id="grnSupplierCountBadge">0</span>
+                <i class="fa-solid fa-truck-field"></i> Suppliers Directory <span class="tab-count-badge" id="grnSupplierCountBadge">{{ $totalSupplierCount }}</span>
               </button>
             </div>
 

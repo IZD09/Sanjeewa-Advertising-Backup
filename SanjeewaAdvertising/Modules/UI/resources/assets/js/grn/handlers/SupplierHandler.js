@@ -60,7 +60,12 @@ export class SupplierHandler {
 
     // 3. Count badge
     const badge = document.getElementById("grnSupplierCountBadge");
-    if (badge) badge.textContent = suppliers.length;
+    const pagination = this.ctx.getSupplierPagination ? this.ctx.getSupplierPagination() : null;
+    if (badge) {
+      badge.textContent = pagination && typeof pagination.total === "number" && pagination.total >= suppliers.length
+        ? pagination.total
+        : suppliers.length;
+    }
   }
 
   populateSupplierFilter() {

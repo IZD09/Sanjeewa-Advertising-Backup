@@ -206,14 +206,18 @@ export { AdminDashboard as SanjeewaAdvertisingDashboard };
 
 // Global initialization with safe readyState handling
 const bootDashboard = () => {
-  if (!window.dashboardInstance) {
+  const root = document.getElementById("module-dashboard") || document.querySelector(".dashboard-content");
+  if (root) {
+    if (window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+      try {
+        window.dashboardInstance.destroy();
+      } catch (_) {}
+    }
     window.dashboardInstance = window.sanjeewaDashboard = window.adminDashboardInstance = new AdminDashboard();
   }
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootDashboard);
-} else {
-  bootDashboard();
-}
+bootDashboard();
+document.addEventListener("DOMContentLoaded", bootDashboard);
+document.addEventListener("turbo:load", bootDashboard);
 
