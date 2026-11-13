@@ -199,6 +199,7 @@ export class AdminDashboard {
       this.dataService = null;
     }
     this.slides = [];
+    this.rootElement = null;
   }
 }
 
@@ -214,6 +215,13 @@ const bootDashboard = () => {
       } catch (_) {}
     }
     window.dashboardInstance = window.sanjeewaDashboard = window.adminDashboardInstance = new AdminDashboard();
+  } else {
+    if (window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+      try {
+        window.dashboardInstance.destroy();
+      } catch (_) {}
+      window.dashboardInstance = window.sanjeewaDashboard = window.adminDashboardInstance = null;
+    }
   }
 };
 

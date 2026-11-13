@@ -83,6 +83,11 @@ class AppRouter {
     const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
     const parts = rawPath.split("/");
 
+    // Handle authentication pages
+    if (parts[0] === "login" || parts[1] === "login" || parts[0] === "logout" || parts[1] === "logout") {
+      return "login";
+    }
+
     // Handle admin subroutes (e.g. /admin/user-control or /admin/dashboard)
     if (parts[0] === "admin" && parts[1] && this.routes[parts[1]]) {
       return parts[1];
@@ -97,7 +102,10 @@ class AppRouter {
       const moduleKey = moduleElem.getAttribute("data-module");
       if (moduleKey && this.routes[moduleKey]) return moduleKey;
     }
-    return "dashboard";
+    if (document.getElementById("module-dashboard") || document.querySelector(".dashboard-content")) {
+      return "dashboard";
+    }
+    return parts[0] || "dashboard";
   }
 
   init() {
@@ -196,8 +204,15 @@ class AppRouter {
       if (window.dashboardInstance) {
         window.dashboardInstance.startSlideshow();
         setTimeout(() => window.dashboardInstance.resizeVisibleCharts(), 60);
-      } else if (window.AdminDashboard) {
+      } else if (window.AdminDashboard && (document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"))) {
         window.dashboardInstance = new window.AdminDashboard();
+      }
+    } else {
+      if (window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+        try {
+          window.dashboardInstance.destroy();
+        } catch (_) {}
+        window.dashboardInstance = null;
       }
     }
 
@@ -306,6 +321,36 @@ if (typeof window !== "undefined") {
   // Handle Turbo SPA navigation events
   document.addEventListener("turbo:load", () => {
     bootApp();
+  });
+
+  // Clean up active streams and timers when navigating away or logging out
+  document.addEventListener("turbo:before-visit", (e) => {
+    try {
+      const nextUrl = new URL(e.detail?.url || "", window.location.origin);
+      const isAuthPage = nextUrl.pathname.includes("/logout") || nextUrl.pathname.includes("/login");
+      const isLeavingDashboard = window.location.pathname.includes("/dashboard") || window.location.pathname === "/";
+      if (isAuthPage || isLeavingDashboard) {
+        if (window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+          try {
+            window.dashboardInstance.destroy();
+          } catch (_) {}
+          window.dashboardInstance = null;
+        }
+      }
+    } catch (_) {}
+  });
+
+  // Also clean up immediately if logout form is submitted
+  document.addEventListener("submit", (e) => {
+    const form = e.target.closest("form");
+    if (form && form.action && (form.action.includes("/logout") || form.action.includes("admin/logout"))) {
+      if (window.dashboardInstance && typeof window.dashboardInstance.destroy === "function") {
+        try {
+          window.dashboardInstance.destroy();
+        } catch (_) {}
+        window.dashboardInstance = null;
+      }
+    }
   });
 
   // Prevent Turbo from navigating when clicking the active URL (prevents UI blink/flash)

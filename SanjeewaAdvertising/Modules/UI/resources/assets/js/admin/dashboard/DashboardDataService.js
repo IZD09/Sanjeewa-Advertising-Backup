@@ -96,8 +96,18 @@ export class DashboardDataService {
    * Schedule SSE connection safely after window load event.
    */
   scheduleSSEConnection() {
+    if (this._sseTimer) {
+      clearTimeout(this._sseTimer);
+      this._sseTimer = null;
+    }
+
     const startSSE = () => {
-      setTimeout(() => {
+      this._sseTimer = setTimeout(() => {
+        // Only connect if dashboard container is currently in the DOM
+        const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+        if (!isDashboard) {
+          return;
+        }
         if (!this.eventSource) {
           this.connectSSE(this.sseUrl);
         }
@@ -115,23 +125,33 @@ export class DashboardDataService {
    * Bind page lifecycle listeners to cleanly disconnect SSE and avoid blocking server threads.
    */
   bindLifecycleEvents() {
-    window.addEventListener("beforeunload", () => {
-      this.disconnectSSE();
-    });
+    if (this._lifecycleBound) return;
+    this._lifecycleBound = true;
 
-    window.addEventListener("pagehide", () => {
+    this._onBeforeUnload = () => {
       this.disconnectSSE();
-    });
+    };
 
-    document.addEventListener("visibilitychange", () => {
+    this._onPageHide = () => {
+      this.disconnectSSE();
+    };
+
+    this._onVisibilityChange = () => {
       if (document.hidden) {
         // Disconnect SSE while tab is in background to save server resources
         this.disconnectSSE();
       } else if (this.sseUrl && !this.eventSource) {
-        // Reconnect SSE when user switches back to the tab
-        this.connectSSE(this.sseUrl);
+        // Only reconnect if on active dashboard page
+        const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+        if (isDashboard) {
+          this.connectSSE(this.sseUrl);
+        }
       }
-    });
+    };
+
+    window.addEventListener("beforeunload", this._onBeforeUnload);
+    window.addEventListener("pagehide", this._onPageHide);
+    document.addEventListener("visibilitychange", this._onVisibilityChange);
   }
 
   /**
@@ -140,6 +160,10 @@ export class DashboardDataService {
    */
   startPolling(interval = 30000) {
     this.stopPolling();
+    // Do not start polling if we are no longer on the dashboard
+    const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+    if (!isDashboard) return;
+
     this.pollInterval = setInterval(async () => {
       if (!document.hidden && this.apiUrl) {
         await this.fetchData(this.apiUrl);
@@ -164,6 +188,10 @@ export class DashboardDataService {
   connectSSE(url) {
     this.disconnectSSE();
 
+    // Guard: only connect if on active dashboard
+    const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+    if (!isDashboard) return;
+
     try {
       this.eventSource = new EventSource(url);
 
@@ -182,12 +210,25 @@ export class DashboardDataService {
 
       this.eventSource.onerror = err => {
         if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
-          console.warn("[DashboardDataService] SSE closed permanently, falling back to background polling:", err);
           this.disconnectSSE();
+
+          // If user navigated away or logged out, stop immediately
+          const stillOnDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+          if (!stillOnDashboard) {
+            this.destroy();
+            return;
+          }
+
+          console.warn("[DashboardDataService] SSE closed permanently, falling back to background polling:", err);
           this.startPolling(30000);
         }
       };
     } catch (e) {
+      const stillOnDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+      if (!stillOnDashboard) {
+        this.destroy();
+        return;
+      }
       console.warn("[DashboardDataService] EventSource setup failed, falling back to polling:", e);
       this.startPolling(30000);
     }
@@ -208,6 +249,12 @@ export class DashboardDataService {
    * @param {string} url
    */
   async fetchData(url) {
+    const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
+    if (!isDashboard) {
+      this.destroy();
+      return;
+    }
+
     try {
       const http = new RequestHandler();
       const json = await http.get(url);
@@ -215,6 +262,13 @@ export class DashboardDataService {
         this.emitData(json);
       }
     } catch (e) {
+      const errorMsg = (e?.message || "").toLowerCase();
+      // If unauthenticated / session expired / unauthorized (401/403), terminate polling immediately
+      if (e?.status === 401 || e?.status === 403 || errorMsg.includes("unauthenticated") || errorMsg.includes("unauthorized")) {
+        console.warn("[DashboardDataService] Session unauthenticated. Terminating background polling.");
+        this.destroy();
+        return;
+      }
       console.warn("[DashboardDataService] API fetch error:", e);
     }
   }
@@ -295,9 +349,20 @@ export class DashboardDataService {
    * Clean up connections and listeners.
    */
   destroy() {
+    if (this._sseTimer) {
+      clearTimeout(this._sseTimer);
+      this._sseTimer = null;
+    }
     this.stopPolling();
     this.disconnectSSE();
     this.callbacks = [];
     this.lastData = null;
+
+    if (this._lifecycleBound) {
+      if (this._onBeforeUnload) window.removeEventListener("beforeunload", this._onBeforeUnload);
+      if (this._onPageHide) window.removeEventListener("pagehide", this._onPageHide);
+      if (this._onVisibilityChange) document.removeEventListener("visibilitychange", this._onVisibilityChange);
+      this._lifecycleBound = false;
+    }
   }
 }

@@ -63,7 +63,7 @@
           </a>
           <div class="profile-dropdown-divider"></div>
         @endif
-        <form method="POST" action="{{ $logoutRoute }}" class="profile-dropdown-logout-form">
+        <form method="POST" action="{{ $logoutRoute }}" class="profile-dropdown-logout-form" data-turbo="false">
           @csrf
           <button type="submit" class="profile-dropdown-logout-btn">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -74,7 +74,7 @@
     </div>
 
     {{-- Direct Quick Logout Button --}}
-    <form method="POST" action="{{ $logoutRoute }}" class="topbar-logout-form" id="topbarLogoutForm">
+    <form method="POST" action="{{ $logoutRoute }}" class="topbar-logout-form" id="topbarLogoutForm" data-turbo="false">
       @csrf
       <button type="submit" class="icon-button topbar-logout-btn" id="topbarLogoutBtn" title="Log Out" aria-label="Log Out">
         <i class="fa-solid fa-arrow-right-from-bracket"></i>
