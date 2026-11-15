@@ -354,12 +354,25 @@ if (typeof window !== "undefined") {
 
   const bootPayments = () => {
     if (document.getElementById("module-payments")) {
+      if (window.paymentsManager && window.paymentsManager.__initialized) {
+        return;
+      }
       window.paymentsManager = new PaymentsManager();
+      window.paymentsManager.__initialized = true;
       window.paymentsApp = window.paymentsManager;
     }
   };
 
-  bootPayments();
-  document.addEventListener("DOMContentLoaded", bootPayments);
-  document.addEventListener("turbo:load", bootPayments);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootPayments, { once: true });
+  } else {
+    bootPayments();
+  }
+
+  document.addEventListener("turbo:load", () => {
+    if (window.paymentsManager) {
+      window.paymentsManager.__initialized = false;
+    }
+    bootPayments();
+  });
 }

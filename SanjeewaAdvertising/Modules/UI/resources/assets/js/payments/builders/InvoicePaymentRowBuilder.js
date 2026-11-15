@@ -7,6 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
+import { getPaymentStageRowClass } from "../../core/StatusHelper.js";
 
 /**
  * InvoicePaymentEntity - Entity model for an Invoice / Print Job Payment record
@@ -89,9 +90,28 @@ export class InvoicePaymentEntity {
     }
   }
 
+  getStageRowClass() {
+    const fromHelper = getPaymentStageRowClass(this.stage);
+    if (fromHelper) return fromHelper;
+
+    const s = String(this.stage || "").toLowerCase().trim();
+    if (s.includes("complete") || s === "paid" || (this.total_bill > 0 && this.balance <= 0)) {
+      return "row-stage-complete row-status-completed";
+    }
+    if (s.includes("advance") || s.includes("partial") || (this.paid_amount > 0 && this.balance > 0)) {
+      return "row-stage-advance row-status-approved";
+    }
+    return "row-stage-pending row-status-pending";
+  }
+
   render() {
     const tr = document.createElement("tr");
     tr.id = `payInvoiceRow_${this.payment_id || this.order_id}`;
+
+    const stageRowClass = this.getStageRowClass();
+    if (stageRowClass) {
+      tr.className = stageRowClass;
+    }
 
     const stagePill = this.renderStageBadge();
     const methodPill = this.renderMethodBadge();
@@ -122,11 +142,6 @@ export class InvoicePaymentEntity {
       <td style="font-weight: 700;">${totalFormatted}</td>
       <td style="font-weight: 800; color: #10b981;">${paidFormatted}</td>
       <td style="font-weight: 700; color: ${balanceColor};">${balanceFormatted}</td>
-      <td>
-        <span style="font-size: 11.5px; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="${this.note || ""}">
-          ${this.note || "-"}
-        </span>
-      </td>
       <td>
         <div class="pay-table-actions">
           <button type="button" class="pay-btn-sm" data-view-receipt="${this.payment_id || this.order_id}" data-type="invoice" title="View & Print Payment Voucher">

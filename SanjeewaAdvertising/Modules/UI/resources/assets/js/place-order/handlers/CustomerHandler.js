@@ -66,7 +66,9 @@ export class CustomerHandler {
     const custDropdown = document.getElementById("customerDropdown");
     const toggleBtn = document.getElementById("toggleCustomerDropdownBtn");
 
-    if (custSearchInput && custDropdown) {
+    if (custSearchInput && custDropdown && !custSearchInput.dataset.boundCustomerEvents) {
+      custSearchInput.dataset.boundCustomerEvents = "true";
+
       // Typing in input filters dropdown
       custSearchInput.addEventListener("input", (e) => {
         this.handleCustomerSearch(e.target.value);
@@ -100,7 +102,8 @@ export class CustomerHandler {
     }
 
     // Toggle arrow button
-    if (toggleBtn) {
+    if (toggleBtn && !toggleBtn.dataset.boundToggle) {
+      toggleBtn.dataset.boundToggle = "true";
       toggleBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -110,13 +113,15 @@ export class CustomerHandler {
 
     // Clear selected customer button
     const clearCustBtn = document.getElementById("clearCustomerBtn");
-    if (clearCustBtn) {
+    if (clearCustBtn && !clearCustBtn.dataset.boundClear) {
+      clearCustBtn.dataset.boundClear = "true";
       clearCustBtn.addEventListener("click", () => this.clearSelectedCustomer());
     }
 
     // New Customer Quick Modal triggers
     const openAddCustBtn = document.getElementById("openAddCustBtn");
-    if (openAddCustBtn) {
+    if (openAddCustBtn && !openAddCustBtn.dataset.boundOpenAdd) {
+      openAddCustBtn.dataset.boundOpenAdd = "true";
       openAddCustBtn.addEventListener("click", (e) => {
         e.preventDefault();
         this.closeDropdown();
@@ -125,7 +130,8 @@ export class CustomerHandler {
     }
 
     const saveNewCustBtn = document.getElementById("saveNewCustomerBtn");
-    if (saveNewCustBtn) {
+    if (saveNewCustBtn && !saveNewCustBtn.dataset.boundSaveCust) {
+      saveNewCustBtn.dataset.boundSaveCust = "true";
       saveNewCustBtn.addEventListener("click", () => this.handleSaveNewCustomer());
     }
   }

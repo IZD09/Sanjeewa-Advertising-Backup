@@ -27,13 +27,15 @@ export class PrintingOrder {
     const statusLower = String(this.orderStatus || "").toLowerCase().trim();
     const isApproved = statusLower === "approved";
     const isCancelled = statusLower === "cancelled" || statusLower === "rejected";
+    const canApprove = statusLower === "pending" || isCancelled;
+    const canCancel = !isCancelled;
     const statusRowClass = getStatusRowClass(this.orderStatus);
     const dimensions = `${this.width} × ${this.height} ${this.unit}`;
     const totalFormatted = `Rs. ${Number(this.totalAmount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
 
     const html = `
-      <td class="order-id-cell">
-        <div>${this.id}</div>
+      <td class="order-id-col">
+        <span class="order-id-badge">${this.id}</span>
         ${this.orderDate ? `<div style="font-size: 10.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${this.orderDate}${this.orderTime ? ` • ${this.orderTime}` : ""}</div>` : ""}
       </td>
       <td class="customer-cell">
@@ -56,10 +58,10 @@ export class PrintingOrder {
       <td>${this.assignedEmployee || "Unassigned"}</td>
       <td>
         <div class="po-action-group">
-          <button class="action-btn approve-action" title="Approve Order" onclick="window.placeOrderApp?.approveOrder('${this.id}')" ${isApproved || isCancelled ? "disabled" : ""}>
+          <button class="action-btn approve-action" title="${canApprove ? "Approve Order" : (isApproved ? "Already Approved" : "Cannot Approve In-Progress Order")}" onclick="window.placeOrderApp?.approveOrder('${this.id}')" ${canApprove ? "" : "disabled"}>
             <i class="fa-solid fa-check"></i>
           </button>
-          <button class="action-btn cancel-action" title="Cancel Order" onclick="window.placeOrderApp?.cancelOrder('${this.id}')" ${isCancelled ? "disabled" : ""}>
+          <button class="action-btn cancel-action" title="${canCancel ? "Cancel Order" : "Already Cancelled"}" onclick="window.placeOrderApp?.cancelOrder('${this.id}')" ${canCancel ? "" : "disabled"}>
             <i class="fa-solid fa-xmark"></i>
           </button>
           <div class="row-action-menu-wrap">
@@ -124,6 +126,7 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
   reset() {
     super.reset();
     this.id = "";
+    this.printJobId = null;
     this.orderDate = "";
     this.customerId = "";
     this.customerName = "";
@@ -160,6 +163,15 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
     super.fromData(data);
 
     if (data.id !== undefined || data.order_id !== undefined) this.setId(data.id ?? data.order_id);
+    if (data.printJobId !== undefined || data.print_job_id !== undefined || data.job_id !== undefined) {
+      this.setPrintJobId(data.printJobId ?? data.print_job_id ?? data.job_id);
+    } else if (data.id) {
+      const parts = String(data.id).trim().split("-");
+      const lastPart = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastPart)) {
+        this.setPrintJobId(lastPart > 1000 ? lastPart - 1000 : lastPart);
+      }
+    }
     if (data.orderDate !== undefined || data.order_date !== undefined) this.setOrderDate(data.orderDate ?? data.order_date);
     if (data.customerId !== undefined || data.customer_id !== undefined) this.setCustomerId(data.customerId ?? data.customer_id);
     if (data.customerName !== undefined || data.customer_name !== undefined) this.setCustomerName(data.customerName ?? data.customer_name);
@@ -195,6 +207,12 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
 
   setId(id) {
     this.id = id !== undefined && id !== null ? String(id).trim() : "";
+    return this;
+  }
+
+  setPrintJobId(printJobId) {
+    const num = parseInt(printJobId, 10);
+    this.printJobId = !isNaN(num) && num > 0 ? num : null;
     return this;
   }
 
@@ -332,6 +350,7 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
   build() {
     return new PrintingOrder({
       id: this.id,
+      printJobId: this.printJobId,
       orderDate: this.orderDate,
       customerId: this.customerId,
       customerName: this.customerName,

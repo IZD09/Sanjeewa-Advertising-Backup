@@ -86,7 +86,7 @@ class PlaceOrderManager {
       getOrders: () => this.orders,
       getPayments: () => this.payments,
       getSelectedCustomer: () => this.customerHandler.getSelectedCustomer(),
-      clearSelectedCustomer: () => this.customerHandler.clearSelectedCustomer(),
+      clearSelectedCustomer: (options) => this.customerHandler.clearSelectedCustomer(options),
       openModal: (id) => this.openModal(id),
       closeModal: (id) => this.closeModal(id),
       showToast: (msg, type) => this.showToast(msg, type),
@@ -111,7 +111,7 @@ class PlaceOrderManager {
       getOrders: () => this.orders,
       getPayments: () => this.payments,
       getSelectedCustomer: () => this.customerHandler.getSelectedCustomer(),
-      clearSelectedCustomer: () => this.customerHandler.clearSelectedCustomer(),
+      clearSelectedCustomer: (options) => this.customerHandler.clearSelectedCustomer(options),
       openModal: (id) => this.openModal(id),
       closeModal: (id) => this.closeModal(id),
       showToast: (msg, type) => this.showToast(msg, type),
@@ -438,11 +438,20 @@ window.PlaceOrderDataLoad = PlaceOrderDataLoad;
 window.OrderPlacementProcess = OrderPlacementProcess;
 
 const bootPlaceOrder = () => {
-  if (document.getElementById("module-place-order")) {
-    window.placeOrderApp = new PlaceOrderManager();
+  const container = document.getElementById("module-place-order");
+  if (!container) return;
+
+  if (window.placeOrderApp && container.dataset.placeOrderBooted === "1") {
+    return;
   }
+
+  container.dataset.placeOrderBooted = "1";
+  window.placeOrderApp = new PlaceOrderManager();
 };
 
-bootPlaceOrder();
-document.addEventListener("DOMContentLoaded", bootPlaceOrder);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootPlaceOrder);
+} else {
+  bootPlaceOrder();
+}
 document.addEventListener("turbo:load", bootPlaceOrder);

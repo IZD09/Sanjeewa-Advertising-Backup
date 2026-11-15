@@ -88,17 +88,40 @@ export class InvoicePaymentProcessor {
     // 1. Dispatch request to Invoice Module via RequestHandler (POST /api/v1/invoices)
     let backendInvoice = null;
     try {
+      const rawCustId = paymentData.customer_id || paymentData.customerId;
+      const cleanCustId = parseInt(String(rawCustId).replace(/\D/g, ""), 10) || 1;
+      
+      const resolveId = (val) => {
+        if (typeof val === "number" && val > 0) return val;
+        const str = String(val || "");
+        const m = str.match(/ORD-\d{4}-(\d+)/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          return num > 1000 ? num - 1000 : num;
+        }
+        const digits = parseInt(str.replace(/\D/g, ""), 10);
+        if (digits > 1000) return digits - 1000;
+        return digits > 0 ? digits : 1;
+      };
+
+      const cleanJobIds = (paymentData.print_job_ids || []).map(id => resolveId(id)).filter(id => id > 0);
+
       const invoicePayload = {
-        customer_id: paymentData.customer_id || paymentData.customerId,
+        customer_id: cleanCustId,
         invoice_at: paymentData.invoice_at || `${paymentData.date} 12:00:00`,
         due_date: `${paymentData.date} 23:59:59`,
-        print_job_ids: paymentData.print_job_ids || [],
-        payment_amount: paymentData.amount,
-        payment_types_id: paymentData.payment_types_id || 1,
-        payment_statuses_id: paymentData.payment_statuses_id || (paymentData.balance <= 0 ? 2 : 3),
+        print_job_ids: cleanJobIds,
+        payment_amount: Number(paymentData.amount) || 0,
+        payment_types_id: parseInt(paymentData.payment_types_id, 10) || 1,
+        payment_statuses_id: parseInt(paymentData.payment_statuses_id, 10) || (paymentData.balance <= 0 ? 2 : 3),
         stage: paymentData.stage,
         notes: paymentData.notes,
-        allocations: paymentData.allocations || []
+        allocations: (paymentData.allocations || []).map(a => {
+          return {
+            job_id: resolveId(a.job_id || a.id),
+            allocated_amount: Number(a.allocatedNow !== undefined ? a.allocatedNow : a.allocated_amount) || 0
+          };
+        })
       };
 
       const response = await this.http.post("/api/v1/invoices", invoicePayload);

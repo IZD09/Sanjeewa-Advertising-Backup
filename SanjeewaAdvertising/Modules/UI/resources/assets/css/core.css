@@ -1365,6 +1365,7 @@ html[data-theme="dark"] .po-header-banner {
    ========================================================================== */
 tr.row-status-approved > td {
     background-color: rgba(2, 132, 199, 0.09) !important;
+    border-right-color: rgba(2, 132, 199, 0.28) !important;
 }
 tr.row-status-approved:hover > td {
     background-color: rgba(2, 132, 199, 0.15) !important;
@@ -1372,9 +1373,13 @@ tr.row-status-approved:hover > td {
 tr.row-status-approved > td:first-child {
     box-shadow: inset 4px 0 0 #0284c7;
 }
+tr.row-status-approved > td:last-child {
+    box-shadow: inset -4px 0 0 #0284c7;
+}
 
 tr.row-status-pending > td {
     background-color: rgba(245, 158, 11, 0.09) !important;
+    border-right-color: rgba(245, 158, 11, 0.30) !important;
 }
 tr.row-status-pending:hover > td {
     background-color: rgba(245, 158, 11, 0.15) !important;
@@ -1382,9 +1387,13 @@ tr.row-status-pending:hover > td {
 tr.row-status-pending > td:first-child {
     box-shadow: inset 4px 0 0 #f59e0b;
 }
+tr.row-status-pending > td:last-child {
+    box-shadow: inset -4px 0 0 #f59e0b;
+}
 
 tr.row-status-cancelled > td {
     background-color: rgba(220, 38, 38, 0.08) !important;
+    border-right-color: rgba(220, 38, 38, 0.28) !important;
 }
 tr.row-status-cancelled:hover > td {
     background-color: rgba(220, 38, 38, 0.14) !important;
@@ -1392,19 +1401,26 @@ tr.row-status-cancelled:hover > td {
 tr.row-status-cancelled > td:first-child {
     box-shadow: inset 4px 0 0 #dc2626;
 }
+tr.row-status-cancelled > td:last-child {
+    box-shadow: inset -4px 0 0 #dc2626;
+}
 
 html[data-theme="dark"] tr.row-status-approved > td {
     background-color: rgba(2, 132, 199, 0.15) !important;
+    border-right-color: rgba(2, 132, 199, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-pending > td {
     background-color: rgba(245, 158, 11, 0.14) !important;
+    border-right-color: rgba(245, 158, 11, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-cancelled > td {
     background-color: rgba(220, 38, 38, 0.14) !important;
+    border-right-color: rgba(220, 38, 38, 0.35) !important;
 }
 
 tr.row-status-designing > td {
     background-color: rgba(124, 58, 237, 0.08) !important;
+    border-right-color: rgba(124, 58, 237, 0.28) !important;
 }
 tr.row-status-designing:hover > td {
     background-color: rgba(124, 58, 237, 0.14) !important;
@@ -1412,9 +1428,13 @@ tr.row-status-designing:hover > td {
 tr.row-status-designing > td:first-child {
     box-shadow: inset 4px 0 0 #7c3aed;
 }
+tr.row-status-designing > td:last-child {
+    box-shadow: inset -4px 0 0 #7c3aed;
+}
 
 tr.row-status-printing > td {
     background-color: rgba(79, 70, 229, 0.08) !important;
+    border-right-color: rgba(79, 70, 229, 0.28) !important;
 }
 tr.row-status-printing:hover > td {
     background-color: rgba(79, 70, 229, 0.14) !important;
@@ -1422,9 +1442,13 @@ tr.row-status-printing:hover > td {
 tr.row-status-printing > td:first-child {
     box-shadow: inset 4px 0 0 #4f46e5;
 }
+tr.row-status-printing > td:last-child {
+    box-shadow: inset -4px 0 0 #4f46e5;
+}
 
 tr.row-status-finishing > td {
     background-color: rgba(234, 88, 12, 0.08) !important;
+    border-right-color: rgba(234, 88, 12, 0.28) !important;
 }
 tr.row-status-finishing:hover > td {
     background-color: rgba(234, 88, 12, 0.14) !important;
@@ -1432,9 +1456,13 @@ tr.row-status-finishing:hover > td {
 tr.row-status-finishing > td:first-child {
     box-shadow: inset 4px 0 0 #ea580c;
 }
+tr.row-status-finishing > td:last-child {
+    box-shadow: inset -4px 0 0 #ea580c;
+}
 
 tr.row-status-ready > td {
     background-color: rgba(13, 148, 136, 0.08) !important;
+    border-right-color: rgba(13, 148, 136, 0.28) !important;
 }
 tr.row-status-ready:hover > td {
     background-color: rgba(13, 148, 136, 0.14) !important;
@@ -1442,9 +1470,13 @@ tr.row-status-ready:hover > td {
 tr.row-status-ready > td:first-child {
     box-shadow: inset 4px 0 0 #0d9488;
 }
+tr.row-status-ready > td:last-child {
+    box-shadow: inset -4px 0 0 #0d9488;
+}
 
 tr.row-status-completed > td {
     background-color: rgba(22, 163, 74, 0.09) !important;
+    border-right-color: rgba(22, 163, 74, 0.28) !important;
 }
 tr.row-status-completed:hover > td {
     background-color: rgba(22, 163, 74, 0.15) !important;
@@ -1452,9 +1484,13 @@ tr.row-status-completed:hover > td {
 tr.row-status-completed > td:first-child {
     box-shadow: inset 4px 0 0 #16a34a;
 }
+tr.row-status-completed > td:last-child {
+    box-shadow: inset -4px 0 0 #16a34a;
+}
 
 tr.row-status-delivered > td {
     background-color: rgba(71, 85, 105, 0.08) !important;
+    border-right-color: rgba(71, 85, 105, 0.28) !important;
 }
 tr.row-status-delivered:hover > td {
     background-color: rgba(71, 85, 105, 0.14) !important;
@@ -1462,22 +1498,31 @@ tr.row-status-delivered:hover > td {
 tr.row-status-delivered > td:first-child {
     box-shadow: inset 4px 0 0 #475569;
 }
+tr.row-status-delivered > td:last-child {
+    box-shadow: inset -4px 0 0 #475569;
+}
 
 html[data-theme="dark"] tr.row-status-designing > td {
     background-color: rgba(124, 58, 237, 0.14) !important;
+    border-right-color: rgba(124, 58, 237, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-printing > td {
     background-color: rgba(79, 70, 229, 0.14) !important;
+    border-right-color: rgba(79, 70, 229, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-finishing > td {
     background-color: rgba(234, 88, 12, 0.14) !important;
+    border-right-color: rgba(234, 88, 12, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-ready > td {
     background-color: rgba(13, 148, 136, 0.14) !important;
+    border-right-color: rgba(13, 148, 136, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-completed > td {
     background-color: rgba(22, 163, 74, 0.14) !important;
+    border-right-color: rgba(22, 163, 74, 0.35) !important;
 }
 html[data-theme="dark"] tr.row-status-delivered > td {
     background-color: rgba(71, 85, 105, 0.16) !important;
+    border-right-color: rgba(71, 85, 105, 0.35) !important;
 }

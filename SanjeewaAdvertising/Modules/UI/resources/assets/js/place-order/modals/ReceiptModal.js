@@ -52,6 +52,8 @@ export class ReceiptModal extends BaseModalHandler {
     setTxt("rcptReceiptNo", p.paymentId);
     setTxt("rcptDate", p.date);
     setTxt("rcptOrderNo", p.orderId);
+    const invNo = p.invoiceNo || order?.invoiceNo || (p.invoiceId ? `INV-2026-${String(p.invoiceId).padStart(4, "0")}` : "-");
+    setTxt("rcptInvoiceNo", invNo);
     setTxt("rcptCustomer", order ? `${order.customerName} (${order.customerMobile})` : "-");
     setTxt("rcptProduct", order ? `${order.productName} (${order.width} × ${order.height} ${order.unit})` : "-");
     setTxt("rcptTotalAmount", `Rs. ${Number(order ? order.totalAmount : 0).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`);
