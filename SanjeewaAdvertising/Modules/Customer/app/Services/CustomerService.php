@@ -6,6 +6,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Customer\Models\Customer;
 use Modules\Customer\Transformers\CustomerResource;
 
@@ -26,8 +27,8 @@ class CustomerService
             $search = trim((string) $search);
             $query->where(function (Builder $q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('mobile', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'mobile', $search);
             });
         }
 

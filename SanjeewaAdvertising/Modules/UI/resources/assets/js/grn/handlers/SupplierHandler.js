@@ -5,6 +5,8 @@
  * filtering, dropdown population, and supplier deletion.
  */
 
+import { matchesMobile } from "../../core/MobileNumberHelper.js";
+
 export class SupplierHandler {
   /**
    * @param {Object} context
@@ -126,7 +128,7 @@ export class SupplierHandler {
         (s.name && s.name.toLowerCase().includes(this.supplierSearchTerm)) ||
         (s.code && s.code.toLowerCase().includes(this.supplierSearchTerm)) ||
         (s.contact_person && s.contact_person.toLowerCase().includes(this.supplierSearchTerm)) ||
-        (s.phone && s.phone.includes(this.supplierSearchTerm)) ||
+        matchesMobile(s.phone, this.supplierSearchTerm) ||
         (s.email && s.email.toLowerCase().includes(this.supplierSearchTerm)) ||
         (s.address && s.address.toLowerCase().includes(this.supplierSearchTerm)) ||
         (s.category && s.category.toLowerCase().includes(this.supplierSearchTerm));

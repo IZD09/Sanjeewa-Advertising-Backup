@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Modules\Core\Models\ActivityType;
 use Modules\Core\Services\ActivityService;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
 
@@ -81,11 +82,11 @@ class UserService
 
                 $q->orWhere('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%")
-                    ->orWhere('mobile', 'like', "%{$search}%")
-                    ->orWhereHas('status', function (Builder $sq) use ($search) {
-                        $sq->where('user_status', 'like', "%{$search}%");
-                    });
+                    ->orWhere('username', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'mobile', $search);
+                $q->orWhereHas('status', function (Builder $sq) use ($search) {
+                    $sq->where('user_status', 'like', "%{$search}%");
+                });
 
                 // Support multi-word name searches (e.g. "Kamal Silva")
                 $terms = array_filter(explode(' ', $search));
@@ -95,8 +96,8 @@ class UserService
                             $subQ->where(function (Builder $w) use ($term) {
                                 $w->where('first_name', 'like', "%{$term}%")
                                     ->orWhere('last_name', 'like', "%{$term}%")
-                                    ->orWhere('username', 'like', "%{$term}%")
-                                    ->orWhere('mobile', 'like', "%{$term}%");
+                                    ->orWhere('username', 'like', "%{$term}%");
+                                MobileNumberHelper::orWhereMobileLike($w, 'mobile', $term);
                             });
                         }
                     });

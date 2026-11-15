@@ -29,10 +29,10 @@ export class RegisterCustomerProcess {
   bindEvents() {
     const saveBtn = document.getElementById("saveNewCustomerBtn");
     if (saveBtn) {
-      saveBtn.addEventListener("click", async (e) => {
+      saveBtn.onclick = async (e) => {
         e.preventDefault();
         await this.submit();
-      });
+      };
     }
   }
 

@@ -6,6 +6,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Inventory\Models\Stock;
 use Modules\Supplier\Models\Grn;
 
@@ -66,8 +67,8 @@ class GrnService
                 $q->orWhereHas('purchaseOrders', function (Builder $poQuery) use ($search) {
                     $poQuery->where('grn_has_puches_order.supplyer_invoice', 'like', "%{$search}%");
                 })->orWhereHas('purchaseOrders.supplier', function (Builder $supQuery) use ($search) {
-                    $supQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%");
+                    $supQuery->where('name', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($supQuery, 'mobile', $search);
                 });
             });
         }

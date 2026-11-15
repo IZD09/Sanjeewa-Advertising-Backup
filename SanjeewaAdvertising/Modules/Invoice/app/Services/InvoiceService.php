@@ -7,6 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Invoice\Models\Invoice;
 use Modules\Invoice\Transformers\InvoiceResource;
 use Modules\PrintJob\Models\PrintJob;
@@ -32,8 +33,8 @@ class InvoiceService
                     $q->where('id', (int) $search);
                 }
                 $q->orWhereHas('customer', function (Builder $cq) use ($search) {
-                    $cq->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%");
+                    $cq->where('name', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($cq, 'mobile', $search);
                 });
             });
         }

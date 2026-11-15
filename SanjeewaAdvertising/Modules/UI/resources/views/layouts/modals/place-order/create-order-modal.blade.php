@@ -103,8 +103,8 @@
               </script>
             </div>
 
-            <!-- 2. Dropdowns: Printing Type, Job Status & Assigned Staff (Loaded from Database) -->
-            <div class="po-field-row-3">
+            <!-- 2. Dropdowns: Printing Type & Assigned Staff (Loaded from Database) -->
+            <div class="po-field-row">
               <!-- Dropdown 1: Printing Type (database) -->
               <div class="po-field">
                 <label class="po-label" for="poPrintingType">
@@ -127,29 +127,7 @@
                 </select>
               </div>
 
-              <!-- Dropdown 2: Initial Job Status (database) -->
-              <div class="po-field">
-                <label class="po-label" for="poJobStatus">
-                  <span>Initial Status <span class="req">*</span></span>
-                  <span class="hint">Database: print_job_statuses</span>
-                </label>
-                <select id="poJobStatus" class="po-select" required>
-                  @forelse($statuses as $st)
-                    @php
-                      $stId = data_get($st, 'id');
-                      $stName = data_get($st, 'print_job_states') ?? data_get($st, 'name');
-                    @endphp
-                    <option value="{{ $stId }}" {{ (int) $stId === 1 ? 'selected' : '' }}>
-                      {{ $stName }}
-                    </option>
-                  @empty
-                    <option value="1" selected>Pending</option>
-                    <option value="2">Designing</option>
-                  @endforelse
-                </select>
-              </div>
-
-              <!-- Dropdown 3: Assigned Staff / Operator (database) -->
+              <!-- Dropdown 2: Assigned Staff / Operator (database) -->
               <div class="po-field">
                 <label class="po-label" for="poUser">
                   <span>Assigned Staff <span class="req">*</span></span>
@@ -179,8 +157,8 @@
                   <span>Artwork / Design Status <span class="req">*</span></span>
                 </label>
                 <select id="poDesignStatus" class="po-select">
-                  <option value="Customer Provides Design" selected>Customer Provides Design (Print Ready)</option>
-                  <option value="Shop Creates Design">Shop Creates Design (+Rs. 500 charge)</option>
+                  <option value="Customer Provides Design" selected>Customer Provides Design</option>
+                  <option value="Shop Creates Design">Shop Creates Design</option>
                 </select>
                 <span id="liveDesignFeeNotice" style="display: none; font-size: 11px; color: var(--po-orange); font-weight: 700; margin-top: 4px;">
                   <i class="fa-solid fa-circle-info"></i> Rs. 500.00 design artwork charge added
@@ -214,14 +192,14 @@
                 <label class="po-label" for="poWidth">
                   <span>Width <span class="req">*</span></span>
                 </label>
-                <input type="number" id="poWidth" class="po-input" value="10" min="0.1" step="any" required>
+                <input type="number" id="poWidth" class="po-input" value="1" min="0.1" step="any" required>
               </div>
 
               <div class="po-field">
                 <label class="po-label" for="poHeight">
                   <span>Height <span class="req">*</span></span>
                 </label>
-                <input type="number" id="poHeight" class="po-input" value="4" min="0.1" step="any" required>
+                <input type="number" id="poHeight" class="po-input" value="1" min="0.1" step="any" required>
               </div>
 
               <!-- Unit Dropdown (from database unit table) -->
@@ -262,7 +240,7 @@
                   <span>Unit Price (Rs.) <span class="req">*</span></span>
                   <span class="hint">Per sq.ft or per unit</span>
                 </label>
-                <input type="number" id="poUnitPrice" class="po-input" value="95.00" min="0" step="any" required>
+                <input type="number" id="poUnitPrice" class="po-input" value="0" min="0" step="any" placeholder="0.00" required>
               </div>
 
               <div class="po-field">
@@ -272,7 +250,7 @@
                 </div>
                 <div class="area-calc-pill" style="height: var(--input-height);">
                   <span><i class="fa-solid fa-calculator" style="color: var(--po-orange); margin-right: 6px;"></i> Area:</span>
-                  <span class="area-val" id="liveAreaVal">40.00 sq.ft</span>
+                  <span class="area-val" id="liveAreaVal">1.00 sq.ft</span>
                 </div>
               </div>
 
@@ -305,15 +283,8 @@
               </div>
             </div>
 
-            <!-- Row 3: Order Date & Deadline -->
+            <!-- Row 3: Deadline -->
             <div class="po-field-row">
-              <div class="po-field">
-                <label class="po-label" for="poOrderDate">
-                  <span>Order Date</span>
-                </label>
-                <input type="date" id="poOrderDate" class="po-input" readonly>
-              </div>
-
               <div class="po-field">
                 <label class="po-label" for="poRequiredDate">
                   <span>Required Deadline <span class="req">*</span></span>
@@ -369,13 +340,13 @@
                     </select>
                   </div>
 
-                  <!-- Payment Status Dropdown (Database loaded: payment_statuses) -->
+                  <!-- Payment Status Dropdown (Auto-set by payment) -->
                   <div class="po-field" id="poPaymentStatusGroup">
                     <label class="po-label" for="poPaymentStatus">
                       <span>Payment Status <span class="req">*</span></span>
-                      <span class="hint">Database: payment_statuses</span>
+                      <span class="hint">Auto-set by payment</span>
                     </label>
-                    <select id="poPaymentStatus" class="po-select">
+                    <select id="poPaymentStatus" class="po-select" disabled style="cursor: not-allowed; opacity: 0.85;">
                       @forelse($paymentStatuses as $ps)
                         @php
                           $psId = data_get($ps, 'id');
@@ -406,7 +377,7 @@
                 <div class="payment-summary-box">
                   <div class="summary-line">
                     <span style="color: var(--text-muted);">Total Amount:</span>
-                    <strong id="liveTotalAmount" style="font-size: 15px; color: var(--text);">Rs. 3,800.00</strong>
+                    <strong id="liveTotalAmount" style="font-size: 15px; color: var(--text);">Rs. 0.00</strong>
                   </div>
                   <div class="summary-line">
                     <span style="color: var(--text-muted);">Initial Paid:</span>
@@ -414,7 +385,7 @@
                   </div>
                   <div class="summary-line highlight balance-line">
                     <span>Remaining Balance:</span>
-                    <span id="liveBalanceAmount">Rs. 3,800.00</span>
+                    <span id="liveBalanceAmount">Rs. 0.00</span>
                   </div>
                   <div class="summary-line" style="margin-top: 4px;">
                     <span style="color: var(--text-muted);">Payment Status:</span>

@@ -11,6 +11,7 @@
 @include('ui::layouts.modals.place-order.add-payment-modal')
 @include('ui::layouts.modals.place-order.payment-history-modal')
 @include('ui::layouts.modals.place-order.receipt-modal')
+@include('ui::layouts.modals.place-order.cancel-order-modal')
 
 {{-- Customer Modals --}}
 @include('ui::layouts.modals.customers.add-customer-modal')

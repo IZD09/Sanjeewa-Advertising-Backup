@@ -21,6 +21,7 @@ import {
     PrintJobExportProcess,
     PrintJobMetricsProcess
 } from "./print-jobs/index.js";
+import { openCancelOrderModal } from "./core/ConfirmModalHelper.js";
 
 export class PrintJobsManager {
     constructor() {
@@ -35,7 +36,7 @@ export class PrintJobsManager {
         // 2. 5 Light Color Tabs & Cards Handler
         this.tabHandler = new PrintJobTabHandler({
             onViewDetails: (jobId) => this.handleViewDetails(jobId),
-            onChangeStatus: (jobId) => this.handleChangeStatus(jobId),
+            onChangeStatus: (jobId) => this.handleAdvanceFromCard(jobId),
             onAllocateStock: (jobId) => this.handleAllocateStock(jobId)
         });
 
@@ -43,7 +44,16 @@ export class PrintJobsManager {
         this.tableHandler = new PrintJobTableHandler({
             onViewDetails: (jobId) => this.handleViewDetails(jobId),
             onChangeStatus: (jobId) => this.handleChangeStatus(jobId),
-            onAllocateStock: (jobId) => this.handleAllocateStock(jobId)
+            onAllocateStock: (jobId) => this.handleAllocateStock(jobId),
+            onApproveJob: (jobId) => this.handleQuickStatusChange(jobId, 'Approved'),
+            onCancelJob: (jobId) => {
+                const job = this.allJobs.find(j => j.id === jobId);
+                const label = job?.order_number || job?.job_number || `Job #${jobId}`;
+                openCancelOrderModal({
+                    targetLabel: label,
+                    onConfirm: () => this.handleQuickStatusChange(jobId, 'Cancelled')
+                });
+            }
         });
 
         this.allJobs = [];
@@ -53,6 +63,17 @@ export class PrintJobsManager {
         this.statuses = [];
         this.printTypes = [];
         this.availableStocks = [];
+        this._initializedEl = null;
+
+        this.init();
+    }
+
+    init() {
+        const moduleEl = document.getElementById('module-print-jobs');
+        if (!moduleEl || this._initializedEl === moduleEl) {
+            return;
+        }
+        this._initializedEl = moduleEl;
 
         this.initUI();
         this.loadInitialData();
@@ -214,9 +235,55 @@ export class PrintJobsManager {
         if (job) this.modalHandler.openChangeStatus(job);
     }
 
+    async handleAdvanceFromCard(jobId) {
+        const job = this.allJobs.find(j => j.id === jobId);
+        if (!job) return;
+
+        const nextStatusByStage = {
+            prepress: 'Printing',
+            printing: 'Finishing',
+            finishing: 'Ready for Pickup',
+            ready: 'Completed',
+        };
+
+        let targetStatus = nextStatusByStage[job.stage_key] || null;
+        if (!targetStatus && job.stage_key === 'completed') {
+            const isAlreadyDelivered = String(job.status_name || '').toLowerCase().trim() === 'delivered';
+            if (!isAlreadyDelivered) {
+                targetStatus = 'Delivered';
+            }
+        }
+
+        if (targetStatus) {
+            await this.handleQuickStatusChange(jobId, targetStatus);
+            return;
+        }
+
+        this.modalHandler.openChangeStatus(job);
+    }
+
     handleAllocateStock(jobId) {
         const job = this.allJobs.find(j => j.id === jobId);
         if (job) this.modalHandler.openAllocateMaterial(job);
+    }
+
+    async handleQuickStatusChange(jobId, targetStatusName) {
+        const statusObj = (this.statuses || []).find(
+            s => String(s.name || '').toLowerCase().trim() === targetStatusName.toLowerCase()
+        );
+
+        if (!statusObj) {
+            this.showToast(`Status "${targetStatusName}" not found.`, 'error');
+            return;
+        }
+
+        try {
+            await this.dataLoader.updateStatus(jobId, statusObj.id);
+            this.showToast(`Job status updated to ${statusObj.name}.`, 'success');
+            await this.reloadFloorData();
+        } catch (err) {
+            this.showToast(err.message || `Failed to mark job as ${targetStatusName}.`, 'error');
+        }
     }
 
     exportCsv() {
@@ -267,6 +334,10 @@ const bootPrintJobs = () => {
         window.printJobsManager = new PrintJobsManager();
     }
 };
+
+if (typeof window !== 'undefined') {
+    window.PrintJobsManager = PrintJobsManager;
+}
 
 bootPrintJobs();
 document.addEventListener('DOMContentLoaded', bootPrintJobs);

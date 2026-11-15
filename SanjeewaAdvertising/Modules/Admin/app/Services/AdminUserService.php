@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Modules\Core\Models\ActivityType;
 use Modules\Core\Services\ActivityService;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
 
@@ -40,8 +41,8 @@ class AdminUserService
             $query->where(function (Builder $q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%")
-                    ->orWhere('mobile', 'like', "%{$search}%");
+                    ->orWhere('username', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'mobile', $search);
             });
         }
 

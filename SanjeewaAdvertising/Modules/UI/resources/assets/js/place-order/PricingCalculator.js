@@ -119,20 +119,38 @@ export class PricingCalculator {
     let paymentStatus = "Unpaid";
     let statusClass = "unpaid";
     let paymentStatusId = 1; // Pending
+    let targetType = "unpaid";
     if (paidAmount >= totalAmount && totalAmount > 0) {
       paymentStatus = "Paid";
       statusClass = "paid";
-      paymentStatusId = 2; // Completed
+      paymentStatusId = 2; // Paid / Completed
+      targetType = "paid";
     } else if (paidAmount > 0 && balanceAmount > 0) {
       paymentStatus = "Partially Paid";
       statusClass = "partially-paid";
       paymentStatusId = 3; // Partial
+      targetType = "partial";
     }
 
-    // Sync poPaymentStatus dropdown if present
+    // Auto-sync poPaymentStatus dropdown based on payment amount
     const payStatusSelect = document.getElementById("poPaymentStatus");
-    if (payStatusSelect && !payStatusSelect.dataset.manualOverride) {
-      payStatusSelect.value = String(paymentStatusId);
+    if (payStatusSelect) {
+      const opts = Array.from(payStatusSelect.options);
+      let matched = null;
+      if (targetType === "paid") {
+        matched = opts.find(o => /paid|completed/i.test(o.textContent) && !/partial|unpaid/i.test(o.textContent))
+          || opts.find(o => o.value === "2");
+      } else if (targetType === "partial") {
+        matched = opts.find(o => /partial/i.test(o.textContent))
+          || opts.find(o => o.value === "3");
+      } else {
+        matched = opts.find(o => /pending|unpaid/i.test(o.textContent))
+          || opts.find(o => o.value === "1");
+      }
+      if (matched) {
+        payStatusSelect.value = matched.value;
+        paymentStatusId = parseInt(matched.value, 10) || paymentStatusId;
+      }
     }
 
     // Update UI elements
@@ -151,14 +169,15 @@ export class PricingCalculator {
       }
     }
 
+    const fmtOpts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
     if (totalElem) {
-      totalElem.textContent = `Rs. ${totalAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+      totalElem.textContent = `Rs. ${totalAmount.toLocaleString("en-LK", fmtOpts)}`;
     }
     if (paidElem) {
-      paidElem.textContent = `Rs. ${paidAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+      paidElem.textContent = `Rs. ${paidAmount.toLocaleString("en-LK", fmtOpts)}`;
     }
     if (balanceElem) {
-      balanceElem.textContent = `Rs. ${balanceAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
+      balanceElem.textContent = `Rs. ${balanceAmount.toLocaleString("en-LK", fmtOpts)}`;
     }
     if (statusElem) {
       statusElem.textContent = paymentStatus;

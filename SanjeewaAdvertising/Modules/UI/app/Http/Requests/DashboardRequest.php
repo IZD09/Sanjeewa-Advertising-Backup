@@ -25,6 +25,7 @@ class DashboardRequest extends FormRequest
         return [
             'period' => ['sometimes', 'string', 'in:today,this_week,this_month,this_year,all'],
             'stream_interval' => ['sometimes', 'integer', 'min:5', 'max:300'],
+            'retry' => ['sometimes', 'integer', 'min:3000', 'max:60000'],
             'refresh' => ['sometimes', 'boolean'],
             'once' => ['sometimes', 'boolean'],
         ];

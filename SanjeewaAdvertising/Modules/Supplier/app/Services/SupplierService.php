@@ -5,6 +5,7 @@ namespace Modules\Supplier\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Supplier\Models\Supplier;
 
 class SupplierService
@@ -28,8 +29,8 @@ class SupplierService
                     $q->where('id', (int) $numericId);
                 }
                 $q->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('mobile', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'mobile', $search);
             });
         }
 

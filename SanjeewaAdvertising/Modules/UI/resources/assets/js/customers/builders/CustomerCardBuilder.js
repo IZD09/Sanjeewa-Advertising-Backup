@@ -5,6 +5,34 @@
  * with avatar initials, metadata, order statistics, and actionable shortcuts.
  */
 
+const CUSTOMER_CARD_THEMES = [
+  {
+    avatar: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+    bg: "#eff6ff",
+    border: "#bfdbfe",
+  },
+  {
+    avatar: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    bg: "#ecfdf5",
+    border: "#a7f3d0",
+  },
+  {
+    avatar: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+    bg: "#f5f3ff",
+    border: "#ddd6fe",
+  },
+  {
+    avatar: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+    bg: "#fffbeb",
+    border: "#fde68a",
+  },
+  {
+    avatar: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+    bg: "#fdf2f8",
+    border: "#fbcfe8",
+  },
+];
+
 export class CustomerCardBuilder {
   /**
    * @param {Object} [data={}]
@@ -70,20 +98,17 @@ export class CustomerCardBuilder {
     return this.name.substring(0, 2).toUpperCase();
   }
 
-  getAvatarGradient() {
-    const gradients = [
-      "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-      "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
-      "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-      "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
-    ];
+  getCardTheme() {
     let hash = 0;
     for (let i = 0; i < this.name.length; i++) {
       hash = this.name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const idx = Math.abs(hash) % gradients.length;
-    return gradients[idx];
+    const idx = Math.abs(hash) % CUSTOMER_CARD_THEMES.length;
+    return CUSTOMER_CARD_THEMES[idx];
+  }
+
+  getAvatarGradient() {
+    return this.getCardTheme().avatar;
   }
 
   getBadgeStyle() {
@@ -106,7 +131,7 @@ export class CustomerCardBuilder {
    */
   render() {
     const initials = this.getInitials();
-    const avatarBg = this.getAvatarGradient();
+    const theme = this.getCardTheme();
     const badgeStyle = this.getBadgeStyle();
     const formattedSpent = Number(this.totalSpent || 0).toLocaleString("en-LK", {
       minimumFractionDigits: 0,
@@ -114,9 +139,9 @@ export class CustomerCardBuilder {
     });
 
     return `
-      <div class="customer-card-box" data-customer-id="${this.id || ""}">
+      <div class="customer-card-box" data-customer-id="${this.id || ""}" style="background: ${theme.bg}; border-color: ${theme.border};">
         <div class="cust-box-top">
-          <div class="cust-avatar" style="background: ${avatarBg};">${initials}</div>
+          <div class="cust-avatar" style="background: ${theme.avatar};">${initials}</div>
           <div class="cust-box-meta">
             <strong>${this.name}</strong>
             <span><i class="fa-solid fa-phone"></i> ${this.mobile}</span>

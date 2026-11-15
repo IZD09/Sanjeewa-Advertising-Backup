@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintType;
 use Modules\Inventory\Models\Stock;
@@ -53,8 +54,8 @@ class PrintJobService
 
                 $q->orWhereHas('customer', function (Builder $cq) use ($search) {
                     $cq->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($cq, 'mobile', $search);
                 })->orWhereHas('printType', function (Builder $ptq) use ($search) {
                     $ptq->where('print_type', 'like', "%{$search}%");
                 })->orWhereHas('statusHistory.status', function (Builder $sq) use ($search) {
@@ -157,6 +158,11 @@ class PrintJobService
                 ? (int) $data['users_id']
                 : (Auth::id() ?? User::query()->value('id') ?? 1);
 
+            $rawDiscription = $data['discription'] ?? $data['notes'] ?? null;
+            $discription = is_string($rawDiscription) && trim($rawDiscription) !== ''
+                ? mb_substr(trim($rawDiscription), 0, 255)
+                : null;
+
             $printJob = PrintJob::create([
                 'users_id' => $userId,
                 'customer_id' => (int) $data['customer_id'],
@@ -169,6 +175,7 @@ class PrintJobService
                 'delivery_method_id' => ! empty($data['delivery_method_id'])
                     ? (int) $data['delivery_method_id']
                     : (! empty($data['delivery_method']) && is_numeric($data['delivery_method']) ? (int) $data['delivery_method'] : 1),
+                'discription' => $discription,
             ]);
 
             // Create initial status history entry (default to 1: Pending/New)
@@ -244,23 +251,20 @@ class PrintJobService
                 $subtotal = $areaSqFt * $unitPrice * $qty;
             }
 
+            $designFee = (isset($data['design_status']) && $data['design_status'] === 'Shop Creates Design') ? 500.0 : 0.0;
             $discount = (float) ($data['discount'] ?? 0);
-            $totalAmount = max(0, $subtotal - $discount);
+            $totalAmount = max(0, $subtotal + $designFee - $discount);
             if (! empty($data['total_amount']) && (float) $data['total_amount'] > 0) {
                 $totalAmount = (float) $data['total_amount'];
             }
 
-            $paidAmount = (float) ($data['payment_amount'] ?? $data['paid_amount'] ?? 0);
+            $paidAmount = max(0, (float) ($data['payment_amount'] ?? $data['paid_amount'] ?? 0));
 
-            // Determine payment_statuses_id (1: Pending, 2: Completed, 3: Partial)
+            // Auto-determine payment_statuses_id based on paid vs total amount (or accept explicit override)
             if (! empty($data['payment_statuses_id'])) {
                 $paymentStatusId = (int) $data['payment_statuses_id'];
-            } elseif ($paidAmount >= $totalAmount && $totalAmount > 0) {
-                $paymentStatusId = 2; // Completed
-            } elseif ($paidAmount > 0) {
-                $paymentStatusId = 3; // Partial
             } else {
-                $paymentStatusId = 1; // Pending
+                $paymentStatusId = $this->resolveAutoPaymentStatusId($paidAmount, $totalAmount);
             }
 
             $paymentTypeId = ! empty($data['payment_types_id'])
@@ -325,6 +329,12 @@ class PrintJobService
         }
         if (isset($data['delivery_method_id'])) {
             $attributes['delivery_method_id'] = (int) $data['delivery_method_id'];
+        }
+        if (array_key_exists('discription', $data) || array_key_exists('notes', $data)) {
+            $rawDiscription = $data['discription'] ?? $data['notes'] ?? null;
+            $attributes['discription'] = is_string($rawDiscription) && trim($rawDiscription) !== ''
+                ? mb_substr(trim($rawDiscription), 0, 255)
+                : null;
         }
 
         $printJob->update($attributes);
@@ -475,8 +485,8 @@ class PrintJobService
                     $q->where('id', (int) $search);
                 }
                 $q->orWhereHas('customer', function (Builder $cq) use ($search) {
-                    $cq->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%");
+                    $cq->where('name', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($cq, 'mobile', $search);
                 })->orWhereHas('printType', function (Builder $ptq) use ($search) {
                     $ptq->where('print_type', 'like', "%{$search}%");
                 });
@@ -520,14 +530,14 @@ class PrintJobService
             $statusId = (int) ($latestHistory?->print_job_statuses_id ?? 1);
             $statusName = $latestHistory?->status?->print_job_states ?? 'Pending';
 
-            // Stage mapping
+            // Stage mapping (Design & Prepress tab loads Approved jobs only)
             $stageKey = match ($statusId) {
-                1, 2, 3 => 'prepress',
+                3 => 'prepress',
                 4 => 'printing',
                 5 => 'finishing',
                 6 => 'ready',
                 7, 8 => 'completed',
-                default => 'prepress',
+                default => null,
             };
 
             $badgeClass = match ($statusId) {
@@ -590,8 +600,12 @@ class PrintJobService
                     : '—',
                 'delivery_method_id' => (int) ($job->delivery_method_id ?? 1),
                 'delivery_method_name' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
+                'discription' => $job->discription,
                 'date_raw' => $job->add_date ? Carbon::parse($job->add_date)->toIso8601String() : null,
                 'date_formatted' => $job->add_date ? Carbon::parse($job->add_date)->format('M d, Y') : '—',
+                'time_formatted' => $job->add_date ? Carbon::parse($job->add_date)->format('h:i A') : '—',
+                'time_24' => $job->add_date ? Carbon::parse($job->add_date)->format('H:i') : '',
+                'date_search' => $job->add_date ? Carbon::parse($job->add_date)->format('Y-m-d H:i:s M d, Y h:i A') : '',
                 'status_id' => $statusId,
                 'status_name' => $statusName,
                 'stage_key' => $stageKey,
@@ -612,7 +626,7 @@ class PrintJobService
             if (! in_array($statusId, [7, 8, 9], true)) {
                 $kpis['active']++;
             }
-            if (in_array($statusId, [1, 2, 3], true)) {
+            if ($statusId === 3) {
                 $kpis['prepress']++;
             } elseif ($statusId === 4) {
                 $kpis['printing']++;
@@ -693,8 +707,8 @@ class PrintJobService
                     $q->where('id', (int) $search);
                 }
                 $q->orWhereHas('customer', function (Builder $cq) use ($search) {
-                    $cq->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%");
+                    $cq->where('name', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($cq, 'mobile', $search);
                 })->orWhereHas('printType', function (Builder $pq) use ($search) {
                     $pq->where('print_type', 'like', "%{$search}%");
                 });
@@ -770,7 +784,11 @@ class PrintJobService
 
             $orders[] = [
                 'id' => 'ORD-2026-'.(1000 + $job->id),
+                'printJobId' => (int) $job->id,
                 'orderDate' => $addDate->toDateString(),
+                'orderDateTime' => $addDate->format('Y-m-d H:i:s'),
+                'orderTime' => $addDate->format('h:i A'),
+                'orderTime24' => $addDate->format('H:i'),
                 'customerId' => 'CUST-'.str_pad((string) $job->customer_id, 3, '0', STR_PAD_LEFT),
                 'customerName' => $job->customer?->name ?? 'Customer #'.$job->customer_id,
                 'customerMobile' => $job->customer?->mobile ?? '',
@@ -793,7 +811,8 @@ class PrintJobService
                 'paymentStatus' => $paymentStatus,
                 'orderStatus' => $statusName,
                 'assignedEmployee' => $employeeName,
-                'notes' => 'Print job order #'.$job->id,
+                'discription' => $job->discription,
+                'notes' => $job->discription ?: ('Print job order #'.$job->id),
             ];
         }
 
@@ -858,5 +877,29 @@ class PrintJobService
             'totalRevenue' => $totalRevenue,
             'outstandingBalance' => $outstandingBalance,
         ];
+    }
+
+    /**
+     * Automatically resolve the payment status ID based on paid amount vs total amount.
+     */
+    protected function resolveAutoPaymentStatusId(float $paidAmount, float $totalAmount): int
+    {
+        $statuses = PaymentStatus::query()->orderBy('id')->get();
+
+        if ($paidAmount >= $totalAmount && $totalAmount > 0) {
+            $match = $statuses->first(fn ($s) => preg_match('/^(paid|completed)$/i', (string) $s->payment_status) === 1);
+
+            return (int) ($match?->id ?? 2);
+        }
+
+        if ($paidAmount > 0) {
+            $match = $statuses->first(fn ($s) => stripos((string) $s->payment_status, 'partial') !== false);
+
+            return (int) ($match?->id ?? 3);
+        }
+
+        $match = $statuses->first(fn ($s) => preg_match('/^(pending|unpaid)$/i', (string) $s->payment_status) === 1);
+
+        return (int) ($match?->id ?? 1);
     }
 }

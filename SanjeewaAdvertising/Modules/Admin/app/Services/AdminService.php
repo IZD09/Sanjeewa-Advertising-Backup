@@ -13,6 +13,7 @@ use Modules\Admin\Models\AdminStatus;
 use Modules\Admin\Models\AdminType;
 use Modules\Core\Models\ActivityType;
 use Modules\Core\Services\ActivityService;
+use Modules\Core\Support\MobileNumberHelper;
 
 class AdminService
 {
@@ -39,8 +40,8 @@ class AdminService
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('username', 'like', "%{$search}%")
-                    ->orWhere('mobile', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'mobile', $search);
             });
         }
 

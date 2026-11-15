@@ -68,6 +68,8 @@ export class PlaceOrderProcess {
     if (typeSelect) {
       this.populateProductsForType(typeSelect.value, "flex_normal");
     }
+
+    this.updateCalculation();
   }
 
   /**
@@ -104,23 +106,6 @@ export class PlaceOrderProcess {
             opt.selected = true;
           }
           typeSelect.appendChild(opt);
-        });
-      }
-    }
-
-    if (Array.isArray(dbData.statuses) && dbData.statuses.length > 0) {
-      const statusSelect = document.getElementById("poJobStatus");
-      if (statusSelect) {
-        const currentVal = statusSelect.value;
-        statusSelect.innerHTML = "";
-        dbData.statuses.forEach((st) => {
-          const opt = document.createElement("option");
-          opt.value = st.id;
-          opt.textContent = st.name || st.print_job_states;
-          if (currentVal ? String(st.id) === String(currentVal) : Number(st.id) === 1) {
-            opt.selected = true;
-          }
-          statusSelect.appendChild(opt);
         });
       }
     }
@@ -210,6 +195,8 @@ export class PlaceOrderProcess {
         });
       }
     }
+
+    this.updateCalculation();
   }
 
   setProducts(products) {
@@ -229,12 +216,7 @@ export class PlaceOrderProcess {
      ========================================================================== */
   setupDatePickers() {
     const todayStr = new Date().toISOString().split("T")[0];
-    const orderDateInput = document.getElementById("poOrderDate");
     const requiredDateInput = document.getElementById("poRequiredDate");
-
-    if (orderDateInput) {
-      orderDateInput.value = todayStr;
-    }
 
     if (requiredDateInput) {
       const deadline = new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0];
@@ -281,25 +263,6 @@ export class PlaceOrderProcess {
       });
     }
 
-    const payStatusEl = document.getElementById("poPaymentStatus");
-    if (payStatusEl) {
-      payStatusEl.addEventListener("change", () => {
-        payStatusEl.dataset.manualOverride = "true";
-        const selectedText = payStatusEl.selectedOptions?.[0]?.textContent?.trim();
-        const liveStatusEl = document.getElementById("livePaymentStatus");
-        if (liveStatusEl && selectedText) {
-          liveStatusEl.textContent = selectedText;
-          if (payStatusEl.value === "2") {
-            liveStatusEl.className = "status-badge paid";
-          } else if (payStatusEl.value === "3") {
-            liveStatusEl.className = "status-badge partially-paid";
-          } else {
-            liveStatusEl.className = "status-badge unpaid";
-          }
-        }
-      });
-    }
-
     const calcFields = [
       "poWidth",
       "poHeight",
@@ -310,7 +273,6 @@ export class PlaceOrderProcess {
       "poPaidAmount",
       "poDesignStatus",
       "poPrintingType",
-      "poJobStatus",
       "poPaymentMethod",
     ];
 
@@ -419,7 +381,24 @@ export class PlaceOrderProcess {
       };
     }
 
+    const unitPriceRaw = document.getElementById("poUnitPrice")?.value;
+    const unitPrice = parseFloat(unitPriceRaw);
+    if (unitPriceRaw === "" || isNaN(unitPrice) || unitPrice < 0) {
+      return {
+        isValid: false,
+        error: "Unit Price must be 0 or a valid positive amount.",
+        targetId: "poUnitPrice",
+      };
+    }
+
     const paidAmount = parseFloat(document.getElementById("poPaidAmount")?.value) || 0;
+    if (paidAmount < 0) {
+      return {
+        isValid: false,
+        error: "Initial Advance Paid cannot be negative.",
+        targetId: "poPaidAmount",
+      };
+    }
     if (paidAmount > 0) {
       const pm = document.getElementById("poPaymentMethod")?.value;
       if (!pm) {
@@ -466,8 +445,7 @@ export class PlaceOrderProcess {
     const requiredDate = document.getElementById("poRequiredDate")?.value || "";
     const notes = document.getElementById("poNotes")?.value || "";
 
-    const statusEl = document.getElementById("poJobStatus");
-    const statusId = statusEl?.value || "1";
+    const statusId = "1"; // Backend defaults to Pending (1)
 
     const paymentMethodEl = document.getElementById("poPaymentMethod");
     const paymentMethodId = paymentMethodEl?.value || "1";
@@ -513,8 +491,8 @@ export class PlaceOrderProcess {
       statusId,
       paymentMethodId,
       paymentMethodName,
-      paymentStatusId: paymentStatusEl?.dataset?.manualOverride ? paymentStatusId : (calc.paymentStatusId || paymentStatusId),
-      paymentStatusName: paymentStatusEl?.dataset?.manualOverride ? paymentStatusName : (calc.paymentStatus || paymentStatusName),
+      paymentStatusId: calc.paymentStatusId || paymentStatusId,
+      paymentStatusName: calc.paymentStatus || paymentStatusName,
       userId,
       userName,
       calc,
@@ -538,13 +516,14 @@ export class PlaceOrderProcess {
       if (el) el.textContent = txt;
     };
 
+    const fmtOpts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
     setTxt("confCustName", data.selectedCustomer?.name || "-");
     setTxt("confCustMobile", data.selectedCustomer?.mobile || "-");
     setTxt("confProduct", data.printingTypeName || "Printing Job");
     setTxt("confSpecs", `${data.width} × ${data.height} ${data.unitSymbol} (Qty: ${data.qty})`);
-    setTxt("confTotal", `Rs. ${data.calc.totalAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`);
-    setTxt("confPaid", `Rs. ${data.calc.paidAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`);
-    setTxt("confBalance", `Rs. ${data.calc.balanceAmount.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`);
+    setTxt("confTotal", `Rs. ${data.calc.totalAmount.toLocaleString("en-LK", fmtOpts)}`);
+    setTxt("confPaid", `Rs. ${data.calc.paidAmount.toLocaleString("en-LK", fmtOpts)}`);
+    setTxt("confBalance", `Rs. ${data.calc.balanceAmount.toLocaleString("en-LK", fmtOpts)}`);
     setTxt("confStatus", data.paymentStatusName || data.calc.paymentStatus);
     setTxt("confDeadline", data.requiredDate);
     setTxt("confDeliveryMethod", data.deliveryMethodName);
@@ -603,14 +582,14 @@ export class PlaceOrderProcess {
         qty: data.qty,
         unit_price: data.unitPrice,
         discount: data.discount,
+        design_status: data.designStatus,
         total_amount: data.calc.totalAmount,
         payment_amount: data.calc.paidAmount,
         paid_amount: data.calc.paidAmount,
         payment_types_id: data.calc.paidAmount > 0 ? paymentTypeId : null,
         payment_statuses_id: data.paymentStatusId || data.calc.paymentStatusId || 1,
-        print_job_statuses_id: statusId,
-        add_date: new Date().toISOString().slice(0, 19).replace("T", " "),
         deadline: data.requiredDate,
+        discription: data.notes,
         notes: data.notes,
       };
 
@@ -656,37 +635,36 @@ export class PlaceOrderProcess {
   }
 
   resetForm() {
-    this.clearSelectedCustomer();
+    this.clearSelectedCustomer({ focusInput: false, openDropdown: false });
     const widthEl = document.getElementById("poWidth");
     const heightEl = document.getElementById("poHeight");
     const qtyEl = document.getElementById("poQty");
+    const priceEl = document.getElementById("poUnitPrice");
     const paidEl = document.getElementById("poPaidAmount");
     const discEl = document.getElementById("poDiscount");
     const notesEl = document.getElementById("poNotes");
     const custSelect = document.getElementById("poCustomerSelect");
     const typeSelect = document.getElementById("poPrintingType");
+    const designSelect = document.getElementById("poDesignStatus");
     const unitSelect = document.getElementById("poUnit");
-    const statusSelect = document.getElementById("poJobStatus");
     const payMethodSelect = document.getElementById("poPaymentMethod");
     const payStatusSelect = document.getElementById("poPaymentStatus");
     const userSelect = document.getElementById("poUser");
     const deliverySelect = document.getElementById("poDeliveryMethod");
 
-    if (widthEl) widthEl.value = "10";
-    if (heightEl) heightEl.value = "4";
+    if (widthEl) widthEl.value = "1";
+    if (heightEl) heightEl.value = "1";
     if (qtyEl) qtyEl.value = "1";
+    if (priceEl) priceEl.value = "0";
     if (paidEl) paidEl.value = "0.00";
     if (discEl) discEl.value = "0.00";
     if (notesEl) notesEl.value = "";
     if (custSelect) custSelect.value = "";
     if (typeSelect && typeSelect.options.length > 0) typeSelect.selectedIndex = 0;
+    if (designSelect && designSelect.options.length > 0) designSelect.selectedIndex = 0;
     if (unitSelect && unitSelect.options.length > 0) unitSelect.selectedIndex = 0;
-    if (statusSelect && statusSelect.options.length > 0) statusSelect.selectedIndex = 0;
     if (payMethodSelect && payMethodSelect.options.length > 0) payMethodSelect.selectedIndex = 0;
-    if (payStatusSelect) {
-      delete payStatusSelect.dataset.manualOverride;
-      if (payStatusSelect.options.length > 0) payStatusSelect.selectedIndex = 0;
-    }
+    if (payStatusSelect && payStatusSelect.options.length > 0) payStatusSelect.selectedIndex = 0;
     if (userSelect && userSelect.options.length > 0) userSelect.selectedIndex = 0;
     if (deliverySelect && deliverySelect.options.length > 0) deliverySelect.selectedIndex = 0;
 

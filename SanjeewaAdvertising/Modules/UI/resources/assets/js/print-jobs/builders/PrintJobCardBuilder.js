@@ -1,6 +1,14 @@
 /**
  * PrintJobCardBuilder - Builds light-themed production job cards
  */
+const STAGE_NEXT_BUTTON = {
+    prepress: { label: 'Start Printing', icon: 'fa-print' },
+    printing: { label: 'Move to Finishing', icon: 'fa-scissors' },
+    finishing: { label: 'Mark Ready for Pickup', icon: 'fa-box-archive' },
+    ready: { label: 'Mark Completed', icon: 'fa-circle-check' },
+    completed: { label: 'Mark Delivered', icon: 'fa-truck-fast' },
+};
+
 export class PrintJobCardBuilder {
     /**
      * Map stage keys to card color theme classes
@@ -80,10 +88,23 @@ export class PrintJobCardBuilder {
                         <button type="button" class="pj-btn-icon-sm btn-action-allocate" data-job-id="${job.id}" title="Allocate Stock / Material">
                             <i class="fa-solid fa-boxes-stacked"></i>
                         </button>
-                        <button type="button" class="pj-btn-icon-sm btn-action-status" data-job-id="${job.id}" title="Advance Production Status">
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
                     </div>
+                </div>
+
+                <div class="pj-card-advance-row">
+                    ${(() => {
+                        const activeStage = stageKey || job.stage_key;
+                        const isDelivered = String(job.status_name || '').toLowerCase().trim() === 'delivered';
+                        const cfg = STAGE_NEXT_BUTTON[activeStage] || { label: 'Advance Production Status', icon: 'fa-forward-step' };
+                        if (isDelivered) {
+                            return `<button type="button" class="pj-btn-advance-status btn-action-status" data-job-id="${job.id}" disabled>
+                                <i class="fa-solid fa-check-double"></i> <span>Delivered</span>
+                            </button>`;
+                        }
+                        return `<button type="button" class="pj-btn-advance-status btn-action-status" data-job-id="${job.id}">
+                            <i class="fa-solid ${cfg.icon}"></i> <span>${cfg.label}</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>`;
+                    })()}
                 </div>
             </div>
         `;

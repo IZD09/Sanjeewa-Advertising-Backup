@@ -6,6 +6,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
+import { matchesMobile } from "../../core/MobileNumberHelper.js";
 import { PrintingOrderBuilder, PrintingOrder } from "../builders/PrintingOrderBuilder.js";
 
 export class OrderTableHandler extends BaseTableLoader {
@@ -93,9 +94,14 @@ export class OrderTableHandler extends BaseTableLoader {
       const matchSearch = !term ||
         (order.id && String(order.id).toLowerCase().includes(term)) ||
         (order.customerName && String(order.customerName).toLowerCase().includes(term)) ||
-        (order.customerMobile && String(order.customerMobile).includes(term)) ||
+        matchesMobile(order.customerMobile, term) ||
         (order.productName && String(order.productName).toLowerCase().includes(term)) ||
-        (order.assignedEmployee && String(order.assignedEmployee).toLowerCase().includes(term));
+        (order.assignedEmployee && String(order.assignedEmployee).toLowerCase().includes(term)) ||
+        [order.orderDate, order.orderDateTime, order.orderTime, order.orderTime24, order.requiredDate]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(term);
 
       const oStatus = String(order.orderStatus || "").toLowerCase().trim();
       let matchStatus = sFilter === "all" || sFilter === "";

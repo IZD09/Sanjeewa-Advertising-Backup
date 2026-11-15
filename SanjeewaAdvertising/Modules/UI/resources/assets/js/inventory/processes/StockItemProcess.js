@@ -338,6 +338,9 @@ export class StockItemProcess {
   closeBrandSelectionModal() {
     const modal = document.getElementById("selectBrandsModal");
     if (modal) {
+      if (document.activeElement && modal.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
     }

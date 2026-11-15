@@ -137,7 +137,7 @@
                             <div class="pj-toolbar-left">
                                 <div class="pj-search-box">
                                     <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="jobSearchInput" placeholder="Search by Job #, Customer, or Category..." />
+                                    <input type="text" id="jobSearchInput" placeholder="Search by Job #, Customer, Category, or Date/Time..." />
                                 </div>
                                 <select class="pj-select" id="filterPrintType">
                                     <option value="">All Categories</option>

@@ -7,6 +7,7 @@
  */
 
 import { BasePaginationHandler } from "../../core/BasePaginationHandler.js";
+import { matchesMobile } from "../../../../UI/resources/assets/js/core/MobileNumberHelper.js";
 import { CustomerCardBuilder } from "../builders/CustomerCardBuilder.js";
 
 export class CustomerCardHandler extends BasePaginationHandler {
@@ -68,9 +69,8 @@ export class CustomerCardHandler extends BasePaginationHandler {
 
     return (customers || []).filter((cust) => {
       const name = (cust.name || "").toLowerCase();
-      const mobile = (cust.mobile || "").toLowerCase();
       const email = (cust.email || "").toLowerCase();
-      return name.includes(term) || mobile.includes(term) || email.includes(term);
+      return name.includes(term) || matchesMobile(cust.mobile, term) || email.includes(term);
     });
   }
 

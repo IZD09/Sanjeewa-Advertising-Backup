@@ -47,8 +47,8 @@ export class CustomersManager {
       closeModal: (id) => this.closeModal(id),
       showToast: (msg, type) => this.showToast(msg, type),
       onCustomerRegistered: (newCust) => {
-        this.customers.unshift(newCust);
-        this.currentPage = 1;
+        this.customers.push(newCust);
+        this.customers.sort((a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0));
         this.renderCards();
         this.updateKPIs();
       },
@@ -70,8 +70,13 @@ export class CustomersManager {
 
   async init() {
     this.cardHandler.showLoading("Loading customer accounts from Customer Module...");
-    const data = await this.dataLoader.fetchCustomersData();
-    this.customers = data.customers || [];
+    const data = await this.dataLoader.fetchCustomersData({
+      sort_by: "id",
+      sort_order: "asc",
+    });
+    this.customers = (data.customers || []).slice().sort(
+      (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0)
+    );
     this.renderCards();
     this.updateKPIs(data.kpis);
   }
@@ -108,17 +113,27 @@ export class CustomersManager {
     // Close on backdrop click
     document.querySelectorAll(".po-modal-overlay").forEach((overlay) => {
       overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) {
-          overlay.classList.remove("active");
+        if (e.target === overlay && overlay.id) {
+          this.closeModal(overlay.id);
         }
       });
+    });
+
+    // Close on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document.querySelectorAll(".po-modal-overlay.open").forEach((modal) => {
+          if (modal.id) this.closeModal(modal.id);
+        });
+      }
     });
   }
 
   openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-      modal.classList.add("active");
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
       const firstInput = modal.querySelector("input, select, textarea");
       if (firstInput) setTimeout(() => firstInput.focus(), 100);
     }
@@ -127,7 +142,11 @@ export class CustomersManager {
   closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-      modal.classList.remove("active");
+      if (document.activeElement && modal.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
     }
   }
 
@@ -160,8 +179,12 @@ export class CustomersManager {
 
 // Auto-instantiate when DOM is ready
 if (typeof document !== "undefined") {
+  window.CustomersManager = CustomersManager;
+
   const bootCustomers = () => {
-    if (document.getElementById("module-customers")) {
+    const moduleEl = document.getElementById("module-customers");
+    if (moduleEl && !moduleEl.dataset.customersBooted) {
+      moduleEl.dataset.customersBooted = "1";
       window.customersApp = new CustomersManager();
     }
   };

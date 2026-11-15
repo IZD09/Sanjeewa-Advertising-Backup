@@ -447,16 +447,19 @@ class PrintJobModuleTest extends TestCase
             'wtdth' => 8,
             'hight' => 4,
             'delivery_method_id' => $deliveryMethod->id,
+            'discription' => 'Urgent vinyl banner with grommets',
         ];
 
         $response = $this->postJson('/api/v1/print-jobs', $payload);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.delivery_method_id', $deliveryMethod->id);
+            ->assertJsonPath('data.delivery_method_id', $deliveryMethod->id)
+            ->assertJsonPath('data.discription', 'Urgent vinyl banner with grommets');
 
         $job = PrintJob::where('customer_id', $this->customer->id)->where('qty', 5)->latest('id')->first();
         $this->assertNotNull($job);
         $this->assertEquals($deliveryMethod->id, $job->delivery_method_id);
+        $this->assertEquals('Urgent vinyl banner with grommets', $job->discription);
         $this->assertEquals('Courier Delivery', $job->deliveryMethod->methord);
     }
 

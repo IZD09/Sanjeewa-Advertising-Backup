@@ -30,6 +30,8 @@ import {
   ExportProcess,
   MetricsProcess
 } from "./place-order/index.js";
+import { toggleRowActionMenu, closeAllActionMenus } from "./core/ActionMenuHelper.js";
+import { openCancelOrderModal } from "./core/ConfirmModalHelper.js";
 
 class PlaceOrderManager {
   constructor() {
@@ -200,6 +202,7 @@ class PlaceOrderManager {
     this.customers = data.customers || [];
     this.orders = data.orders || [];
     this.payments = data.payments || [];
+    this.statuses = data.statuses || [];
     this.products = data.products || this.dataLoader.productsCatalog;
 
     // Propagate state to handlers
@@ -322,6 +325,57 @@ class PlaceOrderManager {
 
   triggerPrintReceipt() {
     this.orderModalHandler.triggerPrintReceipt();
+  }
+
+  toggleRowMenu(triggerBtn) {
+    toggleRowActionMenu(triggerBtn);
+  }
+
+  closeRowMenus() {
+    closeAllActionMenus();
+  }
+
+  async approveOrder(orderId) {
+    await this.updateOrderQuickStatus(orderId, "Approved");
+  }
+
+  cancelOrder(orderId) {
+    openCancelOrderModal({
+      targetLabel: `order ${orderId}`,
+      onConfirm: () => this.updateOrderQuickStatus(orderId, "Cancelled"),
+    });
+  }
+
+  async updateOrderQuickStatus(orderId, targetStatusName) {
+    const order = (this.orders || []).find(o => String(o.id) === String(orderId));
+    if (!order) return;
+
+    const statusObj = (this.statuses || []).find(
+      s => String(s.print_job_states || s.name || "").toLowerCase().trim() === targetStatusName.toLowerCase()
+    );
+
+    const rawId = order.printJobId || Number(String(order.id).replace(/^ORD-\d+-/, "")) - 1000;
+    if (!statusObj || !rawId || rawId <= 0) {
+      this.showToast(`Unable to update status to ${targetStatusName}.`, "error");
+      return;
+    }
+
+    try {
+      const payload = { print_job_statuses_id: Number(statusObj.id) };
+      try {
+        await this.dataLoader.http.patch(`/api/v1/print-jobs/${rawId}/status`, payload);
+      } catch (e) {
+        await this.dataLoader.http.patch(`/print-jobs/${rawId}/status`, payload);
+      }
+
+      order.orderStatus = statusObj.print_job_states || statusObj.name || targetStatusName;
+      this.dataLoader.saveOrders(this.orders);
+      this.renderOrdersTable();
+      this.updateKPIs();
+      this.showToast(`Order ${orderId} marked as ${order.orderStatus}.`, "success");
+    } catch (err) {
+      this.showToast(err?.message || `Failed to update order status to ${targetStatusName}.`, "error");
+    }
   }
 
   renderOrdersTable() {

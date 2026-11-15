@@ -8,6 +8,7 @@ use Database\Seeders\DefaultAdminSeeder;
 use Database\Seeders\SystemModuleSeeder;
 use Database\Seeders\UserStatusSeeder;
 use Modules\Admin\Models\Admin;
+use Modules\UI\Services\DashboardService;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -114,5 +115,32 @@ class DashboardTest extends TestCase
                 'stock',
                 'finance',
             ]);
+    }
+
+    public function test_shared_dashboard_stream_caches_snapshot_and_honors_last_event_id(): void
+    {
+        DashboardService::clearCache();
+
+        $firstResponse = $this->actingAs($this->admin, 'admin')->get('/dashboard/stream');
+        $firstResponse->assertStatus(200);
+        $firstContent = $firstResponse->streamedContent();
+
+        $this->assertStringContainsString('event: message', $firstContent);
+        $this->assertMatchesRegularExpression('/id:\s*([a-f0-9]{32})/', $firstContent);
+
+        preg_match('/id:\s*([a-f0-9]{32})/', $firstContent, $matches);
+        $hash = $matches[1];
+
+        // Second request with Last-Event-ID matching the shared snapshot hash should skip full payload
+        $secondResponse = $this->actingAs($this->admin, 'admin')
+            ->withHeaders(['Last-Event-ID' => $hash])
+            ->get('/dashboard/stream?retry=15000');
+
+        $secondResponse->assertStatus(200);
+        $secondContent = $secondResponse->streamedContent();
+
+        $this->assertStringContainsString('retry: 15000', $secondContent);
+        $this->assertStringContainsString(': unchanged', $secondContent);
+        $this->assertStringNotContainsString('data: {"overview":', $secondContent);
     }
 }

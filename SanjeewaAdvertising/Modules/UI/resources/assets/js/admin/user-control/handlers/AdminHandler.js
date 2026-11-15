@@ -6,6 +6,7 @@
 "use strict";
 
 import { AdminRowBuilder } from "../builders/AdminRowBuilder.js";
+import { matchesMobile } from "../../../core/MobileNumberHelper.js";
 
 export class AdminHandler {
   constructor(options = {}) {
@@ -54,7 +55,7 @@ export class AdminHandler {
         a.last_name.toLowerCase().includes(query) ||
         a.username.toLowerCase().includes(query) ||
         a.email.toLowerCase().includes(query) ||
-        a.mobile.includes(query)
+        matchesMobile(a.mobile, query)
       );
     }
 

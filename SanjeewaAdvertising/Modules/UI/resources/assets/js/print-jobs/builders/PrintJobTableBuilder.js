@@ -1,3 +1,5 @@
+import { getStatusRowClass } from '../../core/StatusHelper.js';
+
 /**
  * PrintJobTableBuilder - Builds HTML table rows for the Print Jobs table view
  */
@@ -19,12 +21,17 @@ export class PrintJobTableBuilder {
         const paymentClass = job.payment_status === 'Paid'
             ? 'paid'
             : (job.payment_status === 'Partially Paid' ? 'partially-paid' : 'unpaid');
+        const statusLower = String(job.status_name || '').toLowerCase().trim();
+        const isApproved = statusLower === 'approved';
+        const isCancelled = statusLower === 'cancelled' || statusLower === 'rejected';
+        const statusRowClass = getStatusRowClass(job.status_name);
 
         return `
-            <tr data-job-id="${job.id}">
+            <tr data-job-id="${job.id}"${statusRowClass ? ` class="${statusRowClass}"` : ''}>
                 <td>
                     <div style="font-weight: 700; font-family: monospace; color: #0f172a;">${this.escapeHtml(job.job_number)}</div>
                     <div style="font-size: 11px; color: #64748b;">${this.escapeHtml(job.order_number)}</div>
+                    ${job.date_formatted ? `<div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${this.escapeHtml(job.date_formatted)}${job.time_formatted && job.time_formatted !== '—' ? ` • ${this.escapeHtml(job.time_formatted)}` : ''}</div>` : ''}
                 </td>
                 <td>
                     <div style="font-weight: 600;">${this.escapeHtml(job.customer_name)}</div>
@@ -50,15 +57,28 @@ export class PrintJobTableBuilder {
                 </td>
                 <td style="text-align: right;">
                     <div style="display: inline-flex; align-items: center; gap: 5px;">
-                        <button type="button" class="pj-btn-icon-sm btn-action-details" data-job-id="${job.id}" title="Details & Timeline">
-                            <i class="fa-solid fa-eye"></i>
+                        <button type="button" class="pj-btn-icon-sm btn-action-approve" data-job-id="${job.id}" title="Approve Order" ${isApproved || isCancelled ? 'disabled' : ''}>
+                            <i class="fa-solid fa-check"></i>
                         </button>
-                        <button type="button" class="pj-btn-icon-sm btn-action-allocate" data-job-id="${job.id}" title="Allocate Stock">
-                            <i class="fa-solid fa-boxes-stacked"></i>
+                        <button type="button" class="pj-btn-icon-sm btn-action-cancel" data-job-id="${job.id}" title="Cancel Order" ${isCancelled ? 'disabled' : ''}>
+                            <i class="fa-solid fa-xmark"></i>
                         </button>
-                        <button type="button" class="pj-btn-icon-sm btn-action-status" data-job-id="${job.id}" title="Update Status">
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
+                        <div class="row-action-menu-wrap">
+                            <button type="button" class="pj-btn-icon-sm btn-action-more" title="More Actions">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div class="row-action-dropdown" style="display: none;">
+                                <button type="button" class="row-action-item btn-action-details" data-job-id="${job.id}">
+                                    <i class="fa-solid fa-eye"></i><span>Details &amp; Timeline</span>
+                                </button>
+                                <button type="button" class="row-action-item btn-action-allocate" data-job-id="${job.id}">
+                                    <i class="fa-solid fa-boxes-stacked"></i><span>Allocate Stock</span>
+                                </button>
+                                <button type="button" class="row-action-item btn-action-status" data-job-id="${job.id}">
+                                    <i class="fa-solid fa-arrow-right"></i><span>Update Status</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>

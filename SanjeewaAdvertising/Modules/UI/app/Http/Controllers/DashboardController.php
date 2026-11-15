@@ -4,10 +4,10 @@ namespace Modules\UI\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Modules\Core\Http\Controllers\BaseApiController;
 use Modules\UI\Http\Requests\DashboardRequest;
 use Modules\UI\Services\DashboardService;
-use Modules\UI\Transformers\DashboardResource;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DashboardController extends BaseApiController
@@ -17,36 +17,43 @@ class DashboardController extends BaseApiController
     ) {}
 
     /**
-     * Display the main interactive dashboard view with initial backend data.
+     * Display the main interactive dashboard view with initial shared backend data.
      */
     public function index(): View
     {
-        $dashboardData = (new DashboardResource($this->dashboardService->getDashboardData()))->resolve();
+        $snapshot = $this->dashboardService->getSharedDashboardSnapshot();
 
         return view('ui::layouts.admin.pages.dashboard.dashboard', [
-            'dashboardData' => $dashboardData,
+            'dashboardData' => $snapshot['data'],
         ]);
     }
 
     /**
-     * Retrieve dashboard metrics as a single JSON response matching the required schema.
+     * Retrieve shared dashboard metrics as a single JSON response matching the required schema.
      */
-    public function data(DashboardRequest $request): JsonResponse
+    public function data(DashboardRequest $request): JsonResponse|Response
     {
-        $data = $this->dashboardService->getDashboardData($request->validated());
+        $validated = $request->validated();
+        $forceRefresh = $request->boolean('refresh');
+        $snapshot = $this->dashboardService->getSharedDashboardSnapshot($validated, $forceRefresh);
 
-        return response()->json(
-            new DashboardResource($data)
-        );
+        return response($snapshot['json'], 200, [
+            'Content-Type' => 'application/json',
+            'ETag' => '"'.$snapshot['hash'].'"',
+        ]);
     }
 
     /**
-     * Stream real-time dashboard data using Server-Sent Events (SSE).
-     * Dispatches updates once every 1 minute (60 seconds) by default.
+     * Stream shared real-time dashboard data using Server-Sent Events (SSE).
+     * Serves the identical cached snapshot to all connected Users and Admins to minimize server load.
      */
     public function stream(DashboardRequest $request): StreamedResponse
     {
-        $response = new StreamedResponse(function () use ($request) {
+        $validated = $request->validated();
+        $forceRefresh = $request->boolean('refresh');
+        $lastEventId = $request->header('Last-Event-ID');
+
+        $response = new StreamedResponse(function () use ($request, $validated, $forceRefresh, $lastEventId) {
             // Prevent PHP execution timeout for long-running streaming
             if (! app()->runningUnitTests()) {
                 @set_time_limit(0);
@@ -64,16 +71,22 @@ class DashboardController extends BaseApiController
                 }
             }
 
-            // Instruct EventSource client to retry automatically after 5 seconds on disconnect
+            // Instruct EventSource client to retry automatically after configured ms on disconnect
             $retryMs = (int) $request->input('retry', 5000);
             $retryMs = max(3000, min(60000, $retryMs));
             echo "retry: {$retryMs}\n\n";
             flush();
 
-            // Send initial immediate payload upon connection
-            $rawData = $this->dashboardService->getDashboardData($request->validated());
-            $resourceData = (new DashboardResource($rawData))->resolve();
-            echo $this->dashboardService->formatEventStreamMessage($resourceData);
+            // Send initial shared payload upon connection (skip full JSON if client already has current hash)
+            $snapshot = $this->dashboardService->getSharedDashboardSnapshot($validated, $forceRefresh);
+            $lastSentHash = $lastEventId;
+
+            if ($lastSentHash !== null && $lastSentHash === $snapshot['hash']) {
+                echo ": unchanged\n\n";
+            } else {
+                echo "id: {$snapshot['hash']}\nevent: message\ndata: {$snapshot['json']}\n\n";
+                $lastSentHash = $snapshot['hash'];
+            }
             flush();
 
             // Only enter continuous blocking loop if explicitly requested (e.g. continuous=1) and not in testing.
@@ -101,9 +114,13 @@ class DashboardController extends BaseApiController
                     break;
                 }
 
-                $rawData = $this->dashboardService->getDashboardData($request->validated());
-                $resourceData = (new DashboardResource($rawData))->resolve();
-                echo $this->dashboardService->formatEventStreamMessage($resourceData);
+                $snapshot = $this->dashboardService->getSharedDashboardSnapshot($validated);
+                if ($lastSentHash !== $snapshot['hash']) {
+                    echo "id: {$snapshot['hash']}\nevent: message\ndata: {$snapshot['json']}\n\n";
+                    $lastSentHash = $snapshot['hash'];
+                } else {
+                    echo ": heartbeat\n\n";
+                }
                 flush();
 
                 $cycle++;

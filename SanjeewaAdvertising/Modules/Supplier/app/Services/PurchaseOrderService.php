@@ -6,6 +6,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\PurchaseOrderItem;
 use Modules\Supplier\Models\PurchaseOrderStatus;
@@ -34,8 +35,8 @@ class PurchaseOrderService
                 }
 
                 $q->orWhereHas('supplier', function (Builder $sq) use ($search) {
-                    $sq->where('name', 'like', "%{$search}%")
-                        ->orWhere('mobile', 'like', "%{$search}%");
+                    $sq->where('name', 'like', "%{$search}%");
+                    MobileNumberHelper::orWhereMobileLike($sq, 'mobile', $search);
                 })->orWhereHas('items.stockItem', function (Builder $iq) use ($search) {
                     $iq->where('name', 'like', "%{$search}%")
                         ->orWhere('code', 'like', "%{$search}%");

@@ -23,6 +23,7 @@ export class DashboardDataService {
     this.eventSource = null;
     this.pollInterval = null;
     this.lastData = null;
+    this._lastPayloadHash = null;
   }
 
   /**
@@ -54,6 +55,12 @@ export class DashboardDataService {
       payload && payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
         ? payload.data
         : payload;
+
+    const serialized = JSON.stringify(raw);
+    if (this._lastPayloadHash === serialized) {
+      return;
+    }
+    this._lastPayloadHash = serialized;
 
     this.lastData = this.validateData(raw);
 
@@ -193,7 +200,10 @@ export class DashboardDataService {
     if (!isDashboard) return;
 
     try {
-      this.eventSource = new EventSource(url);
+      const targetUrl = url.includes("retry=")
+        ? url
+        : `${url}${url.includes("?") ? "&" : "?"}retry=15000`;
+      this.eventSource = new EventSource(targetUrl);
 
       this.eventSource.onopen = () => {
         // When SSE is connected, stop polling fallback if active
@@ -357,6 +367,7 @@ export class DashboardDataService {
     this.disconnectSSE();
     this.callbacks = [];
     this.lastData = null;
+    this._lastPayloadHash = null;
 
     if (this._lifecycleBound) {
       if (this._onBeforeUnload) window.removeEventListener("beforeunload", this._onBeforeUnload);

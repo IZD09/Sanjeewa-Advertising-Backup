@@ -6,6 +6,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
+import { matchesMobile } from "../../core/MobileNumberHelper.js";
 import { GrnRowBuilder, GrnEntity } from "../builders/GrnRowBuilder.js";
 
 export class GRNTableHandler extends BaseTableLoader {
@@ -51,7 +52,7 @@ export class GRNTableHandler extends BaseTableLoader {
         (rec.grn_number && rec.grn_number.toLowerCase().includes(term)) ||
         (rec.purchase_order_no && rec.purchase_order_no.toLowerCase().includes(term)) ||
         (rec.supplier_name && rec.supplier_name.toLowerCase().includes(term)) ||
-        (rec.supplier_contact && rec.supplier_contact.toLowerCase().includes(term));
+        matchesMobile(rec.supplier_contact, term);
 
       const matchesStatus = statusFilter === "ALL" || rec.status === statusFilter;
       const matchesSupplier = supplierFilter === "ALL" || rec.supplier_name === supplierFilter;

@@ -85,6 +85,34 @@ class CustomerModuleTest extends TestCase
             ->assertJson(['success' => true]);
     }
 
+    public function test_can_search_customers_across_sri_lankan_mobile_formats(): void
+    {
+        Customer::firstOrCreate(
+            ['mobile' => '+94779646903'],
+            ['name' => 'International Format Customer', 'email' => 'intl@example.com', 'register_at' => now()]
+        );
+
+        Customer::firstOrCreate(
+            ['mobile' => '0712345678'],
+            ['name' => 'Local Format Customer', 'email' => 'local@example.com', 'register_at' => now()]
+        );
+
+        // Search "+94779646903" using local format "0779646903"
+        $this->getJson('/api/v1/customers/search?q=0779646903')
+            ->assertStatus(200)
+            ->assertJsonFragment(['mobile' => '+94779646903']);
+
+        // Partial local search "07796" should also find "+94779646903"
+        $this->getJson('/api/v1/customers/search?q=07796')
+            ->assertStatus(200)
+            ->assertJsonFragment(['mobile' => '+94779646903']);
+
+        // Search "0712345678" using international format "+94712345678"
+        $this->getJson('/api/v1/customers/search?q='.urlencode('+94712345678'))
+            ->assertStatus(200)
+            ->assertJsonFragment(['mobile' => '0712345678']);
+    }
+
     public function test_can_show_and_update_and_delete_customer(): void
     {
         $customer = Customer::create([

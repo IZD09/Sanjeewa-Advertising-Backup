@@ -5,6 +5,7 @@
  */
 
 import { RequestHandler } from "../../core/RequestHandler.js";
+import { matchesMobile } from "../../core/MobileNumberHelper.js";
 
 export class CustomerHandler {
   /**
@@ -171,7 +172,7 @@ export class CustomerHandler {
     const list = this.customers || [];
     const filtered = q
       ? list.filter((c) =>
-          (c.mobile && c.mobile.includes(q)) ||
+          matchesMobile(c.mobile, q) ||
           (c.name && c.name.toLowerCase().includes(q)) ||
           (c.email && c.email.toLowerCase().includes(q))
         )
@@ -241,7 +242,7 @@ export class CustomerHandler {
     this.onCustomerSelected(cust);
   }
 
-  clearSelectedCustomer() {
+  clearSelectedCustomer({ focusInput = true, openDropdown = true } = {}) {
     this.selectedCustomer = null;
     const searchWrap = document.getElementById("customerSearchGroup");
     const selectedCard = document.getElementById("selectedCustomerCard");
@@ -253,11 +254,19 @@ export class CustomerHandler {
     if (selectedCard) selectedCard.style.display = "none";
     if (searchInput) {
       searchInput.value = "";
-      searchInput.focus();
+      const modal = searchInput.closest(".po-modal-overlay");
+      const isModalHidden = modal && modal.getAttribute("aria-hidden") === "true";
+      if (focusInput && !isModalHidden) {
+        searchInput.focus();
+      }
     }
 
     this.handleCustomerSearch("");
-    this.openDropdown();
+    if (openDropdown) {
+      this.openDropdown();
+    } else {
+      this.closeDropdown();
+    }
     this.onCustomerSelected(null);
   }
 

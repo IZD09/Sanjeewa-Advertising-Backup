@@ -233,7 +233,7 @@ export class OrderPlacementProcess {
      Form Reset
      ========================================================================== */
   resetForm() {
-    this.clearSelectedCustomer();
+    this.clearSelectedCustomer({ focusInput: false, openDropdown: false });
 
     const setVal = (id, val) => {
       const el = document.getElementById(id);
@@ -242,11 +242,11 @@ export class OrderPlacementProcess {
 
     setVal("poPrintingType", "flex");
     this.populateProductsForType("flex", "flex_normal");
-    setVal("poWidth", "10");
-    setVal("poHeight", "4");
+    setVal("poWidth", "1");
+    setVal("poHeight", "1");
     setVal("poQty", "1");
     setVal("poUnit", "feet");
-    setVal("poUnitPrice", "95.00");
+    setVal("poUnitPrice", "0");
     setVal("poDesignStatus", "Customer Provides Design");
     setVal("poDeliveryMethod", "Pickup");
     setVal("poPaidAmount", "0.00");

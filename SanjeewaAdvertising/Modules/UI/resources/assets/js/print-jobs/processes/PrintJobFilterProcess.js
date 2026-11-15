@@ -1,3 +1,5 @@
+import { matchesMobile } from '../../core/MobileNumberHelper.js';
+
 /**
  * PrintJobFilterProcess - Filters and partitions print jobs
  */
@@ -19,10 +21,18 @@ export class PrintJobFilterProcess {
                     job.job_number.toLowerCase().includes(query) ||
                     job.order_number.toLowerCase().includes(query);
                 const matchCustomer = job.customer_name.toLowerCase().includes(query) ||
-                    job.customer_mobile.includes(query);
+                    matchesMobile(job.customer_mobile, query);
                 const matchType = job.print_type_name.toLowerCase().includes(query);
+                const dateHaystack = [
+                    job.date_search,
+                    job.date_formatted,
+                    job.time_formatted,
+                    job.time_24,
+                    job.date_raw
+                ].filter(Boolean).join(' ').toLowerCase();
+                const matchDate = dateHaystack.includes(query);
 
-                if (!matchId && !matchCustomer && !matchType) return false;
+                if (!matchId && !matchCustomer && !matchType && !matchDate) return false;
             }
 
             if (typeId && String(job.print_types_id) !== String(typeId)) {

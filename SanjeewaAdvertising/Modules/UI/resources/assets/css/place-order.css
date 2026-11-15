@@ -998,6 +998,36 @@ html[data-theme="dark"] .status-badge.partial {
     color: var(--blue);
 }
 
+.action-btn.approve-action {
+    color: #16a34a;
+    border-color: rgba(22, 163, 74, 0.35);
+    background: #f0fdf4;
+}
+
+.action-btn.approve-action:hover:not(:disabled) {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+.action-btn.cancel-action {
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.35);
+    background: #fef2f2;
+}
+
+.action-btn.cancel-action:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Empty State & Pagination */
 .po-empty-state {
     padding: 40px 20px;

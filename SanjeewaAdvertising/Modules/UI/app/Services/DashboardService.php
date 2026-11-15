@@ -3,6 +3,7 @@
 namespace Modules\UI\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\Customer\Models\Customer;
@@ -11,9 +12,72 @@ use Modules\PrintJob\Models\PrintJob;
 use Modules\Transaction\Models\Expencesess;
 use Modules\Transaction\Models\GrnPayment;
 use Modules\Transaction\Models\Payment;
+use Modules\UI\Transformers\DashboardResource;
 
 class DashboardService
 {
+    public const string CACHE_KEY = 'ui:dashboard:shared_snapshot';
+
+    public const string CACHE_LOCK_KEY = 'ui:dashboard:shared_snapshot_lock';
+
+    public const int CACHE_TTL_SECONDS = 15;
+
+    /**
+     * Retrieve the shared dashboard snapshot cached across all Users and Admins.
+     * Ensures database aggregations are computed once and broadcast identically to all clients.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{data: array<string, mixed>, json: string, hash: string, generated_at: string}
+     */
+    public function getSharedDashboardSnapshot(array $filters = [], bool $forceRefresh = false): array
+    {
+        if (! $forceRefresh) {
+            $cached = Cache::get(self::CACHE_KEY);
+            if (is_array($cached) && isset($cached['data'], $cached['json'], $cached['hash'])) {
+                return $cached;
+            }
+        }
+
+        $computeSnapshot = function () use ($filters, $forceRefresh): array {
+            if (! $forceRefresh) {
+                $cached = Cache::get(self::CACHE_KEY);
+                if (is_array($cached) && isset($cached['data'], $cached['json'], $cached['hash'])) {
+                    return $cached;
+                }
+            }
+
+            $rawData = $this->getDashboardData($filters);
+            $resolved = (new DashboardResource($rawData))->resolve();
+            $json = (string) json_encode($resolved, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $hash = md5($json);
+
+            $snapshot = [
+                'data' => $resolved,
+                'json' => $json,
+                'hash' => $hash,
+                'generated_at' => Carbon::now()->toIso8601String(),
+            ];
+
+            Cache::put(self::CACHE_KEY, $snapshot, now()->addSeconds(self::CACHE_TTL_SECONDS));
+
+            return $snapshot;
+        };
+
+        try {
+            return Cache::lock(self::CACHE_LOCK_KEY, 10)->block(5, $computeSnapshot);
+        } catch (\Throwable) {
+            return $computeSnapshot();
+        }
+    }
+
+    /**
+     * Clear the shared dashboard snapshot cache so the next request recomputes fresh data.
+     */
+    public static function clearCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
     /**
      * Retrieve aggregated dashboard metrics and chart datasets populated from real database records.
      *

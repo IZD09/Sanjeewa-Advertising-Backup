@@ -515,6 +515,42 @@ html[data-theme="dark"] .status.is-success {
   border-color: rgba(56, 158, 13, 0.35);
 }
 
+/* Portal Switch Button */
+.portal-switch {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  animation: up .6s .72s both;
+}
+
+.portal-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: color .2s, background .2s, border-color .2s, transform .15s, box-shadow .2s;
+}
+
+.portal-switch-btn:hover {
+  color: var(--blue);
+  background: var(--field);
+  border-color: var(--blue);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(22, 119, 255, .18);
+}
+
+.portal-switch-btn:active {
+  transform: translateY(0);
+}
+
 /* Alternative Link */
 .alt {
   text-align: center;

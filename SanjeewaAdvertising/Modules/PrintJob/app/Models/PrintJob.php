@@ -52,6 +52,7 @@ class PrintJob extends Model
         'hight',
         'unit_id',
         'delivery_method_id',
+        'discription',
     ];
 
     /**

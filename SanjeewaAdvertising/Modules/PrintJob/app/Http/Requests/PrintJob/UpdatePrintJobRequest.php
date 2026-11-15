@@ -32,6 +32,7 @@ class UpdatePrintJobRequest extends FormRequest
             'hight' => ['sometimes', 'required', 'integer', 'min:0'],
             'unit_id' => ['sometimes', 'required', 'integer', 'exists:unit,id'],
             'delivery_method_id' => ['sometimes', 'required', 'integer', 'exists:delivery_method,id'],
+            'discription' => ['sometimes', 'nullable', 'string', 'max:255'],
             'payment_statuses_id' => ['nullable', 'integer', 'exists:payment_statuses,id'],
         ];
     }

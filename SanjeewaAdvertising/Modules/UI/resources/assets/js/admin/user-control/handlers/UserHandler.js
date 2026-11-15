@@ -6,6 +6,7 @@
 "use strict";
 
 import { UserRowBuilder } from "../builders/UserRowBuilder.js";
+import { matchesMobile } from "../../../core/MobileNumberHelper.js";
 
 export class UserHandler {
   constructor(options = {}) {
@@ -63,7 +64,7 @@ export class UserHandler {
         u.first_name.toLowerCase().includes(query) ||
         u.last_name.toLowerCase().includes(query) ||
         u.username.toLowerCase().includes(query) ||
-        u.mobile.includes(query)
+        matchesMobile(u.mobile, query)
       );
     }
 

@@ -133,6 +133,18 @@
                 {{-- Status / Error Message Container --}}
                 <p class="status" id="status" role="status" aria-live="polite"></p>
 
+                <div class="portal-switch">
+                    <a href="{{ route('admin.login') }}" class="portal-switch-btn" title="Switch to Administrator Login">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span>Admin Login</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14M13 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+
                 <div class="alt">
                     Need help? <a href="mailto:support@sanjeewaadvertising.com">Contact Support</a>
                 </div>

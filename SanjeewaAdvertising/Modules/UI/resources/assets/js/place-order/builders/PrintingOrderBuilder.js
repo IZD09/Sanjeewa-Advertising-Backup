@@ -7,6 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
+import { getStatusRowClass } from "../../core/StatusHelper.js";
 
 /**
  * PrintingOrder - Constructed Order Entity
@@ -23,11 +24,18 @@ export class PrintingOrder {
   render() {
     const paymentBadgeClass = String(this.paymentStatus || "unpaid").toLowerCase().replace(/\s+/g, "-");
     const orderBadgeClass = String(this.orderStatus || "pending").toLowerCase().replace(/\s+/g, "-");
+    const statusLower = String(this.orderStatus || "").toLowerCase().trim();
+    const isApproved = statusLower === "approved";
+    const isCancelled = statusLower === "cancelled" || statusLower === "rejected";
+    const statusRowClass = getStatusRowClass(this.orderStatus);
     const dimensions = `${this.width} × ${this.height} ${this.unit}`;
     const totalFormatted = `Rs. ${Number(this.totalAmount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
 
     const html = `
-      <td class="order-id-cell">${this.id}</td>
+      <td class="order-id-cell">
+        <div>${this.id}</div>
+        ${this.orderDate ? `<div style="font-size: 10.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${this.orderDate}${this.orderTime ? ` • ${this.orderTime}` : ""}</div>` : ""}
+      </td>
       <td class="customer-cell">
         <strong>${this.customerName}</strong>
         <span>${this.customerMobile || "—"}</span>
@@ -48,21 +56,34 @@ export class PrintingOrder {
       <td>${this.assignedEmployee || "Unassigned"}</td>
       <td>
         <div class="po-action-group">
-          <button class="action-btn" title="View Order" onclick="window.placeOrderApp?.openViewModal('${this.id}')">
-            <i class="fa-solid fa-eye"></i>
+          <button class="action-btn approve-action" title="Approve Order" onclick="window.placeOrderApp?.approveOrder('${this.id}')" ${isApproved || isCancelled ? "disabled" : ""}>
+            <i class="fa-solid fa-check"></i>
           </button>
-          <button class="action-btn" title="Edit Order" onclick="window.placeOrderApp?.openEditModal('${this.id}')">
-            <i class="fa-solid fa-pen-to-square"></i>
+          <button class="action-btn cancel-action" title="Cancel Order" onclick="window.placeOrderApp?.cancelOrder('${this.id}')" ${isCancelled ? "disabled" : ""}>
+            <i class="fa-solid fa-xmark"></i>
           </button>
-          <button class="action-btn pay-action" title="Add Payment Installment" onclick="window.placeOrderApp?.openAddPaymentModal('${this.id}')">
-            <i class="fa-solid fa-credit-card"></i>
-          </button>
-          <button class="action-btn" title="Payment History" onclick="window.placeOrderApp?.openHistoryModal('${this.id}')">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-          </button>
-          <button class="action-btn print-action" title="Print Receipt" onclick="window.placeOrderApp?.printLatestReceipt('${this.id}')">
-            <i class="fa-solid fa-print"></i>
-          </button>
+          <div class="row-action-menu-wrap">
+            <button type="button" class="action-btn more-action" title="More Actions" onclick="window.placeOrderApp?.toggleRowMenu(this)">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <div class="row-action-dropdown" style="display: none;">
+              <button type="button" class="row-action-item" onclick="window.placeOrderApp?.closeRowMenus(); window.placeOrderApp?.openViewModal('${this.id}')">
+                <i class="fa-solid fa-eye"></i><span>View Order</span>
+              </button>
+              <button type="button" class="row-action-item" onclick="window.placeOrderApp?.closeRowMenus(); window.placeOrderApp?.openEditModal('${this.id}')">
+                <i class="fa-solid fa-pen-to-square"></i><span>Edit Order</span>
+              </button>
+              <button type="button" class="row-action-item" onclick="window.placeOrderApp?.closeRowMenus(); window.placeOrderApp?.openAddPaymentModal('${this.id}')">
+                <i class="fa-solid fa-credit-card"></i><span>Add Payment</span>
+              </button>
+              <button type="button" class="row-action-item" onclick="window.placeOrderApp?.closeRowMenus(); window.placeOrderApp?.openHistoryModal('${this.id}')">
+                <i class="fa-solid fa-clock-rotate-left"></i><span>Payment History</span>
+              </button>
+              <button type="button" class="row-action-item" onclick="window.placeOrderApp?.closeRowMenus(); window.placeOrderApp?.printLatestReceipt('${this.id}')">
+                <i class="fa-solid fa-print"></i><span>Print Receipt</span>
+              </button>
+            </div>
+          </div>
         </div>
       </td>
     `;
@@ -70,11 +91,12 @@ export class PrintingOrder {
     if (typeof document !== "undefined" && typeof document.createElement === "function") {
       const tr = document.createElement("tr");
       tr.id = `orderRow_${this.id}`;
+      if (statusRowClass) tr.className = statusRowClass;
       tr.innerHTML = html;
       return tr;
     }
 
-    return `<tr id="orderRow_${this.id}">${html}</tr>`;
+    return `<tr id="orderRow_${this.id}"${statusRowClass ? ` class="${statusRowClass}"` : ""}>${html}</tr>`;
   }
 
   renderTableRow() {

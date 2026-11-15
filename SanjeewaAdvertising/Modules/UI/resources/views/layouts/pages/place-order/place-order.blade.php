@@ -96,7 +96,7 @@
               <div class="po-table-toolbar">
                 <div class="po-search-box">
                   <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="orderSearchInput" placeholder="Search by Order ID, Customer, Phone, Product...">
+                  <input type="text" id="orderSearchInput" placeholder="Search by Order ID, Customer, Phone, Product, or Date/Time...">
                 </div>
 
                 <div class="po-filter-group">

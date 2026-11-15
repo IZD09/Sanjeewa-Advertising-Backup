@@ -37,6 +37,7 @@ class PrintJobResource extends JsonResource
             'hight' => (int) $this->hight,
             'unit_id' => (int) $this->unit_id,
             'delivery_method_id' => (int) ($this->delivery_method_id ?? 1),
+            'discription' => $this->discription,
             'unit' => $this->whenLoaded('unit', function () {
                 return [
                     'id' => $this->unit->id,

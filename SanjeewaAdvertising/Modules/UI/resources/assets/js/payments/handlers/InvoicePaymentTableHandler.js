@@ -7,6 +7,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
+import { matchesMobile } from "../../core/MobileNumberHelper.js";
 import { InvoicePaymentRowBuilder, InvoicePaymentEntity } from "../builders/InvoicePaymentRowBuilder.js";
 
 export class InvoicePaymentTableHandler extends BaseTableLoader {
@@ -70,7 +71,7 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
         invoiceNo.includes(term) ||
         orderId.includes(term) ||
         customerName.includes(term) ||
-        customerMobile.includes(term) ||
+        matchesMobile(customerMobile, term) ||
         ref.includes(term) ||
         note.includes(term) ||
         (Array.isArray(p.jobIds) && p.jobIds.some(j => String(j).toLowerCase().includes(term))) ||

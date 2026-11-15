@@ -29,8 +29,9 @@ export class CustomerDataLoader {
    * @returns {Promise<{customers: Array, kpis: Object|null}>}
    */
   async fetchCustomersData(params = {}) {
+    const queryParams = { sort_by: "id", sort_order: "asc", ...params };
     try {
-      const result = await this.http.get(this.endpoints.data, params);
+      const result = await this.http.get(this.endpoints.data, queryParams);
       const payload = result && result.data ? result.data : result;
       return {
         customers: Array.isArray(payload?.customers)
@@ -42,18 +43,20 @@ export class CustomerDataLoader {
       };
     } catch (err) {
       console.warn("[CustomerDataLoader] fetchCustomersData error, fallback to loadCustomers:", err);
-      const list = await this.loadCustomers();
+      const list = await this.loadCustomers(queryParams);
       return { customers: list, kpis: null };
     }
   }
 
   /**
    * Load complete list of customer accounts.
+   * @param {Object} [params={}]
    * @returns {Promise<Array>}
    */
-  async loadCustomers() {
+  async loadCustomers(params = {}) {
+    const queryParams = { sort_by: "id", sort_order: "asc", ...params };
     try {
-      const response = await this.http.get(this.endpoints.customers);
+      const response = await this.http.get(this.endpoints.customers, queryParams);
       if (Array.isArray(response)) {
         return response;
       }
@@ -65,7 +68,7 @@ export class CustomerDataLoader {
       console.warn("[CustomerDataLoader] Error loading customers:", err);
       // Fallback to /all endpoint
       try {
-        const fallback = await this.http.get(this.endpoints.all);
+        const fallback = await this.http.get(this.endpoints.all, queryParams);
         if (Array.isArray(fallback?.data)) return fallback.data;
         if (Array.isArray(fallback)) return fallback;
       } catch (fErr) {

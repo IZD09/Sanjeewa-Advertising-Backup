@@ -4,6 +4,7 @@ namespace Modules\Reports\Services;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 
 class CustomerReceivablesReportService extends BaseReportService
 {
@@ -150,8 +151,8 @@ class CustomerReceivablesReportService extends BaseReportService
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('customer.name', 'like', "%{$search}%")
-                    ->orWhere('customer.mobile', 'like', "%{$search}%")
                     ->orWhere('customer.email', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'customer.mobile', $search);
             });
         }
 

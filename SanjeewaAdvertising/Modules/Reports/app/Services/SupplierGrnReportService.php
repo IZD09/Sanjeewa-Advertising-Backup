@@ -3,6 +3,7 @@
 namespace Modules\Reports\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Support\MobileNumberHelper;
 
 class SupplierGrnReportService extends BaseReportService
 {
@@ -99,8 +100,8 @@ class SupplierGrnReportService extends BaseReportService
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('suppliers.name', 'like', "%{$search}%")
-                    ->orWhere('suppliers.mobile', 'like', "%{$search}%")
                     ->orWhere('suppliers.email', 'like', "%{$search}%");
+                MobileNumberHelper::orWhereMobileLike($q, 'suppliers.mobile', $search);
             });
         }
 

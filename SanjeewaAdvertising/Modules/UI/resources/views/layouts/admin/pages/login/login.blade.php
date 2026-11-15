@@ -144,8 +144,12 @@
                 <p class="status" id="adminStatusBanner" role="status" aria-live="polite"></p>
 
                 {{-- Switch to Staff Portal --}}
-                <div class="alt">
-                    Looking for Staff / POS Portal? <a href="{{ route('login') }}">Switch to Staff Login &rarr;</a>
+                <div class="portal-switch">
+                    <a href="{{ route('login') }}" class="portal-switch-btn" title="Switch to Staff / User Login">
+                        <i class="fa-solid fa-user" aria-hidden="true"></i>
+                        <span>Staff / User Login</span>
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
                 </div>
             </form>
         </div>
