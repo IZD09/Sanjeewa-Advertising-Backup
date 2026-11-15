@@ -35,6 +35,9 @@ export class GRNManager {
       getSuppliers: () => this.dataLoader.suppliers,
       setSuppliers: (sups) => { this.dataLoader.suppliers = sups; },
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
+      createSupplier: (data) => this.dataLoader.createSupplier(data),
+      updateSupplier: (id, data) => this.dataLoader.updateSupplier(id, data),
+      deleteSupplier: (id) => this.dataLoader.deleteSupplier(id),
       savePOData: () => this.dataLoader.savePOData(),
       generateNextPONumber: () => this.dataLoader.generateNextPONumber(),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
@@ -67,6 +70,9 @@ export class GRNManager {
       getGrnRecords: () => this.dataLoader.grnRecords,
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
+      createSupplier: (data) => this.dataLoader.createSupplier(data),
+      updateSupplier: (id, data) => this.dataLoader.updateSupplier(id, data),
+      deleteSupplier: (id) => this.dataLoader.deleteSupplier(id),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
       openRegisterSupplierModal: (caller, code) => this.modalHandler.openRegisterSupplierModal(caller, code),
       openEditSupplierModal: (code) => this.modalHandler.openEditSupplierModal(code),
@@ -422,11 +428,20 @@ if (typeof window !== "undefined") {
 
   const bootGrn = () => {
     if (document.getElementById("module-grn")) {
-      window.grnManager = new GRNManager();
+      if (!window.grnManager) {
+        window.grnManager = new GRNManager();
+      }
     }
   };
 
-  bootGrn();
-  document.addEventListener("DOMContentLoaded", bootGrn);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootGrn, { once: true });
+  } else {
+    bootGrn();
+  }
+
   document.addEventListener("turbo:load", bootGrn);
+  document.addEventListener("turbo:before-cache", () => {
+    window.grnManager = null;
+  });
 }

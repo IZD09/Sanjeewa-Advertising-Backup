@@ -853,7 +853,7 @@
                REGISTER NEW SUPPLIER MODAL
                ================================================================== -->
           <div class="po-modal-overlay" id="registerSupplierModal">
-            <div class="po-modal" style="max-width: 620px; max-height: 90vh;">
+            <div class="po-modal" style="max-width: 520px; max-height: 90vh;">
               <div class="po-modal-header">
                 <h3 id="registerSupplierModalTitle"><i class="fa-solid fa-truck-field" style="color: #1677ff;"></i> Register New Supplier / Vendor</h3>
                 <button type="button" class="modal-close-btn" data-close-grn-modal="registerSupplierModal" aria-label="Close modal">
@@ -862,49 +862,21 @@
               </div>
 
               <div class="po-modal-body" style="gap: 14px;">
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-                  <!-- Supplier Code -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupCode">
-                      <span>Supplier Code <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupCode" name="supplier_code" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
-                  </div>
-
-                  <!-- Supplier / Company Name -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupName">
-                      <span>Company / Business Name <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupName" name="supplier_name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
-                  </div>
+                <!-- Supplier / Company Name -->
+                <div class="po-field" style="margin: 0;">
+                  <label class="po-label" for="newSupName">
+                    <span>Company / Business Name <span class="req">*</span></span>
+                  </label>
+                  <input type="text" id="newSupName" name="name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Contact Person -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupPerson">
-                      <span>Contact Person <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupPerson" name="contact_person" autocomplete="name" class="grn-inline-input" placeholder="E.g. Samantha Perera" required>
-                  </div>
-
-                  <!-- Phone Number -->
+                  <!-- Phone Number / Mobile -->
                   <div class="po-field" style="margin: 0;">
                     <label class="po-label" for="newSupPhone">
                       <span>Mobile / Phone No <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupPhone" name="phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Landline / Alt Phone -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupAltPhone">
-                      <span>Office Landline (Optional)</span>
-                    </label>
-                    <input type="text" id="newSupAltPhone" name="alt_phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 011 234 5678">
+                    <input type="text" id="newSupPhone" name="mobile" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
                   </div>
 
                   <!-- Email -->
@@ -913,65 +885,6 @@
                       <span>Email Address</span>
                     </label>
                     <input type="email" id="newSupEmail" name="email" autocomplete="email" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Primary Supplied Category -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupCategory">
-                      <span>Primary Material Category <span class="req">*</span></span>
-                    </label>
-                    <select id="newSupCategory" name="category" class="grn-inline-input">
-                      <option value="Paper & Boards">Paper & Boards</option>
-                      <option value="Inks & Solvents">Inks & Solvents</option>
-                      <option value="Flex & Banners">Flex & Banners</option>
-                      <option value="Vinyl & Stickers">Vinyl & Stickers</option>
-                      <option value="Rigid Boards & Hardware">Rigid Boards & Hardware</option>
-                      <option value="Rollup Stands & Displays">Rollup Stands & Displays</option>
-                      <option value="General Printing Media">General Printing Media</option>
-                    </select>
-                  </div>
-
-                  <!-- Payment Terms -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupTerms">
-                      <span>Payment Terms / Credit</span>
-                    </label>
-                    <select id="newSupTerms" name="payment_terms" class="grn-inline-input">
-                      <option value="Cash on Delivery">Cash on Delivery (COD)</option>
-                      <option value="7 Days Credit">7 Days Credit</option>
-                      <option value="14 Days Credit">14 Days Credit</option>
-                      <option value="30 Days Credit" selected>30 Days Credit</option>
-                      <option value="45 Days Credit">45 Days Credit</option>
-                      <option value="60 Days Credit">60 Days Credit</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Address / City -->
-                <div class="po-field" style="margin: 0;">
-                  <label class="po-label" for="newSupAddress">
-                    <span>Warehouse Address / City</span>
-                  </label>
-                  <input type="text" id="newSupAddress" name="address" autocomplete="street-address" class="grn-inline-input" placeholder="E.g. No. 54, Central Road, Colombo 11">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Tax / VAT / BRN -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupTaxNo">
-                      <span>BRN / VAT No</span>
-                    </label>
-                    <input type="text" id="newSupTaxNo" name="tax_no" class="grn-inline-input" placeholder="E.g. PV-12345 / VAT-998811">
-                  </div>
-
-                  <!-- Bank Account Details -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupBank">
-                      <span>Bank Payment Details</span>
-                    </label>
-                    <input type="text" id="newSupBank" name="bank_details" class="grn-inline-input" placeholder="Bank, Branch, Account No">
                   </div>
                 </div>
               </div>

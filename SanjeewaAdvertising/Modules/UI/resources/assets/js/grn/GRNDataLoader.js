@@ -200,6 +200,60 @@ export class GRNDataLoader {
 
   saveSupplierData() {}
 
+  /**
+   * Create a new supplier in the database via API.
+   * @param {Object} data { name, mobile, email }
+   * @returns {Promise<Object>}
+   */
+  async createSupplier(data) {
+    const payload = {
+      name: (data.name || "").trim(),
+      mobile: (data.mobile || data.phone || "").trim(),
+      email: data.email && data.email.trim() ? data.email.trim() : null
+    };
+
+    const response = await this.http.post("/api/v1/suppliers", payload);
+    const newRecord = response?.data || response;
+
+    // Refresh suppliers list from database
+    await this.fetchSuppliers({}, true);
+
+    return newRecord;
+  }
+
+  /**
+   * Update an existing supplier in the database via API.
+   * @param {number|string} id
+   * @param {Object} data { name, mobile, email }
+   * @returns {Promise<Object>}
+   */
+  async updateSupplier(id, data) {
+    const payload = {
+      name: (data.name || "").trim(),
+      mobile: (data.mobile || data.phone || "").trim(),
+      email: data.email && data.email.trim() ? data.email.trim() : null
+    };
+
+    const response = await this.http.put(`/api/v1/suppliers/${id}`, payload);
+    const updatedRecord = response?.data || response;
+
+    // Refresh suppliers list from database
+    await this.fetchSuppliers({}, true);
+
+    return updatedRecord;
+  }
+
+  /**
+   * Delete a supplier from the database via API.
+   * @param {number|string} id
+   * @returns {Promise<boolean>}
+   */
+  async deleteSupplier(id) {
+    await this.http.delete(`/api/v1/suppliers/${id}`);
+    await this.fetchSuppliers({}, true);
+    return true;
+  }
+
   formatCurrency(amount) {
     return `Rs. ${(parseFloat(amount) || 0).toLocaleString("en-LK", {
       minimumFractionDigits: 2,
