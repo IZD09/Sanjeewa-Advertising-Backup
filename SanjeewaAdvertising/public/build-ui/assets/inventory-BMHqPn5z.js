@@ -84,9 +84,6 @@ import{t as e}from"./BaseTableLoader-DB2dbnJ4.js";import{t}from"./BaseTableRowBu
       </td>
       <td class="text-center">
         <div class="inv-actions-group" style="display: inline-flex; gap: 4px; justify-content: center;">
-          <button type="button" class="ant-btn-action" title="Receive / Add Stock" onclick="window.inventoryManager?.openAddStockModal({ item_id: '${this.id}', item_code: '${this.code}' })" style="padding: 3px 8px; font-size: 11.5px;">
-            <i class="fa-solid fa-plus"></i> Add Stock
-          </button>
           <button type="button" class="ant-btn-action" title="View Detailed Batches" onclick="window.inventoryManager?.viewItemBatches('${this.code}')" style="padding: 3px 8px; font-size: 11.5px;">
             <i class="fa-solid fa-boxes-stacked"></i> Batches
           </button>
