@@ -60,7 +60,29 @@ export class SupplierHandler {
     this.populateSupplierFilter();
     this.populatePOSupplierFilter();
 
-    // 3. Count badge
+    // 3. Purchase Order Supplier select box
+    const poSupplierSelect = document.getElementById("newPoSupplier");
+    if (poSupplierSelect && poSupplierSelect.tagName === "SELECT") {
+      const currentVal = poSupplierSelect.value;
+      poSupplierSelect.innerHTML = '<option value="" disabled' + (!currentVal ? ' selected' : '') + '>-- Select Supplier / Vendor --</option>';
+      suppliers.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        opt.dataset.mobile = s.mobile || s.phone || "";
+        if (currentVal && s.name.toLowerCase() === currentVal.toLowerCase()) {
+          opt.selected = true;
+        }
+        poSupplierSelect.appendChild(opt);
+      });
+      const contactInput = document.getElementById("newPoContact");
+      if (poSupplierSelect.value && contactInput && !contactInput.value) {
+        const found = suppliers.find(s => s.name.toLowerCase() === poSupplierSelect.value.toLowerCase());
+        if (found) contactInput.value = found.mobile || found.phone || "";
+      }
+    }
+
+    // 4. Count badge
     const badge = document.getElementById("grnSupplierCountBadge");
     const pagination = this.ctx.getSupplierPagination ? this.ctx.getSupplierPagination() : null;
     if (badge) {
@@ -180,7 +202,21 @@ export class SupplierHandler {
       return;
     }
 
+    const purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
+
     pageItems.forEach(s => {
+      // Calculate un-GRNed (pending/partial) purchase orders count
+      let ungrnedPoCount = 0;
+      if (Array.isArray(purchaseOrders) && purchaseOrders.length > 0) {
+        ungrnedPoCount = purchaseOrders.filter((po) => {
+          const matchSup = (po.suppliers_id && s.id && Number(po.suppliers_id) === Number(s.id)) ||
+            (po.supplier_name && s.name && po.supplier_name.toLowerCase() === s.name.toLowerCase());
+          return matchSup && po.status !== "Completed" && po.status !== "Cancelled";
+        }).length;
+      } else if (typeof s.pending_purchase_orders_count === "number") {
+        ungrnedPoCount = s.pending_purchase_orders_count;
+      }
+
       const card = document.createElement("div");
       card.className = "supplier-card";
       card.innerHTML = `
@@ -217,17 +253,28 @@ export class SupplierHandler {
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span class="supplier-category-pill">${s.category || "General Printing Media"}</span>
             <span class="supplier-terms-badge">${s.payment_terms || "COD"}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(22, 119, 255, 0.04); border: 1px solid ${ungrnedPoCount > 0 ? '#91caff' : 'var(--border)'}; border-radius: 6px; margin-bottom: 12px;">
+            <span style="font-size: 11.5px; font-weight: 600; color: var(--text);">
+              <i class="fa-solid fa-clipboard-list" style="color: ${ungrnedPoCount > 0 ? '#1677ff' : 'var(--text-muted)'}; margin-right: 5px;"></i>
+              Un-GRNed POs:
+            </span>
+            <span class="tab-count-badge" style="background: ${ungrnedPoCount > 0 ? '#faad14' : '#f0f0f0'}; color: ${ungrnedPoCount > 0 ? '#fff' : 'var(--text-muted)'}; font-weight: 700; padding: 1px 8px; border-radius: 10px; font-size: 11px; border: 1px solid ${ungrnedPoCount > 0 ? '#d48806' : 'var(--border)'};">
+              ${ungrnedPoCount}
+            </span>
           </div>
 
           <div class="supplier-card-footer">
             <button type="button" class="ant-btn ant-btn-default" style="font-size: 11.5px; height: 30px; padding: 0 10px;" title="Create Purchase Order for this Supplier" onclick="window.grnManager.openCreatePOModal('${s.name}')">
               <i class="fa-solid fa-cart-arrow-down" style="color: #1677ff;"></i> + PO
             </button>
-            <button type="button" class="ant-btn ant-btn-primary" style="font-size: 11.5px; height: 30px; padding: 0 10px;" title="Create GRN for this Supplier" onclick="window.grnManager.createGrnForSupplier('${s.name}')">
+            <button type="button" class="ant-btn ant-btn-primary" style="font-size: 11.5px; height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px;" title="Create GRN for this Supplier (${ungrnedPoCount} un-GRNed POs)" onclick="window.grnManager.createGrnForSupplier('${s.name}')">
               <i class="fa-solid fa-file-invoice"></i> + GRN
+              <span style="background: ${ungrnedPoCount > 0 ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.15)'}; color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 700;">${ungrnedPoCount}</span>
             </button>
             <button type="button" class="ant-btn-action" style="color: var(--text-muted); border-color: transparent;" title="Edit Supplier Details" onclick="window.grnManager.openEditSupplierModal('${s.code}')">
               <i class="fa-solid fa-pen-to-square"></i>
@@ -314,161 +361,91 @@ export class SupplierHandler {
   }
 
   openEditSupplierModal(supplierCode) {
+    if (this.ctx.openEditSupplierModal) {
+      this.ctx.openEditSupplierModal(supplierCode);
+      return;
+    }
     this.openRegisterSupplierModal(null, supplierCode);
   }
 
   openRegisterSupplierModal(callerContext = null, editingSupplierCode = null) {
+    if (this.ctx.openRegisterSupplierModal) {
+      this.ctx.openRegisterSupplierModal(callerContext, editingSupplierCode);
+      return;
+    }
     this.supplierCallerContext = callerContext;
     this.editingSupplierCode = editingSupplierCode;
 
     const modalTitle = document.getElementById("registerSupplierModalTitle");
     const saveBtn = document.getElementById("saveNewSupplierBtn");
 
-    const codeInput = document.getElementById("newSupCode");
     const nameInput = document.getElementById("newSupName");
-    const personInput = document.getElementById("newSupPerson");
     const phoneInput = document.getElementById("newSupPhone");
-    const altPhoneInput = document.getElementById("newSupAltPhone");
     const emailInput = document.getElementById("newSupEmail");
-    const categoryInput = document.getElementById("newSupCategory");
-    const termsInput = document.getElementById("newSupTerms");
-    const addressInput = document.getElementById("newSupAddress");
-    const taxNoInput = document.getElementById("newSupTaxNo");
-    const bankInput = document.getElementById("newSupBank");
 
-    const suppliers = this.ctx.getSuppliers() || [];
+    const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
 
     if (editingSupplierCode) {
-      const s = suppliers.find(sup => sup.code === editingSupplierCode);
-      if (modalTitle) modalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #1677ff;"></i> Edit Supplier Details (${s ? s.code : ""})`;
+      const s = suppliers.find(sup => sup.code === editingSupplierCode || sup.id === editingSupplierCode);
+      if (modalTitle) modalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #1677ff;"></i> Edit Supplier Details (${s ? (s.code || ('SUP-' + s.id)) : ""})`;
       if (saveBtn) saveBtn.innerHTML = `<i class="fa-solid fa-check"></i> Update Supplier`;
 
-      if (codeInput) codeInput.value = s ? s.code : "";
       if (nameInput) nameInput.value = s ? s.name : "";
-      if (personInput) personInput.value = s ? s.contact_person : "";
-      if (phoneInput) phoneInput.value = s ? s.phone : "";
-      if (altPhoneInput) altPhoneInput.value = s ? (s.alt_phone || "") : "";
+      if (phoneInput) phoneInput.value = s ? (s.phone || s.mobile || "") : "";
       if (emailInput) emailInput.value = s ? (s.email || "") : "";
-      if (categoryInput) categoryInput.value = s ? (s.category || "Paper & Boards") : "Paper & Boards";
-      if (termsInput) termsInput.value = s ? (s.payment_terms || "30 Days Credit") : "30 Days Credit";
-      if (addressInput) addressInput.value = s ? (s.address || "") : "";
-      if (taxNoInput) taxNoInput.value = s ? (s.tax_no || "") : "";
-      if (bankInput) bankInput.value = s ? (s.bank_details || "") : "";
     } else {
       if (modalTitle) modalTitle.innerHTML = `<i class="fa-solid fa-truck-field" style="color: #1677ff;"></i> Register New Supplier / Vendor`;
       if (saveBtn) saveBtn.innerHTML = `<i class="fa-solid fa-user-check"></i> Save & Register Supplier`;
 
-      if (codeInput) codeInput.value = this.ctx.generateNextSupplierCode();
       if (nameInput) nameInput.value = "";
-      if (personInput) personInput.value = "";
       if (phoneInput) phoneInput.value = "";
-      if (altPhoneInput) altPhoneInput.value = "";
       if (emailInput) emailInput.value = "";
-      if (categoryInput) categoryInput.value = "Paper & Boards";
-      if (termsInput) termsInput.value = "30 Days Credit";
-      if (addressInput) addressInput.value = "";
-      if (taxNoInput) taxNoInput.value = "";
-      if (bankInput) bankInput.value = "";
     }
 
     this.ctx.openModal("registerSupplierModal");
   }
 
-  saveNewSupplier() {
-    const code = document.getElementById("newSupCode")?.value || this.ctx.generateNextSupplierCode();
-    const name = document.getElementById("newSupName")?.value?.trim();
-    const person = document.getElementById("newSupPerson")?.value?.trim() || "";
-    const phone = document.getElementById("newSupPhone")?.value?.trim();
-    const altPhone = document.getElementById("newSupAltPhone")?.value?.trim() || "";
-    const email = document.getElementById("newSupEmail")?.value?.trim() || "";
-    const category = document.getElementById("newSupCategory")?.value || "Paper & Boards";
-    const terms = document.getElementById("newSupTerms")?.value || "30 Days Credit";
-    const address = document.getElementById("newSupAddress")?.value?.trim() || "";
-    const taxNo = document.getElementById("newSupTaxNo")?.value?.trim() || "";
-    const bank = document.getElementById("newSupBank")?.value?.trim() || "";
-
-    if (!name) {
-      this.ctx.showToast("Please enter the Company / Supplier Name", "error");
-      return;
+  async saveNewSupplier() {
+    if (this.ctx.saveNewSupplier) {
+      return this.ctx.saveNewSupplier();
     }
+  }
 
-    if (!phone) {
-      this.ctx.showToast("Please enter a valid Phone / Mobile Number", "error");
-      return;
-    }
-
+  async deleteSupplier(supplierCode) {
     let suppliers = this.ctx.getSuppliers() || [];
+    const s = suppliers.find(sup => sup.code === supplierCode || sup.id === supplierCode);
+    if (!s) return;
 
-    if (this.editingSupplierCode) {
-      const existingIdx = suppliers.findIndex(sup => sup.code === this.editingSupplierCode);
-      if (existingIdx !== -1) {
-        suppliers[existingIdx] = {
-          ...suppliers[existingIdx],
-          name: name,
-          contact_person: person || name,
-          phone: phone,
-          alt_phone: altPhone,
-          email: email,
-          category: category,
-          payment_terms: terms,
-          address: address,
-          tax_no: taxNo,
-          bank_details: bank
-        };
-        this.ctx.setSuppliers(suppliers);
-        this.ctx.saveSupplierData();
+    const confirmed = confirm(`Are you sure you want to remove supplier "${s.name}"?`);
+    if (!confirmed) return;
+
+    if (this.ctx.deleteSupplier && s.id) {
+      try {
+        await this.ctx.deleteSupplier(s.id);
         this.populateAllSupplierDropdowns();
         this.renderSuppliersGrid();
-        this.ctx.closeModal("registerSupplierModal");
-        this.ctx.showToast(`Supplier "${name}" updated successfully!`, "success");
-        this.editingSupplierCode = null;
+        this.ctx.showToast(`Supplier "${s.name}" deleted successfully.`, "info");
+        return;
+      } catch (err) {
+        this.ctx.showToast(err.message || "Failed to delete supplier", "error");
         return;
       }
     }
 
-    const newSupplier = {
-      code: code,
-      name: name,
-      contact_person: person || name,
-      phone: phone,
-      alt_phone: altPhone,
-      email: email,
-      category: category,
-      payment_terms: terms,
-      address: address,
-      tax_no: taxNo,
-      bank_details: bank,
-      status: "Active",
-      created_at: new Date().toISOString().split("T")[0]
-    };
-
-    suppliers.unshift(newSupplier);
+    suppliers = suppliers.filter(sup => sup.code !== supplierCode && sup.id !== supplierCode);
     this.ctx.setSuppliers(suppliers);
-    this.ctx.saveSupplierData();
+    if (this.ctx.saveSupplierData) this.ctx.saveSupplierData();
     this.populateAllSupplierDropdowns();
     this.renderSuppliersGrid();
-
-    this.ctx.closeModal("registerSupplierModal");
-
-    if (this.supplierCallerContext === "grn") {
-      const grnSup = document.getElementById("grnFormSupplier");
-      const grnContact = document.getElementById("grnFormContact");
-      if (grnSup) grnSup.value = newSupplier.name;
-      if (grnContact) grnContact.value = newSupplier.phone;
-      this.ctx.showToast(`Supplier "${newSupplier.name}" registered and selected in GRN!`, "success");
-    } else if (this.supplierCallerContext === "po") {
-      const poSup = document.getElementById("newPoSupplier");
-      const poContact = document.getElementById("newPoContact");
-      if (poSup) poSup.value = newSupplier.name;
-      if (poContact) poContact.value = newSupplier.phone;
-      this.ctx.showToast(`Supplier "${newSupplier.name}" registered and selected in Purchase Order!`, "success");
-    } else {
-      this.ctx.showToast(`Supplier "${newSupplier.name}" registered successfully!`, "success");
-      this.ctx.switchView("suppliers");
-    }
+    this.ctx.showToast(`Supplier "${s.name}" deleted successfully.`, "info");
   }
 
   createGrnForSupplier(supplierName) {
+    if (this.ctx.openCreateGrnModal) {
+      this.ctx.openCreateGrnModal(null, supplierName);
+      return;
+    }
+
     this.ctx.switchView("form");
     if (this.ctx.clearSelectedPO) {
       this.ctx.clearSelectedPO();
@@ -488,22 +465,6 @@ export class SupplierHandler {
     if (formView) {
       formView.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }
-
-  deleteSupplier(supplierCode) {
-    let suppliers = this.ctx.getSuppliers() || [];
-    const s = suppliers.find(sup => sup.code === supplierCode);
-    if (!s) return;
-
-    const confirmed = confirm(`Are you sure you want to remove supplier "${s.name}"?`);
-    if (!confirmed) return;
-
-    suppliers = suppliers.filter(sup => sup.code !== supplierCode);
-    this.ctx.setSuppliers(suppliers);
-    this.ctx.saveSupplierData();
-    this.populateAllSupplierDropdowns();
-    this.renderSuppliersGrid();
-    this.ctx.showToast(`Supplier "${s.name}" deleted successfully.`, "info");
   }
 }
 

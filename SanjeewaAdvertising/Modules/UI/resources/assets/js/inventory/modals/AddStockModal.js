@@ -33,32 +33,8 @@ export class AddStockModal extends BaseModalHandler {
   }
 
   bindEvents() {
-    // Add Stock button to open modal
-    const addStockBtn = document.getElementById("invAddStockBtn");
-    if (addStockBtn) {
-      addStockBtn.addEventListener("click", () => this.openAddStockModal());
-    }
-
-    // Add Stock item selection change
-    const addStockItemSelect = document.getElementById("addStockItemSelect");
-    if (addStockItemSelect) {
-      addStockItemSelect.addEventListener("change", () => this.handleItemSelectionChange());
-    }
-
-    // Add Stock financial live calculations
-    const addStockQty = document.getElementById("addStockQty");
-    const addStockUnitCost = document.getElementById("addStockUnitCost");
-    const addStockSellingPrice = document.getElementById("addStockSellingPrice");
-
-    if (addStockQty) addStockQty.addEventListener("input", () => this.updateAddStockFinancials());
-    if (addStockUnitCost) addStockUnitCost.addEventListener("input", () => this.updateAddStockFinancials());
-    if (addStockSellingPrice) addStockSellingPrice.addEventListener("input", () => this.updateAddStockFinancials());
-
-    // Save Stock Shipment button
-    const saveNewStockBtn = document.getElementById("saveNewStockBtn");
-    if (saveNewStockBtn) {
-      saveNewStockBtn.addEventListener("click", () => this.saveNewStock());
-    }
+    // Note: Live database-aligned modal events for #addStockModal are orchestrated by AddStockProcess.
+    // Legacy mock event bindings here are bypassed to prevent dual-trigger conflicts.
   }
 
   openAddStockModal(prefillItemCode = null) {

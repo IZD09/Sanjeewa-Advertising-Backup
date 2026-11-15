@@ -59,15 +59,23 @@ export class AddStockProcess {
       onItemSelected: (item) => {
         this.modeManager.populateExistingBatches(item.existing_batches || []);
         this.modeManager.populateExistingStocks(item.existing_stocks || []);
+        this.calculator.calculate();
       },
       onItemCleared: () => {
         this.modeManager.populateExistingBatches([]);
         this.modeManager.populateExistingStocks([]);
+        this.calculator.calculate();
       },
       onCategoryChanged: () => {
         if (this.itemSelector.selectedItem) {
           this.modeManager.populateExistingStocks(this.itemSelector.selectedItem.existing_stocks || []);
         }
+      },
+      onCalculate: () => {
+        this.calculator.calculate();
+      },
+      onGrnAllStocked: (grn) => {
+        this.handleGrnAllStocked(grn);
       },
     });
 
@@ -139,10 +147,56 @@ export class AddStockProcess {
   handleGrnChange(grnId) {
     if (!grnId) {
       this.itemSelector.setGrnContext(null);
+      this.calculator.calculate();
       return;
     }
     const grn = this.grns.find((g) => String(g.id) === String(grnId));
     this.itemSelector.setGrnContext(grn || null);
+    this.calculator.calculate();
+  }
+
+  /**
+   * Handle when all items for a GRN have been added to stock.
+   * Removes the GRN from the Select GRN Reference dropdown.
+   * @param {Object} grn
+   */
+  handleGrnAllStocked(grn) {
+    if (!grn) return;
+    this.removeGrnFromDropdown(grn.id);
+  }
+
+  /**
+   * Remove a GRN from in-memory list and from the #addStockGrnSelect dropdown.
+   * @param {string|number} grnId
+   */
+  removeGrnFromDropdown(grnId) {
+    if (!grnId) return;
+    this.grns = (this.grns || []).filter((g) => Number(g.id) !== Number(grnId));
+
+    const grnSelect = document.getElementById("addStockGrnSelect");
+    if (grnSelect) {
+      const optToRemove = grnSelect.querySelector(`option[value="${grnId}"]`);
+      if (optToRemove) {
+        optToRemove.remove();
+      }
+
+      // Check remaining GRNs with unstocked items
+      const remainingGrns = (this.grns || []).filter(
+        (g) => (g.pending_count === undefined || g.pending_count > 0) && g.items && g.items.length > 0
+      );
+
+      if (remainingGrns.length > 0) {
+        if (String(grnSelect.value) === String(grnId) || !grnSelect.value) {
+          const nextGrn = remainingGrns[0];
+          grnSelect.value = String(nextGrn.id);
+          this.handleGrnChange(nextGrn.id);
+        }
+      } else {
+        grnSelect.innerHTML = '<option value="">-- No Pending GRNs to Stock --</option>';
+        grnSelect.value = "";
+        this.handleGrnChange("");
+      }
+    }
   }
 
   /**
@@ -168,12 +222,21 @@ export class AddStockProcess {
     const grnSelect = document.getElementById("addStockGrnSelect");
     if (grnSelect) {
       grnSelect.innerHTML = '<option value="">-- Select GRN Reference --</option>';
-      this.grns.forEach((grn) => {
-        grnSelect.insertAdjacentHTML("beforeend", `<option value="${grn.id}">${grn.label || `GRN #${grn.id}`}</option>`);
-      });
-      if (this.grns.length > 0) {
-        grnSelect.value = String(this.grns[0].id);
-        this.handleGrnChange(this.grns[0].id);
+      const availableGrns = (this.grns || []).filter(
+        (g) => (g.pending_count === undefined || g.pending_count > 0) && g.items && g.items.length > 0
+      );
+
+      if (availableGrns.length > 0) {
+        availableGrns.forEach((grn) => {
+          grnSelect.insertAdjacentHTML("beforeend", `<option value="${grn.id}">${grn.label || `GRN #${grn.id}`}</option>`);
+        });
+        const targetGrn = availableGrns[0];
+        grnSelect.value = String(targetGrn.id);
+        this.handleGrnChange(targetGrn.id);
+      } else {
+        grnSelect.innerHTML = '<option value="">-- No Pending GRNs to Stock --</option>';
+        grnSelect.value = "";
+        this.handleGrnChange("");
       }
     }
   }
@@ -249,8 +312,9 @@ export class AddStockProcess {
 
     const grnSelect = document.getElementById("addStockGrnSelect");
     if (grnSelect && this.grns.length > 0) {
-      grnSelect.value = String(this.grns[0].id);
-      this.handleGrnChange(this.grns[0].id);
+      const targetGrn = this.grns.find((g) => g.items && g.items.length > 0) || this.grns[0];
+      grnSelect.value = String(targetGrn.id);
+      this.handleGrnChange(targetGrn.id);
     }
   }
 
@@ -262,7 +326,7 @@ export class AddStockProcess {
 
     const isUpdate = this.modeManager.mode === "UPDATE" || !!this.modeManager.selectedStock;
     const stockId = this.modeManager.selectedStock?.id || Number(document.getElementById("addStockExistingSelect")?.value) || null;
-    const itemId = this.itemSelector.selectedItem?.id || Number(document.getElementById("addStockSelectedItemId")?.value) || null;
+    const itemId = this.itemSelector.selectedItem?.id || Number(document.getElementById("addStockSelectedItemId")?.value) || Number(document.getElementById("addStockItemSelect")?.value) || null;
     const brandId = Number(document.getElementById("addStockBrandSelect")?.value) || null;
     const grnId = Number(document.getElementById("addStockGrnSelect")?.value) || null;
     const qty = parseInt(document.getElementById("addStockQty")?.value, 10);
@@ -312,8 +376,28 @@ export class AddStockProcess {
           ? `Stock #${stockId} successfully updated with +${qty.toLocaleString()} units.`
           : `New Stock record successfully created with ${qty.toLocaleString()} units.`;
 
+        // 1. Immediately remove the item from the active GRN pool
+        if (itemId) {
+          this.itemSelector.removeItemFromGrn(itemId);
+
+          // 2. Remove the item from in-memory this.grns list
+          if (grnId) {
+            const targetGrn = this.grns.find((g) => Number(g.id) === Number(grnId));
+            if (targetGrn && Array.isArray(targetGrn.items)) {
+              targetGrn.items = targetGrn.items.filter((it) => Number(it.id) !== Number(itemId));
+              targetGrn.pending_count = targetGrn.items.length;
+              if (targetGrn.items.length === 0) {
+                this.removeGrnFromDropdown(grnId);
+              }
+            }
+          }
+        }
+
         this.showToast(msg, "success");
         this.closeModal();
+
+        // 3. Reload master datasets in background to maintain full sync
+        this.loadMasterData();
 
         if (typeof this.onSuccess === "function") {
           await this.onSuccess(response.data);

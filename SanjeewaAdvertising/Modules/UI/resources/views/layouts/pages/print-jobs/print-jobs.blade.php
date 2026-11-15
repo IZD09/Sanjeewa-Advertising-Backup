@@ -11,9 +11,13 @@
 
 @section('content')
 @php
-    $printTypes = $printTypes ?? \Modules\Design\Models\PrintType::query()->orderBy('id')->get()->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->all();
-    $statuses = $statuses ?? \Modules\PrintJob\Models\PrintJobStatus::query()->orderBy('id')->get()->map(fn ($st) => ['id' => (int) $st->id, 'name' => $st->print_job_states])->all();
-    $availableStocks = $availableStocks ?? \Modules\Inventory\Models\Stock::query()
+    use Modules\Design\Models\PrintType;
+    use Modules\Inventory\Models\Stock;
+    use Modules\PrintJob\Models\PrintJobStatus;
+
+    $printTypes = $printTypes ?? PrintType::query()->orderBy('id')->get()->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->all();
+    $statuses = $statuses ?? PrintJobStatus::query()->orderBy('id')->get()->map(fn ($st) => ['id' => (int) $st->id, 'name' => $st->print_job_states])->all();
+    $availableStocks = $availableStocks ?? Stock::query()
         ->with(['stockItem', 'brand'])
         ->where('qty', '>', 0)
         ->orderBy('id')
@@ -446,10 +450,13 @@
 
 @push('scripts')
     @php
-        $initialPrintJobsData = $initialPrintJobsData ?? app(\Modules\PrintJob\Services\PrintJobService::class)->getPrintJobFloorData();
+        use Modules\PrintJob\Services\PrintJobService;
+
+        $initialPrintJobsData = $initialPrintJobsData ?? app(PrintJobService::class)->getPrintJobFloorData();
     @endphp
+    <script id="print-jobs-floor-data" type="application/json">@json($initialPrintJobsData)</script>
     <script>
-        window.__INITIAL_PRINT_JOBS_DATA__ = @json($initialPrintJobsData);
+        window.__INITIAL_PRINT_JOBS_DATA__ = JSON.parse(document.getElementById('print-jobs-floor-data')?.textContent || 'null');
     </script>
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}

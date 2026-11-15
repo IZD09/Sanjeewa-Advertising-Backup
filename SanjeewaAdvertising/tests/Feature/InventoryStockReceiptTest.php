@@ -11,6 +11,10 @@ use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovementType;
 use Modules\Inventory\Models\Subcategory;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\PurchaseOrder;
+use Modules\Supplier\Models\PurchaseOrderItem;
+use Modules\Supplier\Models\PurchaseOrderStatus;
+use Modules\Supplier\Models\Supplier;
 use Tests\TestCase;
 
 class InventoryStockReceiptTest extends TestCase
@@ -225,5 +229,97 @@ class InventoryStockReceiptTest extends TestCase
             'source_id' => $grn2->id,
             'stock_movements_types_id' => 1,
         ]);
+    }
+
+    public function test_grn_unstocked_items_are_loaded_and_removed_after_stock_added(): void
+    {
+        $category = Category::create(['category' => 'Display Media']);
+        $subcat = Subcategory::create(['subcategory' => 'Vinyl', 'categories_id' => $category->id]);
+        $brand = Brand::create(['brand' => 'Avery']);
+        $item1 = StockItem::create(['name' => 'Gloss Vinyl 100mic', 'code' => 'VIN-001', 'subcategories_id' => $subcat->id]);
+        $item2 = StockItem::create(['name' => 'Matte Vinyl 100mic', 'code' => 'VIN-002', 'subcategories_id' => $subcat->id]);
+
+        $status = PurchaseOrderStatus::firstOrCreate(['id' => 1], ['purchase_orders_status' => 'Pending']);
+        $supplier = Supplier::create(['name' => 'Test Supplier', 'mobile' => '0771234567']);
+
+        $po = PurchaseOrder::create([
+            'add_date' => now(),
+            'suppliers_id' => $supplier->id,
+            'purchase_orders_status_id' => $status->id,
+        ]);
+
+        PurchaseOrderItem::create([
+            'purchase_orders_id' => $po->id,
+            'stock_items_id' => $item1->id,
+            'unit_cost' => 150.00,
+            'qty_ordered' => 50,
+            'qty_received' => 50,
+        ]);
+
+        PurchaseOrderItem::create([
+            'purchase_orders_id' => $po->id,
+            'stock_items_id' => $item2->id,
+            'unit_cost' => 200.00,
+            'qty_ordered' => 30,
+            'qty_received' => 30,
+        ]);
+
+        $grn = Grn::create(['at_time' => now()]);
+        $grn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-TEST-01']);
+
+        // Step 1: Check form-data endpoint before stock added - both items should be available
+        $formData1 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $grnData1 = collect($formData1['data']['grns'])->firstWhere('id', $grn->id);
+
+        $this->assertNotNull($grnData1);
+        $this->assertCount(2, $grnData1['items']);
+
+        // Check calculations on item 1: 50 * 150.00 = 7500.00
+        $item1Data = collect($grnData1['items'])->firstWhere('id', $item1->id);
+        $this->assertEquals(50, $item1Data['qty']);
+        $this->assertEquals(150.00, $item1Data['unit_cost']);
+        $this->assertEquals(7500.00, $item1Data['total_cost']);
+
+        // Step 2: Add item 1 to stock
+        $payload = [
+            'stock_items_id' => $item1->id,
+            'brands_id' => $brand->id,
+            'qty' => 50,
+            'buy' => 150.00,
+            'price' => 187.50,
+            'grn_id' => $grn->id,
+            'create_new_batch' => true,
+        ];
+
+        $storeResponse = $this->postJson('/api/v1/inventory/stocks', $payload);
+        $storeResponse->assertCreated();
+
+        // Step 3: Check form-data endpoint after item 1 added - item 1 must be removed, only item 2 remains!
+        $formData2 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $grnData2 = collect($formData2['data']['grns'])->firstWhere('id', $grn->id);
+
+        $this->assertNotNull($grnData2);
+        $this->assertCount(1, $grnData2['items']);
+        $this->assertEquals($item2->id, $grnData2['items'][0]['id']);
+
+        // Step 4: Add item 2 to stock
+        $payload2 = [
+            'stock_items_id' => $item2->id,
+            'brands_id' => $brand->id,
+            'qty' => 30,
+            'buy' => 200.00,
+            'price' => 250.00,
+            'grn_id' => $grn->id,
+            'create_new_batch' => true,
+        ];
+
+        $storeResponse2 = $this->postJson('/api/v1/inventory/stocks', $payload2);
+        $storeResponse2->assertCreated();
+
+        // Step 5: Check form-data endpoint after item 2 added - GRN is fully stocked, so it is removed from Select GRN Reference!
+        $formData3 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $grnData3 = collect($formData3['data']['grns'])->firstWhere('id', $grn->id);
+
+        $this->assertNull($grnData3);
     }
 }

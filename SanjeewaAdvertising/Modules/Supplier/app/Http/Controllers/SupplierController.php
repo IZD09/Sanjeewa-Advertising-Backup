@@ -2,6 +2,7 @@
 
 namespace Modules\Supplier\Http\Controllers;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Core\Http\Controllers\BaseApiController;
@@ -92,12 +93,20 @@ class SupplierController extends BaseApiController
      */
     public function store(StoreSupplierRequest $request): JsonResponse
     {
-        $supplier = $this->supplierService->createSupplier($request->validated());
+        try {
+            $supplier = $this->supplierService->createSupplier($request->validated());
 
-        return $this->created(
-            new SupplierResource($supplier),
-            'Supplier created successfully.'
-        );
+            return $this->created(
+                new SupplierResource($supplier),
+                'Supplier created successfully.'
+            );
+        } catch (QueryException $e) {
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062) {
+                return $this->error('A supplier with these details already exists.', 422);
+            }
+
+            throw $e;
+        }
     }
 
     /**
@@ -128,12 +137,20 @@ class SupplierController extends BaseApiController
             return $this->notFound('Supplier not found.');
         }
 
-        $updated = $this->supplierService->updateSupplier($supplier, $request->validated());
+        try {
+            $updated = $this->supplierService->updateSupplier($supplier, $request->validated());
 
-        return $this->success(
-            new SupplierResource($updated),
-            'Supplier updated successfully.'
-        );
+            return $this->success(
+                new SupplierResource($updated),
+                'Supplier updated successfully.'
+            );
+        } catch (QueryException $e) {
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062) {
+                return $this->error('A supplier with these details already exists.', 422);
+            }
+
+            throw $e;
+        }
     }
 
     /**

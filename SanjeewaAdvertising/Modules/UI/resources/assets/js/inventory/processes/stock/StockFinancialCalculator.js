@@ -15,13 +15,14 @@ export class StockFinancialCalculator {
   }
 
   /**
-   * Bind input event listeners on quantity and price fields.
+   * Bind input and change event listeners on quantity and price fields.
    */
   bindEvents() {
     ["addStockQty", "addStockUnitCost", "addStockSellingPrice"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener("input", () => this.calculate());
+        el.addEventListener("change", () => this.calculate());
       }
     });
   }

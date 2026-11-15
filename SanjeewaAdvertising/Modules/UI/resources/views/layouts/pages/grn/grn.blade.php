@@ -1,7 +1,11 @@
 @php
-    $totalGrnCount = \Modules\Supplier\Models\Grn::count();
-    $totalPoCount = \Modules\Supplier\Models\PurchaseOrder::count();
-    $totalSupplierCount = \Modules\Supplier\Models\Supplier::count();
+    use Modules\Supplier\Models\Grn;
+    use Modules\Supplier\Models\PurchaseOrder;
+    use Modules\Supplier\Models\Supplier;
+
+    $totalGrnCount = Grn::count();
+    $totalPoCount = PurchaseOrder::count();
+    $totalSupplierCount = Supplier::count();
 @endphp
 @extends('ui::layouts.master')
 
@@ -125,7 +129,7 @@
             <!-- ======================================================================
                  VIEW A: ALL GRN DIRECTORY & TABLE VIEW
                  ====================================================================== -->
-            <div id="grnListView" style="{{ (request()->has('view') && request('view') !== 'list') ? 'display: none;' : '' }}">
+            <div id="grnListView" @if(request()->has('view') && request('view') !== 'list') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -189,7 +193,7 @@
             <!-- ==================================================================
                  VIEW B: PURCHASE ORDERS (PO) DIRECTORY & TRACKING VIEW
                  ================================================================== -->
-            <div id="grnPOView" style="{{ request('view') === 'po' ? '' : 'display: none;' }}">
+            <div id="grnPOView" @if(request('view') !== 'po') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- PO Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -253,7 +257,7 @@
             <!-- ==================================================================
                  VIEW D: SUPPLIERS DIRECTORY VIEW
                  ================================================================== -->
-            <div id="grnSuppliersView" style="{{ request('view') === 'suppliers' ? '' : 'display: none;' }}">
+            <div id="grnSuppliersView" @if(request('view') !== 'suppliers') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- Supplier Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -360,12 +364,15 @@
                       <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Active Purchase Order <span class="req" style="color: #ff4d4f;">*</span></span>
                       <span class="hint" id="grnModalPoSearchHint" style="font-size: 11px; color: var(--text-muted);">Type PO #, supplier name, or click to browse active POs</span>
                     </label>
-                    <div style="position: relative;">
-                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
-                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px; z-index: 2;"></i>
+                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 145px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
+                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 150px; top: 11px; color: #1677ff; font-size: 13px; z-index: 2;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
                       </span>
+                      <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="grnModalAddPoItemBtn" style="position: absolute; right: 4px; top: 4px; bottom: 4px; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 4px; z-index: 3;" title="Load order items from active Purchase Order">
+                        <i class="fa-solid fa-plus"></i> Add GRN Item
+                      </button>
                       <!-- Live Search Results Dropdown -->
                       <div id="grnModalPoSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 250px; overflow-y: auto; margin-top: 4px;">
                       </div>
@@ -633,8 +640,9 @@
                         <i class="fa-solid fa-user-plus"></i> New
                       </button>
                     </div>
-                    <input type="text" id="newPoSupplier" name="po_supplier" class="grn-inline-input" list="grnSupplierList" placeholder="Select or enter supplier" required>
-                    <datalist id="grnSupplierList"></datalist>
+                    <select id="newPoSupplier" name="po_supplier" class="grn-inline-input" required>
+                      <option value="" disabled selected>-- Select Supplier / Vendor --</option>
+                    </select>
                   </div>
                 </div>
 
@@ -673,12 +681,15 @@
                       <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Material Item <span class="req" style="color: #ff4d4f;">*</span></span>
                       <span class="hint" id="newPoItemSearchHint" style="font-size: 11px; color: var(--text-muted);">Type SKU code or material name to load &amp; add directly</span>
                     </label>
-                    <div style="position: relative;">
-                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                      <input type="text" id="newPoItemSearchInput" name="po_item_search" aria-label="Search material items from database" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search material item from database by SKU code or name..." autocomplete="off">
-                      <span id="newPoItemSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px; z-index: 2;"></i>
+                      <input type="text" id="newPoItemSearchInput" name="po_item_search" aria-label="Search material items from database" class="grn-inline-input" style="padding-left: 34px; padding-right: 145px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search material item from database by SKU code or name..." autocomplete="off">
+                      <span id="newPoItemSearchLoading" style="display: none; position: absolute; right: 150px; top: 11px; color: #1677ff; font-size: 13px; z-index: 2;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
                       </span>
+                      <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="newPoAddRowBtn" style="position: absolute; right: 4px; top: 4px; bottom: 4px; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 4px; z-index: 3;" title="View items & add item line">
+                        <i class="fa-solid fa-plus"></i> Add Item Line
+                      </button>
                       <!-- Live Match Results Dropdown -->
                       <div id="newPoItemSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; margin-top: 4px;">
                       </div>
@@ -709,7 +720,7 @@
                                   No Materials Added Yet
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); max-width: 380px; line-height: 1.5;">
-                                  Click the <strong>"Add Item Line"</strong> button below to select material items, enter quantities, and specify estimated unit costs.
+                                  Click the <strong>"Add Item Line"</strong> button above to select material items, enter quantities, and specify estimated unit costs.
                                 </div>
                               </div>
                               <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="margin-top: 4px;" onclick="window.grnManager.addNewPoRow()">
@@ -720,12 +731,6 @@
                         </tr>
                       </tbody>
                     </table>
-                  </div>
-
-                  <div class="grn-add-row-bar" style="margin-top: 8px;">
-                    <button type="button" class="ant-btn ant-btn-dashed" id="newPoAddRowBtn">
-                      <i class="fa-solid fa-plus"></i> Add Item Line
-                    </button>
                   </div>
                 </div>
 
@@ -853,7 +858,7 @@
                REGISTER NEW SUPPLIER MODAL
                ================================================================== -->
           <div class="po-modal-overlay" id="registerSupplierModal">
-            <div class="po-modal" style="max-width: 620px; max-height: 90vh;">
+            <div class="po-modal" style="max-width: 520px; max-height: 90vh;">
               <div class="po-modal-header">
                 <h3 id="registerSupplierModalTitle"><i class="fa-solid fa-truck-field" style="color: #1677ff;"></i> Register New Supplier / Vendor</h3>
                 <button type="button" class="modal-close-btn" data-close-grn-modal="registerSupplierModal" aria-label="Close modal">
@@ -862,49 +867,21 @@
               </div>
 
               <div class="po-modal-body" style="gap: 14px;">
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-                  <!-- Supplier Code -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupCode">
-                      <span>Supplier Code <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupCode" name="supplier_code" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
-                  </div>
-
-                  <!-- Supplier / Company Name -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupName">
-                      <span>Company / Business Name <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupName" name="supplier_name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
-                  </div>
+                <!-- Supplier / Company Name -->
+                <div class="po-field" style="margin: 0;">
+                  <label class="po-label" for="newSupName">
+                    <span>Company / Business Name <span class="req">*</span></span>
+                  </label>
+                  <input type="text" id="newSupName" name="name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Contact Person -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupPerson">
-                      <span>Contact Person <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newSupPerson" name="contact_person" autocomplete="name" class="grn-inline-input" placeholder="E.g. Samantha Perera" required>
-                  </div>
-
-                  <!-- Phone Number -->
+                  <!-- Phone Number / Mobile -->
                   <div class="po-field" style="margin: 0;">
                     <label class="po-label" for="newSupPhone">
                       <span>Mobile / Phone No <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupPhone" name="phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Landline / Alt Phone -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupAltPhone">
-                      <span>Office Landline (Optional)</span>
-                    </label>
-                    <input type="text" id="newSupAltPhone" name="alt_phone" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 011 234 5678">
+                    <input type="text" id="newSupPhone" name="mobile" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
                   </div>
 
                   <!-- Email -->
@@ -913,65 +890,6 @@
                       <span>Email Address</span>
                     </label>
                     <input type="email" id="newSupEmail" name="email" autocomplete="email" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Primary Supplied Category -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupCategory">
-                      <span>Primary Material Category <span class="req">*</span></span>
-                    </label>
-                    <select id="newSupCategory" name="category" class="grn-inline-input">
-                      <option value="Paper & Boards">Paper & Boards</option>
-                      <option value="Inks & Solvents">Inks & Solvents</option>
-                      <option value="Flex & Banners">Flex & Banners</option>
-                      <option value="Vinyl & Stickers">Vinyl & Stickers</option>
-                      <option value="Rigid Boards & Hardware">Rigid Boards & Hardware</option>
-                      <option value="Rollup Stands & Displays">Rollup Stands & Displays</option>
-                      <option value="General Printing Media">General Printing Media</option>
-                    </select>
-                  </div>
-
-                  <!-- Payment Terms -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupTerms">
-                      <span>Payment Terms / Credit</span>
-                    </label>
-                    <select id="newSupTerms" name="payment_terms" class="grn-inline-input">
-                      <option value="Cash on Delivery">Cash on Delivery (COD)</option>
-                      <option value="7 Days Credit">7 Days Credit</option>
-                      <option value="14 Days Credit">14 Days Credit</option>
-                      <option value="30 Days Credit" selected>30 Days Credit</option>
-                      <option value="45 Days Credit">45 Days Credit</option>
-                      <option value="60 Days Credit">60 Days Credit</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Address / City -->
-                <div class="po-field" style="margin: 0;">
-                  <label class="po-label" for="newSupAddress">
-                    <span>Warehouse Address / City</span>
-                  </label>
-                  <input type="text" id="newSupAddress" name="address" autocomplete="street-address" class="grn-inline-input" placeholder="E.g. No. 54, Central Road, Colombo 11">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <!-- Tax / VAT / BRN -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupTaxNo">
-                      <span>BRN / VAT No</span>
-                    </label>
-                    <input type="text" id="newSupTaxNo" name="tax_no" class="grn-inline-input" placeholder="E.g. PV-12345 / VAT-998811">
-                  </div>
-
-                  <!-- Bank Account Details -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newSupBank">
-                      <span>Bank Payment Details</span>
-                    </label>
-                    <input type="text" id="newSupBank" name="bank_details" class="grn-inline-input" placeholder="Bank, Branch, Account No">
                   </div>
                 </div>
               </div>

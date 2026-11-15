@@ -118,7 +118,7 @@ class PurchaseOrderService
      */
     public function getPurchaseOrders(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $perPage = max(1, min(100, $perPage));
+        $perPage = max(1, min(250, $perPage));
         $page = isset($filters['page']) ? max(1, (int) $filters['page']) : null;
 
         return $this->buildQuery($filters)->paginate($perPage, ['*'], 'page', $page);

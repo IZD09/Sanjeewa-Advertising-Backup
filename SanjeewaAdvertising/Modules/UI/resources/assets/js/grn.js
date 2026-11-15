@@ -35,6 +35,9 @@ export class GRNManager {
       getSuppliers: () => this.dataLoader.suppliers,
       setSuppliers: (sups) => { this.dataLoader.suppliers = sups; },
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
+      createSupplier: (data) => this.dataLoader.createSupplier(data),
+      updateSupplier: (id, data) => this.dataLoader.updateSupplier(id, data),
+      deleteSupplier: (id) => this.dataLoader.deleteSupplier(id),
       savePOData: () => this.dataLoader.savePOData(),
       generateNextPONumber: () => this.dataLoader.generateNextPONumber(),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
@@ -48,6 +51,8 @@ export class GRNManager {
       renderSuppliersGrid: () => this.renderSuppliersGrid(),
       loadAndRenderGRN: (force) => this.loadAndRenderGRN(force),
       loadAndRenderPO: (force) => this.loadAndRenderPO(force),
+      loadAndRenderSuppliers: (force) => this.loadAndRenderSuppliers(force),
+      dataLoader: this.dataLoader,
       viewGRN: (num) => this.viewGRN(num),
       showToast: (msg, type) => this.showToast(msg, type),
       createGrnForPO: (num) => this.createGrnForPO(num),
@@ -67,6 +72,9 @@ export class GRNManager {
       getGrnRecords: () => this.dataLoader.grnRecords,
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
+      createSupplier: (data) => this.dataLoader.createSupplier(data),
+      updateSupplier: (id, data) => this.dataLoader.updateSupplier(id, data),
+      deleteSupplier: (id) => this.dataLoader.deleteSupplier(id),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
       openRegisterSupplierModal: (caller, code) => this.modalHandler.openRegisterSupplierModal(caller, code),
       openEditSupplierModal: (code) => this.modalHandler.openEditSupplierModal(code),
@@ -114,7 +122,7 @@ export class GRNManager {
     // 5. Button Processes (from grn/processes/)
     this.navigationProcess = new NavigationProcess({
       initNewGrnForm: (targetPo) => this.grnFormProcess.initNewGrnForm(targetPo),
-      openCreateGrnModal: (targetPo) => this.openCreateGrnModal(targetPo),
+      openCreateGrnModal: (targetPo, supplier) => this.openCreateGrnModal(targetPo, supplier),
       loadAndRenderPO: () => this.loadAndRenderPO(),
       renderPOTable: () => this.renderPOTable(),
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
@@ -343,7 +351,7 @@ export class GRNManager {
     this.supplierHandler.setFilters(this.supplierSearchTerm, this.supplierCategoryFilter);
     this.supplierHandler.renderSuppliersGrid(this.dataLoader.supplierPagination);
   }
-  createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(); }
+  createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(null, name); }
   deleteSupplier(code) { this.supplierHandler.deleteSupplier(code); }
 
   // Table Render Delegations
@@ -373,7 +381,7 @@ export class GRNManager {
   onPurchaseOrderSelect(po) { this.grnFormProcess.onPurchaseOrderSelect(po); }
   clearSelectedPO() { this.grnFormProcess.clearSelectedPO(); }
   createGrnForPO(po) { this.modalHandler.openCreateGrnModal(po); }
-  openCreateGrnModal(po = null) { this.modalHandler.openCreateGrnModal(po); }
+  openCreateGrnModal(po = null, supplier = null) { this.modalHandler.openCreateGrnModal(po, supplier); }
   getCatalogItems() { return this.grnFormProcess.getCatalogItems(); }
   addNewRow() { this.grnFormProcess.addNewRow(); }
   removeRow(i) { this.grnFormProcess.removeRow(i); }
@@ -422,11 +430,20 @@ if (typeof window !== "undefined") {
 
   const bootGrn = () => {
     if (document.getElementById("module-grn")) {
-      window.grnManager = new GRNManager();
+      if (!window.grnManager) {
+        window.grnManager = new GRNManager();
+      }
     }
   };
 
-  bootGrn();
-  document.addEventListener("DOMContentLoaded", bootGrn);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootGrn, { once: true });
+  } else {
+    bootGrn();
+  }
+
   document.addEventListener("turbo:load", bootGrn);
+  document.addEventListener("turbo:before-cache", () => {
+    window.grnManager = null;
+  });
 }
