@@ -49,8 +49,13 @@ export class CreatePOModal extends BaseModalHandler {
 
   bindEvents() {
     const newPoAddRowBtn = document.getElementById("newPoAddRowBtn");
-    if (newPoAddRowBtn) {
-      newPoAddRowBtn.addEventListener("click", () => this.addNewPoRow());
+    if (newPoAddRowBtn && !newPoAddRowBtn._poAddRowBound) {
+      newPoAddRowBtn._poAddRowBound = true;
+      newPoAddRowBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.addNewPoRow();
+      });
     }
 
     const saveNewPoBtn = document.getElementById("saveNewPoBtn");
@@ -74,25 +79,33 @@ export class CreatePOModal extends BaseModalHandler {
       quickAddPoBtn.addEventListener("click", () => this.openCreatePOModal());
     }
 
-    // Auto-fill phone on typing/selecting supplier in PO Modal
+    // Auto-fill phone on selecting supplier in PO Modal
     const newPoSupplier = document.getElementById("newPoSupplier");
-    if (newPoSupplier) {
+    if (newPoSupplier && !newPoSupplier._poSupplierBound) {
+      newPoSupplier._poSupplierBound = true;
       const autoFillHandler = (e) => {
-        const val = e.target.value.trim().toLowerCase();
+        const val = (e.target.value || "").trim().toLowerCase();
         const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
-        const found = suppliers.find(s => s.name.toLowerCase() === val);
+        const found = suppliers.find(s => s.name && s.name.toLowerCase() === val);
         const contactInput = document.getElementById("newPoContact");
-        if (found && contactInput) {
-          contactInput.value = found.phone;
+        if (contactInput) {
+          if (found) {
+            contactInput.value = found.mobile || found.phone || "";
+          } else if (e.target.selectedOptions && e.target.selectedOptions[0]?.dataset?.mobile) {
+            contactInput.value = e.target.selectedOptions[0].dataset.mobile;
+          } else {
+            contactInput.value = "";
+          }
         }
       };
-      newPoSupplier.addEventListener("input", autoFillHandler);
       newPoSupplier.addEventListener("change", autoFillHandler);
+      newPoSupplier.addEventListener("input", autoFillHandler);
     }
 
     // Search input for adding items from database
     const itemSearchInput = document.getElementById("newPoItemSearchInput");
-    if (itemSearchInput) {
+    if (itemSearchInput && !itemSearchInput._poSearchBound) {
+      itemSearchInput._poSearchBound = true;
       itemSearchInput.addEventListener("input", (e) => this.searchAndRenderCatalogItems(e.target.value));
       itemSearchInput.addEventListener("focus", (e) => this.searchAndRenderCatalogItems(e.target.value));
     }
@@ -101,7 +114,14 @@ export class CreatePOModal extends BaseModalHandler {
     document.addEventListener("click", (e) => {
       const dropdown = document.getElementById("newPoItemSearchDropdown");
       const searchInput = document.getElementById("newPoItemSearchInput");
-      if (dropdown && searchInput && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      const addRowBtn = document.getElementById("newPoAddRowBtn");
+      if (
+        dropdown &&
+        searchInput &&
+        !searchInput.contains(e.target) &&
+        !dropdown.contains(e.target) &&
+        (!addRowBtn || !addRowBtn.contains(e.target))
+      ) {
         dropdown.style.display = "none";
       }
     });
@@ -210,14 +230,14 @@ export class CreatePOModal extends BaseModalHandler {
     // Dropdown Header
     const header = document.createElement("div");
     header.style.cssText =
-      "padding: 7px 12px; background: rgba(22, 119, 255, 0.06); font-size: 11px; font-weight: 700; color: #1677ff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;";
+      "padding: 7px 12px; background: #f0f7ff; font-size: 11px; font-weight: 700; color: #1677ff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2;";
     header.innerHTML = `
       <span><i class="fa-solid fa-database"></i> Database Items (${matches.length})</span>
       <span style="font-size: 10.5px; font-weight: 500; color: var(--text-muted);">Click an item to add to Purchase Order</span>
     `;
     dropdown.appendChild(header);
 
-    matches.slice(0, 20).forEach((item) => {
+    matches.slice(0, 50).forEach((item) => {
       const row = document.createElement("div");
       row.style.cssText =
         "padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;";
@@ -298,23 +318,15 @@ export class CreatePOModal extends BaseModalHandler {
     const poNumInput = document.getElementById("newPoNumber");
     const orderDateInput = document.getElementById("newPoDate");
     const expDateInput = document.getElementById("newPoExpectedDate");
-    const supplierInput = document.getElementById("newPoSupplier");
-    const contactInput = document.getElementById("newPoContact");
     const remarksInput = document.getElementById("newPoRemarks");
     const searchInput = document.getElementById("newPoItemSearchInput");
 
     const today = new Date().toISOString().split("T")[0];
     const expDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    const supName = defaultSupplier || "PaperPro Lanka";
-    const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
-    const foundSup = suppliers.find(s => s.name.toLowerCase() === supName.toLowerCase());
-
-    if (poNumInput) poNumInput.value = this.ctx.generateNextPONumber();
+    if (poNumInput) poNumInput.value = this.ctx.generateNextPONumber ? this.ctx.generateNextPONumber() : `PO-${Date.now().toString().slice(-4)}`;
     if (orderDateInput) orderDateInput.value = today;
     if (expDateInput) expDateInput.value = expDate;
-    if (supplierInput) supplierInput.value = supName;
-    if (contactInput) contactInput.value = foundSup ? foundSup.phone : "077 123 4567";
     if (remarksInput) remarksInput.value = "";
     if (searchInput) searchInput.value = "";
 
@@ -323,18 +335,111 @@ export class CreatePOModal extends BaseModalHandler {
 
     this.renderNewPoItems();
     this.calculateNewPoTotal();
+
+    // Populate suppliers dropdown from database
+    await this.populateSupplierSelect(defaultSupplier);
+
     this.openModal("createPOModal");
 
     // Load database items asynchronously
     await this.loadCatalogItemsFromDatabase();
   }
 
-  addNewPoRow() {
+  /**
+   * Populate #newPoSupplier select box from database suppliers
+   * and auto-fill contact number.
+   * @param {string|null} [defaultSupplier=null]
+   */
+  async populateSupplierSelect(defaultSupplier = null) {
+    const supplierInput = document.getElementById("newPoSupplier");
+    const contactInput = document.getElementById("newPoContact");
+    if (!supplierInput) return;
+
+    let suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
+    if ((!suppliers || suppliers.length === 0) && this.ctx.dataLoader?.fetchSuppliers) {
+      await this.ctx.dataLoader.fetchSuppliers({ per_page: 100 }, true);
+      suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
+    }
+
+    // Ensure change listener is bound
+    if (!supplierInput._poSupplierBound) {
+      supplierInput._poSupplierBound = true;
+      const autoFillHandler = (e) => {
+        const val = (e.target.value || "").trim().toLowerCase();
+        const currentSuppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
+        const found = currentSuppliers.find(s => s.name && s.name.toLowerCase() === val);
+        const contactEl = document.getElementById("newPoContact");
+        if (contactEl) {
+          if (found) {
+            contactEl.value = found.mobile || found.phone || "";
+          } else if (e.target.selectedOptions && e.target.selectedOptions[0]?.dataset?.mobile) {
+            contactEl.value = e.target.selectedOptions[0].dataset.mobile;
+          } else {
+            contactEl.value = "";
+          }
+        }
+      };
+      supplierInput.addEventListener("change", autoFillHandler);
+      supplierInput.addEventListener("input", autoFillHandler);
+    }
+
+    if (supplierInput.tagName === "SELECT") {
+      supplierInput.innerHTML = '<option value="" disabled' + (!defaultSupplier ? ' selected' : '') + '>-- Select Supplier / Vendor --</option>';
+
+      let matchedSupplier = null;
+
+      suppliers.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        const phone = s.mobile || s.phone || "";
+        opt.dataset.mobile = phone;
+
+        if (
+          defaultSupplier &&
+          (s.name.toLowerCase() === defaultSupplier.toLowerCase() || String(s.id) === String(defaultSupplier))
+        ) {
+          opt.selected = true;
+          matchedSupplier = s;
+        }
+        supplierInput.appendChild(opt);
+      });
+
+      if (matchedSupplier) {
+        if (contactInput) contactInput.value = matchedSupplier.mobile || matchedSupplier.phone || "";
+      } else if (!defaultSupplier) {
+        if (contactInput) contactInput.value = "";
+      }
+    } else {
+      const supName = defaultSupplier || "";
+      const foundSup = suppliers.find(s => s.name && s.name.toLowerCase() === supName.toLowerCase());
+      supplierInput.value = supName;
+      if (contactInput) contactInput.value = foundSup ? (foundSup.mobile || foundSup.phone || "") : "";
+    }
+  }
+
+  async addNewPoRow() {
     const searchInput = document.getElementById("newPoItemSearchInput");
+    const dropdown = document.getElementById("newPoItemSearchDropdown");
+
     if (searchInput) {
       searchInput.focus();
-      this.searchAndRenderCatalogItems("");
     }
+
+    if (!this.catalogLoaded || !this.catalogItems || this.catalogItems.length === 0) {
+      if (dropdown) {
+        dropdown.innerHTML = `
+          <div style="padding: 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            <i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px; color: #1677ff;"></i>
+            Loading material stock items from database...
+          </div>`;
+        dropdown.style.display = "block";
+      }
+      await this.loadCatalogItemsFromDatabase();
+    }
+
+    const currentQuery = searchInput ? searchInput.value : "";
+    this.searchAndRenderCatalogItems(currentQuery);
   }
 
   removeNewPoRow(index) {
@@ -536,9 +641,14 @@ export class CreatePOModal extends BaseModalHandler {
         if (this.ctx.setPurchaseOrders) this.ctx.setPurchaseOrders(purchaseOrders);
       }
 
-      // 6. Refresh suppliers if a new supplier was created
-      if (!matchedSupplier && this.ctx.dataLoader?.fetchSuppliers) {
+      // 6. Refresh suppliers and re-render grid so un-GRNed PO count auto-adjusts
+      if (this.ctx.loadAndRenderSuppliers) {
+        await this.ctx.loadAndRenderSuppliers(true);
+      } else if (this.ctx.dataLoader?.fetchSuppliers) {
         await this.ctx.dataLoader.fetchSuppliers({}, true);
+        if (this.ctx.renderSuppliersGrid) this.ctx.renderSuppliersGrid();
+      } else if (this.ctx.renderSuppliersGrid) {
+        this.ctx.renderSuppliersGrid();
       }
 
       // 7. Update UI tables and KPIs

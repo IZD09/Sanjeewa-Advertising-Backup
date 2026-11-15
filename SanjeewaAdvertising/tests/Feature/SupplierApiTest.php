@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Supplier\Models\PurchaseOrder;
+use Modules\Supplier\Models\PurchaseOrderStatus;
+use Modules\Supplier\Models\Supplier;
 use Tests\TestCase;
 
 class SupplierApiTest extends TestCase
@@ -112,5 +115,49 @@ class SupplierApiTest extends TestCase
 
         $duplicate->assertStatus(422)
             ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_can_fetch_purchase_orders_data_across_all_suppliers_and_filtered_by_supplier(): void
+    {
+        $statusPending = PurchaseOrderStatus::firstOrCreate(
+            ['id' => 1],
+            ['purchase_orders_status' => 'Pending']
+        );
+
+        $supplierA = Supplier::create(['name' => 'Supplier Alpha', 'mobile' => '0771111111']);
+        $supplierB = Supplier::create(['name' => 'Supplier Beta', 'mobile' => '0772222222']);
+
+        $poA = PurchaseOrder::create([
+            'suppliers_id' => $supplierA->id,
+            'purchase_orders_status_id' => $statusPending->id,
+            'add_date' => now(),
+        ]);
+
+        $poB = PurchaseOrder::create([
+            'suppliers_id' => $supplierB->id,
+            'purchase_orders_status_id' => $statusPending->id,
+            'add_date' => now(),
+        ]);
+
+        // 1. Fetching across ALL suppliers (e.g. + Create New GRN path)
+        $allResponse = $this->getJson('/api/v1/purchase-orders/data?per_page=100');
+        $allResponse->assertOk()
+            ->assertJsonPath('success', true);
+
+        $orders = $allResponse->json('data.purchase_orders');
+        $this->assertCount(2, $orders);
+
+        $poIds = collect($orders)->pluck('id')->all();
+        $this->assertContains($poA->id, $poIds);
+        $this->assertContains($poB->id, $poIds);
+
+        // 2. Fetching filtered to Supplier Alpha only (Supplier Directory Card path)
+        $filteredResponse = $this->getJson('/api/v1/purchase-orders/data?suppliers_id='.$supplierA->id);
+        $filteredResponse->assertOk();
+
+        $filteredOrders = $filteredResponse->json('data.purchase_orders');
+        $this->assertCount(1, $filteredOrders);
+        $this->assertEquals($poA->id, $filteredOrders[0]['id']);
+        $this->assertEquals('Supplier Alpha', $filteredOrders[0]['supplier_name']);
     }
 }

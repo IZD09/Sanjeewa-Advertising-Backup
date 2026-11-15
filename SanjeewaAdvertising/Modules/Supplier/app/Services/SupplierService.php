@@ -6,6 +6,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Modules\Core\Support\MobileNumberHelper;
+use Modules\Supplier\Models\PurchaseOrderStatus;
 use Modules\Supplier\Models\Supplier;
 
 class SupplierService
@@ -18,7 +19,16 @@ class SupplierService
      */
     public function buildQuery(array $filters = []): Builder
     {
-        $query = Supplier::query()->withCount('purchaseOrders');
+        $query = Supplier::query()
+            ->withCount([
+                'purchaseOrders',
+                'purchaseOrders as pending_purchase_orders_count' => function ($q) {
+                    $q->whereIn('purchase_orders_status_id', [
+                        PurchaseOrderStatus::STATUS_PENDING,
+                        PurchaseOrderStatus::STATUS_PARTIAL,
+                    ]);
+                },
+            ]);
 
         $search = $filters['search'] ?? $filters['q'] ?? null;
         if (! empty($search)) {
@@ -182,7 +192,8 @@ class SupplierService
             'tax_no' => '',
             'bank_details' => '',
             'status' => 'Active',
-            'purchase_orders_count' => $supplier->purchase_orders_count ?? 0,
+            'purchase_orders_count' => (int) ($supplier->purchase_orders_count ?? 0),
+            'pending_purchase_orders_count' => (int) ($supplier->pending_purchase_orders_count ?? 0),
         ];
     }
 }

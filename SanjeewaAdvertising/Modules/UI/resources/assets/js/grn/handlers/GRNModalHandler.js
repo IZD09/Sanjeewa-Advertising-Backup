@@ -57,7 +57,9 @@ export class GRNModalHandler extends BaseModalHandler {
   triggerPrintPO() { this.viewPoModal.triggerPrintPO(); }
 
   // 3. Create GRN Modal
-  openCreateGrnModal(targetPoNumber = null) { this.createGrnModal.openCreateGrnModal(targetPoNumber); }
+  openCreateGrnModal(targetPoNumber = null, targetSupplier = null) {
+    this.createGrnModal.openCreateGrnModal(targetPoNumber, targetSupplier);
+  }
 
   // 4. Create PO Modal
   openCreatePOModal(defaultSupplier = null) { this.createPoModal.openCreatePOModal(defaultSupplier); }

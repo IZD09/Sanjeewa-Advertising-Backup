@@ -44,6 +44,7 @@ export class CreateGrnModal extends BaseModalHandler {
     this.grnItems = [];
     this.allPurchaseOrders = [];
     this.poListLoaded = false;
+    this.activeSupplierFilter = null;
 
     this.bindEvents();
   }
@@ -66,7 +67,8 @@ export class CreateGrnModal extends BaseModalHandler {
 
     // Active PO Search Input
     const poSearchInput = document.getElementById("grnModalPoSearchInput");
-    if (poSearchInput) {
+    if (poSearchInput && !poSearchInput._poSearchBound) {
+      poSearchInput._poSearchBound = true;
       poSearchInput.addEventListener("focus", () => {
         this.searchAndRenderActivePOs(poSearchInput.value);
       });
@@ -74,27 +76,145 @@ export class CreateGrnModal extends BaseModalHandler {
       poSearchInput.addEventListener("input", (e) => {
         this.searchAndRenderActivePOs(e.target.value);
       });
+
+      poSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.handleManualAddPoItem();
+        }
+      });
+    }
+
+    // Add GRN Item Button (placed at right side inside search input container)
+    const addPoItemBtn = document.getElementById("grnModalAddPoItemBtn");
+    if (addPoItemBtn && !addPoItemBtn._grnAddPoItemBound) {
+      addPoItemBtn._grnAddPoItemBound = true;
+      addPoItemBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleManualAddPoItem();
+      });
     }
 
     // Close search dropdown on click outside
     document.addEventListener("click", (e) => {
       const dropdown = document.getElementById("grnModalPoSearchDropdown");
       const searchInput = document.getElementById("grnModalPoSearchInput");
-      if (dropdown && searchInput && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      const addPoBtn = document.getElementById("grnModalAddPoItemBtn");
+      if (
+        dropdown &&
+        searchInput &&
+        !searchInput.contains(e.target) &&
+        !dropdown.contains(e.target) &&
+        (!addPoBtn || !addPoBtn.contains(e.target))
+      ) {
         dropdown.style.display = "none";
       }
     });
   }
 
   /**
+   * Handle clicking the "Add GRN Item" button or pressing Enter in the search input.
+   * Links the selected/typed Purchase Order and automatically populates its line items.
+   */
+  handleManualAddPoItem() {
+    const searchInput = document.getElementById("grnModalPoSearchInput");
+    const dropdown = document.getElementById("grnModalPoSearchDropdown");
+    const query = (searchInput?.value || "").trim().toLowerCase();
+
+    // Available unlinked active POs
+    const selectedNumbers = this.selectedPurchaseOrders.map((p) => p.po_number);
+    let availablePOs = this.allPurchaseOrders.filter(
+      (po) => po.status !== "Completed" && po.status !== "Cancelled" && !selectedNumbers.includes(po.po_number)
+    );
+
+    if (query) {
+      // 1. Exact match on PO Number (e.g. "PO-0001" or "0001" or "1")
+      let match = availablePOs.find(
+        (po) => po.po_number.toLowerCase() === query ||
+                String(po.id) === query ||
+                po.po_number.toLowerCase().replace(/\D+/g, "") === query.replace(/\D+/g, "")
+      );
+
+      // 2. If already linked, warn user
+      if (!match && this.selectedPurchaseOrders.some(
+        (po) => po.po_number.toLowerCase() === query ||
+                po.po_number.toLowerCase().replace(/\D+/g, "") === query.replace(/\D+/g, "")
+      )) {
+        this.showToast("Purchase Order is already linked to this GRN.", "warning");
+        if (dropdown) dropdown.style.display = "none";
+        return;
+      }
+
+      // 3. Match by supplier name if single active PO exists
+      if (!match) {
+        const supplierMatches = availablePOs.filter(
+          (po) => po.supplier_name && po.supplier_name.toLowerCase().includes(query)
+        );
+        if (supplierMatches.length === 1) {
+          match = supplierMatches[0];
+        } else if (supplierMatches.length > 1) {
+          this.searchAndRenderActivePOs(query);
+          return;
+        }
+      }
+
+      if (match) {
+        this.addPurchaseOrder(match);
+        if (searchInput) searchInput.value = "";
+        if (dropdown) dropdown.style.display = "none";
+        return;
+      }
+    }
+
+    // If active supplier filter is present and has only 1 available PO
+    if (this.activeSupplierFilter) {
+      const supPOs = availablePOs.filter(
+        (po) => (po.supplier_name && po.supplier_name.toLowerCase() === this.activeSupplierFilter.toLowerCase()) ||
+                String(po.suppliers_id) === String(this.activeSupplierFilter)
+      );
+      if (supPOs.length === 1) {
+        this.addPurchaseOrder(supPOs[0]);
+        if (searchInput) searchInput.value = "";
+        if (dropdown) dropdown.style.display = "none";
+        return;
+      }
+    }
+
+    // If only 1 available PO overall and query is empty
+    if (availablePOs.length === 1 && !query) {
+      this.addPurchaseOrder(availablePOs[0]);
+      if (searchInput) searchInput.value = "";
+      if (dropdown) dropdown.style.display = "none";
+      return;
+    }
+
+    // Otherwise show dropdown so user can pick
+    if (availablePOs.length > 0) {
+      if (searchInput) searchInput.focus();
+      this.searchAndRenderActivePOs(query || (this.activeSupplierFilter || ""));
+    } else {
+      this.showToast(
+        this.activeSupplierFilter
+          ? `No active un-GRNed Purchase Orders available for "${this.activeSupplierFilter}".`
+          : "No active un-GRNed Purchase Orders available to link.",
+        "warning"
+      );
+      if (dropdown) dropdown.style.display = "none";
+    }
+  }
+
+  /**
    * Open the Create GRN Modal and initialize fields.
    *
    * @param {string|null} [targetPoNumber=null]
+   * @param {string|null} [targetSupplier=null]
    */
-  async openCreateGrnModal(targetPoNumber = null) {
+  async openCreateGrnModal(targetPoNumber = null, targetSupplier = null) {
     // Reset state
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
+    this.activeSupplierFilter = targetSupplier ? String(targetSupplier).trim() : null;
 
     const grnNoInput = document.getElementById("grnModalNumber");
     const dateInput = document.getElementById("grnCreateModalDate") || document.getElementById("grnModalDate");
@@ -103,6 +223,7 @@ export class CreateGrnModal extends BaseModalHandler {
     const receivedByInput = document.getElementById("grnModalReceivedBy");
     const poSearchInput = document.getElementById("grnModalPoSearchInput");
     const poSearchDropdown = document.getElementById("grnModalPoSearchDropdown");
+    const poSearchHint = document.getElementById("grnModalPoSearchHint");
 
     if (grnNoInput) {
       grnNoInput.value = this.ctx.generateNextGrnNumber
@@ -113,11 +234,10 @@ export class CreateGrnModal extends BaseModalHandler {
     if (remarksInput) remarksInput.value = "";
     if (discountInput) discountInput.value = "0.00";
     if (receivedByInput) receivedByInput.value = "Admin User";
-    if (poSearchInput) poSearchInput.value = "";
     if (poSearchDropdown) poSearchDropdown.style.display = "none";
 
-    // Load active purchase orders
-    await this.loadActivePurchaseOrders();
+    // Load active purchase orders fresh from database
+    await this.loadActivePurchaseOrders(true);
 
     // If a target PO was specified (e.g. from PO table action), auto-add it
     if (targetPoNumber) {
@@ -127,6 +247,46 @@ export class CreateGrnModal extends BaseModalHandler {
       if (po) {
         this.addPurchaseOrder(po);
       }
+      if (poSearchInput) poSearchInput.value = "";
+      if (poSearchDropdown) poSearchDropdown.style.display = "none";
+    } else if (this.activeSupplierFilter) {
+      // Find un-GRNed POs for this specific supplier (Supplier Directory Card path)
+      const supPOs = this.allPurchaseOrders.filter(
+        (p) => p.status !== "Completed" && p.status !== "Cancelled" && (
+          (p.supplier_name && p.supplier_name.toLowerCase() === this.activeSupplierFilter.toLowerCase()) ||
+          String(p.suppliers_id) === String(this.activeSupplierFilter)
+        )
+      );
+
+      if (poSearchInput) {
+        if (supPOs.length === 1) {
+          poSearchInput.value = supPOs[0].po_number;
+        } else {
+          poSearchInput.value = this.activeSupplierFilter;
+        }
+      }
+
+      if (poSearchHint) {
+        poSearchHint.textContent = `${supPOs.length} un-GRNed Purchase Order(s) for "${this.activeSupplierFilter}". Click 'Add GRN Item' or select PO below.`;
+      }
+
+      // Open dropdown showing un-GRNed POs strictly for this supplier
+      this.searchAndRenderActivePOs(this.activeSupplierFilter);
+    } else {
+      // Top "+ Create New GRN" button path: Independent flow across ALL suppliers
+      this.activeSupplierFilter = null;
+      if (poSearchInput) poSearchInput.value = "";
+
+      const allActivePOs = this.allPurchaseOrders.filter(
+        (p) => p.status !== "Completed" && p.status !== "Cancelled"
+      );
+
+      if (poSearchHint) {
+        poSearchHint.textContent = `${allActivePOs.length} un-GRNed Purchase Order(s) available across all suppliers. Select a PO or click 'Add GRN Item'.`;
+      }
+
+      // Open dropdown showing ALL un-GRNed POs across all suppliers
+      this.searchAndRenderActivePOs("");
     }
 
     this.renderSelectedPOs();
@@ -145,33 +305,36 @@ export class CreateGrnModal extends BaseModalHandler {
     const loadingEl = document.getElementById("grnModalPoSearchLoading");
     const hintEl = document.getElementById("grnModalPoSearchHint");
 
-    let purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
+    let purchaseOrders = [];
 
-    if (!purchaseOrders || purchaseOrders.length === 0 || forceRefresh) {
+    if (!this.allPurchaseOrders || this.allPurchaseOrders.length === 0 || forceRefresh) {
       if (loadingEl) loadingEl.style.display = "inline-block";
       if (hintEl) hintEl.textContent = "Loading active purchase orders from database...";
 
       try {
-        const response = await this.http.get("/api/v1/purchase-orders/data", { per_page: 50 });
+        const response = await this.http.get("/api/v1/purchase-orders/data", { per_page: 100 });
         const data = response?.data || response;
         purchaseOrders = data?.purchase_orders ?? data?.orders ?? (Array.isArray(data) ? data : []);
-        if (this.ctx.setPurchaseOrders) {
+        if (this.ctx.setPurchaseOrders && Array.isArray(purchaseOrders)) {
           this.ctx.setPurchaseOrders(purchaseOrders);
         }
       } catch (err) {
         console.warn("[CreateGrnModal] Failed to fetch purchase orders:", err);
+        purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
       } finally {
         if (loadingEl) loadingEl.style.display = "none";
       }
+    } else {
+      purchaseOrders = this.allPurchaseOrders;
     }
 
     this.allPurchaseOrders = purchaseOrders;
     this.poListLoaded = true;
 
     // Filter active POs (Pending / Partial)
-    const activeCount = this.allPurchaseOrders.filter((p) => p.status !== "Completed").length;
-    if (hintEl) {
-      hintEl.textContent = `${activeCount} active purchase orders available. Search or click to link POs.`;
+    const activeCount = this.allPurchaseOrders.filter((p) => p.status !== "Completed" && p.status !== "Cancelled").length;
+    if (hintEl && !this.activeSupplierFilter) {
+      hintEl.textContent = `${activeCount} un-GRNed Purchase Order(s) available across all suppliers. Search or click to link POs.`;
     }
 
     return this.allPurchaseOrders;
@@ -191,10 +354,20 @@ export class CreateGrnModal extends BaseModalHandler {
     // Active POs not yet completed and not already selected in this GRN
     const selectedNumbers = this.selectedPurchaseOrders.map((p) => p.po_number);
     let availablePOs = this.allPurchaseOrders.filter(
-      (po) => po.status !== "Completed" && !selectedNumbers.includes(po.po_number)
+      (po) => po.status !== "Completed" && po.status !== "Cancelled" && !selectedNumbers.includes(po.po_number)
     );
 
-    if (term) {
+    // 1. If activeSupplierFilter is present (Supplier Directory Card path), restrict strictly to this supplier
+    if (this.activeSupplierFilter) {
+      const supFilter = this.activeSupplierFilter.toLowerCase().trim();
+      availablePOs = availablePOs.filter(
+        (po) => (po.supplier_name && po.supplier_name.toLowerCase() === supFilter) ||
+                String(po.suppliers_id) === String(this.activeSupplierFilter)
+      );
+    }
+
+    // 2. If a search term is provided (e.g. PO number, supplier name, material item name)
+    if (term && (!this.activeSupplierFilter || term !== this.activeSupplierFilter.toLowerCase().trim())) {
       availablePOs = availablePOs.filter((po) => {
         const matchNumber = (po.po_number || "").toLowerCase().includes(term);
         const matchSupplier = (po.supplier_name || "").toLowerCase().includes(term);
@@ -206,10 +379,14 @@ export class CreateGrnModal extends BaseModalHandler {
     dropdown.innerHTML = "";
 
     if (availablePOs.length === 0) {
+      const emptyMessage = this.activeSupplierFilter
+        ? `No matching un-GRNed Purchase Orders found for supplier "${this.activeSupplierFilter}".`
+        : (term ? `No matching active Purchase Orders found for "${term}".` : "All active Purchase Orders are already linked or none pending.");
+
       dropdown.innerHTML = `
         <div style="padding: 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
-          <i class="fa-solid fa-clipboard-check" style="margin-right: 6px; color: #52c41a;"></i>
-          ${term ? "No matching active Purchase Orders found." : "All active Purchase Orders are already linked or none pending."}
+          <i class="fa-solid fa-circle-info" style="margin-right: 6px; color: #1677ff;"></i>
+          ${emptyMessage}
         </div>
       `;
       dropdown.style.display = "block";
@@ -219,18 +396,19 @@ export class CreateGrnModal extends BaseModalHandler {
     // Dropdown Header
     const header = document.createElement("div");
     header.style.cssText =
-      "padding: 7px 12px; background: rgba(22, 119, 255, 0.06); font-size: 11px; font-weight: 700; color: #1677ff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;";
+      "padding: 7px 12px; background: #f0f7ff; font-size: 11px; font-weight: 700; color: #1677ff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2;";
+    const filterTitle = this.activeSupplierFilter ? `for "${this.activeSupplierFilter}"` : "across all suppliers";
     header.innerHTML = `
-      <span><i class="fa-solid fa-clipboard-list"></i> Active Purchase Orders (${availablePOs.length})</span>
-      <span style="font-size: 10.5px; font-weight: 500; color: var(--text-muted);">Click a PO to link to this GRN</span>
+      <span><i class="fa-solid fa-clipboard-list"></i> Active Purchase Orders (${availablePOs.length}) ${filterTitle}</span>
+      <span style="font-size: 10.5px; font-weight: 500; color: var(--text-muted);">Click a PO to link &amp; load order items</span>
     `;
     dropdown.appendChild(header);
 
-    availablePOs.slice(0, 15).forEach((po) => {
+    availablePOs.forEach((po) => {
       const row = document.createElement("div");
       row.style.cssText =
         "padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;";
-      row.onmouseenter = () => (row.style.background = "var(--surface-2, rgba(0,0,0,0.03))");
+      row.onmouseenter = () => (row.style.background = "rgba(22, 119, 255, 0.08)");
       row.onmouseleave = () => (row.style.background = "transparent");
 
       const poTotalFormatted = this.ctx.formatCurrency
@@ -254,7 +432,7 @@ export class CreateGrnModal extends BaseModalHandler {
           <span style="font-size: 12px; font-weight: 700; color: var(--text);">${poTotalFormatted}</span>
           ${statusBadge}
           <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="font-size: 11px; height: 24px; padding: 0 8px; pointer-events: none;">
-            <i class="fa-solid fa-plus"></i> Link
+            <i class="fa-solid fa-plus"></i> Load Items
           </button>
         </div>
       `;
@@ -769,12 +947,20 @@ export class CreateGrnModal extends BaseModalHandler {
       // Close modal
       this.closeModal("createGrnModal");
 
-      // Refresh GRN records and Purchase Orders
+      // Refresh GRN records, Purchase Orders, and Suppliers
       if (this.ctx.loadAndRenderGRN) {
         await this.ctx.loadAndRenderGRN(true);
       }
       if (this.ctx.loadAndRenderPO) {
         await this.ctx.loadAndRenderPO(true);
+      }
+      if (this.ctx.loadAndRenderSuppliers) {
+        await this.ctx.loadAndRenderSuppliers(true);
+      } else if (this.ctx.dataLoader?.fetchSuppliers) {
+        await this.ctx.dataLoader.fetchSuppliers({}, true);
+        if (this.ctx.renderSuppliersGrid) this.ctx.renderSuppliersGrid();
+      } else if (this.ctx.renderSuppliersGrid) {
+        this.ctx.renderSuppliersGrid();
       }
 
       // Optionally open View GRN document for the newly created GRN

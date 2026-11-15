@@ -60,7 +60,29 @@ export class SupplierHandler {
     this.populateSupplierFilter();
     this.populatePOSupplierFilter();
 
-    // 3. Count badge
+    // 3. Purchase Order Supplier select box
+    const poSupplierSelect = document.getElementById("newPoSupplier");
+    if (poSupplierSelect && poSupplierSelect.tagName === "SELECT") {
+      const currentVal = poSupplierSelect.value;
+      poSupplierSelect.innerHTML = '<option value="" disabled' + (!currentVal ? ' selected' : '') + '>-- Select Supplier / Vendor --</option>';
+      suppliers.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        opt.dataset.mobile = s.mobile || s.phone || "";
+        if (currentVal && s.name.toLowerCase() === currentVal.toLowerCase()) {
+          opt.selected = true;
+        }
+        poSupplierSelect.appendChild(opt);
+      });
+      const contactInput = document.getElementById("newPoContact");
+      if (poSupplierSelect.value && contactInput && !contactInput.value) {
+        const found = suppliers.find(s => s.name.toLowerCase() === poSupplierSelect.value.toLowerCase());
+        if (found) contactInput.value = found.mobile || found.phone || "";
+      }
+    }
+
+    // 4. Count badge
     const badge = document.getElementById("grnSupplierCountBadge");
     const pagination = this.ctx.getSupplierPagination ? this.ctx.getSupplierPagination() : null;
     if (badge) {
@@ -180,7 +202,21 @@ export class SupplierHandler {
       return;
     }
 
+    const purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
+
     pageItems.forEach(s => {
+      // Calculate un-GRNed (pending/partial) purchase orders count
+      let ungrnedPoCount = 0;
+      if (Array.isArray(purchaseOrders) && purchaseOrders.length > 0) {
+        ungrnedPoCount = purchaseOrders.filter((po) => {
+          const matchSup = (po.suppliers_id && s.id && Number(po.suppliers_id) === Number(s.id)) ||
+            (po.supplier_name && s.name && po.supplier_name.toLowerCase() === s.name.toLowerCase());
+          return matchSup && po.status !== "Completed" && po.status !== "Cancelled";
+        }).length;
+      } else if (typeof s.pending_purchase_orders_count === "number") {
+        ungrnedPoCount = s.pending_purchase_orders_count;
+      }
+
       const card = document.createElement("div");
       card.className = "supplier-card";
       card.innerHTML = `
@@ -217,17 +253,28 @@ export class SupplierHandler {
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span class="supplier-category-pill">${s.category || "General Printing Media"}</span>
             <span class="supplier-terms-badge">${s.payment_terms || "COD"}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(22, 119, 255, 0.04); border: 1px solid ${ungrnedPoCount > 0 ? '#91caff' : 'var(--border)'}; border-radius: 6px; margin-bottom: 12px;">
+            <span style="font-size: 11.5px; font-weight: 600; color: var(--text);">
+              <i class="fa-solid fa-clipboard-list" style="color: ${ungrnedPoCount > 0 ? '#1677ff' : 'var(--text-muted)'}; margin-right: 5px;"></i>
+              Un-GRNed POs:
+            </span>
+            <span class="tab-count-badge" style="background: ${ungrnedPoCount > 0 ? '#faad14' : '#f0f0f0'}; color: ${ungrnedPoCount > 0 ? '#fff' : 'var(--text-muted)'}; font-weight: 700; padding: 1px 8px; border-radius: 10px; font-size: 11px; border: 1px solid ${ungrnedPoCount > 0 ? '#d48806' : 'var(--border)'};">
+              ${ungrnedPoCount}
+            </span>
           </div>
 
           <div class="supplier-card-footer">
             <button type="button" class="ant-btn ant-btn-default" style="font-size: 11.5px; height: 30px; padding: 0 10px;" title="Create Purchase Order for this Supplier" onclick="window.grnManager.openCreatePOModal('${s.name}')">
               <i class="fa-solid fa-cart-arrow-down" style="color: #1677ff;"></i> + PO
             </button>
-            <button type="button" class="ant-btn ant-btn-primary" style="font-size: 11.5px; height: 30px; padding: 0 10px;" title="Create GRN for this Supplier" onclick="window.grnManager.createGrnForSupplier('${s.name}')">
+            <button type="button" class="ant-btn ant-btn-primary" style="font-size: 11.5px; height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px;" title="Create GRN for this Supplier (${ungrnedPoCount} un-GRNed POs)" onclick="window.grnManager.createGrnForSupplier('${s.name}')">
               <i class="fa-solid fa-file-invoice"></i> + GRN
+              <span style="background: ${ungrnedPoCount > 0 ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.15)'}; color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 700;">${ungrnedPoCount}</span>
             </button>
             <button type="button" class="ant-btn-action" style="color: var(--text-muted); border-color: transparent;" title="Edit Supplier Details" onclick="window.grnManager.openEditSupplierModal('${s.code}')">
               <i class="fa-solid fa-pen-to-square"></i>
@@ -394,6 +441,11 @@ export class SupplierHandler {
   }
 
   createGrnForSupplier(supplierName) {
+    if (this.ctx.openCreateGrnModal) {
+      this.ctx.openCreateGrnModal(null, supplierName);
+      return;
+    }
+
     this.ctx.switchView("form");
     if (this.ctx.clearSelectedPO) {
       this.ctx.clearSelectedPO();

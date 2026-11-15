@@ -198,7 +198,10 @@ export class SupplierModal extends BaseModalHandler {
       } else if (this.supplierCallerContext === "po") {
         const poSup = document.getElementById("newPoSupplier");
         const poContact = document.getElementById("newPoContact");
-        if (poSup) poSup.value = name;
+        if (poSup) {
+          poSup.value = name;
+          poSup.dispatchEvent(new Event("change"));
+        }
         if (poContact) poContact.value = phone;
         this.showToast(`Supplier "${name}" registered and selected in Purchase Order!`, "success");
       } else {

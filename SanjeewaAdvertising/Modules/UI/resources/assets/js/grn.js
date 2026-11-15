@@ -51,6 +51,8 @@ export class GRNManager {
       renderSuppliersGrid: () => this.renderSuppliersGrid(),
       loadAndRenderGRN: (force) => this.loadAndRenderGRN(force),
       loadAndRenderPO: (force) => this.loadAndRenderPO(force),
+      loadAndRenderSuppliers: (force) => this.loadAndRenderSuppliers(force),
+      dataLoader: this.dataLoader,
       viewGRN: (num) => this.viewGRN(num),
       showToast: (msg, type) => this.showToast(msg, type),
       createGrnForPO: (num) => this.createGrnForPO(num),
@@ -120,7 +122,7 @@ export class GRNManager {
     // 5. Button Processes (from grn/processes/)
     this.navigationProcess = new NavigationProcess({
       initNewGrnForm: (targetPo) => this.grnFormProcess.initNewGrnForm(targetPo),
-      openCreateGrnModal: (targetPo) => this.openCreateGrnModal(targetPo),
+      openCreateGrnModal: (targetPo, supplier) => this.openCreateGrnModal(targetPo, supplier),
       loadAndRenderPO: () => this.loadAndRenderPO(),
       renderPOTable: () => this.renderPOTable(),
       populatePOSupplierFilter: () => this.supplierHandler.populatePOSupplierFilter(),
@@ -349,7 +351,7 @@ export class GRNManager {
     this.supplierHandler.setFilters(this.supplierSearchTerm, this.supplierCategoryFilter);
     this.supplierHandler.renderSuppliersGrid(this.dataLoader.supplierPagination);
   }
-  createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(); }
+  createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(null, name); }
   deleteSupplier(code) { this.supplierHandler.deleteSupplier(code); }
 
   // Table Render Delegations
@@ -379,7 +381,7 @@ export class GRNManager {
   onPurchaseOrderSelect(po) { this.grnFormProcess.onPurchaseOrderSelect(po); }
   clearSelectedPO() { this.grnFormProcess.clearSelectedPO(); }
   createGrnForPO(po) { this.modalHandler.openCreateGrnModal(po); }
-  openCreateGrnModal(po = null) { this.modalHandler.openCreateGrnModal(po); }
+  openCreateGrnModal(po = null, supplier = null) { this.modalHandler.openCreateGrnModal(po, supplier); }
   getCatalogItems() { return this.grnFormProcess.getCatalogItems(); }
   addNewRow() { this.grnFormProcess.addNewRow(); }
   removeRow(i) { this.grnFormProcess.removeRow(i); }

@@ -1017,37 +1017,16 @@
                   </select>
                 </div>
 
-                <!-- 2. Material Stock Item with Interactive Search Selector (Step 2) -->
+                <!-- 2. Material Stock Item with Interactive Select (Step 2) -->
                 <div class="po-field" style="margin: 0; position: relative;">
-                  <label class="po-label" for="addStockItemSearch" style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700;">
+                  <label class="po-label" for="addStockItemSelect" style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700;">
                     <span>Select Material Item (SKU) <span class="req" style="color: #ff4d4f;">*</span></span>
-                    <span class="hint" id="addStockItemHint" style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 8px;">Search or select items under this GRN's Purchase Orders</span>
+                    <span class="hint" id="addStockItemHint" style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 8px;">Pending Purchase Order items for this GRN</span>
                   </label>
                   <input type="hidden" id="addStockSelectedItemId" name="add_stock_item_id" value="">
-
-                  <!-- Selected Item Preview Card (Hidden until an item is picked) -->
-                  <div id="addStockSelectedItemDisplay" style="display: none; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 6px; padding: 10px 14px; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <span class="inv-item-code" id="addStockPickedCode" style="font-size: 12.5px; font-weight: 700; color: #1677ff;">SKU-000</span>
-                      <div>
-                        <div id="addStockPickedName" style="font-weight: 600; font-size: 13px; color: var(--text);">Material Item Name</div>
-                        <div id="addStockPickedCategory" style="font-size: 11px; color: var(--text-muted);">Category / Subcategory</div>
-                      </div>
-                    </div>
-                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" id="addStockChangeItemBtn" style="font-size: 11px; height: 26px;">
-                      <i class="fa-solid fa-pencil"></i> Change
-                    </button>
-                  </div>
-
-                  <!-- Live Search Input Box -->
-                  <div id="addStockItemSearchBoxWrap" style="position: relative;">
-                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                    <input type="text" id="addStockItemSearch" name="add_stock_item_search" class="inv-search-input" style="padding-left: 34px; width: 100%;" placeholder="Search or pick stock items for this GRN..." autocomplete="off">
-                    <!-- Dropdown Matches List -->
-                    <div id="addStockItemResultsDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto; margin-top: 4px;">
-                      <!-- Populated via JS -->
-                    </div>
-                  </div>
+                  <select id="addStockItemSelect" name="add_stock_item_select" class="inv-select" style="width: 100%;">
+                    <option value="">-- Select Material Item (SKU) --</option>
+                  </select>
                 </div>
 
                 <!-- 3. Classification & Brand Selectors (Auto-selected on Item pick) -->

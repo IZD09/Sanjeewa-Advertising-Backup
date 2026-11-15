@@ -360,12 +360,15 @@
                       <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Active Purchase Order <span class="req" style="color: #ff4d4f;">*</span></span>
                       <span class="hint" id="grnModalPoSearchHint" style="font-size: 11px; color: var(--text-muted);">Type PO #, supplier name, or click to browse active POs</span>
                     </label>
-                    <div style="position: relative;">
-                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
-                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px; z-index: 2;"></i>
+                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 145px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
+                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 150px; top: 11px; color: #1677ff; font-size: 13px; z-index: 2;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
                       </span>
+                      <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="grnModalAddPoItemBtn" style="position: absolute; right: 4px; top: 4px; bottom: 4px; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 4px; z-index: 3;" title="Load order items from active Purchase Order">
+                        <i class="fa-solid fa-plus"></i> Add GRN Item
+                      </button>
                       <!-- Live Search Results Dropdown -->
                       <div id="grnModalPoSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 250px; overflow-y: auto; margin-top: 4px;">
                       </div>
@@ -633,8 +636,9 @@
                         <i class="fa-solid fa-user-plus"></i> New
                       </button>
                     </div>
-                    <input type="text" id="newPoSupplier" name="po_supplier" class="grn-inline-input" list="grnSupplierList" placeholder="Select or enter supplier" required>
-                    <datalist id="grnSupplierList"></datalist>
+                    <select id="newPoSupplier" name="po_supplier" class="grn-inline-input" required>
+                      <option value="" disabled selected>-- Select Supplier / Vendor --</option>
+                    </select>
                   </div>
                 </div>
 
@@ -673,12 +677,15 @@
                       <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Material Item <span class="req" style="color: #ff4d4f;">*</span></span>
                       <span class="hint" id="newPoItemSearchHint" style="font-size: 11px; color: var(--text-muted);">Type SKU code or material name to load &amp; add directly</span>
                     </label>
-                    <div style="position: relative;">
-                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px;"></i>
-                      <input type="text" id="newPoItemSearchInput" name="po_item_search" aria-label="Search material items from database" class="grn-inline-input" style="padding-left: 34px; padding-right: 34px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search material item from database by SKU code or name..." autocomplete="off">
-                      <span id="newPoItemSearchLoading" style="display: none; position: absolute; right: 12px; top: 11px; color: #1677ff; font-size: 13px;">
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px; z-index: 2;"></i>
+                      <input type="text" id="newPoItemSearchInput" name="po_item_search" aria-label="Search material items from database" class="grn-inline-input" style="padding-left: 34px; padding-right: 145px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search material item from database by SKU code or name..." autocomplete="off">
+                      <span id="newPoItemSearchLoading" style="display: none; position: absolute; right: 150px; top: 11px; color: #1677ff; font-size: 13px; z-index: 2;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
                       </span>
+                      <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="newPoAddRowBtn" style="position: absolute; right: 4px; top: 4px; bottom: 4px; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 4px; z-index: 3;" title="View items & add item line">
+                        <i class="fa-solid fa-plus"></i> Add Item Line
+                      </button>
                       <!-- Live Match Results Dropdown -->
                       <div id="newPoItemSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; margin-top: 4px;">
                       </div>
@@ -709,7 +716,7 @@
                                   No Materials Added Yet
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); max-width: 380px; line-height: 1.5;">
-                                  Click the <strong>"Add Item Line"</strong> button below to select material items, enter quantities, and specify estimated unit costs.
+                                  Click the <strong>"Add Item Line"</strong> button above to select material items, enter quantities, and specify estimated unit costs.
                                 </div>
                               </div>
                               <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="margin-top: 4px;" onclick="window.grnManager.addNewPoRow()">
@@ -720,12 +727,6 @@
                         </tr>
                       </tbody>
                     </table>
-                  </div>
-
-                  <div class="grn-add-row-bar" style="margin-top: 8px;">
-                    <button type="button" class="ant-btn ant-btn-dashed" id="newPoAddRowBtn">
-                      <i class="fa-solid fa-plus"></i> Add Item Line
-                    </button>
                   </div>
                 </div>
 
