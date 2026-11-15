@@ -448,8 +448,9 @@
     @php
         $initialPrintJobsData = $initialPrintJobsData ?? app(\Modules\PrintJob\Services\PrintJobService::class)->getPrintJobFloorData();
     @endphp
+    <script id="print-jobs-floor-data" type="application/json">@json($initialPrintJobsData)</script>
     <script>
-        window.__INITIAL_PRINT_JOBS_DATA__ = @json($initialPrintJobsData);
+        window.__INITIAL_PRINT_JOBS_DATA__ = JSON.parse(document.getElementById('print-jobs-floor-data')?.textContent || 'null');
     </script>
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}

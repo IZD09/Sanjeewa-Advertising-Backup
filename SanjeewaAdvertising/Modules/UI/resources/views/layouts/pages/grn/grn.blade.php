@@ -1,7 +1,11 @@
 @php
-    $totalGrnCount = \Modules\Supplier\Models\Grn::count();
-    $totalPoCount = \Modules\Supplier\Models\PurchaseOrder::count();
-    $totalSupplierCount = \Modules\Supplier\Models\Supplier::count();
+    use Modules\Supplier\Models\Grn;
+    use Modules\Supplier\Models\PurchaseOrder;
+    use Modules\Supplier\Models\Supplier;
+
+    $totalGrnCount = Grn::count();
+    $totalPoCount = PurchaseOrder::count();
+    $totalSupplierCount = Supplier::count();
 @endphp
 @extends('ui::layouts.master')
 
@@ -125,7 +129,7 @@
             <!-- ======================================================================
                  VIEW A: ALL GRN DIRECTORY & TABLE VIEW
                  ====================================================================== -->
-            <div id="grnListView" style="{{ (request()->has('view') && request('view') !== 'list') ? 'display: none;' : '' }}">
+            <div id="grnListView" @if(request()->has('view') && request('view') !== 'list') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -189,7 +193,7 @@
             <!-- ==================================================================
                  VIEW B: PURCHASE ORDERS (PO) DIRECTORY & TRACKING VIEW
                  ================================================================== -->
-            <div id="grnPOView" style="{{ request('view') === 'po' ? '' : 'display: none;' }}">
+            <div id="grnPOView" @if(request('view') !== 'po') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- PO Toolbar Controls -->
                 <div class="grn-toolbar">
@@ -253,7 +257,7 @@
             <!-- ==================================================================
                  VIEW D: SUPPLIERS DIRECTORY VIEW
                  ================================================================== -->
-            <div id="grnSuppliersView" style="{{ request('view') === 'suppliers' ? '' : 'display: none;' }}">
+            <div id="grnSuppliersView" @if(request('view') !== 'suppliers') style="display: none;" @endif>
               <div class="grn-card">
                 <!-- Supplier Toolbar Controls -->
                 <div class="grn-toolbar">

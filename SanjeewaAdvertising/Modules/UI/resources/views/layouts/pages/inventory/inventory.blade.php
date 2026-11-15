@@ -1161,10 +1161,13 @@
 
 @push('scripts')
     @php
-        $initialCategoriesTabData = app(\Modules\Inventory\Services\InventoryCategoryService::class)->getCategoriesTabData();
+        use Modules\Inventory\Services\InventoryCategoryService;
+
+        $initialCategoriesTabData = app(InventoryCategoryService::class)->getCategoriesTabData();
     @endphp
+    <script id="inventory-categories-data" type="application/json">@json($initialCategoriesTabData)</script>
     <script>
-        window.__INITIAL_INVENTORY_CATEGORIES_DATA__ = @json($initialCategoriesTabData);
+        window.__INITIAL_INVENTORY_CATEGORIES_DATA__ = JSON.parse(document.getElementById('inventory-categories-data')?.textContent || 'null');
     </script>
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}
