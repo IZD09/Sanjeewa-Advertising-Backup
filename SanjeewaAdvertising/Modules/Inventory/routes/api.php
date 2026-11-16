@@ -40,6 +40,8 @@ Route::prefix('v1')->group(function () {
     Route::get('inventory/stocks/form-data', [StockController::class, 'formData'])->name('inventory.stocks.form-data');
     Route::get('inventory/stocks', [StockController::class, 'index'])->name('inventory.stocks.index');
     Route::post('inventory/stocks', [StockController::class, 'store'])->name('inventory.stocks.store');
+    Route::post('inventory/stocks/adjust', [StockController::class, 'adjustDirect'])->name('inventory.stocks.adjust-direct');
+    Route::post('inventory/stocks/{stock}/adjust', [StockController::class, 'adjust'])->name('inventory.stocks.adjust');
     Route::put('inventory/stocks/{stock}', [StockController::class, 'update'])->name('inventory.stocks.update');
     Route::get('inventory/stocks/{stock}', [StockController::class, 'show'])->name('inventory.stocks.show');
 

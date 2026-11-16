@@ -95,8 +95,8 @@ export class InventoryEntity {
           <button type="button" class="ant-btn-action" title="View Details" onclick="window.inventoryManager?.openViewModal('${this.code}')">
             <i class="fa-solid fa-eye"></i> View
           </button>
-          <button type="button" class="ant-btn-action adjust-btn" title="Adjust Stock" onclick="window.inventoryManager?.openAdjustModal('${this.code}')">
-            <i class="fa-solid fa-sliders"></i> Adjust
+          <button type="button" class="ant-btn-action adjust-btn" title="Adjust Stock" onclick="window.inventoryManager?.openAdjustModal('${this.code}', '${this.id || ''}')">
+            <i class="fa-solid fa-sliders"></i> +Adjust
           </button>
         </div>
       </td>

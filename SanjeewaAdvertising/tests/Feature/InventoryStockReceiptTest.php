@@ -26,10 +26,19 @@ class InventoryStockReceiptTest extends TestCase
         parent::setUp();
         $this->artisan('migrate');
 
-        StockMovementType::firstOrCreate(
-            ['id' => 1],
-            ['stock_movements_type' => 'GRN / Purchase Receipt']
-        );
+        $types = [
+            ['id' => 1, 'stock_movements_type' => 'GRN / Purchase Receipt'],
+            ['id' => 2, 'stock_movements_type' => 'Job Usage / Issue'],
+            ['id' => 3, 'stock_movements_type' => 'Manual Stock In'],
+            ['id' => 4, 'stock_movements_type' => 'Manual Stock Out'],
+            ['id' => 5, 'stock_movements_type' => 'Inventory Adjustment'],
+            ['id' => 6, 'stock_movements_type' => 'Damage / Wastage'],
+            ['id' => 7, 'stock_movements_type' => 'Return to Supplier'],
+        ];
+
+        foreach ($types as $type) {
+            StockMovementType::firstOrCreate(['id' => $type['id']], $type);
+        }
     }
 
     public function test_can_fetch_stock_inventory_listing_and_form_data(): void
@@ -321,5 +330,96 @@ class InventoryStockReceiptTest extends TestCase
         $grnData3 = collect($formData3['data']['grns'])->firstWhere('id', $grn->id);
 
         $this->assertNull($grnData3);
+    }
+
+    public function test_can_adjust_stock_quantity_up_and_down_and_record_movement(): void
+    {
+        StockMovementType::firstOrCreate(['id' => 3], ['stock_movements_type' => 'Manual Stock In']);
+        StockMovementType::firstOrCreate(['id' => 5], ['stock_movements_type' => 'Inventory Adjustment']);
+        StockMovementType::firstOrCreate(['id' => 6], ['stock_movements_type' => 'Damage / Wastage']);
+
+        $category = Category::create(['category' => 'Adjust Test Category']);
+        $subcat = Subcategory::create(['subcategory' => 'Adjust Subcategory', 'categories_id' => $category->id]);
+        $brand = Brand::create(['brand' => 'Adjust Brand']);
+        $item = StockItem::create(['name' => 'Adjustable Item', 'code' => 'ADJ-001', 'subcategories_id' => $subcat->id]);
+        $grn = Grn::create(['at_time' => now()]);
+
+        $stock = Stock::create([
+            'stock_items_id' => $item->id,
+            'brands_id' => $brand->id,
+            'qty' => 100,
+            'price' => 250.00,
+            'buy' => 200.00,
+            'grn_id' => $grn->id,
+            'add_date' => now(),
+        ]);
+
+        // 1. Adjust up (ADD: 100 -> 105)
+        $responseAdd = $this->postJson("/api/v1/inventory/stocks/{$stock->id}/adjust", [
+            'stock_id' => $stock->id,
+            'adjustment_type' => 'ADD',
+            'new_qty' => 105,
+            'qty' => 5,
+            'reason' => 'New Inflow / Restock',
+            'remarks' => 'Found 5 extra units during audit',
+        ]);
+
+        $responseAdd->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.qty', 105);
+
+        $this->assertDatabaseHas('stock', [
+            'id' => $stock->id,
+            'qty' => 105,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'stock_id' => $stock->id,
+            'stock_movements_types_id' => 3,
+            'qty' => 5,
+        ]);
+
+        // 2. Adjust down (DEDUCT: 105 -> 95)
+        $responseDeduct = $this->postJson("/api/v1/inventory/stocks/{$stock->id}/adjust", [
+            'stock_id' => $stock->id,
+            'adjustment_type' => 'DEDUCT',
+            'new_qty' => 95,
+            'qty' => 10,
+            'reason' => 'Damaged / Wasted',
+            'remarks' => 'Damaged during storage',
+        ]);
+
+        $responseDeduct->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.qty', 95);
+
+        $this->assertDatabaseHas('stock', [
+            'id' => $stock->id,
+            'qty' => 95,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'stock_id' => $stock->id,
+            'stock_movements_types_id' => 6,
+            'qty' => 10,
+        ]);
+
+        // 3. Adjust via direct endpoint
+        $responseDirect = $this->postJson('/api/v1/inventory/stocks/adjust', [
+            'stock_id' => $stock->id,
+            'adjustment_type' => 'ADD',
+            'new_qty' => 120,
+            'qty' => 25,
+            'reason' => 'Physical Count Mismatch',
+        ]);
+
+        $responseDirect->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.qty', 120);
+
+        $this->assertDatabaseHas('stock', [
+            'id' => $stock->id,
+            'qty' => 120,
+        ]);
     }
 }

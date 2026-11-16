@@ -661,4 +661,61 @@ class StockService
             return $stock->load(['stockItem.subcategory.category', 'brand', 'grn', 'grmItems.itemBatch']);
         });
     }
+
+    /**
+     * Adjust stock quantity (physical count adjustment, damage, manual stock in/out, etc.) and log stock movement.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function adjustStock(Stock $stock, array $data): Stock
+    {
+        return DB::transaction(function () use ($stock, $data) {
+            $oldQty = (int) $stock->qty;
+            $type = strtoupper((string) ($data['adjustment_type'] ?? 'ADD'));
+
+            // Check if final target quantity is provided or delta qty
+            if (isset($data['new_qty']) && is_numeric($data['new_qty'])) {
+                $finalQty = max(0, (int) $data['new_qty']);
+                $diff = abs($finalQty - $oldQty);
+                $isIncrease = $finalQty >= $oldQty;
+            } else {
+                $deltaQty = (int) ($data['qty'] ?? 0);
+                if ($type === 'DEDUCT') {
+                    $finalQty = max(0, $oldQty - $deltaQty);
+                    $diff = min($oldQty, $deltaQty);
+                    $isIncrease = false;
+                } else {
+                    $finalQty = $oldQty + $deltaQty;
+                    $diff = $deltaQty;
+                    $isIncrease = true;
+                }
+            }
+
+            // Determine stock movement type
+            $movementTypeId = match ($data['reason'] ?? '') {
+                'Damaged / Wasted', 'Production Scrap' => 6, // Damage / Wastage
+                'Supplier Return' => 7, // Return to Supplier
+                'New Inflow / Restock' => 3, // Manual Stock In
+                'Lost' => 4, // Manual Stock Out
+                default => ($isIncrease ? 3 : 5), // Manual Stock In or Inventory Adjustment
+            };
+
+            // Update Stock record quantity
+            $stock->qty = $finalQty;
+            $stock->save();
+
+            // Record Movement in stock_movements
+            if ($diff > 0) {
+                StockMovement::create([
+                    'stock_id' => $stock->id,
+                    'stock_movements_types_id' => $movementTypeId,
+                    'qty' => $diff,
+                    'date' => now(),
+                    'source_id' => $stock->id,
+                ]);
+            }
+
+            return $stock->load(['stockItem.subcategory.category', 'brand', 'grn', 'grmItems.itemBatch']);
+        });
+    }
 }

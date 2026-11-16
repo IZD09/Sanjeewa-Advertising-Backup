@@ -285,7 +285,7 @@ export class InventoryManager {
 
   // Modal Delegations (Backward compatibility for HTML onclick and window calls)
   openViewModal(itemCode) { this.modalHandler.openViewModal(itemCode); }
-  openAdjustModal(itemCode) { this.modalHandler.openAdjustModal(itemCode); }
+  openAdjustModal(itemCode, stockId = null) { this.modalHandler.openAdjustModal(itemCode, stockId); }
   setAdjustmentType(type) { this.modalHandler.setAdjustmentType(type); }
   updateAdjustmentImpact() { this.modalHandler.updateAdjustmentImpact(); }
   saveStockAdjustment() { this.modalHandler.saveStockAdjustment(); }
