@@ -51,12 +51,20 @@ export class ReceiptModal extends BaseModalHandler {
 
   openReceiptModal(paymentId, type = "invoice") {
     let rec = null;
+    const paymentIdStr = (typeof paymentId === "object" && paymentId !== null)
+      ? (paymentId.paymentId || paymentId.id)
+      : paymentId;
+
     if (type === "grn") {
       const grnPayments = this.ctx.getGrnPayments ? this.ctx.getGrnPayments() : [];
-      rec = grnPayments.find(p => p.paymentId === paymentId);
+      rec = grnPayments.find(p => p.paymentId === paymentIdStr || p.id === paymentIdStr);
     } else {
       const orderPayments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
-      rec = orderPayments.find(p => p.paymentId === paymentId);
+      rec = orderPayments.find(p => p.paymentId === paymentIdStr || p.id === paymentIdStr);
+    }
+
+    if (!rec && typeof paymentId === "object" && paymentId !== null) {
+      rec = paymentId;
     }
 
     if (!rec) return;

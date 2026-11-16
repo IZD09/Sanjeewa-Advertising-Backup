@@ -39,6 +39,7 @@ export class PaymentTableBulder {
     this.itemLabel = config.itemLabel || "items";
     this.emptyMessage = config.emptyMessage || "No items match your filter criteria.";
     this.emptyIcon = config.emptyIcon || "fa-solid fa-folder-open";
+    this.colspan = config.colspan || 8;
     this.filterFn = typeof config.filterFn === "function" ? config.filterFn : null;
     this.onPageChange = typeof config.onPageChange === "function" ? config.onPageChange : null;
     this.onRender = typeof config.onRender === "function" ? config.onRender : null;
@@ -229,7 +230,7 @@ export class PaymentTableBulder {
     if (pageItems.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="9">
+          <td colspan="${this.colspan || 8}">
             <div class="po-empty-state">
               <i class="${this.emptyIcon}"></i>
               <p>${this.emptyMessage}</p>

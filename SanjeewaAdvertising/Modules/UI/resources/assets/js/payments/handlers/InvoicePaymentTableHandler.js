@@ -25,7 +25,7 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
       paginationInfoId: "payInvoicePaginationInfo",
       paginationControlsId: "payInvoicePaginationControls",
       pageSize: options.pageSize || 20,
-      colspan: 9,
+      colspan: options.colspan || 8,
       emptyIcon: "fa-receipt",
       emptyMessage: "No Invoice Payments match your filter criteria.",
       itemLabel: "invoices",

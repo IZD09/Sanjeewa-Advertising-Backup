@@ -192,8 +192,7 @@
                   <th>Total Bill</th>
                   <th>Paid Amount</th>
                   <th>Balance Due</th>
-                  <th>Narration</th>
-                  <th>Actions</th>
+                  <th style="text-align: center;">Actions</th>
                 </tr>
               </thead>
               <tbody id="payInvoiceTableBody">
@@ -328,7 +327,7 @@
                   <th>Paid Amount</th>
                   <th>Balance Due</th>
                   <th>Narration</th>
-                  <th>Actions</th>
+                  <th style="text-align: center;">Actions</th>
                 </tr>
               </thead>
               <tbody id="payGrnTableBody">

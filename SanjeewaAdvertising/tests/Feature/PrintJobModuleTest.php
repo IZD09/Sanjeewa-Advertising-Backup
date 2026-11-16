@@ -480,10 +480,8 @@ class PrintJobModuleTest extends TestCase
         $response->assertStatus(201);
 
         $jobId = $response->json('data.id');
-        $this->assertDatabaseHas('payments', [
+        $this->assertDatabaseMissing('payments', [
             'print_jobs_id' => $jobId,
-            'payment' => 0.00,
-            'payment_statuses_id' => 1, // Pending
         ]);
     }
 

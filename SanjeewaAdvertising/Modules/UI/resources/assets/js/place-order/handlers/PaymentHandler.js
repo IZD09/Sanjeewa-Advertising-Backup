@@ -38,10 +38,7 @@ export class PaymentHandler {
   }
 
   bindEvents() {
-    const submitBtn = document.getElementById("submitAddPaymentBtn");
-    if (submitBtn) {
-      submitBtn.addEventListener("click", () => this.saveNewPayment());
-    }
+    // Note: #submitAddPaymentBtn is managed by AddPaymentModal handler
   }
 
   /**
@@ -226,6 +223,10 @@ export class PaymentHandler {
    * @param {Array} [paymentsList]
    */
   openHistoryModal(orderId, ordersList, paymentsList) {
+    if (window.placeOrderApp?.orderModalHandler?.openPaymentHistoryModal) {
+      window.placeOrderApp.orderModalHandler.openPaymentHistoryModal(orderId);
+      return;
+    }
     const orders = ordersList || this.getOrders();
     const payments = paymentsList || this.getPayments();
     const order = orders.find(o => o.id === orderId);

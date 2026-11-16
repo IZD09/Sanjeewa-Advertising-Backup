@@ -240,7 +240,8 @@ export class PlaceOrderProcess {
      ========================================================================== */
   bindEvents() {
     const form = document.getElementById("placeOrderForm");
-    if (form) {
+    if (form && !form.dataset.boundPlaceOrderSubmit) {
+      form.dataset.boundPlaceOrderSubmit = "true";
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         this.openConfirmation();
@@ -248,7 +249,8 @@ export class PlaceOrderProcess {
     }
 
     const confirmBtn = document.getElementById("confirmPlaceOrderBtn");
-    if (confirmBtn) {
+    if (confirmBtn && !confirmBtn.dataset.boundConfirmClick) {
+      confirmBtn.dataset.boundConfirmClick = "true";
       confirmBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         await this.confirmAndPlaceOrder();
@@ -256,7 +258,8 @@ export class PlaceOrderProcess {
     }
 
     const resetBtn = document.getElementById("resetOrderFormBtn");
-    if (resetBtn) {
+    if (resetBtn && !resetBtn.dataset.boundResetClick) {
+      resetBtn.dataset.boundResetClick = "true";
       resetBtn.addEventListener("click", (e) => {
         e.preventDefault();
         this.resetForm();
@@ -344,7 +347,20 @@ export class PlaceOrderProcess {
   }
 
   validate() {
-    const customer = this.getSelectedCustomer();
+    let customer = this.getSelectedCustomer();
+    if (!customer || !customer.id) {
+      const hiddenId = document.getElementById("selectedCustomerId")?.value;
+      const custName = document.getElementById("selectedCustName")?.textContent;
+      const custMobile = document.getElementById("selectedCustMobile")?.textContent;
+      if (hiddenId && custName && custName !== "Customer Name") {
+        customer = {
+          id: parseInt(hiddenId, 10),
+          name: custName,
+          mobile: custMobile || "",
+        };
+      }
+    }
+
     if (!customer || !customer.id) {
       return {
         isValid: false,
@@ -544,7 +560,10 @@ export class PlaceOrderProcess {
    * Submit new order to backend API database via PrintJob module.
    */
   async confirmAndPlaceOrder() {
-    if (this.isSubmitting) return;
+    const confirmBtn = document.getElementById("confirmPlaceOrderBtn");
+    if (this.isSubmitting || confirmBtn?.dataset.submitting === "true" || confirmBtn?.disabled) {
+      return;
+    }
 
     const validation = this.validate();
     if (!validation.isValid) {
@@ -555,10 +574,10 @@ export class PlaceOrderProcess {
 
     this.isSubmitting = true;
     const data = this.getFormData();
-    const confirmBtn = document.getElementById("confirmPlaceOrderBtn");
     const origText = confirmBtn ? confirmBtn.innerHTML : "";
 
     if (confirmBtn) {
+      confirmBtn.dataset.submitting = "true";
       confirmBtn.disabled = true;
       confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Order...';
     }
@@ -628,6 +647,7 @@ export class PlaceOrderProcess {
     } finally {
       this.isSubmitting = false;
       if (confirmBtn) {
+        delete confirmBtn.dataset.submitting;
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = origText;
       }

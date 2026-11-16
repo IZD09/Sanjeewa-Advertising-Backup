@@ -34,6 +34,15 @@ export class GrnEntity {
     const tr = document.createElement("tr");
     tr.id = `grnRow_${this.grn_number || ""}`;
 
+    const statusKey = String(this.status || "").toLowerCase().trim();
+    if (statusKey === "completed") {
+      tr.className = "row-status-completed";
+    } else if (statusKey === "cancelled") {
+      tr.className = "row-status-cancelled";
+    } else {
+      tr.className = "row-status-pending";
+    }
+
     const isCompleted = this.status === "Completed";
     const itemCount = this.items && Array.isArray(this.items) ? this.items.length : 0;
 

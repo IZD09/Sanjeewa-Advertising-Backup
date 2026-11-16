@@ -37,7 +37,20 @@ export class OrderConfirmationModal extends BaseModalHandler {
   }
 
   openOrderConfirmation() {
-    const selectedCustomer = this.ctx.getSelectedCustomer ? this.ctx.getSelectedCustomer() : null;
+    let selectedCustomer = this.ctx.getSelectedCustomer ? this.ctx.getSelectedCustomer() : null;
+    if (!selectedCustomer || !selectedCustomer.id) {
+      const hiddenId = document.getElementById("selectedCustomerId")?.value;
+      const custName = document.getElementById("selectedCustName")?.textContent;
+      const custMobile = document.getElementById("selectedCustMobile")?.textContent;
+      if (hiddenId && custName && custName !== "Customer Name") {
+        selectedCustomer = {
+          id: parseInt(hiddenId, 10),
+          name: custName,
+          mobile: custMobile || "",
+        };
+      }
+    }
+
     if (!selectedCustomer) {
       this.showToast("Please search and select a customer first", "error");
       const searchInput = document.getElementById("customerSearchInput");

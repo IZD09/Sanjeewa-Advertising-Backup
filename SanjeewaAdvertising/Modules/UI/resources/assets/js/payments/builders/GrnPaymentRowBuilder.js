@@ -7,6 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
+import { getPaymentStageRowClass } from "../../core/StatusHelper.js";
 
 /**
  * GrnPaymentEntity - Entity model for a GRN Stock Payment record
@@ -91,9 +92,28 @@ export class GrnPaymentEntity {
     }
   }
 
+  getStageRowClass() {
+    const fromHelper = getPaymentStageRowClass(this.stage);
+    if (fromHelper) return fromHelper;
+
+    const s = String(this.stage || "").toLowerCase().trim();
+    if (s.includes("complete") || s === "paid" || (this.total_bill > 0 && this.balance <= 0)) {
+      return "row-stage-complete row-status-completed";
+    }
+    if (s.includes("advance") || s.includes("partial") || (this.paid_amount > 0 && this.balance > 0)) {
+      return "row-stage-advance row-status-approved";
+    }
+    return "row-stage-pending row-status-pending";
+  }
+
   render() {
     const tr = document.createElement("tr");
     tr.id = `payGrnRow_${this.payment_id || this.grn_number}`;
+
+    const stageRowClass = this.getStageRowClass();
+    if (stageRowClass) {
+      tr.className = stageRowClass;
+    }
 
     const stagePill = this.renderStageBadge();
     const methodPill = this.renderMethodBadge();

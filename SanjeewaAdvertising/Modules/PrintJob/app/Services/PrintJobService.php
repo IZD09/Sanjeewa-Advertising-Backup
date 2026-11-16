@@ -279,8 +279,8 @@ class PrintJobService
                 $paymentStatusId = (int) (DB::table('payment_statuses')->value('id') ?? 0);
             }
 
-            // Record payment transaction when valid payment types and statuses exist in database
-            if ($paymentTypeId > 0 && $paymentStatusId > 0) {
+            // Record payment transaction only when actual payment amount is made (> 0) and valid payment type exists
+            if ($paidAmount > 0 && $paymentTypeId > 0 && $paymentStatusId > 0) {
                 Payment::create([
                     'payment' => $paidAmount,
                     'print_jobs_id' => $printJob->id,
@@ -828,6 +828,7 @@ class PrintJobService
     {
         $payments = Payment::query()
             ->with(['printJob', 'paymentType', 'status'])
+            ->where('payment', '>', 0)
             ->orderByDesc('id')
             ->get();
 

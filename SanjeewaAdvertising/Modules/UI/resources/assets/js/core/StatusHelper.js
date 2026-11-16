@@ -21,3 +21,23 @@ export function getStatusRowClass(status) {
   const key = String(status || "").toLowerCase().trim();
   return STATUS_ROW_CLASS_MAP[key] || "";
 }
+
+/**
+ * Map a payment stage string to its row highlight CSS class (matching place-order design).
+ *
+ * @param {string|null|undefined} stage
+ * @returns {string}
+ */
+export function getPaymentStageRowClass(stage) {
+  const key = String(stage || "").toLowerCase().trim();
+  if (key === "complete payment" || key === "complete" || key === "paid") {
+    return "row-stage-complete row-status-completed";
+  }
+  if (key === "advance payment" || key === "advance" || key === "partial" || key === "partial payment") {
+    return "row-stage-advance row-status-approved";
+  }
+  if (key === "pending payment" || key === "pending" || key === "unpaid") {
+    return "row-stage-pending row-status-pending";
+  }
+  return "";
+}

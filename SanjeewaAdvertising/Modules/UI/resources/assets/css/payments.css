@@ -617,40 +617,208 @@
 .pay-table-wrapper {
     overflow-x: auto;
     width: 100%;
+    padding: 8px 16px 14px 16px;
 }
 
 .pay-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    font-size: 12px;
     text-align: left;
-}
-
-.pay-table th {
-    background: var(--surface-2);
-    color: var(--text-muted);
-    font-weight: 700;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
 
+/* Header Columns */
+.pay-table th {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.pay-table th:first-child {
+    border-left: 1px solid var(--border);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.pay-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    text-align: center;
+}
+
+/* Body Table Cells (Rows & Columns Separation) */
 .pay-table td {
     padding: 13px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border-light);
     border-bottom: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
     color: var(--text);
     vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Row Front (First Column: Invoice / Date) */
+.pay-table td:first-child {
+    border-left: 5px solid var(--border);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding-left: 16px;
+}
+
+/* Row Back (Last Column: Action Buttons) */
+.pay-table td:last-child {
+    border-right: 5px solid var(--border);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding-right: 16px;
+    text-align: center;
 }
 
 .pay-table tr:hover td {
     background: var(--surface-hover);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.pay-table tr:last-child td {
-    border-bottom: none;
+/* ==========================================================================
+   Payment Table Row Stage Highlights (Aligned with place-order table row design)
+   ========================================================================== */
+.pay-table tr[class*="row-"] > td:first-child,
+.pay-table tr[class*="row-"] > td:last-child {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Complete Payment (Paid) - Green */
+.pay-table tr.row-stage-complete > td,
+.pay-table tr.row-stage-paid > td,
+.pay-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.08) !important;
+    border-top-color: rgba(22, 163, 74, 0.22) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.22) !important;
+    border-right-color: rgba(22, 163, 74, 0.20) !important;
+}
+.pay-table tr.row-stage-complete:hover > td,
+.pay-table tr.row-stage-paid:hover > td,
+.pay-table tr.row-status-completed:hover > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+}
+.pay-table tr.row-stage-complete > td:first-child,
+.pay-table tr.row-stage-paid > td:first-child,
+.pay-table tr.row-status-completed > td:first-child {
+    border-left: 5px solid #16a34a !important;
+}
+.pay-table tr.row-stage-complete > td:last-child,
+.pay-table tr.row-stage-paid > td:last-child,
+.pay-table tr.row-status-completed > td:last-child {
+    border-right: 5px solid #16a34a !important;
+}
+
+/* Advance / Partial Payment - Blue */
+.pay-table tr.row-stage-advance > td,
+.pay-table tr.row-stage-partial > td,
+.pay-table tr.row-status-approved > td {
+    background-color: rgba(37, 99, 235, 0.08) !important;
+    border-top-color: rgba(37, 99, 235, 0.22) !important;
+    border-bottom-color: rgba(37, 99, 235, 0.22) !important;
+    border-right-color: rgba(37, 99, 235, 0.20) !important;
+}
+.pay-table tr.row-stage-advance:hover > td,
+.pay-table tr.row-stage-partial:hover > td,
+.pay-table tr.row-status-approved:hover > td {
+    background-color: rgba(37, 99, 235, 0.14) !important;
+}
+.pay-table tr.row-stage-advance > td:first-child,
+.pay-table tr.row-stage-partial > td:first-child,
+.pay-table tr.row-status-approved > td:first-child {
+    border-left: 5px solid #2563eb !important;
+}
+.pay-table tr.row-stage-advance > td:last-child,
+.pay-table tr.row-stage-partial > td:last-child,
+.pay-table tr.row-status-approved > td:last-child {
+    border-right: 5px solid #2563eb !important;
+}
+
+/* Pending Payment (Unpaid) - Amber */
+.pay-table tr.row-stage-pending > td,
+.pay-table tr.row-stage-unpaid > td,
+.pay-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-top-color: rgba(245, 158, 11, 0.22) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.22) !important;
+    border-right-color: rgba(245, 158, 11, 0.20) !important;
+}
+.pay-table tr.row-stage-pending:hover > td,
+.pay-table tr.row-stage-unpaid:hover > td,
+.pay-table tr.row-status-pending:hover > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.pay-table tr.row-stage-pending > td:first-child,
+.pay-table tr.row-stage-unpaid > td:first-child,
+.pay-table tr.row-status-pending > td:first-child {
+    border-left: 5px solid #f59e0b !important;
+}
+.pay-table tr.row-stage-pending > td:last-child,
+.pay-table tr.row-stage-unpaid > td:last-child,
+.pay-table tr.row-status-pending > td:last-child {
+    border-right: 5px solid #f59e0b !important;
+}
+
+/* Dark mode overrides */
+html[data-theme="dark"] .pay-table th {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .pay-table td {
+    background: var(--surface);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    border-right-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .pay-table td:first-child {
+    border-left-color: var(--border);
+}
+
+html[data-theme="dark"] .pay-table td:last-child {
+    border-right-color: var(--border);
+}
+
+html[data-theme="dark"] .pay-table tr.row-stage-complete > td,
+html[data-theme="dark"] .pay-table tr.row-stage-paid > td,
+html[data-theme="dark"] .pay-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+    border-top-color: rgba(22, 163, 74, 0.32) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.32) !important;
+    border-right-color: rgba(22, 163, 74, 0.30) !important;
+}
+html[data-theme="dark"] .pay-table tr.row-stage-advance > td,
+html[data-theme="dark"] .pay-table tr.row-stage-partial > td,
+html[data-theme="dark"] .pay-table tr.row-status-approved > td {
+    background-color: rgba(37, 99, 235, 0.14) !important;
+    border-top-color: rgba(37, 99, 235, 0.32) !important;
+    border-bottom-color: rgba(37, 99, 235, 0.32) !important;
+    border-right-color: rgba(37, 99, 235, 0.30) !important;
+}
+html[data-theme="dark"] .pay-table tr.row-stage-pending > td,
+html[data-theme="dark"] .pay-table tr.row-stage-unpaid > td,
+html[data-theme="dark"] .pay-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-top-color: rgba(245, 158, 11, 0.32) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.32) !important;
+    border-right-color: rgba(245, 158, 11, 0.30) !important;
 }
 
 /* Status Badges */
@@ -1042,13 +1210,30 @@
     color: var(--text);
 }
 
-.method-choice.selected {
-    border-color: var(--blue);
-    background: rgba(37, 99, 235, 0.08);
+.method-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
 }
 
-.method-choice.selected i {
-    color: var(--blue);
+.method-choice:hover {
+    border-color: #93c5fd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.method-choice.selected {
+    border-color: #2563eb !important;
+    background: rgba(37, 99, 235, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16) !important;
 }
 
 /* Form Controls */
@@ -1076,6 +1261,12 @@
     color: var(--text);
     display: flex;
     justify-content: space-between;
+}
+
+.req, span.req, .pay-label .req, label .req {
+    color: #ef4444 !important;
+    font-weight: 800;
+    margin-left: 2px;
 }
 
 .pay-input, .pay-select-field, .pay-textarea {

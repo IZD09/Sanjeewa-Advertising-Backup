@@ -176,6 +176,7 @@ class InvoiceService
             'customer',
             'printType',
             'cost.printCosts',
+            'unit',
             'payments',
             'statusHistory.status',
         ]);
@@ -191,12 +192,33 @@ class InvoiceService
             $costSum = $job->cost?->printCosts?->sum('price') ?? 0;
             $unitPrice = $costSum > 0 ? (float) $costSum : 120.00;
             $qty = max(1, (int) $job->qty);
-            $subtotal = $unitPrice * $qty;
+            $width = (float) ($job->wtdth > 0 ? $job->wtdth : 10);
+            $height = (float) ($job->hight > 0 ? $job->hight : 4);
+            $unitSymbol = strtolower((string) ($job->unit?->simble ?? 'ft'));
+            $areaSqFt = match ($unitSymbol) {
+                'ft', 'feet' => $width * $height,
+                'in', 'inches' => ($width * $height) / 144,
+                'cm' => ($width * $height) / 929.0304,
+                'mm' => ($width * $height) / 92903.04,
+                'm' => ($width * $height) * 10.7639,
+                default => ($width * $height),
+            };
+
+            if ($unitSymbol === 'pcs') {
+                $subtotal = $unitPrice * $qty;
+            } else {
+                $subtotal = $areaSqFt * $unitPrice * $qty;
+            }
+
             $discount = (float) ($job->cost?->discount ?? 0);
             $totalAmount = max(0, $subtotal - $discount);
 
             $paidAmount = (float) $job->payments->sum('payment');
             $balanceAmount = max(0, $totalAmount - $paidAmount);
+
+            if (! empty($filters['pending_only']) && $balanceAmount <= 0.01) {
+                continue;
+            }
 
             $latestStatus = $job->relationLoaded('statusHistory')
                 ? $job->statusHistory->sortByDesc('update_at')->first()?->status?->print_job_states ?? 'Pending'
@@ -212,9 +234,12 @@ class InvoiceService
                 'customerMobile' => $job->customer?->mobile ?? '',
                 'productName' => $job->printType?->print_type ?? 'Print Job #'.$job->id,
                 'qty' => $qty,
-                'totalAmount' => $totalAmount,
-                'paidAmount' => $paidAmount,
-                'balanceAmount' => $balanceAmount,
+                'width' => $width,
+                'height' => $height,
+                'unit' => $unitSymbol,
+                'totalAmount' => round($totalAmount, 2),
+                'paidAmount' => round($paidAmount, 2),
+                'balanceAmount' => round($balanceAmount, 2),
                 'status' => $latestStatus,
                 'addDate' => $job->add_date ? (is_string($job->add_date) ? $job->add_date : $job->add_date->toDateString()) : null,
             ];
@@ -251,7 +276,7 @@ class InvoiceService
                     if (! empty($allocations)) {
                         foreach ($allocations as $alloc) {
                             $jobId = (int) ($alloc['job_id'] ?? $alloc['id'] ?? 0);
-                            $allocAmount = (float) ($alloc['allocated_amount'] ?? $alloc['amount'] ?? 0);
+                            $allocAmount = (float) ($alloc['allocated_amount'] ?? $alloc['amount'] ?? $alloc['allocatedNow'] ?? 0);
                             if ($jobId > 0 && $allocAmount > 0) {
                                 Payment::create([
                                     'payment' => $allocAmount,

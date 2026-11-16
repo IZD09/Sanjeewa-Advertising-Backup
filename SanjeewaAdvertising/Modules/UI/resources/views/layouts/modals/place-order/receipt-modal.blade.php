@@ -21,6 +21,7 @@
         <table class="receipt-details-table">
           <tr><td><strong>Receipt No:</strong></td><td class="strong" id="rcptPaymentId">-</td></tr>
           <tr><td><strong>Order ID:</strong></td><td class="strong" id="rcptOrderId">-</td></tr>
+          <tr><td><strong>Invoice No:</strong></td><td class="strong" id="rcptInvoiceNo">-</td></tr>
           <tr><td><strong>Date:</strong></td><td class="strong" id="rcptDate">-</td></tr>
           <tr><td><strong>Customer Name:</strong></td><td class="strong" id="rcptCustName">-</td></tr>
           <tr><td><strong>Mobile No:</strong></td><td class="strong" id="rcptCustMobile">-</td></tr>

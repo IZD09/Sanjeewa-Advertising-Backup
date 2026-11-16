@@ -19,11 +19,18 @@ class PaymentResource extends JsonResource
     {
         $amount = (float) ($this->amount ?? $this->payment ?? 0);
         $paid = (float) ($this->paid_amount ?? ($this->status === 'Paid' ? $amount : 0));
+        $invoice = $this->relationLoaded('activeInvoice')
+            ? $this->activeInvoice
+            : $this->printJob?->invoices?->sortByDesc('id')->first();
+        $invoiceId = $invoice?->id;
+        $invoiceNo = $invoice ? ('INV-2026-'.str_pad((string) $invoice->id, 4, '0', STR_PAD_LEFT)) : null;
 
         return [
             'id' => $this->id,
             'payment' => (float) $this->payment,
             'amount' => $amount,
+            'invoice_id' => $invoiceId,
+            'invoice_no' => $invoiceNo,
             'title' => $this->title ?? 'Operating Bill',
             'category' => $this->category ?? 'Electricity',
             'provider' => $this->provider ?? 'Ceylon Electricity Board (CEB)',

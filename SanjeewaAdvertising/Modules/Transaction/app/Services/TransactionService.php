@@ -2,9 +2,13 @@
 
 namespace Modules\Transaction\Services;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Modules\Invoice\Models\Invoice;
+use Modules\PrintJob\Models\PrintJob;
 use Modules\Supplier\Models\Grn;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Transaction\Models\GrnPayment;
@@ -24,7 +28,11 @@ class TransactionService
      */
     public function buildPaymentsQuery(array $filters = []): Builder
     {
-        $query = Payment::query()->with(['paymentType', 'paymentStatus', 'printJob.customer']);
+        $query = Payment::query()->with(['paymentType', 'paymentStatus', 'printJob.customer', 'printJob.invoices']);
+
+        if (empty($filters['include_zero'])) {
+            $query->where('payment', '>', 0);
+        }
 
         if (! empty($filters['print_jobs_id'])) {
             $query->where('print_jobs_id', (int) $filters['print_jobs_id']);
@@ -78,23 +86,99 @@ class TransactionService
      */
     public function getPaymentById(int $id): ?Payment
     {
-        return Payment::query()->with(['paymentType', 'paymentStatus', 'printJob.customer'])->find($id);
+        return Payment::query()->with(['paymentType', 'paymentStatus', 'printJob.customer', 'printJob.invoices'])->find($id);
     }
 
     /**
      * Create a customer payment.
+     * Evaluates existing invoices & payments for the print job, verifies if payment is complete,
+     * and if there is remaining balance to pay, generates a brand-NEW invoice for this payment.
      *
      * @param  array<string, mixed>  $data
      */
     public function createPayment(array $data): Payment
     {
-        return Payment::create([
-            'payment' => (float) $data['payment'],
-            'print_jobs_id' => (int) $data['print_jobs_id'],
-            'payment_types_id' => (int) $data['payment_types_id'],
-            'payment_statuses_id' => (int) $data['payment_statuses_id'],
-            'pay_date' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),
-        ])->load(['paymentType', 'paymentStatus', 'printJob']);
+        return DB::transaction(function () use ($data) {
+            $amount = (float) $data['payment'];
+            $jobId = (int) $data['print_jobs_id'];
+            $statusId = (int) ($data['payment_statuses_id'] ?? 3);
+
+            $job = PrintJob::query()->with(['cost.printCosts', 'payments', 'unit', 'invoices', 'customer'])->find($jobId);
+
+            if (! $job) {
+                throw new \InvalidArgumentException("Print job #{$jobId} not found in the database.");
+            }
+
+            // 1. Calculate job financials from all previous payments across invoices
+            $costSum = (float) ($job->cost?->printCosts?->sum('price') ?? 0);
+            $unitPrice = $costSum > 0 ? $costSum : 120.00;
+            $qty = max(1, (int) $job->qty);
+            $width = (float) ($job->wtdth > 0 ? $job->wtdth : 10);
+            $height = (float) ($job->hight > 0 ? $job->hight : 4);
+            $unitSymbol = strtolower((string) ($job->unit?->simble ?? 'ft'));
+            $areaSqFt = match ($unitSymbol) {
+                'ft', 'feet' => $width * $height,
+                'in', 'inches' => ($width * $height) / 144,
+                'cm' => ($width * $height) / 929.0304,
+                'mm' => ($width * $height) / 92903.04,
+                'm' => ($width * $height) * 10.7639,
+                default => ($width * $height),
+            };
+            $subtotal = $unitSymbol === 'pcs' ? ($unitPrice * $qty) : ($areaSqFt * $unitPrice * $qty);
+            $discount = (float) ($job->cost?->discount ?? 0);
+            $totalAmount = max(0, $subtotal - $discount);
+            $alreadyPaid = (float) $job->payments->sum('payment');
+            $remainingBalance = max(0, $totalAmount - $alreadyPaid);
+
+            // 2. Check if payment for this print job is already completed
+            if ($totalAmount > 0 && $remainingBalance <= 0.00) {
+                throw new \InvalidArgumentException("All payments for Print Job #{$jobId} have already been completed across existing invoices.");
+            }
+
+            if ($totalAmount > 0 && $amount > ($remainingBalance + 0.05)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Payment amount (Rs. %s) exceeds the outstanding remaining balance (Rs. %s).',
+                    number_format($amount, 2),
+                    number_format($remainingBalance, 2)
+                ));
+            }
+
+            // 3. Since there is still payment to be made, create a NEW invoice for this payment installment
+            $invoiceDate = ! empty($data['pay_date']) ? Carbon::parse($data['pay_date']) : now();
+            $dueDate = $job->reg_date ? Carbon::parse($job->reg_date) : $invoiceDate->copy()->addDays(14);
+
+            $invoice = Invoice::create([
+                'customer_id' => $job->customer_id,
+                'invoice_at' => $invoiceDate,
+                'due_date' => $dueDate,
+            ]);
+
+            // Link the print job to this newly generated invoice
+            $job->invoices()->attach($invoice->id);
+
+            // 4. Determine payment status (Completed vs Partial)
+            if ($statusId !== 1) {
+                if ($amount >= ($remainingBalance - 0.05) && $totalAmount > 0) {
+                    $statusId = 2; // Completed
+                } else {
+                    $statusId = 3; // Partial
+                }
+            }
+
+            // 5. Create the payment record
+            $payment = Payment::create([
+                'payment' => $amount,
+                'print_jobs_id' => $jobId,
+                'payment_types_id' => (int) $data['payment_types_id'],
+                'payment_statuses_id' => $statusId,
+                'pay_date' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),
+            ]);
+
+            // Attach the newly created active invoice to the payment instance
+            $payment->setRelation('activeInvoice', $invoice);
+
+            return $payment->load(['paymentType', 'paymentStatus', 'printJob.customer', 'printJob.invoices']);
+        });
     }
 
     /**

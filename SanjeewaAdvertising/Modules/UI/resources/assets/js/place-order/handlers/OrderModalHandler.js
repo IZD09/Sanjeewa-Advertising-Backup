@@ -40,12 +40,20 @@ export class OrderModalHandler extends BaseModalHandler {
     this.options = options;
 
     // Sub-modal instances
-    this.orderConfirmationModal = new OrderConfirmationModal(options);
-    this.viewOrderModal = new ViewOrderModal(options);
-    this.editOrderModal = new EditOrderModal(options);
-    this.addPaymentModal = new AddPaymentModal(options);
-    this.paymentHistoryModal = new PaymentHistoryModal(options);
     this.receiptModal = new ReceiptModal(options);
+    this.orderConfirmationModal = new OrderConfirmationModal(options);
+    this.editOrderModal = new EditOrderModal(options);
+    this.paymentHistoryModal = new PaymentHistoryModal(options);
+    this.addPaymentModal = new AddPaymentModal({
+      ...options,
+      openReceiptModal: (paymentId) => this.receiptModal.openReceiptModal(paymentId),
+    });
+    this.viewOrderModal = new ViewOrderModal({
+      ...options,
+      openEditModal: (orderId) => this.openEditModal(orderId),
+      openAddPaymentModal: (orderId) => this.openAddPaymentModal(orderId),
+      openPaymentHistoryModal: (orderId) => this.openPaymentHistoryModal(orderId),
+    });
     this.addCustomerModal = new AddCustomerModal(options);
   }
 

@@ -799,16 +799,19 @@ html[data-theme="dark"] .po-header-banner {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    padding: 8px 16px 14px 16px;
 }
 
 .po-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 8px;
     font-size: 12px;
     text-align: left;
     white-space: nowrap;
 }
 
+/* Header Columns */
 .po-table th {
     padding: 12px 16px;
     background: var(--surface-2);
@@ -817,30 +820,314 @@ html[data-theme="dark"] .po-header-banner {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
 }
 
+.po-table th:first-child {
+    border-left: 1px solid var(--border);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.po-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    text-align: center;
+}
+
+/* Body Table Cells (Rows & Columns Separation) */
 .po-table td {
-    padding: 14px 16px;
+    padding: 13px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border-light);
     border-bottom: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
     color: var(--text);
     vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Row Front (First Column: Order ID & Date) */
+.po-table td:first-child {
+    border-left: 5px solid var(--border);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding-left: 16px;
+}
+
+/* Row Back (Last Column: Action Buttons) */
+.po-table td:last-child {
+    border-right: 5px solid var(--border);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding-right: 16px;
+    text-align: center;
 }
 
 .po-table tr:hover td {
     background: var(--surface-hover);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
+/* Remove awkward flat box-shadow overrides from core.css */
+.po-table tr[class*="row-status-"] > td:first-child,
+.po-table tr[class*="row-status-"] > td:last-child {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Status-specific Row Highlights with Styled Front & Back */
+/* Approved - Sky Blue */
+.po-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+    border-top-color: rgba(2, 132, 199, 0.22) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.22) !important;
+    border-right-color: rgba(2, 132, 199, 0.20) !important;
+}
+.po-table tr.row-status-approved:hover > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+}
+.po-table tr.row-status-approved > td:first-child {
+    border-left: 5px solid #0284c7 !important;
+}
+.po-table tr.row-status-approved > td:last-child {
+    border-right: 5px solid #0284c7 !important;
+}
+
+/* Pending - Amber */
+.po-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-top-color: rgba(245, 158, 11, 0.22) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.22) !important;
+    border-right-color: rgba(245, 158, 11, 0.20) !important;
+}
+.po-table tr.row-status-pending:hover > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.po-table tr.row-status-pending > td:first-child {
+    border-left: 5px solid #f59e0b !important;
+}
+.po-table tr.row-status-pending > td:last-child {
+    border-right: 5px solid #f59e0b !important;
+}
+
+/* Completed - Green */
+.po-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.08) !important;
+    border-top-color: rgba(22, 163, 74, 0.22) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.22) !important;
+    border-right-color: rgba(22, 163, 74, 0.20) !important;
+}
+.po-table tr.row-status-completed:hover > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+}
+.po-table tr.row-status-completed > td:first-child {
+    border-left: 5px solid #16a34a !important;
+}
+.po-table tr.row-status-completed > td:last-child {
+    border-right: 5px solid #16a34a !important;
+}
+
+/* Cancelled / Rejected - Red */
+.po-table tr.row-status-cancelled > td {
+    background-color: rgba(220, 38, 38, 0.08) !important;
+    border-top-color: rgba(220, 38, 38, 0.22) !important;
+    border-bottom-color: rgba(220, 38, 38, 0.22) !important;
+    border-right-color: rgba(220, 38, 38, 0.20) !important;
+}
+.po-table tr.row-status-cancelled:hover > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+}
+.po-table tr.row-status-cancelled > td:first-child {
+    border-left: 5px solid #dc2626 !important;
+}
+.po-table tr.row-status-cancelled > td:last-child {
+    border-right: 5px solid #dc2626 !important;
+}
+
+/* Designing - Purple */
+.po-table tr.row-status-designing > td {
+    background-color: rgba(124, 58, 237, 0.08) !important;
+    border-top-color: rgba(124, 58, 237, 0.22) !important;
+    border-bottom-color: rgba(124, 58, 237, 0.22) !important;
+    border-right-color: rgba(124, 58, 237, 0.20) !important;
+}
+.po-table tr.row-status-designing:hover > td {
+    background-color: rgba(124, 58, 237, 0.14) !important;
+}
+.po-table tr.row-status-designing > td:first-child {
+    border-left: 5px solid #7c3aed !important;
+}
+.po-table tr.row-status-designing > td:last-child {
+    border-right: 5px solid #7c3aed !important;
+}
+
+/* Printing - Indigo */
+.po-table tr.row-status-printing > td {
+    background-color: rgba(79, 70, 229, 0.08) !important;
+    border-top-color: rgba(79, 70, 229, 0.22) !important;
+    border-bottom-color: rgba(79, 70, 229, 0.22) !important;
+    border-right-color: rgba(79, 70, 229, 0.20) !important;
+}
+.po-table tr.row-status-printing:hover > td {
+    background-color: rgba(79, 70, 229, 0.14) !important;
+}
+.po-table tr.row-status-printing > td:first-child {
+    border-left: 5px solid #4f46e5 !important;
+}
+.po-table tr.row-status-printing > td:last-child {
+    border-right: 5px solid #4f46e5 !important;
+}
+
+/* Finishing - Orange */
+.po-table tr.row-status-finishing > td {
+    background-color: rgba(234, 88, 12, 0.08) !important;
+    border-top-color: rgba(234, 88, 12, 0.22) !important;
+    border-bottom-color: rgba(234, 88, 12, 0.22) !important;
+    border-right-color: rgba(234, 88, 12, 0.20) !important;
+}
+.po-table tr.row-status-finishing:hover > td {
+    background-color: rgba(234, 88, 12, 0.14) !important;
+}
+.po-table tr.row-status-finishing > td:first-child {
+    border-left: 5px solid #ea580c !important;
+}
+.po-table tr.row-status-finishing > td:last-child {
+    border-right: 5px solid #ea580c !important;
+}
+
+/* Ready for Pickup - Teal */
+.po-table tr.row-status-ready > td {
+    background-color: rgba(13, 148, 136, 0.08) !important;
+    border-top-color: rgba(13, 148, 136, 0.22) !important;
+    border-bottom-color: rgba(13, 148, 136, 0.22) !important;
+    border-right-color: rgba(13, 148, 136, 0.20) !important;
+}
+.po-table tr.row-status-ready:hover > td {
+    background-color: rgba(13, 148, 136, 0.14) !important;
+}
+.po-table tr.row-status-ready > td:first-child {
+    border-left: 5px solid #0d9488 !important;
+}
+.po-table tr.row-status-ready > td:last-child {
+    border-right: 5px solid #0d9488 !important;
+}
+
+/* Delivered - Slate */
+.po-table tr.row-status-delivered > td {
+    background-color: rgba(71, 85, 105, 0.08) !important;
+    border-top-color: rgba(71, 85, 105, 0.22) !important;
+    border-bottom-color: rgba(71, 85, 105, 0.22) !important;
+    border-right-color: rgba(71, 85, 105, 0.20) !important;
+}
+.po-table tr.row-status-delivered:hover > td {
+    background-color: rgba(71, 85, 105, 0.14) !important;
+}
+.po-table tr.row-status-delivered > td:first-child {
+    border-left: 5px solid #475569 !important;
+}
+.po-table tr.row-status-delivered > td:last-child {
+    border-right: 5px solid #475569 !important;
+}
+
+/* Dark Mode Overrides */
+html[data-theme="dark"] .po-table th {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .po-table td {
+    background: var(--surface);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    border-right-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .po-table td:first-child {
+    border-left-color: var(--border);
+}
+
+html[data-theme="dark"] .po-table td:last-child {
+    border-right-color: var(--border);
+}
+
+html[data-theme="dark"] .po-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+    border-top-color: rgba(2, 132, 199, 0.32) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.32) !important;
+    border-right-color: rgba(2, 132, 199, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-top-color: rgba(245, 158, 11, 0.32) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.32) !important;
+    border-right-color: rgba(245, 158, 11, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+    border-top-color: rgba(22, 163, 74, 0.32) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.32) !important;
+    border-right-color: rgba(22, 163, 74, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-cancelled > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+    border-top-color: rgba(220, 38, 38, 0.32) !important;
+    border-bottom-color: rgba(220, 38, 38, 0.32) !important;
+    border-right-color: rgba(220, 38, 38, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-designing > td {
+    background-color: rgba(124, 58, 237, 0.14) !important;
+    border-top-color: rgba(124, 58, 237, 0.32) !important;
+    border-bottom-color: rgba(124, 58, 237, 0.32) !important;
+    border-right-color: rgba(124, 58, 237, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-printing > td {
+    background-color: rgba(79, 70, 229, 0.14) !important;
+    border-top-color: rgba(79, 70, 229, 0.32) !important;
+    border-bottom-color: rgba(79, 70, 229, 0.32) !important;
+    border-right-color: rgba(79, 70, 229, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-finishing > td {
+    background-color: rgba(234, 88, 12, 0.14) !important;
+    border-top-color: rgba(234, 88, 12, 0.32) !important;
+    border-bottom-color: rgba(234, 88, 12, 0.32) !important;
+    border-right-color: rgba(234, 88, 12, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-ready > td {
+    background-color: rgba(13, 148, 136, 0.14) !important;
+    border-top-color: rgba(13, 148, 136, 0.32) !important;
+    border-bottom-color: rgba(13, 148, 136, 0.32) !important;
+    border-right-color: rgba(13, 148, 136, 0.30) !important;
+}
+html[data-theme="dark"] .po-table tr.row-status-delivered > td {
+    background-color: rgba(71, 85, 105, 0.16) !important;
+    border-top-color: rgba(71, 85, 105, 0.32) !important;
+    border-bottom-color: rgba(71, 85, 105, 0.32) !important;
+    border-right-color: rgba(71, 85, 105, 0.30) !important;
+}
+
+.order-id-badge,
 .order-id-cell {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-weight: 700;
     color: #1677ff;
-    background: rgba(22, 119, 255, 0.08);
-    padding: 3px 8px;
-    border-radius: 4px;
+    background: rgba(22, 119, 255, 0.09);
+    border: 1px solid rgba(22, 119, 255, 0.22);
+    padding: 3px 9px;
+    border-radius: 6px;
     display: inline-block;
     font-size: 12px;
     letter-spacing: -0.2px;
+    box-shadow: 0 1px 2px rgba(22, 119, 255, 0.08);
+}
+
+td.order-id-col,
+td.order-id-cell {
+    display: table-cell;
+    vertical-align: middle;
 }
 
 .customer-cell strong {
@@ -963,20 +1250,22 @@ html[data-theme="dark"] .status-badge.partial {
 .po-action-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 7px;
 }
 
 .action-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     display: inline-grid;
     place-items: center;
-    border-radius: 6px;
+    border-radius: 7px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
-    font-size: 11.5px;
-    transition: all 0.18s;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
@@ -999,33 +1288,75 @@ html[data-theme="dark"] .status-badge.partial {
 }
 
 .action-btn.approve-action {
-    color: #16a34a;
-    border-color: rgba(22, 163, 74, 0.35);
-    background: #f0fdf4;
+    color: #ffffff;
+    background: #16a34a;
+    border-color: #15803d;
+    box-shadow: 0 2px 5px rgba(22, 163, 74, 0.28);
+    font-weight: 700;
 }
 
 .action-btn.approve-action:hover:not(:disabled) {
-    background: #16a34a;
-    border-color: #16a34a;
+    background: #15803d;
+    border-color: #166534;
     color: #ffffff;
+    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.38);
+    transform: translateY(-1.5px);
 }
 
 .action-btn.cancel-action {
-    color: #dc2626;
-    border-color: rgba(220, 38, 38, 0.35);
-    background: #fef2f2;
+    color: #ffffff;
+    background: #ef4444;
+    border-color: #dc2626;
+    box-shadow: 0 2px 5px rgba(239, 68, 68, 0.28);
+    font-weight: 700;
 }
 
 .action-btn.cancel-action:hover:not(:disabled) {
     background: #dc2626;
-    border-color: #dc2626;
+    border-color: #b91c1c;
     color: #ffffff;
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.38);
+    transform: translateY(-1.5px);
 }
 
 .action-btn:disabled {
-    opacity: 0.45;
+    opacity: 0.32;
     cursor: not-allowed;
-    transform: none;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(85%);
+}
+
+html[data-theme="dark"] .action-btn.approve-action {
+    background: #15803d;
+    border-color: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .action-btn.approve-action:hover:not(:disabled) {
+    background: #16a34a;
+    border-color: #22c55e;
+}
+
+html[data-theme="dark"] .action-btn.cancel-action {
+    background: #dc2626;
+    border-color: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .action-btn.cancel-action:hover:not(:disabled) {
+    background: #ef4444;
+    border-color: #f87171;
+}
+
+html[data-theme="dark"] .action-btn:disabled {
+    opacity: 0.22;
+    filter: grayscale(100%);
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-muted);
 }
 
 /* Empty State & Pagination */
@@ -1238,31 +1569,97 @@ html[data-theme="dark"] .status-badge.partial {
 /* Payment History Table in Modal */
 .history-table {
     width: 100%;
+    min-width: 860px;
     border-collapse: collapse;
-    font-size: 11.5px;
+    font-size: 12px;
 }
 
 .history-table th {
-    padding: 9px 12px;
+    padding: 11px 14px;
     background: var(--surface-2);
     color: var(--text-muted);
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     border-bottom: 1px solid var(--border);
     text-align: left;
+    white-space: nowrap;
 }
 
 .history-table td {
-    padding: 10px 12px;
+    padding: 12px 14px;
     border-bottom: 1px solid var(--border-light);
     color: var(--text);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.history-table tr:hover td {
+    background: var(--surface-hover);
+}
+
+.po-table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.po-table-responsive::-webkit-scrollbar-track {
+    background: var(--surface-2);
+    border-radius: 4px;
+}
+
+.po-table-responsive::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.po-table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .reversed-row {
     opacity: 0.6;
     text-decoration: line-through;
     background: rgba(239, 68, 68, 0.04);
+}
+
+.pay-method-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.pay-method-pill.cash {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.25);
+    color: #10b981;
+}
+
+.pay-method-pill.card {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: #3b82f6;
+}
+
+.pay-method-pill.bank-transfer,
+.pay-method-pill.bank {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.25);
+    color: #8b5cf6;
+}
+
+.pay-method-pill.cheque,
+.pay-method-pill.check {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #f59e0b;
 }
 
 /* Printable Receipt Template */
