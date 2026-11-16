@@ -38,6 +38,10 @@ class CheckModulePermission
                 return $next($request);
             }
 
+            // Inactive or suspended administrator: terminate admin guard session only
+            // (Preserves web guard session if multi-authenticated)
+            Auth::guard('admin')->logout();
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -67,7 +71,12 @@ class CheckModulePermission
 
         $fallbackRoute = $user && method_exists($user, 'getDefaultLandingRoute')
             ? $user->getDefaultLandingRoute()
-            : route('login');
+            : route('ui.user-profile');
+
+        // Prevent redirecting an authenticated user back to login
+        if (empty($fallbackRoute) || $fallbackRoute === route('login') || $fallbackRoute === url('/login')) {
+            $fallbackRoute = route('ui.user-profile');
+        }
 
         // Prevent infinite redirect loop if current URL is already the fallback URL
         if ($fallbackRoute === $request->url() || $fallbackRoute === url()->current()) {

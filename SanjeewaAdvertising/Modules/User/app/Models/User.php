@@ -226,6 +226,6 @@ class User extends Authenticatable
             }
         }
 
-        return route('login');
+        return route('ui.user-profile');
     }
 }
