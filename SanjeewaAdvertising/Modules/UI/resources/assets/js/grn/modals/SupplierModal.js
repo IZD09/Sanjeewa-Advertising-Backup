@@ -80,6 +80,7 @@ export class SupplierModal extends BaseModalHandler {
     const nameInput = document.getElementById("newSupName");
     const phoneInput = document.getElementById("newSupPhone");
     const emailInput = document.getElementById("newSupEmail");
+    const bankAccountInput = document.getElementById("newSupBankAccount");
 
     const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
 
@@ -91,6 +92,7 @@ export class SupplierModal extends BaseModalHandler {
       if (nameInput) nameInput.value = s ? s.name : "";
       if (phoneInput) phoneInput.value = s ? (s.phone || s.mobile || "") : "";
       if (emailInput) emailInput.value = s ? (s.email || "") : "";
+      if (bankAccountInput) bankAccountInput.value = s ? (s.bank_account || s.bank_details || "") : "";
     } else {
       if (modalTitle) modalTitle.innerHTML = `<i class="fa-solid fa-truck-field" style="color: #1677ff;"></i> Register New Supplier / Vendor`;
       if (saveBtn) saveBtn.innerHTML = `<i class="fa-solid fa-user-check"></i> Save & Register Supplier`;
@@ -98,6 +100,7 @@ export class SupplierModal extends BaseModalHandler {
       if (nameInput) nameInput.value = "";
       if (phoneInput) phoneInput.value = "";
       if (emailInput) emailInput.value = "";
+      if (bankAccountInput) bankAccountInput.value = "";
     }
 
     this.openModal("registerSupplierModal");
@@ -111,6 +114,7 @@ export class SupplierModal extends BaseModalHandler {
     const name = document.getElementById("newSupName")?.value?.trim();
     const phone = document.getElementById("newSupPhone")?.value?.trim();
     const email = document.getElementById("newSupEmail")?.value?.trim() || "";
+    const bankAccount = document.getElementById("newSupBankAccount")?.value?.trim() || "";
 
     if (!name) {
       this.showToast("Please enter the Company / Business Name", "error");
@@ -119,6 +123,16 @@ export class SupplierModal extends BaseModalHandler {
 
     if (!phone) {
       this.showToast("Please enter a valid Mobile / Phone Number", "error");
+      return;
+    }
+
+    if (phone.length > 15) {
+      this.showToast("Mobile / Phone Number cannot exceed 15 characters", "error");
+      return;
+    }
+
+    if (bankAccount.length > 50) {
+      this.showToast("Bank Account Details cannot exceed 50 characters", "error");
       return;
     }
 
@@ -140,7 +154,12 @@ export class SupplierModal extends BaseModalHandler {
         const supplierId = existing ? existing.id : (this.editingSupplierCode.toString().replace(/\D+/g, "") || null);
 
         if (this.ctx.updateSupplier && supplierId) {
-          await this.ctx.updateSupplier(supplierId, { name, mobile: phone, email: email || null });
+          await this.ctx.updateSupplier(supplierId, {
+            name,
+            mobile: phone,
+            email: email || null,
+            bank_account: bankAccount || null
+          });
         } else {
           const existingIdx = suppliers.findIndex(sup => sup.code === this.editingSupplierCode || sup.id === this.editingSupplierCode);
           if (existingIdx !== -1) {
@@ -150,7 +169,9 @@ export class SupplierModal extends BaseModalHandler {
               contact_person: name,
               phone: phone,
               mobile: phone,
-              email: email
+              email: email,
+              bank_account: bankAccount,
+              bank_details: bankAccount
             };
             if (this.ctx.setSuppliers) this.ctx.setSuppliers(suppliers);
           }
@@ -167,7 +188,12 @@ export class SupplierModal extends BaseModalHandler {
 
       // Create new supplier in database
       if (this.ctx.createSupplier) {
-        await this.ctx.createSupplier({ name, mobile: phone, email: email || null });
+        await this.ctx.createSupplier({
+          name,
+          mobile: phone,
+          email: email || null,
+          bank_account: bankAccount || null
+        });
       } else {
         const fallbackId = Date.now();
         const newSupplier = {
@@ -178,6 +204,8 @@ export class SupplierModal extends BaseModalHandler {
           phone: phone,
           mobile: phone,
           email: email,
+          bank_account: bankAccount,
+          bank_details: bankAccount,
           status: "Active"
         };
         suppliers.unshift(newSupplier);

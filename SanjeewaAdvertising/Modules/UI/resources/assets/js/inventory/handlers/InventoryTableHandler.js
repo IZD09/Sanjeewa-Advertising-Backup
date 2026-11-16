@@ -192,7 +192,7 @@ export class InventoryTableHandler extends BaseTableLoader {
 
       if (aggBtn) {
         aggBtn.classList.add("active");
-        aggBtn.style.background = "#fff";
+        aggBtn.style.background = "var(--surface, #fff)";
         aggBtn.style.color = "#1677ff";
         aggBtn.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
       }
@@ -212,7 +212,7 @@ export class InventoryTableHandler extends BaseTableLoader {
 
       if (batBtn) {
         batBtn.classList.add("active");
-        batBtn.style.background = "#fff";
+        batBtn.style.background = "var(--surface, #fff)";
         batBtn.style.color = "#1677ff";
         batBtn.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
       }

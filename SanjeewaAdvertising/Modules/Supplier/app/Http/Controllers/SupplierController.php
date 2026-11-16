@@ -154,7 +154,7 @@ class SupplierController extends BaseApiController
     }
 
     /**
-     * Remove the specified supplier.
+     * Disable the specified supplier instead of deleting.
      */
     public function destroy(int $id): JsonResponse
     {
@@ -166,7 +166,27 @@ class SupplierController extends BaseApiController
 
         $this->supplierService->deleteSupplier($supplier);
 
-        return $this->success(null, 'Supplier deleted successfully.');
+        return $this->success(null, "Supplier '{$supplier->name}' disabled successfully.");
+    }
+
+    /**
+     * Toggle active/disabled status for the specified supplier.
+     */
+    public function toggleStatus(int $id): JsonResponse
+    {
+        $supplier = $this->supplierService->getSupplierById($id);
+
+        if (! $supplier) {
+            return $this->notFound('Supplier not found.');
+        }
+
+        $updated = $this->supplierService->toggleSupplierStatus($supplier);
+        $action = $updated->status === 'Disabled' ? 'disabled' : 'enabled';
+
+        return $this->success(
+            new SupplierResource($updated),
+            "Supplier '{$updated->name}' {$action} successfully."
+        );
     }
 
     /**

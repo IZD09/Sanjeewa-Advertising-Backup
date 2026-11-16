@@ -21,6 +21,8 @@ class SupplierResource extends JsonResource
             'name' => $this->name,
             'mobile' => $this->mobile,
             'email' => $this->email,
+            'bank_account' => $this->bank_account,
+            'status' => $this->status ?? 'Active',
             'purchase_orders_count' => $this->whenCounted('purchaseOrders'),
             'purchase_orders' => PurchaseOrderResource::collection($this->whenLoaded('purchaseOrders')),
         ];

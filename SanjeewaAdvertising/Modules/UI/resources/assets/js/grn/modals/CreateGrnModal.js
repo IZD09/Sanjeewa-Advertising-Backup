@@ -43,6 +43,8 @@ export class CreateGrnModal extends BaseModalHandler {
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
     this.allPurchaseOrders = [];
+    this.suppliers = [];
+    this.selectedSupplier = null;
     this.poListLoaded = false;
     this.activeSupplierFilter = null;
 
@@ -65,50 +67,88 @@ export class CreateGrnModal extends BaseModalHandler {
       saveBtn.addEventListener("click", () => this.saveGrn());
     }
 
-    // Active PO Search Input
-    const poSearchInput = document.getElementById("grnModalPoSearchInput");
-    if (poSearchInput && !poSearchInput._poSearchBound) {
-      poSearchInput._poSearchBound = true;
-      poSearchInput.addEventListener("focus", () => {
-        this.searchAndRenderActivePOs(poSearchInput.value);
-      });
+    // Searchable Supplier Selector inside Create GRN Modal
+    const suppSearchInput = document.getElementById("grnCreateSuppSearchInput");
+    if (suppSearchInput && !suppSearchInput._grnSuppSearchBound) {
+      suppSearchInput._grnSuppSearchBound = true;
+      suppSearchInput.addEventListener("input", (e) => this.renderSupplierDropdown(e.target.value));
+      suppSearchInput.addEventListener("focus", (e) => this.renderSupplierDropdown(e.target.value));
+    }
 
-      poSearchInput.addEventListener("input", (e) => {
-        this.searchAndRenderActivePOs(e.target.value);
+    const toggleSuppBtn = document.getElementById("grnCreateToggleSuppDropdownBtn");
+    if (toggleSuppBtn && !toggleSuppBtn._grnSuppToggleBound) {
+      toggleSuppBtn._grnSuppToggleBound = true;
+      toggleSuppBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleSupplierDropdown();
       });
+    }
 
-      poSearchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          this.handleManualAddPoItem();
+    const clearSuppBtn = document.getElementById("grnCreateClearSupplierBtn");
+    if (clearSuppBtn && !clearSuppBtn._grnSuppClearBound) {
+      clearSuppBtn._grnSuppClearBound = true;
+      clearSuppBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.clearSelectedSupplier();
+      });
+    }
+
+    // Approved PO Selector dropdown -> auto-add PO & its items
+    const approvedPoSelect = document.getElementById("grnModalApprovedPoSelect");
+    if (approvedPoSelect && !approvedPoSelect._grnApprovedPoBound) {
+      approvedPoSelect._grnApprovedPoBound = true;
+      approvedPoSelect.addEventListener("change", (e) => {
+        const val = e.target.value;
+        if (val) {
+          this.addPurchaseOrderByNumber(val);
+          approvedPoSelect.value = "";
         }
       });
     }
 
-    // Add GRN Item Button (placed at right side inside search input container)
-    const addPoItemBtn = document.getElementById("grnModalAddPoItemBtn");
-    if (addPoItemBtn && !addPoItemBtn._grnAddPoItemBound) {
-      addPoItemBtn._grnAddPoItemBound = true;
-      addPoItemBtn.addEventListener("click", (e) => {
+    // Add All Approved POs button
+    const addAllBtn = document.getElementById("grnCreateAddAllApprovedPoBtn");
+    if (addAllBtn && !addAllBtn._grnAddAllBound) {
+      addAllBtn._grnAddAllBound = true;
+      addAllBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        this.handleManualAddPoItem();
+        this.addAllApprovedPOs();
       });
     }
 
-    // Close search dropdown on click outside
+    // Delegated clicks for supplier items, quick PO chips & outside close
     document.addEventListener("click", (e) => {
-      const dropdown = document.getElementById("grnModalPoSearchDropdown");
-      const searchInput = document.getElementById("grnModalPoSearchInput");
-      const addPoBtn = document.getElementById("grnModalAddPoItemBtn");
-      if (
-        dropdown &&
-        searchInput &&
-        !searchInput.contains(e.target) &&
-        !dropdown.contains(e.target) &&
-        (!addPoBtn || !addPoBtn.contains(e.target))
-      ) {
-        dropdown.style.display = "none";
+      const suppItem = e.target.closest(".grn-create-supp-item");
+      if (suppItem) {
+        e.preventDefault();
+        const suppId = suppItem.getAttribute("data-supplier-id");
+        const suppName = suppItem.getAttribute("data-supplier-name");
+        const matched = this.suppliers.find(
+          s => (suppId && String(s.id) === String(suppId)) || (suppName && s.name === suppName)
+        );
+        if (matched) {
+          this.selectSupplier(matched);
+        }
+        return;
+      }
+
+      const poChip = e.target.closest(".grn-create-po-chip");
+      if (poChip) {
+        e.preventDefault();
+        const poNum = poChip.getAttribute("data-po-number");
+        if (poNum) {
+          this.addPurchaseOrderByNumber(poNum);
+        }
+        return;
+      }
+
+      const suppGroup = document.getElementById("grnCreateSuppSearchGroup");
+      const suppDropdown = document.getElementById("grnCreateSuppDropdown");
+      if (suppDropdown && suppDropdown.style.display !== "none") {
+        if (!suppGroup || !suppGroup.contains(e.target)) {
+          this.hideSupplierDropdown();
+        }
       }
     });
   }
@@ -214,86 +254,344 @@ export class CreateGrnModal extends BaseModalHandler {
     // Reset state
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
+    this.selectedSupplier = null;
     this.activeSupplierFilter = targetSupplier ? String(targetSupplier).trim() : null;
 
-    const grnNoInput = document.getElementById("grnModalNumber");
-    const dateInput = document.getElementById("grnCreateModalDate") || document.getElementById("grnModalDate");
     const remarksInput = document.getElementById("grnModalRemarks");
     const discountInput = document.getElementById("grnModalDiscount");
     const receivedByInput = document.getElementById("grnModalReceivedBy");
-    const poSearchInput = document.getElementById("grnModalPoSearchInput");
-    const poSearchDropdown = document.getElementById("grnModalPoSearchDropdown");
-    const poSearchHint = document.getElementById("grnModalPoSearchHint");
 
-    if (grnNoInput) {
-      grnNoInput.value = this.ctx.generateNextGrnNumber
-        ? this.ctx.generateNextGrnNumber()
-        : `GRN-${Date.now().toString().slice(-4)}`;
-    }
-    if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
     if (remarksInput) remarksInput.value = "";
     if (discountInput) discountInput.value = "0.00";
-    if (receivedByInput) receivedByInput.value = "Admin User";
-    if (poSearchDropdown) poSearchDropdown.style.display = "none";
+    if (receivedByInput && receivedByInput.dataset?.loggedUser) {
+      receivedByInput.value = receivedByInput.dataset.loggedUser;
+    }
 
-    // Load active purchase orders fresh from database
-    await this.loadActivePurchaseOrders(true);
+    this.resetSupplierUI();
+    this.renderSelectedPOs();
+    this.renderGrnItems();
+    this.calculateFinancials();
 
-    // If a target PO was specified (e.g. from PO table action), auto-add it
+    // Load suppliers & active purchase orders fresh from database concurrently
+    await Promise.all([
+      this.loadSuppliers(),
+      this.loadActivePurchaseOrders(true)
+    ]);
+
+    // If a target PO was specified (e.g. from PO table action), select its supplier and link it
     if (targetPoNumber) {
       const po = this.allPurchaseOrders.find(
         (p) => p.po_number === targetPoNumber || String(p.id) === String(targetPoNumber)
       );
       if (po) {
-        this.addPurchaseOrder(po);
-      }
-      if (poSearchInput) poSearchInput.value = "";
-      if (poSearchDropdown) poSearchDropdown.style.display = "none";
-    } else if (this.activeSupplierFilter) {
-      // Find un-GRNed POs for this specific supplier (Supplier Directory Card path)
-      const supPOs = this.allPurchaseOrders.filter(
-        (p) => p.status !== "Completed" && p.status !== "Cancelled" && (
-          (p.supplier_name && p.supplier_name.toLowerCase() === this.activeSupplierFilter.toLowerCase()) ||
-          String(p.suppliers_id) === String(this.activeSupplierFilter)
-        )
-      );
-
-      if (poSearchInput) {
-        if (supPOs.length === 1) {
-          poSearchInput.value = supPOs[0].po_number;
+        const supp = this.findSupplierForPo(po);
+        if (supp) {
+          this.selectSupplier(supp, po.po_number);
         } else {
-          poSearchInput.value = this.activeSupplierFilter;
+          this.addPurchaseOrder(po);
         }
       }
-
-      if (poSearchHint) {
-        poSearchHint.textContent = `${supPOs.length} un-GRNed Purchase Order(s) for "${this.activeSupplierFilter}". Click 'Add GRN Item' or select PO below.`;
-      }
-
-      // Open dropdown showing un-GRNed POs strictly for this supplier
-      this.searchAndRenderActivePOs(this.activeSupplierFilter);
-    } else {
-      // Top "+ Create New GRN" button path: Independent flow across ALL suppliers
-      this.activeSupplierFilter = null;
-      if (poSearchInput) poSearchInput.value = "";
-
-      const allActivePOs = this.allPurchaseOrders.filter(
-        (p) => p.status !== "Completed" && p.status !== "Cancelled"
+    } else if (this.activeSupplierFilter) {
+      const cleanFilter = this.activeSupplierFilter.toLowerCase();
+      const supp = this.suppliers.find(
+        s => String(s.id) === String(this.activeSupplierFilter) ||
+             (s.name && s.name.toLowerCase() === cleanFilter)
       );
-
-      if (poSearchHint) {
-        poSearchHint.textContent = `${allActivePOs.length} un-GRNed Purchase Order(s) available across all suppliers. Select a PO or click 'Add GRN Item'.`;
+      if (supp) {
+        this.selectSupplier(supp);
       }
-
-      // Open dropdown showing ALL un-GRNed POs across all suppliers
-      this.searchAndRenderActivePOs("");
     }
 
+    this.openModal("createGrnModal");
+  }
+
+  async loadSuppliers() {
+    try {
+      const res = await this.http.get("/api/v1/suppliers/all");
+      const data = res?.data || res;
+      this.suppliers = Array.isArray(data) ? data : (data?.data || []);
+    } catch (err) {
+      console.warn("[CreateGrnModal] Could not fetch suppliers:", err);
+      this.suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
+    }
+  }
+
+  findSupplierForPo(po) {
+    if (!po) return null;
+    let supp = null;
+    if (po.suppliers_id) {
+      supp = this.suppliers.find(s => Number(s.id) === Number(po.suppliers_id));
+    }
+    if (!supp && po.supplier_name) {
+      const cleanName = String(po.supplier_name).trim().toLowerCase();
+      supp = this.suppliers.find(s => String(s.name || "").trim().toLowerCase() === cleanName);
+    }
+    if (!supp) {
+      supp = {
+        id: po.suppliers_id || null,
+        code: po.suppliers_id ? `SUP-${String(po.suppliers_id).padStart(3, "0")}` : "SUP",
+        name: po.supplier_name || "Supplier",
+        mobile: po.supplier_contact || ""
+      };
+    }
+    return supp;
+  }
+
+  getApprovedPOsForSupplier(supplier) {
+    if (!supplier) return [];
+    return (this.allPurchaseOrders || []).filter(po => {
+      const isApproved = String(po.status || "").trim().toLowerCase() === "approved";
+      if (!isApproved) return false;
+
+      const matchId = supplier.id && po.suppliers_id && Number(po.suppliers_id) === Number(supplier.id);
+      const matchName = supplier.name && po.supplier_name &&
+        String(po.supplier_name).trim().toLowerCase() === String(supplier.name).trim().toLowerCase();
+      return matchId || matchName;
+    });
+  }
+
+  resetSupplierUI() {
+    const searchGroup = document.getElementById("grnCreateSuppSearchGroup");
+    const searchInput = document.getElementById("grnCreateSuppSearchInput");
+    const card = document.getElementById("grnCreateSelectedSupplierCard");
+    const hiddenId = document.getElementById("grnCreateSelectedSupplierId");
+    const dropdown = document.getElementById("grnCreateSuppDropdown");
+    const poSelect = document.getElementById("grnModalApprovedPoSelect");
+    const addAllBtn = document.getElementById("grnCreateAddAllApprovedPoBtn");
+    const chips = document.getElementById("grnCreateApprovedPoChips");
+    const hint = document.getElementById("grnModalPoSearchHint");
+
+    if (searchGroup) searchGroup.style.display = "block";
+    if (searchInput) searchInput.value = "";
+    if (card) card.style.display = "none";
+    if (hiddenId) hiddenId.value = "";
+    if (dropdown) dropdown.style.display = "none";
+    if (addAllBtn) addAllBtn.style.display = "none";
+    if (chips) {
+      chips.style.display = "none";
+      chips.innerHTML = "";
+    }
+    if (poSelect) {
+      poSelect.innerHTML = '<option value="">-- Please select a supplier above first --</option>';
+      poSelect.disabled = true;
+    }
+    if (hint) {
+      hint.textContent = "Select a supplier above to view their Approved Purchase Orders";
+    }
+  }
+
+  toggleSupplierDropdown() {
+    const dropdown = document.getElementById("grnCreateSuppDropdown");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "block") {
+      this.hideSupplierDropdown();
+    } else {
+      const searchInput = document.getElementById("grnCreateSuppSearchInput");
+      this.renderSupplierDropdown(searchInput ? searchInput.value : "");
+    }
+  }
+
+  hideSupplierDropdown() {
+    const dropdown = document.getElementById("grnCreateSuppDropdown");
+    const icon = document.getElementById("grnCreateSuppDropdownIcon");
+    if (dropdown) dropdown.style.display = "none";
+    if (icon) {
+      icon.classList.remove("fa-chevron-up");
+      icon.classList.add("fa-chevron-down");
+    }
+  }
+
+  renderSupplierDropdown(query = "") {
+    const dropdown = document.getElementById("grnCreateSuppDropdown");
+    const icon = document.getElementById("grnCreateSuppDropdownIcon");
+    if (!dropdown) return;
+
+    const cleanQuery = String(query || "").trim().toLowerCase();
+    let matches = (this.suppliers || []).filter(
+      s => (s.status || "Active").toLowerCase() !== "disabled" || this.getApprovedPOsForSupplier(s).length > 0
+    );
+
+    if (cleanQuery) {
+      matches = matches.filter(s =>
+        String(s.name || "").toLowerCase().includes(cleanQuery) ||
+        String(s.mobile || s.phone || "").toLowerCase().includes(cleanQuery) ||
+        String(s.code || "").toLowerCase().includes(cleanQuery)
+      );
+    }
+
+    // Sort suppliers with Approved POs first
+    matches.sort((a, b) => this.getApprovedPOsForSupplier(b).length - this.getApprovedPOsForSupplier(a).length);
+
+    if (matches.length === 0) {
+      dropdown.innerHTML = `
+        <div style="padding: 12px 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
+          <i class="fa-solid fa-truck-field" style="margin-right: 6px; opacity: 0.6;"></i>
+          No suppliers found matching "<strong>${this.escapeHtml(query)}</strong>"
+        </div>`;
+    } else {
+      dropdown.innerHTML = matches.slice(0, 35).map(s => {
+        const approvedCount = this.getApprovedPOsForSupplier(s).length;
+        const phone = s.mobile || s.phone || "No Phone";
+        const code = s.code || (s.id ? `SUP-${String(s.id).padStart(3, "0")}` : "SUP");
+        return `
+          <div class="grn-create-supp-item" data-supplier-id="${s.id || ""}" data-supplier-name="${this.escapeHtml(s.name)}" style="padding: 9px 12px; border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.06)); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s ease;">
+            <div style="min-width: 0;">
+              <strong style="color: var(--text); font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(s.name)}</strong>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">${this.escapeHtml(phone)} • ${this.escapeHtml(code)}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              ${approvedCount > 0
+                ? `<span style="font-size: 10px; background: rgba(22,119,255,0.1); color: #1677ff; padding: 2px 8px; border-radius: 10px; font-weight: 700;">${approvedCount} Approved PO${approvedCount === 1 ? "" : "s"}</span>`
+                : `<span style="font-size: 10px; color: var(--text-muted);">0 Approved</span>`}
+              <span style="font-size: 11px; font-weight: 700; color: #1677ff;">Select &rarr;</span>
+            </div>
+          </div>`;
+      }).join("");
+
+      dropdown.querySelectorAll(".grn-create-supp-item").forEach(item => {
+        item.addEventListener("mouseenter", () => item.style.backgroundColor = "var(--surface-2, rgba(22,119,255,0.05))");
+        item.addEventListener("mouseleave", () => item.style.backgroundColor = "");
+      });
+    }
+
+    dropdown.style.display = "block";
+    if (icon) {
+      icon.classList.remove("fa-chevron-down");
+      icon.classList.add("fa-chevron-up");
+    }
+  }
+
+  selectSupplier(supplier, autoAddPoNumber = null) {
+    if (!supplier) return;
+    this.selectedSupplier = supplier;
+    this.hideSupplierDropdown();
+
+    const searchGroup = document.getElementById("grnCreateSuppSearchGroup");
+    const card = document.getElementById("grnCreateSelectedSupplierCard");
+    const nameEl = document.getElementById("grnCreateSelectedSuppName");
+    const metaEl = document.getElementById("grnCreateSelectedSuppMeta");
+    const hiddenId = document.getElementById("grnCreateSelectedSupplierId");
+
+    const approvedPOs = this.getApprovedPOsForSupplier(supplier);
+    const phone = supplier.mobile || supplier.phone || "No Phone";
+
+    if (searchGroup) searchGroup.style.display = "none";
+    if (card) card.style.display = "flex";
+    if (nameEl) nameEl.textContent = supplier.name;
+    if (metaEl) metaEl.textContent = `${phone} • ${approvedPOs.length} Approved PO${approvedPOs.length === 1 ? "" : "s"}`;
+    if (hiddenId) hiddenId.value = supplier.id || "";
+
+    if (autoAddPoNumber) {
+      const targetPo = this.allPurchaseOrders.find(
+        p => p.po_number === autoAddPoNumber || String(p.id) === String(autoAddPoNumber)
+      );
+      if (targetPo) {
+        this.addPurchaseOrder(targetPo);
+      }
+    }
+
+    this.populateApprovedPoSelector();
+  }
+
+  clearSelectedSupplier() {
+    this.selectedSupplier = null;
+    this.selectedPurchaseOrders = [];
+    this.grnItems = [];
+    this.resetSupplierUI();
     this.renderSelectedPOs();
     this.renderGrnItems();
     this.calculateFinancials();
+  }
 
-    this.openModal("createGrnModal");
+  populateApprovedPoSelector() {
+    const poSelect = document.getElementById("grnModalApprovedPoSelect");
+    const addAllBtn = document.getElementById("grnCreateAddAllApprovedPoBtn");
+    const chipsContainer = document.getElementById("grnCreateApprovedPoChips");
+    const hintEl = document.getElementById("grnModalPoSearchHint");
+
+    if (!this.selectedSupplier) {
+      this.resetSupplierUI();
+      return;
+    }
+
+    const approvedPOs = this.getApprovedPOsForSupplier(this.selectedSupplier);
+    const selectedNumbers = this.selectedPurchaseOrders.map(p => p.po_number);
+    const available = approvedPOs.filter(po => !selectedNumbers.includes(po.po_number));
+
+    if (poSelect) {
+      poSelect.disabled = false;
+      if (available.length === 0) {
+        poSelect.innerHTML = approvedPOs.length === 0
+          ? `<option value="">No Approved Purchase Orders found for ${this.escapeHtml(this.selectedSupplier.name)}</option>`
+          : `<option value="">All Approved POs for ${this.escapeHtml(this.selectedSupplier.name)} are linked (${this.selectedPurchaseOrders.length} linked)</option>`;
+      } else {
+        poSelect.innerHTML = `<option value="">-- Select Approved PO to Add (${available.length} available) --</option>` +
+          available.map(po => {
+            const itemCount = po.items ? po.items.length : 0;
+            const totalFmt = this.ctx.formatCurrency ? this.ctx.formatCurrency(po.total_amount) : `Rs. ${Number(po.total_amount || 0).toFixed(2)}`;
+            return `<option value="${this.escapeHtml(po.po_number)}">${this.escapeHtml(po.po_number)} • ${po.order_date || ""} (${itemCount} items | ${totalFmt})</option>`;
+          }).join("");
+      }
+    }
+
+    if (addAllBtn) {
+      addAllBtn.style.display = available.length > 1 ? "inline-flex" : "none";
+    }
+
+    if (hintEl) {
+      hintEl.textContent = approvedPOs.length > 0
+        ? `Showing ${approvedPOs.length} Approved PO(s) for ${this.selectedSupplier.name}. Select to link & auto-load items.`
+        : `No Approved Purchase Orders found for ${this.selectedSupplier.name}.`;
+    }
+
+    if (chipsContainer) {
+      if (available.length === 0) {
+        chipsContainer.style.display = "none";
+        chipsContainer.innerHTML = "";
+      } else {
+        chipsContainer.style.display = "flex";
+        chipsContainer.innerHTML = available.map(po => {
+          const itemCount = po.items ? po.items.length : 0;
+          return `
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm grn-create-po-chip" data-po-number="${this.escapeHtml(po.po_number)}" style="height: 28px; font-size: 11.5px; padding: 0 10px; border-radius: 16px; border: 1px dashed rgba(22,119,255,0.45); background: rgba(22,119,255,0.06); color: var(--text); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+              <i class="fa-solid fa-plus" style="color: #1677ff; font-size: 10px;"></i>
+              <strong>${this.escapeHtml(po.po_number)}</strong>
+              <span style="color: var(--text-muted);">(${itemCount} items)</span>
+            </button>`;
+        }).join("");
+      }
+    }
+  }
+
+  addPurchaseOrderByNumber(poNumber) {
+    if (!poNumber) return;
+    const po = this.allPurchaseOrders.find(
+      p => p.po_number === poNumber || String(p.id) === String(poNumber)
+    );
+    if (po) {
+      this.addPurchaseOrder(po);
+      this.populateApprovedPoSelector();
+    }
+  }
+
+  addAllApprovedPOs() {
+    if (!this.selectedSupplier) return;
+    const approvedPOs = this.getApprovedPOsForSupplier(this.selectedSupplier);
+    const selectedNumbers = this.selectedPurchaseOrders.map(p => p.po_number);
+    const available = approvedPOs.filter(po => !selectedNumbers.includes(po.po_number));
+    available.forEach(po => this.addPurchaseOrder(po));
+    this.populateApprovedPoSelector();
+  }
+
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   /**
@@ -531,6 +829,7 @@ export class CreateGrnModal extends BaseModalHandler {
       this.renderSelectedPOs();
       this.renderGrnItems();
       this.calculateFinancials();
+      this.populateApprovedPoSelector();
 
       this.showToast(`Removed Purchase Order ${poNumber} and its items.`, "info");
     }
@@ -623,7 +922,7 @@ export class CreateGrnModal extends BaseModalHandler {
                   class="ant-btn-action text-danger grn-remove-po-btn"
                   data-po-number="${po.po_number}"
                   title="Remove this Purchase Order and its items from GRN"
-                  style="border-color: #ffccc7; color: #ff4d4f; background: #fff1f0; height: 28px; width: 28px; padding: 0;">
+                  style="border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 28px; width: 28px; padding: 0;">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </td>
@@ -755,7 +1054,7 @@ export class CreateGrnModal extends BaseModalHandler {
                   class="ant-btn-action text-danger grn-modal-remove-item-btn"
                   data-item-index="${index}"
                   title="Remove this item from GRN"
-                  style="border-color: #ffccc7; color: #ff4d4f; background: #fff1f0; height: 26px; width: 26px; padding: 0;">
+                  style="border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 26px; width: 26px; padding: 0;">
             <i class="fa-solid fa-trash-can" style="font-size: 11px;"></i>
           </button>
         </td>
@@ -878,16 +1177,10 @@ export class CreateGrnModal extends BaseModalHandler {
    * Sends POST request to /api/v1/grns, linking multiple purchase orders and updating stocks.
    */
   async saveGrn() {
-    const receivedDate = (document.getElementById("grnCreateModalDate") || document.getElementById("grnModalDate"))?.value;
     const remarks = document.getElementById("grnModalRemarks")?.value?.trim() || "";
 
     if (!this.selectedPurchaseOrders || this.selectedPurchaseOrders.length === 0) {
-      this.showToast("Please search and link at least one Purchase Order to this GRN", "error");
-      return;
-    }
-
-    if (!receivedDate) {
-      this.showToast("Please specify the Received Date", "error");
+      this.showToast("Please select a supplier and link at least one Approved Purchase Order to this GRN", "error");
       return;
     }
 
@@ -921,7 +1214,6 @@ export class CreateGrnModal extends BaseModalHandler {
       const primaryPo = this.selectedPurchaseOrders[0];
 
       const payload = {
-        at_time: receivedDate ? `${receivedDate} ${new Date().toTimeString().split(" ")[0]}` : null,
         purchase_orders: purchaseOrdersPayload,
         purchase_orders_id: primaryPo.id,
         supplyer_invoice: primaryPo.supplier_invoice,

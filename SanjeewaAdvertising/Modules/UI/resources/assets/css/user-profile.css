@@ -488,6 +488,16 @@
 }
 
 /* Header & Secondary Action Buttons */
+.up-container .po-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
 .up-container .po-btn-secondary {
     background: var(--surface-2, #f8fafc) !important;
     color: var(--text, #0f172a) !important;
@@ -500,7 +510,138 @@
 }
 
 .up-container .po-btn-secondary:hover:not(:disabled) {
-    background: var(--surface-hover, #f1f5f9) !important;
+    background: var(--surface, #f1f5f9) !important;
     border-color: var(--text-muted, #64748b) !important;
     transform: translateY(-1px);
+}
+
+/* Theme variable fixes for non-existent fallback tokens */
+.up-tabs-header,
+.up-table th {
+    background: var(--surface-2, #f8fafc);
+}
+
+.up-form-group input[readonly],
+.up-form-group input:disabled {
+    background: var(--surface-2, #f1f5f9);
+}
+
+/* ==========================================================================
+   Night / Dark Mode Overrides (html[data-theme="dark"])
+   ========================================================================== */
+html[data-theme="dark"] .up-card,
+html[data-theme="dark"] .up-tabs-card,
+html[data-theme="dark"] .up-stat-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .up-tabs-header {
+    background: var(--surface-2);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .up-tab-btn {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .up-tab-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="dark"] .up-tab-btn.active {
+    color: #60a5fa;
+    border-bottom-color: #3b82f6;
+    background: var(--surface);
+}
+
+html[data-theme="dark"] .up-avatar-edit-btn {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .up-avatar-edit-btn:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .up-badge-blue {
+    background: rgba(59, 130, 246, 0.16);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+html[data-theme="dark"] .up-badge-green {
+    background: rgba(16, 185, 129, 0.16);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+html[data-theme="dark"] .up-form-group input {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .up-form-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="dark"] .up-form-group input[readonly],
+html[data-theme="dark"] .up-form-group input:disabled {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .up-table th {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .up-table td {
+    color: var(--text);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .up-table tbody tr:hover td {
+    background: var(--surface-2);
+}
+
+html[data-theme="dark"] .up-pill-active {
+    background: rgba(16, 185, 129, 0.16);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+html[data-theme="dark"] .up-pill-inactive {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .up-perm-card {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .up-perm-card:hover {
+    border-color: #3b82f6;
+}
+
+html[data-theme="dark"] .up-container .po-btn-secondary {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .up-container .po-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: #475569 !important;
+    color: #ffffff !important;
 }

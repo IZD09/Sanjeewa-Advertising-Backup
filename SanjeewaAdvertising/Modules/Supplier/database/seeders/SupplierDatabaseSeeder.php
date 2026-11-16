@@ -3,6 +3,7 @@
 namespace Modules\Supplier\Database\Seeders;
 
 use Database\Seeders\PurchaseOrderStatusSeeder;
+use Database\Seeders\SupplierSeeder;
 use Illuminate\Database\Seeder;
 
 class SupplierDatabaseSeeder extends Seeder
@@ -14,6 +15,7 @@ class SupplierDatabaseSeeder extends Seeder
     {
         $this->call([
             PurchaseOrderStatusSeeder::class,
+            SupplierSeeder::class,
         ]);
     }
 }

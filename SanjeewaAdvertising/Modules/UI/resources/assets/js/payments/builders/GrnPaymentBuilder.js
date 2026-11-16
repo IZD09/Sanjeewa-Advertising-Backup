@@ -37,9 +37,10 @@ export class GrnPaymentBuilder {
     return this;
   }
 
-  setMethod(method, details = {}) {
+  setMethod(method, details = {}, typeId = null) {
     this.method = method || "Cash";
     this.methodDetails = details || {};
+    this.paymentTypeId = typeId ? parseInt(typeId, 10) : null;
     return this;
   }
 
@@ -60,38 +61,45 @@ export class GrnPaymentBuilder {
 
   build() {
     const primaryPo = this.purchaseOrders[0] || {};
-    const primaryGrnId = primaryPo.grn_id || (parseInt(String(primaryPo.id).replace(/\D/g, ""), 10) || 101);
-    const primaryGrnNumber = primaryPo.grnNumber || (primaryPo.id ? `GRN-${primaryPo.id.replace("PO-", "")}` : `GRN-0${primaryGrnId}`);
+    const primaryGrnId = primaryPo.grn_id || null;
+    const primaryGrnNumber = primaryPo.grnNumber && primaryPo.grnNumber !== "GRN-Pending"
+      ? primaryPo.grnNumber
+      : (primaryGrnId ? `GRN-0${primaryGrnId}` : "GRN-New");
 
     const combinedTotal = this.purchaseOrders.reduce((sum, p) => sum + (Number(p.totalAmount) || 0), 0);
     const combinedDue = this.purchaseOrders.reduce((sum, p) => sum + (Number(p.balanceAmount !== undefined ? p.balanceAmount : p.balance) || 0), 0);
     const remainingBalance = Math.max(0, combinedDue - this.amount);
 
-    let paymentTypeId = 1; // Cash
+    let paymentTypeId = this.paymentTypeId || 1; // Cash
     let methodRef = "Petty Cash Voucher";
 
-    if (this.method === "Card") {
-      paymentTypeId = 3;
+    if (this.method === "Credit Card" || this.method === "Card") {
+      paymentTypeId = this.paymentTypeId || 3;
       const last4 = this.methodDetails.last4 || "";
       const auth = this.methodDetails.auth || "";
-      methodRef = `Corp Card ****${last4}${auth ? ` (${auth})` : ""}`;
+      methodRef = `Credit Card ****${last4}${auth ? ` (${auth})` : ""}`;
+    } else if (this.method === "Debit Card") {
+      paymentTypeId = this.paymentTypeId || 4;
+      const last4 = this.methodDetails.last4 || "";
+      const auth = this.methodDetails.auth || "";
+      methodRef = `Debit Card ****${last4}${auth ? ` (${auth})` : ""}`;
     } else if (this.method === "Check" || this.method === "Cheque") {
-      paymentTypeId = 5;
+      paymentTypeId = this.paymentTypeId || 5;
       const chq = this.methodDetails.chequeNo || "";
       const bank = this.methodDetails.bank || "";
       methodRef = `Cheque #${chq} - ${bank}`;
     } else if (this.method === "Bank Transfer") {
-      paymentTypeId = 2;
+      paymentTypeId = this.paymentTypeId || 2;
       const ref = this.methodDetails.ref || "";
       const bank = this.methodDetails.bank || "";
       methodRef = `FT: ${bank} ${ref}`;
-    } else if (this.method === "Online / QR") {
-      paymentTypeId = 6;
+    } else if (this.method === "Online / QR" || this.method === "Online / QR Payment") {
+      paymentTypeId = this.paymentTypeId || 6;
       const app = this.methodDetails.app || "LankaQR";
       const ref = this.methodDetails.ref || "";
       methodRef = `${app} Ref: ${ref}`;
     } else {
-      paymentTypeId = 1;
+      paymentTypeId = this.paymentTypeId || 1;
       const receipt = this.methodDetails.receipt;
       methodRef = receipt ? `Petty Cash Voucher #${receipt}` : "Main Shop Petty Cash";
     }
@@ -99,6 +107,9 @@ export class GrnPaymentBuilder {
     const paymentStatusId = remainingBalance <= 0 ? 2 : (this.amount > 0 ? 3 : 1);
     const paymentId = `PAY-GRN-${Date.now().toString().slice(-6)}`;
     const poNumbers = this.purchaseOrders.map(p => p.poNumber || p.id);
+    const purchaseOrderIds = this.purchaseOrders
+      .map(p => p.raw_id || parseInt(String(p.poNumber || p.id).replace(/\D/g, ""), 10))
+      .filter(id => Number.isInteger(id) && id > 0);
     const supplierInvoices = this.purchaseOrders.map(p => p.supplierInvoice).filter(Boolean);
 
     const allocations = this.purchaseOrders.map(po => {
@@ -108,10 +119,15 @@ export class GrnPaymentBuilder {
       return {
         id: po.id,
         poNumber: po.poNumber || po.id,
+        orderDate: po.orderDate || null,
+        status: po.status || "Pending",
+        notes: po.notes || "",
         grnNumber: po.grnNumber || primaryGrnNumber,
         supplierName: po.supplierName || "Supplier",
+        supplierBankAccount: po.supplierBankAccount || "",
         stockCategory: po.stockCategory || "Stock Delivery",
         supplierInvoice: po.supplierInvoice || "",
+        items: Array.isArray(po.items) ? po.items : [],
         total: Number(po.totalAmount) || 0,
         allocated_amount: alloc,
         allocatedNow: alloc,
@@ -125,12 +141,15 @@ export class GrnPaymentBuilder {
       grnId: primaryGrnNumber,
       grnNumber: primaryGrnNumber,
       purchaseOrders: allocations,
+      purchase_order_ids: purchaseOrderIds,
+      supplier_id: primaryPo.supplier_id || null,
       pos: allocations,
       allocations,
       poNumbers,
       poNumber: poNumbers.join(", "),
       poCount: this.purchaseOrders.length,
       supplierName: primaryPo.supplierName || "Supplier",
+      supplierBankAccount: primaryPo.supplierBankAccount || "",
       supplierInvoice: supplierInvoices.join(", "),
       stockCategory: primaryPo.stockCategory || "Stock Delivery",
       totalBill: combinedTotal,

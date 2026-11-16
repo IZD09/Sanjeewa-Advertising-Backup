@@ -275,47 +275,47 @@
                 <button type="button" class="pj-modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="pj-modal-body">
-                <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="background: var(--surface-2); border-radius: 8px; padding: 12px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
-                        <div style="font-size: 11px; color: #64748b;">Job Code</div>
-                        <div style="font-size: 14px; font-weight: 700;" id="detailsJobCode">—</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Job Code</div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--text);" id="detailsJobCode">—</div>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #64748b;">Order Date</div>
-                        <div style="font-size: 13px; font-weight: 600;" id="detailsDate">—</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Order Date</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text);" id="detailsDate">—</div>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #64748b;">Customer</div>
-                        <div style="font-size: 13px; font-weight: 600;" id="detailsCustomerName">—</div>
-                        <div style="font-size: 11px; color: #64748b;" id="detailsCustomerContact">—</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Customer</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text);" id="detailsCustomerName">—</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="detailsCustomerContact">—</div>
                     </div>
                     <div>
-                        <div style="font-size: 11px; color: #64748b;">Specification</div>
-                        <div style="font-size: 13px; font-weight: 600;" id="detailsPrintType">—</div>
-                        <div style="font-size: 11px; color: #0369a1; font-weight: 600;" id="detailsQuantity">—</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Specification</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text);" id="detailsPrintType">—</div>
+                        <div style="font-size: 11px; color: #38bdf8; font-weight: 600;" id="detailsQuantity">—</div>
                     </div>
                 </div>
 
                 <!-- Financial Snapshot -->
                 <div>
-                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: #1e293b;">
+                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: var(--text);">
                         <i class="fa-solid fa-file-invoice-dollar" style="color: #52c41a;"></i> Financial Summary
                     </h4>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center;">
                         <div>
-                            <div style="font-size: 10.5px; color: #8c8c8c;">Total Amount</div>
-                            <div style="font-size: 13px; font-weight: 700;" id="detailsTotalAmount">Rs. 0.00</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Total Amount</div>
+                            <div style="font-size: 13px; font-weight: 700; color: var(--text);" id="detailsTotalAmount">Rs. 0.00</div>
                         </div>
                         <div>
-                            <div style="font-size: 10.5px; color: #8c8c8c;">Paid</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Paid</div>
                             <div style="font-size: 13px; font-weight: 700; color: #52c41a;" id="detailsPaidAmount">Rs. 0.00</div>
                         </div>
                         <div>
-                            <div style="font-size: 10.5px; color: #8c8c8c;">Balance</div>
-                            <div style="font-size: 13px; font-weight: 700; color: #cf1322;" id="detailsBalanceAmount">Rs. 0.00</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Balance</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #ef4444;" id="detailsBalanceAmount">Rs. 0.00</div>
                         </div>
                         <div>
-                            <div style="font-size: 10.5px; color: #8c8c8c;">Status</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted);">Status</div>
                             <div style="margin-top: 2px;"><span id="detailsPaymentBadge" class="pj-pay-badge unpaid">Unpaid</span></div>
                         </div>
                     </div>
@@ -323,7 +323,7 @@
 
                 <!-- Allocated Materials -->
                 <div>
-                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: #1e293b;">
+                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 6px 0; color: var(--text);">
                         <i class="fa-solid fa-boxes-stacked" style="color: #fa8c16;"></i> Allocated Materials & Raw Stock
                     </h4>
                     <div id="detailsMaterialsList">
@@ -333,7 +333,7 @@
 
                 <!-- Status History Timeline -->
                 <div>
-                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 8px 0; color: #1e293b;">
+                    <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 8px 0; color: var(--text);">
                         <i class="fa-solid fa-clock-rotate-left" style="color: #722ed1;"></i> Status History Timeline
                     </h4>
                     <div id="detailsTimelineContainer">
@@ -342,8 +342,8 @@
                 </div>
             </div>
             <div class="pj-modal-footer">
-                <div style="font-size: 11px; color: #64748b; margin-right: auto;">
-                    Registered by: <strong id="detailsOperator">—</strong>
+                <div style="font-size: 11px; color: var(--text-muted); margin-right: auto;">
+                    Registered by: <strong id="detailsOperator" style="color: var(--text);">—</strong>
                 </div>
                 <button type="button" class="ant-btn ant-btn-default pj-modal-close">Close</button>
             </div>
@@ -360,11 +360,11 @@
                 <button type="button" class="pj-modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="pj-modal-body">
-                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 8px;" id="statusJobHeader">
+                <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px;" id="statusJobHeader">
                     —
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                    <span style="font-size: 12px; color: #64748b;">Current Stage:</span>
+                    <span style="font-size: 12px; color: var(--text-muted);">Current Stage:</span>
                     <span id="statusCurrentBadge" class="pj-badge pending">—</span>
                 </div>
 
@@ -397,11 +397,11 @@
                 <button type="button" class="pj-modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="pj-modal-body">
-                <div style="font-size: 13px; font-weight: 600; color: #1e293b;" id="allocJobHeader">—</div>
+                <div style="font-size: 13px; font-weight: 600; color: var(--text);" id="allocJobHeader">—</div>
 
                 <!-- Form to Add Material -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
-                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: #334155;">Assign Material from Warehouse Stock</div>
+                <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text);">Assign Material from Warehouse Stock</div>
                     <div class="pj-alloc-form">
                         <div class="pj-form-group">
                             <label for="selectAllocateStock">Warehouse Stock Item</label>
@@ -428,7 +428,7 @@
 
                 <!-- Currently Allocated Materials Table -->
                 <div>
-                    <div style="font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Currently Linked Raw Materials</div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Currently Linked Raw Materials</div>
                     <div id="allocatedMaterialsList">
                         <!-- Populated by JS -->
                     </div>

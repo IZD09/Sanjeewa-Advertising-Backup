@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             SystemModuleSeeder::class,
             DefaultAdminSeeder::class,
             CustomerSeeder::class,
+            SupplierSeeder::class,
             UnitSeeder::class,
             DeliveryMethodSeeder::class,
             StockMovementSeeder::class,

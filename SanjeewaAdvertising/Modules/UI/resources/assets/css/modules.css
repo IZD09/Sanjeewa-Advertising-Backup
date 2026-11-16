@@ -104,6 +104,65 @@
     margin-top: auto;
 }
 
+/* Dark Mode Overrides for Customer & Supplier Cards */
+html[data-theme="dark"] .customer-card-box {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(59, 130, 246, 0.08) 100%) !important;
+    border-color: rgba(59, 130, 246, 0.28) !important;
+}
+
+html[data-theme="dark"] .customer-card-box.cust-theme-blue {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(59, 130, 246, 0.12) 100%) !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+html[data-theme="dark"] .customer-card-box.cust-theme-green {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(16, 185, 129, 0.12) 100%) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+html[data-theme="dark"] .customer-card-box.cust-theme-purple {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
+    border-color: rgba(139, 92, 246, 0.35) !important;
+}
+
+html[data-theme="dark"] .customer-card-box.cust-theme-amber {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(245, 158, 11, 0.12) 100%) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-theme="dark"] .customer-card-box.cust-theme-pink {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(236, 72, 153, 0.12) 100%) !important;
+    border-color: rgba(236, 72, 153, 0.35) !important;
+}
+
+html[data-theme="dark"] .customer-card-box:hover {
+    border-color: var(--po-orange) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .cust-stats-row {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .cust-item-badge.badge-vip {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #34d399 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+html[data-theme="dark"] .cust-item-badge.badge-corporate {
+    background: rgba(139, 92, 246, 0.2) !important;
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+html[data-theme="dark"] .cust-item-badge.badge-regular {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #93c5fd !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
 /* ==========================================================================
    2. Print Production Jobs Queue
    ========================================================================== */

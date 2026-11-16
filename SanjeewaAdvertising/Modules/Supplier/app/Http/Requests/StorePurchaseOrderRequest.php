@@ -49,6 +49,7 @@ class StorePurchaseOrderRequest extends FormRequest
             'purchase_orders_status_id' => ['nullable', 'integer', 'exists:purchase_orders_status,id'],
             'add_date' => ['nullable', 'date'],
             'expected_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:255'],
             'remarks' => ['nullable', 'string', 'max:500'],
             'items' => ['nullable', 'array'],
             'items.*.stock_items_id' => ['required_with:items', 'integer', 'exists:stock_items,id'],

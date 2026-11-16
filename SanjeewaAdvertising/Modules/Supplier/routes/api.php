@@ -11,6 +11,7 @@ Route::prefix('v1')->group(function () {
     Route::get('suppliers/all', [SupplierController::class, 'all'])->name('supplier.all');
     Route::get('suppliers/search', [SupplierController::class, 'search'])->name('supplier.search');
     Route::get('suppliers/{id}/purchase-orders', [SupplierController::class, 'purchaseOrders'])->name('supplier.purchase-orders');
+    Route::patch('suppliers/{id}/toggle-status', [SupplierController::class, 'toggleStatus'])->name('supplier.toggle-status');
     Route::apiResource('suppliers', SupplierController::class)
         ->parameters(['suppliers' => 'id'])
         ->names('supplier');
@@ -26,6 +27,7 @@ Route::prefix('v1')->group(function () {
     // GRNs (Goods Received Notes)
     Route::get('grns/data', [GrnController::class, 'grnData'])->name('supplier.grns.data');
     Route::get('grns/all', [GrnController::class, 'all'])->name('supplier.grns.all');
+    Route::patch('grns/{id}/status', [GrnController::class, 'updateStatus'])->name('supplier.grns.update-status');
     Route::apiResource('grns', GrnController::class)
         ->parameters(['grns' => 'id'])
         ->names('supplier.grns');

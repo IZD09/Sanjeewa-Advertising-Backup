@@ -34,6 +34,17 @@ export class PurchaseOrderEntity {
     const tr = document.createElement("tr");
     tr.id = `poRow_${this.po_number || ""}`;
 
+    const statusKey = String(this.status || "").toLowerCase().trim();
+    if (statusKey === "completed") {
+      tr.className = "row-status-completed";
+    } else if (statusKey === "approved") {
+      tr.className = "row-status-approved";
+    } else if (statusKey === "cancelled") {
+      tr.className = "row-status-cancelled";
+    } else {
+      tr.className = "row-status-pending";
+    }
+
     // Items summary tags
     let itemsTags = "";
     if (this.items && this.items.length > 0) {
@@ -44,21 +55,30 @@ export class PurchaseOrderEntity {
       `).join("");
     }
 
-    let statusBadgeClass = "pending";
+    let statusBadgeClass = "draft";
     let statusIcon = "fa-clock";
-    if (this.status === "Completed") {
+    if (statusKey === "completed") {
       statusBadgeClass = "completed";
       statusIcon = "fa-circle-check";
-    } else if (this.status === "Partial") {
-      statusBadgeClass = "partial";
+    } else if (statusKey === "approved") {
+      statusBadgeClass = "approved";
+      statusIcon = "fa-thumbs-up";
+    } else if (statusKey === "cancelled") {
+      statusBadgeClass = "cancelled";
+      statusIcon = "fa-ban";
+    } else if (statusKey === "partial") {
+      statusBadgeClass = "draft";
       statusIcon = "fa-hourglass-half";
     }
 
-    const isCompleted = this.status === "Completed";
+    const isCompleted = statusKey === "completed";
+    const isCancelled = statusKey === "cancelled";
+    const isApproved = statusKey === "approved";
+    const canApproveOrCancel = statusKey === "pending" || statusKey === "partial" || isApproved;
 
     tr.innerHTML = `
       <td>
-        <span class="grn-code-badge" style="background: #e6f4ff; color: #1677ff; border-color: #91caff;">
+        <span class="grn-code-badge">
           ${this.po_number || "—"}
         </span>
       </td>
@@ -70,8 +90,10 @@ export class PurchaseOrderEntity {
           <i class="fa-solid fa-phone" style="font-size: 10px;"></i> ${this.supplier_contact || "-"}
         </div>
       </td>
-      <td style="max-width: 320px;">
-        ${itemsTags || "<span style='font-size: 11.5px; color: var(--text-muted);'>No items</span>"}
+      <td class="po-materials-cell">
+        <div class="po-items-cell-wrap">
+          ${itemsTags || "<span style='font-size: 11.5px; color: var(--text-muted);'>No items</span>"}
+        </div>
       </td>
       <td class="text-right" style="font-weight: 700; color: var(--text);">
         ${this.formatCurrency(this.total_amount)}
@@ -82,15 +104,45 @@ export class PurchaseOrderEntity {
         </span>
       </td>
       <td class="text-center">
-        <div class="inv-actions-group">
-          <button type="button" class="ant-btn-action" title="View Purchase Order" onclick="window.grnManager?.viewPO('${this.po_number}')">
-            <i class="fa-solid fa-eye"></i> View
-          </button>
-          ${!isCompleted ? `
-            <button type="button" class="ant-btn-action" style="color: #52c41a; border-color: #b7eb8f; background: #f6ffed;" title="Create GRN for this PO" onclick="window.grnManager?.createGrnForPO('${this.po_number}')">
-              <i class="fa-solid fa-truck-ramp-box"></i> Receive (GRN)
+        <div class="po-action-group">
+          ${canApproveOrCancel ? `
+            <button type="button" class="action-btn approve-action" ${isApproved ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Already Approved"' : `title="Approve / Complete Purchase Order" onclick="window.grnManager?.approvePO('${this.po_number}')"`}>
+              <i class="fa-solid fa-check"></i>
             </button>
-          ` : ""}
+            <button type="button" class="action-btn cancel-action" title="Cancel Purchase Order" onclick="window.grnManager?.cancelPO('${this.po_number}')">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          ` : `
+            <button type="button" class="action-btn" title="View Purchase Order" onclick="window.grnManager?.viewPO('${this.po_number}')">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button type="button" class="action-btn print-action" title="Print Purchase Order" onclick="window.grnManager?.printPO('${this.po_number}')">
+              <i class="fa-solid fa-print"></i>
+            </button>
+          `}
+          <div class="row-action-menu-wrap">
+            <button type="button" class="action-btn more-action" title="More Actions" onclick="window.grnManager?.toggleRowMenu(this)">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <div class="row-action-dropdown" style="display: none;">
+              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.viewPO('${this.po_number}')">
+                <i class="fa-solid fa-eye"></i><span>View PO</span>
+              </button>
+              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.printPO('${this.po_number}')">
+                <i class="fa-solid fa-print"></i><span>Print PO</span>
+              </button>
+              ${!isCompleted && !isCancelled ? `
+                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.createGrnForPO('${this.po_number}')">
+                  <i class="fa-solid fa-truck-ramp-box"></i><span>Receive (GRN)</span>
+                </button>
+              ` : ""}
+              ${isCancelled ? `
+                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.restorePO('${this.po_number}')">
+                  <i class="fa-solid fa-rotate-left"></i><span>Restore to Pending</span>
+                </button>
+              ` : ""}
+            </div>
+          </div>
         </div>
       </td>
     `;

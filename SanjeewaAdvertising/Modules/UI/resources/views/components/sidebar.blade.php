@@ -94,8 +94,8 @@
             'section' => 'INVENTORY',
             'items' => [
                 ['component' => 'purchase-orders'],
-                ['component' => 'stock-management'],
                 ['component' => 'goods-received'],
+                ['component' => 'stock-management'],
             ],
         ],
         [
@@ -138,8 +138,8 @@
             'section' => 'INVENTORY',
             'items' => [
                 ['component' => 'purchase-orders'],
-                ['component' => 'stock-management'],
                 ['component' => 'goods-received'],
+                ['component' => 'stock-management'],
             ],
         ],
         [

@@ -42,6 +42,8 @@ class Expencesess extends Model
         'pay_by',
         'add_date',
         'pay_at',
+        'reference',
+        'settlement_note',
     ];
 
     /**

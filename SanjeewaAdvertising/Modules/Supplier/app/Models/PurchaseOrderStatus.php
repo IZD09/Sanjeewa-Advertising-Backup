@@ -42,6 +42,8 @@ class PurchaseOrderStatus extends Model
      */
     public const STATUS_PENDING = 1;
 
+    public const STATUS_APPROVED = 2;
+
     public const STATUS_PARTIAL = 2;
 
     public const STATUS_COMPLETED = 3;

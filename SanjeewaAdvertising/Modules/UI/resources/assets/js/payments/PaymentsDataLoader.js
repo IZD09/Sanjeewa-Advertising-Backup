@@ -483,10 +483,12 @@ export class PaymentsDataLoader {
       supplier_invoice: supplierInvoice,
       supplierInvoice: supplierInvoice,
       pos: g.pos || [],
+      grn_items: g.grn_items || [],
       supplier_id: g.supplier_id || g.supplierId || "SUP-001",
       supplierId: g.supplierId || g.supplier_id || "SUP-001",
       supplier_name: g.supplier_name || g.supplierName || (g.supplier && g.supplier.name) || "Supplier",
       supplierName: g.supplierName || g.supplier_name || (g.supplier && g.supplier.name) || "Supplier",
+      supplierBankAccount: g.supplierBankAccount || g.supplier_bank_account || "",
       stock_category: g.stock_category || g.stockCategory || "Stock Delivery",
       stockCategory: g.stockCategory || g.stock_category || "Stock Delivery",
       net_total: total,
@@ -507,14 +509,18 @@ export class PaymentsDataLoader {
 
   normalizeExpense(exp = {}) {
     const rawCategory = exp.type?.expencesess_type || exp.category || "Electricity Utility";
-    const statusText = exp.status?.expencesess_status || exp.status || (exp.expencesess_statuses_id === 3 ? "Paid" : "Pending");
+    const statusText = exp.status_details?.expencesess_status || (typeof exp.status === "object" ? exp.status?.expencesess_status : exp.status) || (exp.expencesess_statuses_id === 3 ? "Paid" : "Pending");
     const rawDate = exp.add_date || exp.created_at || exp.dueDate || "2026-10-15";
     const month = exp.month || (typeof rawDate === "string" && rawDate.includes("-") ? rawDate.substring(0, 7) : "2026-10");
     const price = Number(exp.price ?? exp.amount ?? 0);
-    const isPaid = String(statusText).toLowerCase() === "paid" || (exp.pay_by !== null && exp.pay_by !== undefined && exp.pay_by !== 0);
+    const isPaid = String(statusText).toLowerCase() === "paid" || Number(exp.expencesess_statuses_id) === 3;
+    const normalizedStatus = isPaid
+      ? "Paid"
+      : (String(statusText).toLowerCase() === "overdue" ? "Overdue" : (String(statusText).toLowerCase() === "cancelled" ? "Cancelled" : "Pending"));
 
     return {
       id: exp.id || `EXP-${Date.now()}`,
+      raw_id: exp.raw_id || (typeof exp.id === "number" ? exp.id : null),
       title: exp.title || exp.description || rawCategory,
       category: rawCategory,
       typeId: exp.expencesess_types_id || exp.typeId || 1,
@@ -523,13 +529,13 @@ export class PaymentsDataLoader {
       month: month,
       dueDate: exp.due_date || (typeof rawDate === "string" && rawDate.includes("T") ? rawDate.split("T")[0] : rawDate),
       amount: price,
-      status: isPaid ? "Paid" : "Pending",
+      status: normalizedStatus,
       paidDate: exp.paid_date || exp.paidDate || (exp.pay_at ? (typeof exp.pay_at === "string" && exp.pay_at.includes("T") ? exp.pay_at.split("T")[0] : exp.pay_at) : ""),
       paidAmount: exp.paid_amount !== undefined ? Number(exp.paid_amount) : (isPaid ? price : 0),
       paidMethod: exp.paid_method || exp.paidMethod || "Bank Transfer",
-      paidRef: exp.paid_ref || exp.paidRef || "TXN-AUTO",
-      paidNote: exp.paid_note || exp.paidNote || "",
-      notes: exp.notes || exp.narration || ""
+      paidRef: exp.reference || exp.paid_ref || exp.paidRef || "",
+      paidNote: exp.settlement_note || exp.paid_note || exp.paidNote || "",
+      notes: exp.settlement_note || exp.notes || exp.narration || ""
     };
   }
 }

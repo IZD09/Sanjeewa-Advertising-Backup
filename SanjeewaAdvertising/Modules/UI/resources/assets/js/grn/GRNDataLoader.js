@@ -16,7 +16,11 @@ export class GRNDataLoader {
     this.supplierStorageKey = "sa_advertising_suppliers";
 
     this.grnRecords = [];
+    this.grnSuppliers = [];
+    this.grnStatuses = ["Completed", "Approved", "Draft", "Cancelled"];
     this.purchaseOrders = [];
+    this.poSuppliers = [];
+    this.poStatuses = ["Pending", "Partial", "Completed", "Cancelled"];
     this.suppliers = [];
 
     this.grnKpis = { total: 0, completed: 0, draft: 0, total_value: 0 };
@@ -110,6 +114,12 @@ export class GRNDataLoader {
 
       if (Array.isArray(orders)) {
         this.purchaseOrders = orders;
+        if (Array.isArray(data?.suppliers)) {
+          this.poSuppliers = data.suppliers;
+        }
+        if (Array.isArray(data?.statuses) && data.statuses.length > 0) {
+          this.poStatuses = data.statuses;
+        }
         if (data?.kpis) {
           this.poKpis = data.kpis;
         }
@@ -137,6 +147,20 @@ export class GRNDataLoader {
   }
 
   /**
+   * Update Purchase Order status via API.
+   * @param {number|string} id
+   * @param {number} statusId
+   * @returns {Promise<Object>}
+   */
+  async updatePoStatus(id, statusId) {
+    const response = await this.http.patch(`/api/v1/purchase-orders/${id}`, {
+      purchase_orders_status_id: statusId
+    });
+    await this.fetchPurchaseOrders({}, true);
+    return response;
+  }
+
+  /**
    * Fetch Goods Received Notes (GRN) data from backend Supplier module via RequestHandler.
    *
    * @param {Object} [filters={}]
@@ -156,6 +180,12 @@ export class GRNDataLoader {
 
       if (Array.isArray(grns)) {
         this.grnRecords = grns;
+        if (Array.isArray(data?.suppliers)) {
+          this.grnSuppliers = data.suppliers;
+        }
+        if (Array.isArray(data?.statuses) && data.statuses.length > 0) {
+          this.grnStatuses = data.statuses;
+        }
         if (data?.kpis) {
           this.grnKpis = data.kpis;
         }
@@ -183,6 +213,18 @@ export class GRNDataLoader {
   }
 
   /**
+   * Update GRN status (Approved, Cancelled, Completed, Draft) via API.
+   * @param {number|string} id
+   * @param {string} status
+   * @returns {Promise<Object>}
+   */
+  async updateGrnStatus(id, status) {
+    const response = await this.http.patch(`/api/v1/grns/${id}/status`, { status });
+    await this.fetchGrns({}, true);
+    return response;
+  }
+
+  /**
    * Return current in-memory state.
    */
   loadData() {
@@ -202,14 +244,15 @@ export class GRNDataLoader {
 
   /**
    * Create a new supplier in the database via API.
-   * @param {Object} data { name, mobile, email }
+   * @param {Object} data { name, mobile, email, bank_account }
    * @returns {Promise<Object>}
    */
   async createSupplier(data) {
     const payload = {
       name: (data.name || "").trim(),
       mobile: (data.mobile || data.phone || "").trim(),
-      email: data.email && data.email.trim() ? data.email.trim() : null
+      email: data.email && data.email.trim() ? data.email.trim() : null,
+      bank_account: data.bank_account && data.bank_account.trim() ? data.bank_account.trim() : null
     };
 
     const response = await this.http.post("/api/v1/suppliers", payload);
@@ -224,14 +267,15 @@ export class GRNDataLoader {
   /**
    * Update an existing supplier in the database via API.
    * @param {number|string} id
-   * @param {Object} data { name, mobile, email }
+   * @param {Object} data { name, mobile, email, bank_account }
    * @returns {Promise<Object>}
    */
   async updateSupplier(id, data) {
     const payload = {
       name: (data.name || "").trim(),
       mobile: (data.mobile || data.phone || "").trim(),
-      email: data.email && data.email.trim() ? data.email.trim() : null
+      email: data.email && data.email.trim() ? data.email.trim() : null,
+      bank_account: data.bank_account && data.bank_account.trim() ? data.bank_account.trim() : null
     };
 
     const response = await this.http.put(`/api/v1/suppliers/${id}`, payload);
@@ -244,7 +288,18 @@ export class GRNDataLoader {
   }
 
   /**
-   * Delete a supplier from the database via API.
+   * Toggle supplier active/disabled status via API.
+   * @param {number|string} id
+   * @returns {Promise<Object>}
+   */
+  async toggleSupplierStatus(id) {
+    const response = await this.http.patch(`/api/v1/suppliers/${id}/toggle-status`, {});
+    await this.fetchSuppliers({}, true);
+    return response;
+  }
+
+  /**
+   * Delete / disable a supplier from the database via API.
    * @param {number|string} id
    * @returns {Promise<boolean>}
    */

@@ -19,8 +19,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-surface, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     padding: 20px 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -63,6 +63,68 @@
     flex-wrap: wrap;
 }
 
+.ant-btn {
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    user-select: none;
+    text-decoration: none;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.ant-btn-default {
+    background: var(--surface, #ffffff);
+    border-color: var(--border, #d9d9d9);
+    color: var(--text, #111827);
+}
+
+.ant-btn-default:hover {
+    color: #1677ff;
+    border-color: #1677ff;
+    background: var(--surface-2, #f8fafc);
+}
+
+.ant-btn-primary {
+    background: #1677ff;
+    border-color: #1677ff;
+    color: #ffffff;
+}
+
+.ant-btn-primary:hover {
+    background: #4096ff;
+    border-color: #4096ff;
+    color: #ffffff;
+}
+
+.ant-btn-sm {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+html[data-theme="dark"] .ant-btn-default {
+    background: var(--surface-2, #1e293b);
+    border-color: var(--border, #334155);
+    color: var(--text, #f8fafc);
+}
+
+html[data-theme="dark"] .ant-btn-default:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+}
+
 /* ==========================================================================
    2. KPI CARDS GRID (5 Cards)
    ========================================================================== */
@@ -91,8 +153,8 @@
 }
 
 .pj-kpi-card {
-    background: var(--bg-surface, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     padding: 16px 18px;
     display: flex;
@@ -160,8 +222,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-surface, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 10px;
     padding: 12px 18px;
     flex-wrap: wrap;
@@ -187,9 +249,9 @@
     width: 100%;
     padding: 8px 12px 8px 34px;
     font-size: 13px;
-    border: 1px solid var(--border-color, #d9d9d9);
+    border: 1px solid var(--border, #d9d9d9);
     border-radius: 6px;
-    background: var(--bg-surface, #ffffff);
+    background: var(--surface, #ffffff);
     color: var(--text, #111827);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -205,16 +267,16 @@
     left: 11px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8c8c8c;
+    color: var(--text-muted, #8c8c8c);
     font-size: 13px;
 }
 
 .pj-select {
     padding: 8px 12px;
     font-size: 13px;
-    border: 1px solid var(--border-color, #d9d9d9);
+    border: 1px solid var(--border, #d9d9d9);
     border-radius: 6px;
-    background: var(--bg-surface, #ffffff);
+    background: var(--surface, #ffffff);
     color: var(--text, #111827);
     outline: none;
     cursor: pointer;
@@ -233,10 +295,10 @@
 
 .pj-view-switcher {
     display: inline-flex;
-    background: var(--bg-body, #f3f4f6);
+    background: var(--surface-2, #f3f4f6);
     padding: 3px;
     border-radius: 8px;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
 }
 
 .pj-view-btn {
@@ -259,7 +321,7 @@
 }
 
 .pj-view-btn.active {
-    background: var(--bg-surface, #ffffff);
+    background: var(--surface, #ffffff);
     color: #1677ff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -428,15 +490,15 @@
 .pj-tab-empty {
     padding: 60px 20px;
     text-align: center;
-    background: var(--bg-surface, #ffffff);
-    border: 1px dashed var(--border-color, #d9d9d9);
+    background: var(--surface, #ffffff);
+    border: 1px dashed var(--border, #d9d9d9);
     border-radius: 12px;
     grid-column: 1 / -1;
 }
 
 .pj-tab-empty i {
     font-size: 32px;
-    color: #cbd5e1;
+    color: var(--text-muted, #cbd5e1);
     margin-bottom: 12px;
     display: block;
 }
@@ -444,12 +506,12 @@
 .pj-empty-title {
     font-size: 14px;
     font-weight: 600;
-    color: #475569;
+    color: var(--text, #475569);
 }
 
 .pj-empty-sub {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--text-muted, #94a3b8);
     margin-top: 4px;
 }
 
@@ -560,12 +622,12 @@
     font-size: 13px;
     font-weight: 700;
     font-family: monospace;
-    color: #0f172a;
+    color: var(--text, #0f172a);
 }
 
 .pj-card-order-num {
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-muted, #64748b);
 }
 
 .pj-stage-badge {
@@ -587,12 +649,12 @@
 .pj-card-cust-name {
     font-size: 13.5px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text, #1e293b);
 }
 
 .pj-card-cust-phone {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--text-muted, #64748b);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -776,8 +838,8 @@
    6. TABLE VIEW STYLING
    ========================================================================== */
 .pj-table-card {
-    background: var(--bg-surface, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -796,23 +858,23 @@
 }
 
 .pj-table thead th {
-    background: var(--bg-surface-secondary, #fafafa);
+    background: var(--surface-2, #fafafa);
     color: var(--text-muted, #595959);
     font-weight: 600;
     padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    border-bottom: 1px solid var(--border, #f0f0f0);
     white-space: nowrap;
 }
 
 .pj-table tbody td {
     padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    border-bottom: 1px solid var(--border, #f0f0f0);
     color: var(--text, #1f2937);
     vertical-align: middle;
 }
 
 .pj-table tbody tr:hover {
-    background: var(--bg-hover, #fbfbfb);
+    background: var(--surface-2, #fbfbfb);
 }
 
 .pj-table-footer {
@@ -820,8 +882,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 14px 18px;
-    background: var(--bg-surface, #ffffff);
-    border-top: 1px solid var(--border-color, #f0f0f0);
+    background: var(--surface, #ffffff);
+    border-top: 1px solid var(--border, #f0f0f0);
     flex-wrap: wrap;
     gap: 12px;
 }
@@ -835,10 +897,10 @@
 .pj-page-btn {
     padding: 5px 12px;
     font-size: 12px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--border, #d9d9d9);
     border-radius: 4px;
-    background: #ffffff;
-    color: #333333;
+    background: var(--surface, #ffffff);
+    color: var(--text, #333333);
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -908,7 +970,8 @@
 }
 
 .pj-modal {
-    background: var(--bg-surface, #ffffff);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     width: 100%;
     max-width: 600px;
@@ -930,7 +993,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
 }
 
 .pj-modal-header h3 {
@@ -947,7 +1010,7 @@
     background: none;
     border: none;
     font-size: 16px;
-    color: #8c8c8c;
+    color: var(--text-muted, #8c8c8c);
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -972,8 +1035,8 @@
     align-items: center;
     gap: 10px;
     padding: 14px 20px;
-    border-top: 1px solid var(--border-color, #e5e7eb);
-    background: var(--bg-surface-secondary, #fafafa);
+    border-top: 1px solid var(--border, #e5e7eb);
+    background: var(--surface-2, #fafafa);
 }
 
 /* Timeline */
@@ -992,7 +1055,7 @@
     top: 6px;
     bottom: 6px;
     width: 2px;
-    background: #e2e8f0;
+    background: var(--border, #e2e8f0);
 }
 
 .pj-timeline-item {
@@ -1009,19 +1072,19 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #ffffff;
+    background: var(--surface, #ffffff);
     border: 3px solid #1677ff;
 }
 
 .pj-timeline-status {
     font-size: 13px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text, #1e293b);
 }
 
 .pj-timeline-date {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--text-muted, #94a3b8);
 }
 
 /* Material Allocation Form */
@@ -1041,14 +1104,16 @@
 .pj-form-group label {
     font-size: 12px;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-muted, #475569);
 }
 
 .pj-input {
     padding: 8px 12px;
     font-size: 13px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--border, #d9d9d9);
     border-radius: 6px;
+    background: var(--surface, #ffffff);
+    color: var(--text, #111827);
     outline: none;
     transition: border-color 0.2s;
 }
@@ -1065,16 +1130,198 @@
 }
 
 .pj-assigned-table th {
-    background: #f8fafc;
+    background: var(--surface-2, #f8fafc);
     padding: 8px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #64748b;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    color: var(--text-muted, #64748b);
     font-weight: 600;
     text-align: left;
 }
 
 .pj-assigned-table td {
     padding: 8px 10px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #334155;
+    border-bottom: 1px solid var(--border, #f1f5f9);
+    color: var(--text, #334155);
 }
+
+/* ==========================================================================
+   8. DARK MODE / NIGHT THEME OVERRIDES (html[data-theme="dark"])
+   ========================================================================== */
+html[data-theme="dark"] .pj-stage-tab.tab-purple {
+    background: rgba(147, 51, 234, 0.14);
+    color: #d8b4fe;
+    border-color: rgba(147, 51, 234, 0.35);
+}
+html[data-theme="dark"] .pj-stage-tab.tab-purple .pj-tab-count {
+    background: rgba(147, 51, 234, 0.28);
+    color: #f3e8ff;
+}
+html[data-theme="dark"] .pj-stage-tab.tab-purple:hover,
+html[data-theme="dark"] .pj-stage-tab.tab-purple.active {
+    background: rgba(147, 51, 234, 0.24);
+    border-color: #a855f7;
+    color: #f3e8ff;
+}
+
+html[data-theme="dark"] .pj-stage-tab.tab-blue {
+    background: rgba(2, 132, 199, 0.14);
+    color: #7dd3fc;
+    border-color: rgba(2, 132, 199, 0.35);
+}
+html[data-theme="dark"] .pj-stage-tab.tab-blue .pj-tab-count {
+    background: rgba(2, 132, 199, 0.28);
+    color: #e0f2fe;
+}
+html[data-theme="dark"] .pj-stage-tab.tab-blue:hover,
+html[data-theme="dark"] .pj-stage-tab.tab-blue.active {
+    background: rgba(2, 132, 199, 0.24);
+    border-color: #38bdf8;
+    color: #e0f2fe;
+}
+
+html[data-theme="dark"] .pj-stage-tab.tab-amber {
+    background: rgba(217, 119, 6, 0.14);
+    color: #fcd34d;
+    border-color: rgba(217, 119, 6, 0.35);
+}
+html[data-theme="dark"] .pj-stage-tab.tab-amber .pj-tab-count {
+    background: rgba(217, 119, 6, 0.28);
+    color: #fef3c7;
+}
+html[data-theme="dark"] .pj-stage-tab.tab-amber:hover,
+html[data-theme="dark"] .pj-stage-tab.tab-amber.active {
+    background: rgba(217, 119, 6, 0.24);
+    border-color: #f59e0b;
+    color: #fef3c7;
+}
+
+html[data-theme="dark"] .pj-stage-tab.tab-mint {
+    background: rgba(22, 163, 74, 0.14);
+    color: #86efac;
+    border-color: rgba(22, 163, 74, 0.35);
+}
+html[data-theme="dark"] .pj-stage-tab.tab-mint .pj-tab-count {
+    background: rgba(22, 163, 74, 0.28);
+    color: #dcfce7;
+}
+html[data-theme="dark"] .pj-stage-tab.tab-mint:hover,
+html[data-theme="dark"] .pj-stage-tab.tab-mint.active {
+    background: rgba(22, 163, 74, 0.24);
+    border-color: #22c55e;
+    color: #dcfce7;
+}
+
+html[data-theme="dark"] .pj-stage-tab.tab-slate {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.28);
+}
+html[data-theme="dark"] .pj-stage-tab.tab-slate .pj-tab-count {
+    background: rgba(148, 163, 184, 0.24);
+    color: #f1f5f9;
+}
+html[data-theme="dark"] .pj-stage-tab.tab-slate:hover,
+html[data-theme="dark"] .pj-stage-tab.tab-slate.active {
+    background: rgba(148, 163, 184, 0.20);
+    border-color: #94a3b8;
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .pj-job-card.card-purple {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(147, 51, 234, 0.12) 100%);
+    border-color: rgba(147, 51, 234, 0.35);
+}
+html[data-theme="dark"] .pj-stage-badge.badge-card-purple {
+    background: rgba(147, 51, 234, 0.22);
+    color: #d8b4fe;
+    border-color: rgba(147, 51, 234, 0.45);
+}
+
+html[data-theme="dark"] .pj-job-card.card-blue {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(2, 132, 199, 0.12) 100%);
+    border-color: rgba(2, 132, 199, 0.35);
+}
+html[data-theme="dark"] .pj-stage-badge.badge-card-blue {
+    background: rgba(2, 132, 199, 0.22);
+    color: #7dd3fc;
+    border-color: rgba(2, 132, 199, 0.45);
+}
+
+html[data-theme="dark"] .pj-job-card.card-amber {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(217, 119, 6, 0.12) 100%);
+    border-color: rgba(217, 119, 6, 0.35);
+}
+html[data-theme="dark"] .pj-stage-badge.badge-card-amber {
+    background: rgba(217, 119, 6, 0.22);
+    color: #fcd34d;
+    border-color: rgba(217, 119, 6, 0.45);
+}
+
+html[data-theme="dark"] .pj-job-card.card-mint {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(22, 163, 74, 0.12) 100%);
+    border-color: rgba(22, 163, 74, 0.35);
+}
+html[data-theme="dark"] .pj-stage-badge.badge-card-mint {
+    background: rgba(22, 163, 74, 0.22);
+    color: #86efac;
+    border-color: rgba(22, 163, 74, 0.45);
+}
+
+html[data-theme="dark"] .pj-job-card.card-slate {
+    background: linear-gradient(180deg, var(--surface) 0%, rgba(148, 163, 184, 0.10) 100%);
+    border-color: rgba(148, 163, 184, 0.28);
+}
+html[data-theme="dark"] .pj-stage-badge.badge-card-slate {
+    background: rgba(148, 163, 184, 0.20);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.38);
+}
+
+html[data-theme="dark"] .pj-tag-spec,
+html[data-theme="dark"] .pj-card-materials.has-material {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .pj-card-materials.no-material {
+    background: rgba(15, 23, 42, 0.45);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .pj-card-bottom-row,
+html[data-theme="dark"] .pj-card-advance-row {
+    border-top-color: var(--border);
+}
+
+html[data-theme="dark"] .pj-btn-icon-sm {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .pj-btn-icon-sm.btn-action-approve {
+    background: rgba(22, 163, 74, 0.15);
+    border-color: rgba(22, 163, 74, 0.4);
+    color: #4ade80;
+}
+
+html[data-theme="dark"] .pj-btn-icon-sm.btn-action-cancel {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #f87171;
+}
+
+html[data-theme="dark"] .pj-badge.pending { background: rgba(250, 173, 20, 0.16); color: #fcd34d; border-color: rgba(250, 173, 20, 0.38); }
+html[data-theme="dark"] .pj-badge.designing { background: rgba(114, 46, 209, 0.18); color: #d8b4fe; border-color: rgba(114, 46, 209, 0.42); }
+html[data-theme="dark"] .pj-badge.approved { background: rgba(22, 119, 255, 0.18); color: #93c5fd; border-color: rgba(22, 119, 255, 0.42); }
+html[data-theme="dark"] .pj-badge.in-progress { background: rgba(250, 140, 22, 0.18); color: #fdba74; border-color: rgba(250, 140, 22, 0.42); }
+html[data-theme="dark"] .pj-badge.finishing { background: rgba(250, 173, 20, 0.18); color: #fde047; border-color: rgba(250, 173, 20, 0.42); }
+html[data-theme="dark"] .pj-badge.ready { background: rgba(19, 194, 194, 0.18); color: #5eead4; border-color: rgba(19, 194, 194, 0.42); }
+html[data-theme="dark"] .pj-badge.completed { background: rgba(82, 196, 26, 0.18); color: #86efac; border-color: rgba(82, 196, 26, 0.42); }
+html[data-theme="dark"] .pj-badge.cancelled { background: rgba(255, 77, 79, 0.18); color: #fca5a5; border-color: rgba(255, 77, 79, 0.42); }
+
+html[data-theme="dark"] .pj-pay-badge.paid { background: rgba(82, 196, 26, 0.18); color: #86efac; }
+html[data-theme="dark"] .pj-pay-badge.partially-paid { background: rgba(250, 140, 22, 0.18); color: #fdba74; }
+html[data-theme="dark"] .pj-pay-badge.unpaid { background: rgba(255, 77, 79, 0.18); color: #fca5a5; }

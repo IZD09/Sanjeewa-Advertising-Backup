@@ -94,6 +94,29 @@ class GrnController extends BaseApiController
     }
 
     /**
+     * Update GRN status (Approved, Cancelled, Completed, Draft).
+     */
+    public function updateStatus(Request $request, int $id): JsonResponse
+    {
+        $grn = $this->grnService->getGrnById($id);
+
+        if (! $grn) {
+            return $this->notFound('GRN not found.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Approved,Cancelled,Completed,Draft'],
+        ]);
+
+        $updated = $this->grnService->updateGrnStatus($grn, $validated['status']);
+
+        return $this->success(
+            $this->grnService->formatGrnRecord($updated),
+            "GRN status updated to {$validated['status']} successfully."
+        );
+    }
+
+    /**
      * Remove the specified GRN.
      */
     public function destroy(int $id): JsonResponse

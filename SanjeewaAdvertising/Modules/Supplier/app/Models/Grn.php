@@ -40,6 +40,7 @@ class Grn extends Model
      */
     protected $fillable = [
         'at_time',
+        'status',
     ];
 
     /**

@@ -169,7 +169,7 @@
 
                                         <!-- Tab 3: Assigned Permissions -->
                                         <div class="up-tab-pane" id="tabPermissions">
-                                            <p style="margin-top: 0; color: #64748b; font-size: 13px;">Below is the list of administrative and operational modules enabled on your staff account.</p>
+                                            <p style="margin-top: 0; color: var(--text-muted); font-size: 13px;">Below is the list of administrative and operational modules enabled on your staff account.</p>
                                             <div class="up-perm-grid" id="userPermissionsContainer">
                                                 <div style="text-align: center; color: #94a3b8; padding: 20px;">Loading permissions...</div>
                                             </div>
@@ -177,7 +177,7 @@
 
                                         <!-- Tab 4: Recent Logins -->
                                         <div class="up-tab-pane" id="tabLogins">
-                                            <p style="margin-top: 0; color: #64748b; font-size: 13px;">Inspect your recent login sessions and active sign-in history.</p>
+                                            <p style="margin-top: 0; color: var(--text-muted); font-size: 13px;">Inspect your recent login sessions and active sign-in history.</p>
                                             <div class="up-table-responsive" style="margin-top: 10px;">
                                                 <table class="up-table">
                                                     <thead>

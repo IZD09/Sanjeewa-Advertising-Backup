@@ -224,7 +224,14 @@ class TransactionService
      */
     public function buildGrnPaymentsQuery(array $filters = []): Builder
     {
-        $query = GrnPayment::query()->with(['paymentType', 'paymentStatus', 'grn.purchaseOrders.supplier', 'grn.stocks']);
+        $query = GrnPayment::query()->with([
+            'paymentType',
+            'paymentStatus',
+            'grn.purchaseOrders.supplier',
+            'grn.purchaseOrders.status',
+            'grn.purchaseOrders.items.stockItem',
+            'grn.stocks.stockItem',
+        ]);
 
         if (! empty($filters['grn_id'])) {
             $query->where('grn_id', (int) $filters['grn_id']);
@@ -339,7 +346,14 @@ class TransactionService
      */
     public function getGrnPaymentById(int $id): ?GrnPayment
     {
-        return GrnPayment::query()->with(['paymentType', 'paymentStatus', 'grn'])->find($id);
+        return GrnPayment::query()->with([
+            'paymentType',
+            'paymentStatus',
+            'grn.purchaseOrders.supplier',
+            'grn.purchaseOrders.status',
+            'grn.purchaseOrders.items.stockItem',
+            'grn.stocks.stockItem',
+        ])->find($id);
     }
 
     /**
@@ -354,7 +368,7 @@ class TransactionService
 
         // 1. Fetch live purchase orders from database
         $purchaseOrders = PurchaseOrder::query()
-            ->with(['supplier', 'items.stockItem', 'grns.payments'])
+            ->with(['supplier', 'status', 'items.stockItem', 'grns.payments'])
             ->orderByDesc('id')
             ->get();
 
@@ -372,14 +386,34 @@ class TransactionService
             }
             $balanceAmount = max(0, $totalAmount - $paidAmount);
 
+            $poItems = $po->items->map(function ($item) {
+                $qty = (int) ($item->qty_ordered ?? 0);
+                $unitCost = (float) ($item->unit_cost ?? 0);
+
+                return [
+                    'name' => $item->stockItem?->name ?? 'Material Item',
+                    'code' => $item->stockItem?->code ?? '',
+                    'qty_ordered' => $qty,
+                    'qty_received' => (int) ($item->qty_received ?? 0),
+                    'unit_cost' => $unitCost,
+                    'line_total' => $qty * $unitCost,
+                ];
+            })->values()->all();
+
             $available[] = [
                 'id' => $poNum,
+                'raw_id' => $po->id,
                 'poNumber' => $poNum,
+                'orderDate' => $po->add_date?->format('Y-m-d') ?? null,
+                'status' => $po->status?->purchase_orders_status ?? 'Pending',
+                'notes' => $po->notes ?? '',
                 'grn_id' => $po->grns->first()?->id ?? null,
                 'grnNumber' => $po->grns->first() ? ('GRN-0'.$po->grns->first()->id) : 'GRN-Pending',
                 'supplier_id' => $po->suppliers_id,
                 'supplierName' => $supplierName,
-                'stockCategory' => $po->items->first()?->stockItem?->item_name ?? 'Stock Consignment',
+                'supplierBankAccount' => $po->supplier?->bank_account ?? '',
+                'stockCategory' => $po->items->first()?->stockItem?->name ?? 'Stock Consignment',
+                'items' => $poItems,
                 'totalAmount' => $totalAmount,
                 'paidAmount' => $paidAmount,
                 'balanceAmount' => $balanceAmount,
@@ -416,6 +450,7 @@ class TransactionService
                     'grnNumber' => $grnNum,
                     'supplier_id' => $firstPo?->suppliers_id ?? null,
                     'supplierName' => $supplierName,
+                    'supplierBankAccount' => $firstPo?->supplier?->bank_account ?? '',
                     'stockCategory' => $grn->stocks->first()?->stockItem?->name ?? 'Stock Materials',
                     'totalAmount' => $totalAmount,
                     'paidAmount' => $paidAmount,
@@ -436,16 +471,44 @@ class TransactionService
      */
     public function createGrnPayment(array $data): GrnPayment
     {
-        $grnId = (int) $data['grn_id'];
-        Grn::firstOrCreate(['id' => $grnId], ['at_time' => now()]);
+        return DB::transaction(function () use ($data) {
+            $grnId = ! empty($data['grn_id']) ? (int) $data['grn_id'] : null;
 
-        return GrnPayment::create([
-            'payment' => (float) $data['payment'],
-            'grn_id' => $grnId,
-            'payment_types_id' => (int) $data['payment_types_id'],
-            'payment_statuses_id' => (int) $data['payment_statuses_id'],
-            'pay_date' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),
-        ])->load(['paymentType', 'paymentStatus', 'grn']);
+            if ($grnId) {
+                $grn = Grn::firstOrCreate(
+                    ['id' => $grnId],
+                    ['at_time' => ! empty($data['pay_date']) ? $data['pay_date'] : now()]
+                );
+            } else {
+                $grn = Grn::create([
+                    'at_time' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),
+                ]);
+            }
+
+            if (! empty($data['purchase_order_ids']) && is_array($data['purchase_order_ids'])) {
+                $poIds = array_values(array_unique(array_filter(
+                    array_map('intval', $data['purchase_order_ids']),
+                    fn (int $id): bool => $id > 0
+                )));
+
+                $attachData = [];
+                foreach ($poIds as $poId) {
+                    $attachData[$poId] = ['supplyer_invoice' => null];
+                }
+
+                if (! empty($attachData)) {
+                    $grn->purchaseOrders()->syncWithoutDetaching($attachData);
+                }
+            }
+
+            return GrnPayment::create([
+                'payment' => (float) $data['payment'],
+                'grn_id' => $grn->id,
+                'payment_types_id' => (int) $data['payment_types_id'],
+                'payment_statuses_id' => (int) $data['payment_statuses_id'],
+                'pay_date' => ! empty($data['pay_date']) ? $data['pay_date'] : now(),
+            ])->load(['paymentType', 'paymentStatus', 'grn.purchaseOrders']);
+        });
     }
 
     /**

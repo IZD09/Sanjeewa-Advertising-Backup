@@ -37,6 +37,12 @@ class StoreSupplierRequest extends FormRequest
                 'max:100',
                 Rule::unique('suppliers', 'email'),
             ],
+            'bank_account' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('suppliers', 'bank_account'),
+            ],
         ];
     }
 

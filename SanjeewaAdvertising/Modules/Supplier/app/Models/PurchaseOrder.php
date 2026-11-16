@@ -39,6 +39,7 @@ class PurchaseOrder extends Model
         'add_date',
         'suppliers_id',
         'purchase_orders_status_id',
+        'notes',
     ];
 
     /**

@@ -46,7 +46,8 @@ class ExpencesessResource extends JsonResource
 
         $month = $addDate->format('Y-m');
         $dueDate = $addDate->copy()->endOfMonth()->toDateString();
-        $isPaid = (strtolower($statusName) === 'paid' || $this->pay_by !== null);
+        $isPaid = (strtolower($statusName) === 'paid');
+        $resolvedStatus = $isPaid ? 'Paid' : ($statusName ?: 'Pending');
 
         $payDateStr = $this->pay_at instanceof \DateTimeInterface
             ? $this->pay_at->toDateString()
@@ -65,17 +66,20 @@ class ExpencesessResource extends JsonResource
             'dueDate' => $dueDate,
             'price' => (float) $this->price,
             'amount' => (float) $this->price,
-            'status' => $isPaid ? 'Paid' : 'Pending',
+            'status' => $resolvedStatus,
             'paid_amount' => $isPaid ? (float) $this->price : 0.0,
             'paidAmount' => $isPaid ? (float) $this->price : 0.0,
             'paid_date' => $payDateStr,
             'paidDate' => $payDateStr,
             'paid_method' => $isPaid ? 'Bank Transfer' : '',
             'paidMethod' => $isPaid ? 'Bank Transfer' : '',
-            'paid_ref' => $isPaid ? "EXP-TXN-{$this->id}" : '',
-            'paidRef' => $isPaid ? "EXP-TXN-{$this->id}" : '',
-            'paid_note' => $isPaid ? 'Settled through business account' : '',
-            'notes' => "Operating monthly overhead - {$typeName}",
+            'reference' => $this->reference ?? '',
+            'settlement_note' => $this->settlement_note ?? '',
+            'paid_ref' => $this->reference ?? ($isPaid ? "EXP-TXN-{$this->id}" : ''),
+            'paidRef' => $this->reference ?? ($isPaid ? "EXP-TXN-{$this->id}" : ''),
+            'paid_note' => $this->settlement_note ?? ($isPaid ? 'Settled through business account' : ''),
+            'paidNote' => $this->settlement_note ?? ($isPaid ? 'Settled through business account' : ''),
+            'notes' => $this->settlement_note ?? "Operating monthly overhead - {$typeName}",
             'expencesess_types_id' => $this->expencesess_types_id,
             'expencesess_statuses_id' => $this->expencesess_statuses_id,
             'add_by' => $this->add_by,
@@ -83,7 +87,7 @@ class ExpencesessResource extends JsonResource
             'add_date' => $this->add_date?->toIso8601String() ?? $this->add_date,
             'pay_at' => $this->pay_at?->toIso8601String() ?? $this->pay_at,
             'type' => new ExpencesessTypeResource($this->whenLoaded('type')),
-            'status' => new ExpencesessStatusResource($this->whenLoaded('status')),
+            'status_details' => new ExpencesessStatusResource($this->whenLoaded('status')),
             'added_by' => $this->whenLoaded('addedBy', function () {
                 return [
                     'id' => $this->addedBy->id,

@@ -127,6 +127,29 @@ class ExpencesessService
      */
     public function updateExpencesess(Expencesess $expense, array $data): Expencesess
     {
+        $statusId = isset($data['expencesess_statuses_id']) ? (int) $data['expencesess_statuses_id'] : null;
+
+        if (array_key_exists('reference', $data)) {
+            $data['reference'] = ! empty($data['reference']) ? trim((string) $data['reference']) : null;
+        }
+        if (array_key_exists('settlement_note', $data)) {
+            $data['settlement_note'] = ! empty($data['settlement_note']) ? trim((string) $data['settlement_note']) : null;
+        }
+
+        if ($statusId === 3) {
+            if (! array_key_exists('pay_at', $data) || empty($data['pay_at'])) {
+                $data['pay_at'] = now();
+            }
+            if (! array_key_exists('pay_by', $data) || empty($data['pay_by'])) {
+                $data['pay_by'] = auth()->id();
+            }
+        } elseif ($statusId === 1) {
+            $data['pay_at'] = null;
+            $data['pay_by'] = null;
+            $data['reference'] = null;
+            $data['settlement_note'] = null;
+        }
+
         $expense->update($data);
 
         return $expense->fresh(['type', 'status', 'addedBy', 'paidBy']);

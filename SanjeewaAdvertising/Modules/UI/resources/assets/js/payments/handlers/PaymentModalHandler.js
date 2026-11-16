@@ -107,10 +107,10 @@ export class PaymentModalHandler extends BaseModalHandler {
   }
 
   openMarkExpensePaidModal(billId) {
-    this.markExpensePaidModal.open(billId);
+    this.markExpensePaidModal.openMarkExpensePaidModal(billId);
   }
   saveMarkExpensePaid() {
-    this.markExpensePaidModal.save();
+    this.markExpensePaidModal.confirm();
   }
   undoExpensePaid(billId) {
     this.markExpensePaidModal.undo(billId);

@@ -2,11 +2,11 @@
  * SanjeewaAdvertising - Record GRN Payment Modal
  *
  * Handles recording Stock Material & Multi-Purchase Order Disbursements (#modalRecordGrnPayment).
- * Allows adding multiple purchase orders to a single GRN consignment by selecting from the list
- * OR typing the PO # directly (with keyboard Enter / barcode scanner support),
- * allocating payment amounts, and generating an itemized voucher for all included purchase orders.
- *
- * Supports Cash / Petty Cash, Corporate Card, Company Cheque, Bank Transfer, and Online / QR.
+ * Workflow:
+ *  1. Search & Select Supplier (optional first step; or auto-selected when a PO is picked)
+ *  2. Select Pending Purchase Orders (shows supplier's pending POs, or all pending POs before supplier selection)
+ *  3. Consolidate multiple Purchase Orders into one GRN with custom allocations
+ *  4. Select Payment Method (Cash, Bank Transfer, Credit Card, Debit Card, Cheque, Online/QR)
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
@@ -35,15 +35,22 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     this.ctx = context;
     this.http = new RequestHandler();
     this.processor = new GrnPaymentProcessor(this.ctx);
-    this.selectedMethod = "Cash";
+
+    this.suppliers = [];
+    this.availablePos = [];
+    this.selectedSupplier = null;
+    this.pendingPOs = [];
     this.selectedPOs = [];
+    this.selectedPaymentTypeId = 1;
+    this.selectedMethod = "Cash";
+    this.isSubmitting = false;
 
     this.bindEvents();
   }
 
   bindEvents() {
-    // Open triggers
     document.addEventListener("click", (e) => {
+      // Open triggers
       const openBtn = e.target.closest("#btnOpenRecordGrnPayment, [data-action='record-grn']");
       if (openBtn) {
         e.preventDefault();
@@ -64,6 +71,17 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
         return;
       }
 
+      // Quick PO Chip click
+      const poChip = e.target.closest(".grn-quick-po-chip");
+      if (poChip) {
+        e.preventDefault();
+        const poId = poChip.getAttribute("data-po-id");
+        if (poId) {
+          this.addPoById(poId);
+        }
+        return;
+      }
+
       // Pay Full Balance shortcut
       const payFullBtn = e.target.closest("#btnGrnPayFull");
       if (payFullBtn) {
@@ -76,14 +94,79 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
       const methodChoice = e.target.closest("#grnModalMethodSelector .method-choice");
       if (methodChoice) {
         e.preventDefault();
-        document.querySelectorAll("#grnModalMethodSelector .method-choice").forEach(c => c.classList.remove("selected"));
-        methodChoice.classList.add("selected");
-        this.selectedMethod = methodChoice.getAttribute("data-method") || "Cash";
-        this.updateMethodFields();
+        const typeId = parseInt(methodChoice.getAttribute("data-type-id"), 10) || 1;
+        const methodName = methodChoice.getAttribute("data-method") || "Cash";
+        this.setPaymentType(typeId, methodName);
+        return;
+      }
+
+      // Supplier dropdown toggle button
+      const toggleSuppBtn = e.target.closest("#grnToggleSuppDropdownBtn");
+      if (toggleSuppBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleSupplierDropdown();
+        return;
+      }
+
+      // Supplier item click inside search dropdown
+      const suppItem = e.target.closest(".grn-supp-item");
+      if (suppItem) {
+        e.preventDefault();
+        const suppId = parseInt(suppItem.getAttribute("data-supplier-id"), 10);
+        const supp = this.suppliers.find(s => Number(s.id) === suppId);
+        if (supp) {
+          this.selectSupplier(supp);
+        }
+        return;
+      }
+
+      // Clear / Change supplier button
+      const clearSuppBtn = e.target.closest("#grnClearSupplierBtn");
+      if (clearSuppBtn) {
+        e.preventDefault();
+        this.clearSelectedSupplier();
+        return;
+      }
+
+      // Add All Pending POs button
+      const addAllBtn = e.target.closest("#grnBtnAddAllPos");
+      if (addAllBtn) {
+        e.preventDefault();
+        this.addAllPendingPOs();
+        return;
+      }
+
+      // Confirm Save Button click
+      const confirmBtn = e.target.closest("#btnConfirmSaveGrnPayment");
+      if (confirmBtn) {
+        e.preventDefault();
+        this.save();
+        return;
+      }
+
+      // Click outside supplier dropdown -> close dropdown
+      const searchGroup = document.getElementById("grnSuppSearchGroup");
+      const dropdown = document.getElementById("grnSuppDropdown");
+      if (dropdown && dropdown.style.display !== "none") {
+        if (!searchGroup || !searchGroup.contains(e.target)) {
+          this.hideSupplierDropdown();
+        }
       }
     });
 
-    // PO Selector dropdown - automatically add PO when selected
+    // Supplier Search Input typing & focus
+    const suppSearchInput = document.getElementById("grnSuppSearchInput");
+    if (suppSearchInput) {
+      suppSearchInput.addEventListener("input", (e) => {
+        this.renderSupplierDropdown(e.target.value.trim());
+      });
+      suppSearchInput.addEventListener("focus", () => {
+        this.renderSupplierDropdown(suppSearchInput.value.trim());
+      });
+    }
+
+    // PO Selector dropdown - automatically add PO when selected (and auto-select supplier if needed)
     const refSelect = document.getElementById("grnModalRefSelect");
     if (refSelect) {
       refSelect.addEventListener("change", (e) => {
@@ -113,90 +196,13 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
         }
       });
     }
-
-    // Confirm Save
-    const confirmBtn = document.getElementById("btnConfirmSaveGrnPayment");
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", () => this.save());
-    }
   }
 
   async openRecordGrnPaymentModal(prefillGrnId = null) {
     const modal = document.getElementById("modalRecordGrnPayment");
     if (!modal) return;
 
-    this.selectedMethod = "Cash";
-    document.querySelectorAll("#grnModalMethodSelector .method-choice").forEach(c => {
-      c.classList.toggle("selected", c.getAttribute("data-method") === "Cash");
-    });
-    this.updateMethodFields();
-
-    this.selectedPOs = [];
-
-    // Ensure live purchase orders and GRN consignments from database are loaded
-    let grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
-    if (grnRecords.length === 0) {
-      try {
-        const res = await this.http.get("/api/v1/grn-payments/available-pos");
-        const data = res?.data || res;
-        const livePos = Array.isArray(data) ? data : (data?.pos || []);
-        if (Array.isArray(livePos) && livePos.length > 0) {
-          grnRecords = livePos.map(g => ({
-            id: g.id,
-            poNumber: g.poNumber || g.id,
-            grn_id: g.grn_id || g.id,
-            grnNumber: g.grnNumber || `GRN-${g.id}`,
-            supplier_id: g.supplier_id || "SUP-001",
-            supplier_name: g.supplierName || "Supplier",
-            supplierName: g.supplierName || "Supplier",
-            stock_category: g.stockCategory || "Stock Consignment",
-            stockCategory: g.stockCategory || "Stock Consignment",
-            net_total: Number(g.totalAmount || g.totalBill || 0),
-            totalAmount: Number(g.totalAmount || g.totalBill || 0),
-            totalBill: Number(g.totalAmount || g.totalBill || 0),
-            paid_amount: Number(g.paidAmount || 0),
-            paidAmount: Number(g.paidAmount || 0),
-            balance: Number(g.balanceAmount !== undefined ? g.balanceAmount : g.balance) || 0,
-            balanceAmount: Number(g.balanceAmount !== undefined ? g.balanceAmount : g.balance) || 0,
-            status: (Number(g.balanceAmount !== undefined ? g.balanceAmount : g.balance) || 0) <= 0 ? "Completed" : "Pending",
-            received_date: g.received_date || new Date().toISOString().split("T")[0]
-          }));
-          localStorage.setItem("sa_advertising_grn_records", JSON.stringify(grnRecords));
-        }
-      } catch (err) {
-        console.warn("[RecordGrnPaymentModal] Could not fetch live purchase orders:", err);
-      }
-    }
-
-    const grnPayments = this.ctx.getGrnPayments ? this.ctx.getGrnPayments() : [];
-
-    // If prefillGrnId passed, find and pre-add that GRN / PO
-    if (prefillGrnId) {
-      const foundGrn = grnRecords.find(g => (g.grnNumber || g.grn_number || g.id) === prefillGrnId || (g.poNumber || g.purchase_order_no) === prefillGrnId);
-      if (foundGrn) {
-        this.addPoObject(foundGrn);
-      } else {
-        const foundPay = grnPayments.find(p => (p.grnNumber || p.grn_number || p.grnId) === prefillGrnId || (p.poNumber || p.po_number) === prefillGrnId);
-        if (foundPay) {
-          this.addPoObject({
-            id: foundPay.poNumber || foundPay.grnNumber || prefillGrnId,
-            grnNumber: foundPay.grnNumber || prefillGrnId,
-            poNumber: foundPay.poNumber || `PO-${prefillGrnId}`,
-            supplierName: foundPay.supplierName || "Supplier",
-            supplierInvoice: foundPay.supplier_invoice || foundPay.supplierInvoice || "",
-            stockCategory: foundPay.stockCategory || "Stock Delivery",
-            totalBill: foundPay.totalBill,
-            amount: foundPay.amount,
-            balance: foundPay.balance
-          });
-        }
-      }
-    }
-    // No default prefill row when prefillGrnId is not passed, start with empty selection
-
-    this.updateDropdown();
-    this.renderSelectedPoTable();
-    this.recalculateSummary();
+    this.setPaymentType(1, "Cash");
 
     const dateInput = document.getElementById("grnModalDate");
     if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
@@ -204,31 +210,351 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     const noteInput = document.getElementById("grnModalNotes");
     if (noteInput) noteInput.value = "";
 
-    const refSelect = document.getElementById("grnModalRefSelect");
-    if (refSelect) {
-      refSelect.value = "";
+    this.selectedSupplier = null;
+    this.pendingPOs = [];
+    this.selectedPOs = [];
+
+    this.resetSupplierUI();
+    this.renderSelectedPoTable();
+    this.recalculateSummary();
+
+    // Load suppliers & available purchase orders concurrently
+    await Promise.all([
+      this.loadSuppliers(),
+      this.loadAvailablePurchaseOrders()
+    ]);
+
+    if (prefillGrnId) {
+      this.handlePrefillPo(prefillGrnId);
+    } else {
+      this.updateDropdown();
+      this.renderQuickPoChips();
     }
 
     this.openModal("modalRecordGrnPayment");
   }
 
+  async loadSuppliers() {
+    try {
+      const res = await this.http.get("/api/v1/suppliers/all");
+      const data = res?.data || res;
+      this.suppliers = Array.isArray(data) ? data : (data?.data || []);
+    } catch (err) {
+      console.warn("[RecordGrnPaymentModal] Could not fetch supplier list:", err);
+      this.suppliers = [];
+    }
+  }
+
+  async loadAvailablePurchaseOrders() {
+    let records = [];
+    try {
+      const res = await this.http.get("/api/v1/grn-payments/available-pos");
+      const data = res?.data || res;
+      const livePos = Array.isArray(data) ? data : (data?.pos || []);
+      if (Array.isArray(livePos)) {
+        records = livePos.map(g => ({
+          id: g.id || g.poNumber,
+          raw_id: g.raw_id || parseInt(String(g.poNumber || g.id || "").replace(/\D/g, ""), 10) || null,
+          poNumber: g.poNumber || g.id,
+          orderDate: g.orderDate || g.add_date || null,
+          status: g.status || "Pending",
+          notes: g.notes || "",
+          grn_id: g.grn_id || null,
+          grnNumber: g.grnNumber || (g.grn_id ? `GRN-0${g.grn_id}` : "GRN-Pending"),
+          supplier_id: g.supplier_id || null,
+          supplierName: g.supplierName || g.supplier_name || "Direct Supplier",
+          supplierBankAccount: g.supplierBankAccount || g.bank_account || "",
+          stockCategory: g.stockCategory || "Stock Consignment",
+          items: Array.isArray(g.items) ? g.items : [],
+          totalAmount: Number(g.totalAmount ?? g.totalBill ?? 0),
+          paidAmount: Number(g.paidAmount ?? 0),
+          balanceAmount: Number(g.balanceAmount ?? g.balance ?? 0),
+          supplierInvoice: g.supplierInvoice || ""
+        }));
+      }
+    } catch (err) {
+      console.warn("[RecordGrnPaymentModal] Could not fetch live purchase orders:", err);
+    }
+
+    // Fallback to context if API returned empty
+    if (records.length === 0) {
+      const ctxGrns = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
+      records = ctxGrns.map(g => ({
+        id: g.poNumber || g.purchase_order_no || g.id,
+        poNumber: g.poNumber || g.purchase_order_no || `PO-0${g.id}`,
+        grn_id: g.grn_id || g.id,
+        grnNumber: g.grnNumber || g.grn_number || `GRN-0${g.id}`,
+        supplier_id: g.supplier_id || null,
+        supplierName: g.supplierName || g.supplier_name || "Supplier",
+        stockCategory: g.stockCategory || g.stock_category || "Stock Consignment",
+        totalAmount: Number(g.net_total ?? g.totalAmount ?? g.totalBill ?? 0),
+        paidAmount: Number(g.paid_amount ?? g.paidAmount ?? 0),
+        balanceAmount: Number(g.balance ?? g.balanceAmount ?? 0),
+        supplierInvoice: g.supplier_invoice_no || g.supplierInvoice || ""
+      }));
+    }
+
+    this.availablePos = records;
+  }
+
+  getAllPendingPOs() {
+    return this.availablePos.filter(po => (Number(po.balanceAmount) || 0) > 0);
+  }
+
+  getSupplierPendingPOs(supplier) {
+    if (!supplier) return this.getAllPendingPOs();
+    return this.getAllPendingPOs().filter(po => {
+      const matchId = supplier.id && po.supplier_id && Number(po.supplier_id) === Number(supplier.id);
+      const matchName = supplier.name && po.supplierName &&
+        String(po.supplierName).trim().toLowerCase() === String(supplier.name).trim().toLowerCase();
+      return matchId || matchName;
+    });
+  }
+
+  findSupplierForPo(po) {
+    if (!po) return null;
+    let supp = null;
+    if (po.supplier_id) {
+      supp = this.suppliers.find(s => Number(s.id) === Number(po.supplier_id));
+    }
+    if (!supp && po.supplierName) {
+      const cleanName = String(po.supplierName).trim().toLowerCase();
+      supp = this.suppliers.find(s => String(s.name || "").trim().toLowerCase() === cleanName);
+    }
+    if (!supp) {
+      supp = {
+        id: po.supplier_id || null,
+        code: po.supplier_id ? `SUP-${String(po.supplier_id).padStart(3, "0")}` : "SUP",
+        name: po.supplierName || "Direct Supplier",
+        mobile: "",
+        bank_account: po.supplierBankAccount || ""
+      };
+    }
+    return supp;
+  }
+
+  handlePrefillPo(prefillId) {
+    const clean = String(prefillId).trim().toLowerCase();
+    const found = this.availablePos.find(g =>
+      String(g.id ?? "").toLowerCase() === clean ||
+      String(g.poNumber ?? "").toLowerCase() === clean ||
+      String(g.grnNumber ?? "").toLowerCase() === clean
+    );
+    if (found) {
+      const supp = this.findSupplierForPo(found);
+      if (supp) {
+        this.selectSupplier(supp, found.id);
+      } else {
+        this.addPoObject(found);
+        this.updateDropdown();
+        this.renderQuickPoChips();
+        this.renderSelectedPoTable();
+        this.recalculateSummary();
+      }
+    } else {
+      this.updateDropdown();
+      this.renderQuickPoChips();
+    }
+  }
+
+  resetSupplierUI() {
+    const searchGroup = document.getElementById("grnSuppSearchGroup");
+    const searchInput = document.getElementById("grnSuppSearchInput");
+    const suppCard = document.getElementById("grnSelectedSupplierCard");
+    const suppIdHidden = document.getElementById("grnSelectedSupplierId");
+    const dropdown = document.getElementById("grnSuppDropdown");
+    const addAllBtn = document.getElementById("grnBtnAddAllPos");
+    const quickList = document.getElementById("grnPendingPoQuickList");
+    const helpMsg = document.getElementById("grnPoSelectHelpMsg");
+
+    if (searchGroup) searchGroup.style.display = "block";
+    if (searchInput) searchInput.value = "";
+    if (suppCard) suppCard.style.display = "none";
+    if (suppIdHidden) suppIdHidden.value = "";
+    if (dropdown) dropdown.style.display = "none";
+    if (addAllBtn) addAllBtn.style.display = "none";
+    if (quickList) {
+      quickList.style.display = "none";
+      quickList.innerHTML = "";
+    }
+    if (helpMsg) {
+      helpMsg.textContent = "Select a pending purchase order above (auto-selects its supplier) or choose a supplier first to filter their pending POs.";
+    }
+  }
+
+  toggleSupplierDropdown() {
+    const dropdown = document.getElementById("grnSuppDropdown");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "block") {
+      this.hideSupplierDropdown();
+    } else {
+      const searchInput = document.getElementById("grnSuppSearchInput");
+      this.renderSupplierDropdown(searchInput ? searchInput.value.trim() : "");
+    }
+  }
+
+  hideSupplierDropdown() {
+    const dropdown = document.getElementById("grnSuppDropdown");
+    const icon = document.getElementById("grnSuppDropdownIcon");
+    if (dropdown) dropdown.style.display = "none";
+    if (icon) {
+      icon.classList.remove("fa-chevron-up");
+      icon.classList.add("fa-chevron-down");
+    }
+  }
+
+  renderSupplierDropdown(query = "") {
+    const dropdown = document.getElementById("grnSuppDropdown");
+    const icon = document.getElementById("grnSuppDropdownIcon");
+    if (!dropdown) return;
+
+    const cleanQuery = String(query).toLowerCase().trim();
+    let matches = this.suppliers.filter(s => (s.status || "Active").toLowerCase() !== "disabled" || this.getSupplierPendingPOs(s).length > 0);
+
+    if (cleanQuery) {
+      matches = matches.filter(s => {
+        const name = String(s.name || "").toLowerCase();
+        const mobile = String(s.mobile || s.phone || "").toLowerCase();
+        const code = String(s.code || "").toLowerCase();
+        const id = String(s.id || "");
+        return name.includes(cleanQuery) || mobile.includes(cleanQuery) || code.includes(cleanQuery) || id === cleanQuery;
+      });
+    }
+
+    // Sort suppliers with pending POs first
+    matches.sort((a, b) => this.getSupplierPendingPOs(b).length - this.getSupplierPendingPOs(a).length);
+
+    if (matches.length === 0) {
+      dropdown.innerHTML = `
+        <div style="padding: 14px 16px; text-align: center; color: var(--text-muted); font-size: 12px;">
+          <i class="fa-solid fa-truck-field" style="margin-right: 6px; opacity: 0.6;"></i>
+          No suppliers found matching "<strong>${this.escapeHtml(query)}</strong>"
+        </div>`;
+    } else {
+      dropdown.innerHTML = matches.slice(0, 35).map(s => {
+        const pendingCount = this.getSupplierPendingPOs(s).length;
+        const phone = s.mobile || s.phone || "No Phone";
+        const code = s.code || `SUP-${String(s.id).padStart(3, "0")}`;
+        return `
+          <div class="grn-supp-item" data-supplier-id="${s.id}" style="padding: 10px 14px; border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.06)); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s ease;">
+            <div style="min-width: 0;">
+              <strong style="color: var(--text); font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(s.name)}</strong>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+                ${this.escapeHtml(phone)} • ${this.escapeHtml(code)}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              ${pendingCount > 0
+                ? `<span style="font-size: 10px; background: rgba(16,185,129,0.1); color: #10b981; padding: 2px 8px; border-radius: 10px; font-weight: 700;">${pendingCount} Pending PO${pendingCount === 1 ? "" : "s"}</span>`
+                : `<span style="font-size: 10px; color: var(--text-muted);">0 Pending</span>`}
+              <span style="font-size: 11px; font-weight: 700; color: #10b981;">Select &rarr;</span>
+            </div>
+          </div>`;
+      }).join("");
+
+      dropdown.querySelectorAll(".grn-supp-item").forEach(item => {
+        item.addEventListener("mouseenter", () => item.style.backgroundColor = "var(--surface-2, rgba(16,185,129,0.06))");
+        item.addEventListener("mouseleave", () => item.style.backgroundColor = "");
+      });
+    }
+
+    dropdown.style.display = "block";
+    if (icon) {
+      icon.classList.remove("fa-chevron-down");
+      icon.classList.add("fa-chevron-up");
+    }
+  }
+
+  selectSupplier(supplier, autoSelectPoId = null) {
+    if (!supplier) return;
+
+    this.selectedSupplier = supplier;
+    this.hideSupplierDropdown();
+
+    const searchGroup = document.getElementById("grnSuppSearchGroup");
+    const suppCard = document.getElementById("grnSelectedSupplierCard");
+    const suppNameEl = document.getElementById("grnSelectedSuppName");
+    const suppMobileEl = document.getElementById("grnSelectedSuppMobile");
+    const suppIdHidden = document.getElementById("grnSelectedSupplierId");
+    const pendingBadge = document.getElementById("grnSelectedSuppPendingBadge");
+    const helpMsg = document.getElementById("grnPoSelectHelpMsg");
+
+    const code = supplier.code || (supplier.id ? `SUP-${String(supplier.id).padStart(3, "0")}` : "SUP");
+    const phone = supplier.mobile || supplier.phone || "No Phone";
+
+    if (searchGroup) searchGroup.style.display = "none";
+    if (suppCard) suppCard.style.display = "flex";
+    if (suppNameEl) suppNameEl.textContent = supplier.name;
+    if (suppMobileEl) suppMobileEl.textContent = `${phone} • ${code}`;
+    if (suppIdHidden) suppIdHidden.value = supplier.id || "";
+
+    // Load pending POs for this supplier
+    this.pendingPOs = this.getSupplierPendingPOs(supplier);
+    const count = this.pendingPOs.length;
+
+    if (pendingBadge) {
+      pendingBadge.textContent = `${count} Pending PO${count === 1 ? "" : "s"}`;
+      pendingBadge.style.color = count > 0 ? "#10b981" : "var(--text-muted)";
+    }
+
+    if (helpMsg) {
+      helpMsg.textContent = count > 0
+        ? `Showing ${count} pending purchase order(s) for ${supplier.name}. Click or select POs to add them to this GRN.`
+        : `No pending purchase orders found for ${supplier.name}. All orders are settled.`;
+    }
+
+    // If autoSelectPoId was passed (e.g., PO clicked before supplier), add it
+    if (autoSelectPoId) {
+      const targetPo = this.availablePos.find(p =>
+        String(p.id).toLowerCase() === String(autoSelectPoId).toLowerCase() ||
+        String(p.poNumber || "").toLowerCase() === String(autoSelectPoId).toLowerCase()
+      );
+      if (targetPo) {
+        this.addPoObject(targetPo);
+      }
+    }
+
+    this.updateDropdown();
+    this.renderQuickPoChips();
+    this.renderSelectedPoTable();
+    this.recalculateSummary();
+    this.updateMethodFields();
+  }
+
+  clearSelectedSupplier() {
+    this.selectedSupplier = null;
+    this.pendingPOs = [];
+    this.selectedPOs = [];
+
+    this.resetSupplierUI();
+    this.updateDropdown();
+    this.renderQuickPoChips();
+    this.renderSelectedPoTable();
+    this.recalculateSummary();
+    this.updateMethodFields();
+  }
+
   addPoObject(grnOrPo) {
     const id = grnOrPo.poNumber || grnOrPo.purchase_order_no || grnOrPo.po_number || grnOrPo.grnNumber || grnOrPo.grn_number || (grnOrPo.id ? `PO-0${grnOrPo.id}` : "PO-0101");
     if (!id || id === "-") return;
-    if (this.selectedPOs.some(p => p.id === id)) return;
+    if (this.selectedPOs.some(p => String(p.id).toLowerCase() === String(id).toLowerCase())) return;
 
-    const tot = Number(grnOrPo.totalAmount !== undefined ? grnOrPo.totalAmount : (grnOrPo.totalBill !== undefined ? grnOrPo.totalBill : (grnOrPo.net_total !== undefined ? grnOrPo.net_total : 0))) || 0;
-    const paid = Number(grnOrPo.paidAmount !== undefined ? grnOrPo.paidAmount : (grnOrPo.amount !== undefined ? grnOrPo.amount : (grnOrPo.paid_amount !== undefined ? grnOrPo.paid_amount : 0))) || 0;
-    const bal = Number(grnOrPo.balanceAmount !== undefined ? grnOrPo.balanceAmount : (grnOrPo.balance !== undefined ? grnOrPo.balance : (grnOrPo.balance_amount !== undefined ? grnOrPo.balance_amount : Math.max(0, tot - paid)))) || 0;
+    const tot = Number(grnOrPo.totalAmount ?? grnOrPo.totalBill ?? grnOrPo.net_total ?? 0) || 0;
+    const paid = Number(grnOrPo.paidAmount ?? grnOrPo.amount ?? grnOrPo.paid_amount ?? 0) || 0;
+    const bal = Number(grnOrPo.balanceAmount ?? grnOrPo.balance ?? grnOrPo.balance_amount ?? Math.max(0, tot - paid)) || 0;
 
-    const grnNum = grnOrPo.grnNumber || grnOrPo.grn_number || (grnOrPo.grn_id ? `GRN-0${grnOrPo.grn_id}` : `GRN-${id.replace("PO-", "")}`);
+    const grnNum = grnOrPo.grnNumber || grnOrPo.grn_number || (grnOrPo.grn_id ? `GRN-0${grnOrPo.grn_id}` : `GRN-${String(id).replace("PO-", "")}`);
     const poNum = (grnOrPo.poNumber && grnOrPo.poNumber !== "-") ? grnOrPo.poNumber : (grnOrPo.purchase_order_no && grnOrPo.purchase_order_no !== "-" ? grnOrPo.purchase_order_no : id);
     const suppInv = grnOrPo.supplierInvoice || grnOrPo.supplier_invoice || grnOrPo.supplyer_invoice || grnOrPo.supplier_invoice_no || "";
 
     this.selectedPOs.push({
       id: id,
+      raw_id: grnOrPo.raw_id || parseInt(String(poNum || id).replace(/\D/g, ""), 10) || null,
+      grn_id: grnOrPo.grn_id || null,
       grnNumber: grnNum,
       poNumber: poNum,
+      supplier_id: grnOrPo.supplier_id || null,
       supplierInvoice: suppInv,
       supplierName: grnOrPo.supplierName || grnOrPo.supplier_name || "Direct Consignment",
       stockCategory: grnOrPo.stockCategory || grnOrPo.stock_category || "Stock Supplies",
@@ -244,54 +570,19 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     const clean = String(query).trim().toLowerCase().replace(/^#/, "");
     if (!clean) return null;
 
-    const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
-    const grnPayments = this.ctx.getGrnPayments ? this.ctx.getGrnPayments() : [];
-
-    // 1. Exact match on PO or GRN number
-    let match = grnRecords.find(g =>
-      String(g.poNumber ?? g.purchase_order_no ?? g.po_number ?? "").toLowerCase() === clean ||
-      String(g.grnNumber ?? g.grn_number ?? g.id ?? "").toLowerCase() === clean
-    );
-    if (match) return match;
-
-    // 2. Suffix match on ID (e.g. "0101" matches "PO-0101" or "GRN-0101")
-    match = grnRecords.find(g =>
-      String(g.poNumber ?? g.purchase_order_no ?? g.po_number ?? "").toLowerCase().endsWith(clean) ||
-      String(g.grnNumber ?? g.grn_number ?? "").toLowerCase().endsWith(clean) ||
+    let match = this.availablePos.find(g =>
+      String(g.poNumber ?? "").toLowerCase() === clean ||
+      String(g.grnNumber ?? "").toLowerCase() === clean ||
       String(g.id ?? "").toLowerCase() === clean
     );
     if (match) return match;
 
-    // 3. Substring match on supplier name or invoice
+    const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
     match = grnRecords.find(g =>
-      String(g.supplierName ?? g.supplier_name ?? "").toLowerCase().includes(clean) ||
-      String(g.supplier_invoice_no ?? g.supplierInvoice ?? g.supplier_invoice ?? "").toLowerCase().includes(clean)
+      String(g.poNumber ?? g.purchase_order_no ?? g.po_number ?? "").toLowerCase() === clean ||
+      String(g.grnNumber ?? g.grn_number ?? g.id ?? "").toLowerCase() === clean
     );
-    if (match) return match;
-
-    // 4. Fallback in GRN payments history
-    let payMatch = grnPayments.find(p =>
-      String(p.poNumber ?? p.po_number ?? "").toLowerCase() === clean ||
-      String(p.grnNumber ?? p.grn_number ?? p.grnId ?? "").toLowerCase() === clean ||
-      String(p.poNumber ?? p.po_number ?? "").toLowerCase().endsWith(clean) ||
-      String(p.supplierName ?? p.supplier_name ?? "").toLowerCase().includes(clean)
-    );
-
-    if (payMatch) {
-      return {
-        id: payMatch.poNumber || payMatch.grnNumber,
-        grnNumber: payMatch.grnNumber,
-        poNumber: payMatch.poNumber,
-        supplierName: payMatch.supplierName,
-        stockCategory: payMatch.stockCategory || "Stock Delivery",
-        totalBill: payMatch.totalBill,
-        amount: payMatch.amount,
-        balance: payMatch.balance,
-        supplierInvoice: payMatch.supplierInvoice || payMatch.supplier_invoice || ""
-      };
-    }
-
-    return null;
+    return match || null;
   }
 
   addPoById(poId) {
@@ -299,26 +590,56 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     const found = this.findPoByIdOrQuery(poId);
     if (!found) return;
 
-    const cleanId = found.id || found.poNumber || found.grnNumber;
+    const cleanId = found.poNumber || found.id || found.grnNumber;
     if (this.selectedPOs.some(p =>
       String(p.id).toLowerCase() === String(cleanId).toLowerCase() ||
       String(p.poNumber || "").toLowerCase() === String(cleanId).toLowerCase()
     )) {
       this.showToast(`Purchase Order ${cleanId} is already included in this GRN.`, "info");
-      const select = document.getElementById("grnModalRefSelect");
-      if (select) select.value = "";
       return;
     }
 
+    // If supplier is NOT selected yet, automatically select this PO's supplier and filter pending POs!
+    if (!this.selectedSupplier) {
+      const supp = this.findSupplierForPo(found);
+      if (supp) {
+        this.selectSupplier(supp, found.id || found.poNumber);
+        this.showToast(`Supplier "${supp.name}" selected & PO ${found.poNumber || found.id} added to GRN!`);
+        return;
+      }
+    }
+
     this.addPoObject(found);
-
-    const select = document.getElementById("grnModalRefSelect");
-    if (select) select.value = "";
-
     this.updateDropdown();
+    this.renderQuickPoChips();
     this.renderSelectedPoTable();
     this.recalculateSummary();
     this.showToast(`Purchase Order ${found.poNumber || found.id} added to GRN!`);
+  }
+
+  addAllPendingPOs() {
+    const sourceList = this.selectedSupplier ? this.pendingPOs : this.getAllPendingPOs();
+    let addedCount = 0;
+
+    sourceList.forEach(po => {
+      const cleanId = po.poNumber || po.id;
+      const alreadyExists = this.selectedPOs.some(p =>
+        String(p.id).toLowerCase() === String(cleanId).toLowerCase() ||
+        String(p.poNumber || "").toLowerCase() === String(cleanId).toLowerCase()
+      );
+      if (!alreadyExists) {
+        this.addPoObject(po);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      this.updateDropdown();
+      this.renderQuickPoChips();
+      this.renderSelectedPoTable();
+      this.recalculateSummary();
+      this.showToast(`Added ${addedCount} pending purchase order(s) to this GRN.`);
+    }
   }
 
   removePo(poId) {
@@ -327,6 +648,7 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
       String(p.poNumber || "").toLowerCase() !== String(poId).toLowerCase()
     );
     this.updateDropdown();
+    this.renderQuickPoChips();
     this.renderSelectedPoTable();
     this.recalculateSummary();
     this.showToast(`Purchase Order ${poId} removed from GRN.`, "info");
@@ -334,51 +656,84 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
 
   updateDropdown() {
     const select = document.getElementById("grnModalRefSelect");
+    const addAllBtn = document.getElementById("grnBtnAddAllPos");
     if (!select) return;
 
-    const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
-    const grnPayments = this.ctx.getGrnPayments ? this.ctx.getGrnPayments() : [];
+    const sourceList = this.selectedSupplier ? this.pendingPOs : this.getAllPendingPOs();
 
-    const availableItems = [];
-
-    grnRecords.forEach(g => {
-      const poNum = (g.poNumber && g.poNumber !== "-") ? g.poNumber : (g.purchase_order_no && g.purchase_order_no !== "-" ? g.purchase_order_no : (g.id ? `PO-0${g.id}` : "PO-0101"));
-      const grnNum = g.grnNumber || g.grn_number || (g.id ? `GRN-0${g.id}` : "GRN-0101");
-      const supplier = g.supplierName || g.supplier_name || "Supplier";
-      const bal = Number(g.balance ?? g.balance_amount ?? 0);
-      const inv = g.supplier_invoice_no || g.supplierInvoice || "";
-
-      const isSelected = this.selectedPOs.some(p =>
-        String(p.id).toLowerCase() === String(poNum).toLowerCase() ||
-        String(p.poNumber || "").toLowerCase() === String(poNum).toLowerCase() ||
-        String(p.grnNumber || "").toLowerCase() === String(grnNum).toLowerCase()
+    const unselected = sourceList.filter(po => {
+      const poNum = po.poNumber || po.id;
+      return !this.selectedPOs.some(sel =>
+        String(sel.id).toLowerCase() === String(poNum).toLowerCase() ||
+        String(sel.poNumber || "").toLowerCase() === String(poNum).toLowerCase()
       );
-
-      if (!isSelected && !availableItems.some(i => i.id === poNum)) {
-        availableItems.push({
-          id: poNum,
-          label: `${poNum} | ${grnNum} - ${supplier} ${inv ? `[Inv: ${inv}]` : ""} (Bal: Rs. ${bal.toLocaleString()})`
-        });
-      }
     });
 
-    grnPayments.forEach(p => {
-      const poNum = p.poNumber || p.po_number || `PO-${p.grnNumber || "0101"}`;
-      const isSelected = this.selectedPOs.some(selected =>
-        String(selected.id).toLowerCase() === String(poNum).toLowerCase() ||
-        String(selected.poNumber || "").toLowerCase() === String(poNum).toLowerCase()
-      );
+    if (this.selectedSupplier && unselected.length > 0 && addAllBtn) {
+      addAllBtn.style.display = "inline-flex";
+    } else if (addAllBtn) {
+      addAllBtn.style.display = "none";
+    }
 
-      if (!isSelected && !availableItems.some(i => i.id === poNum)) {
-        availableItems.push({
-          id: poNum,
-          label: `${poNum} | ${p.grnNumber || "GRN"} - ${p.supplierName} (Bal: Rs. ${(Number(p.balance) || 0).toLocaleString()})`
-        });
+    if (unselected.length === 0) {
+      if (this.selectedSupplier) {
+        select.innerHTML = sourceList.length === 0
+          ? `<option value="">No pending purchase orders for ${this.escapeHtml(this.selectedSupplier.name)}</option>`
+          : `<option value="">All pending POs for ${this.escapeHtml(this.selectedSupplier.name)} are added (${this.selectedPOs.length} selected)</option>`;
+      } else {
+        select.innerHTML = `<option value="">No pending purchase orders available</option>`;
       }
+      return;
+    }
+
+    const placeholder = this.selectedSupplier
+      ? `-- Select Pending PO for ${this.escapeHtml(this.selectedSupplier.name)} (${unselected.length} available) --`
+      : `-- Select Pending Purchase Order to Add (${unselected.length} pending) --`;
+
+    select.innerHTML = `<option value="">${placeholder}</option>` +
+      unselected.map(po => {
+        const poNum = po.poNumber || po.id;
+        const grnPart = po.grnNumber && po.grnNumber !== "GRN-Pending" ? ` | ${po.grnNumber}` : "";
+        const bal = Number(po.balanceAmount || 0).toLocaleString();
+        return `<option value="${this.escapeHtml(poNum)}">${this.escapeHtml(poNum)}${this.escapeHtml(grnPart)} - ${this.escapeHtml(po.supplierName)} (Bal: Rs. ${bal})</option>`;
+      }).join("");
+  }
+
+  renderQuickPoChips() {
+    const container = document.getElementById("grnPendingPoQuickList");
+    if (!container) return;
+
+    if (!this.selectedSupplier) {
+      container.style.display = "none";
+      container.innerHTML = "";
+      return;
+    }
+
+    const unselected = this.pendingPOs.filter(po => {
+      const poNum = po.poNumber || po.id;
+      return !this.selectedPOs.some(sel =>
+        String(sel.id).toLowerCase() === String(poNum).toLowerCase() ||
+        String(sel.poNumber || "").toLowerCase() === String(poNum).toLowerCase()
+      );
     });
 
-    select.innerHTML = `<option value="">-- Select Purchase Order / Consignment to Add --</option>` +
-      availableItems.map(item => `<option value="${item.id}">${item.label}</option>`).join("");
+    if (unselected.length === 0) {
+      container.style.display = "none";
+      container.innerHTML = "";
+      return;
+    }
+
+    container.style.display = "flex";
+    container.innerHTML = unselected.map(po => {
+      const poNum = po.poNumber || po.id;
+      const bal = Number(po.balanceAmount || 0).toLocaleString();
+      return `
+        <button type="button" class="po-btn po-btn-secondary grn-quick-po-chip" data-po-id="${this.escapeHtml(poNum)}" style="height: 30px; font-size: 11.5px; padding: 0 10px; border-radius: 16px; border: 1px dashed rgba(16,185,129,0.5); background: rgba(16,185,129,0.06); color: var(--text); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <i class="fa-solid fa-plus" style="color: #10b981; font-size: 10px;"></i>
+          <strong>${this.escapeHtml(poNum)}</strong>
+          <span style="color: #ef4444; font-weight: 700;">Rs. ${bal}</span>
+        </button>`;
+    }).join("");
   }
 
   renderSelectedPoTable() {
@@ -395,27 +750,28 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     if (poCount === 0) {
       tbody.innerHTML = `
         <tr class="empty-po-row">
-          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 22px;">
             <i class="fa-solid fa-circle-info" style="color: #10b981; margin-right: 6px;"></i>
-            No purchase orders added to this GRN consignment yet. Select a purchase order from the dropdown above.
+            No purchase orders added to this GRN consignment yet. Select a supplier or choose a pending PO above.
           </td>
         </tr>`;
       return;
     }
 
     tbody.innerHTML = this.selectedPOs.map(p => {
+      const safeAttrId = String(p.id).replace(/[^a-zA-Z0-9_-]/g, "_");
       return `
         <tr>
           <td style="padding: 8px 12px;">
-            <strong style="color: #10b981; font-size: 12.5px;">${p.poNumber || p.id}</strong>
+            <strong style="color: #10b981; font-size: 12.5px;">${this.escapeHtml(p.poNumber || p.id)}</strong>
             <div style="font-size: 11px; color: var(--text-muted);">
-              ${p.grnNumber ? `<span style="margin-right: 4px;">${p.grnNumber}</span>` : ""}
-              ${p.supplierInvoice ? `<span style="color: var(--text-muted);">| Inv: ${p.supplierInvoice}</span>` : ""}
+              ${p.grnNumber ? `<span style="margin-right: 4px;">${this.escapeHtml(p.grnNumber)}</span>` : ""}
+              ${p.supplierInvoice ? `<span>| Inv: ${this.escapeHtml(p.supplierInvoice)}</span>` : ""}
             </div>
           </td>
           <td style="padding: 8px 10px; font-size: 12px; color: var(--text);">
-            <strong>${p.supplierName}</strong>
-            <div style="font-size: 10.5px; color: var(--text-muted);">${p.stockCategory}</div>
+            <strong>${this.escapeHtml(p.supplierName)}</strong>
+            <div style="font-size: 10.5px; color: var(--text-muted);">${this.escapeHtml(p.stockCategory)}</div>
           </td>
           <td style="padding: 8px 10px; text-align: right; font-weight: 600;">
             Rs. ${p.totalAmount.toLocaleString()}
@@ -424,10 +780,10 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
             Rs. ${p.balanceAmount.toLocaleString()}
           </td>
           <td style="padding: 8px 10px; text-align: right;">
-            <input type="number" class="pay-po-allocation pay-input" data-po-id="${p.id}" min="0" step="100" value="${p.allocatedAmount}">
+            <input type="number" id="grnPoAlloc_${safeAttrId}" name="grn_po_alloc[${safeAttrId}]" aria-label="Payment allocation for ${this.escapeHtml(p.poNumber || p.id)}" class="pay-po-allocation pay-input" data-po-id="${this.escapeHtml(p.id)}" min="0" step="100" value="${p.allocatedAmount}">
           </td>
           <td style="padding: 8px 8px; text-align: center;">
-            <button type="button" class="btn-remove-po" data-po-id="${p.id}" title="Remove purchase order from GRN">
+            <button type="button" class="btn-remove-po" data-po-id="${this.escapeHtml(p.id)}" title="Remove purchase order from GRN">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </td>
@@ -436,7 +792,7 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
   }
 
   onPoAllocationChanged(poId, val) {
-    const po = this.selectedPOs.find(p => p.id === poId);
+    const po = this.selectedPOs.find(p => String(p.id).toLowerCase() === String(poId).toLowerCase());
     if (!po) return;
 
     po.allocatedAmount = Math.max(0, val);
@@ -536,130 +892,160 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     }
   }
 
+  setPaymentType(typeId, methodName = null) {
+    this.selectedPaymentTypeId = parseInt(typeId, 10) || 1;
+
+    const typeNames = {
+      1: "Cash",
+      2: "Bank Transfer",
+      3: "Credit Card",
+      4: "Debit Card",
+      5: "Cheque",
+      6: "Online / QR Payment"
+    };
+
+    this.selectedMethod = methodName || typeNames[this.selectedPaymentTypeId] || "Cash";
+
+    const hiddenInput = document.getElementById("grnPaymentTypeId");
+    if (hiddenInput) {
+      hiddenInput.value = String(this.selectedPaymentTypeId);
+    }
+
+    document.querySelectorAll("#grnModalMethodSelector .method-choice").forEach(c => {
+      const cId = parseInt(c.getAttribute("data-type-id"), 10);
+      c.classList.toggle("selected", cId === this.selectedPaymentTypeId);
+    });
+
+    this.updateMethodFields();
+  }
+
   updateMethodFields() {
     const container = document.getElementById("grnModalMethodFields");
     if (!container) return;
 
-    if (this.selectedMethod === "Card") {
+    if (this.selectedMethod === "Bank Transfer") {
+      const matchedSupplier = this.selectedSupplier
+        ? (this.suppliers.find(s =>
+            (this.selectedSupplier.id && Number(s.id) === Number(this.selectedSupplier.id)) ||
+            (this.selectedSupplier.name && String(s.name || "").trim().toLowerCase() === String(this.selectedSupplier.name).trim().toLowerCase())
+          ) || this.selectedSupplier)
+        : null;
+      const bankAccount = matchedSupplier
+        ? (matchedSupplier.bank_account || matchedSupplier.bank_details || this.selectedPOs[0]?.supplierBankAccount || "").trim()
+        : "";
+      const supplierLabel = matchedSupplier ? this.escapeHtml(matchedSupplier.name || "Selected Supplier") : "";
+
+      let displayHtml = "";
+      if (!this.selectedSupplier) {
+        displayHtml = `
+          <div style="font-size: 12.5px; color: var(--text-muted); padding: 10px 12px; border-radius: 8px; background: var(--surface); border: 1px dashed var(--border); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info" style="color: #1677ff;"></i>
+            <span>Select a supplier above to view their registered bank account.</span>
+          </div>`;
+      } else if (!bankAccount) {
+        displayHtml = `
+          <div style="font-size: 12.5px; color: #b45309; padding: 10px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>No bank account registered for <strong>${supplierLabel}</strong>.</span>
+          </div>`;
+      } else {
+        displayHtml = `
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.28);">
+            <i class="fa-solid fa-building-columns" style="color: #10b981; font-size: 16px;"></i>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">${supplierLabel} — Bank Account</div>
+              <div id="grnTransferBank" style="font-size: 13.5px; font-weight: 800; color: var(--text); word-break: break-word;">${this.escapeHtml(bankAccount)}</div>
+            </div>
+          </div>`;
+      }
+
       container.innerHTML = `
-        <div class="pay-form-grid">
-          <div class="pay-field">
-            <label class="pay-label">Company Credit/Debit Card</label>
-            <input type="text" id="grnCardType" class="pay-input" placeholder="Commercial Bank VISA Corporate">
+        <div class="pay-field" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+          <div class="pay-label" style="font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-building-columns" style="color: #10b981;"></i>
+            <span>Supplier Bank Account Details</span>
           </div>
-          <div class="pay-field">
-            <label class="pay-label">Card Last 4 Digits</label>
-            <input type="text" id="grnCardLast4" class="pay-input" placeholder="E.g. 8832" maxlength="4">
-          </div>
-        </div>
-        <div class="pay-field" style="margin-top: 10px;">
-          <label class="pay-label">Approval Code / Terminal Ref</label>
-          <input type="text" id="grnCardAuth" class="pay-input" placeholder="Authorization code">
-        </div>`;
-    } else if (this.selectedMethod === "Check") {
-      container.innerHTML = `
-        <div class="pay-form-grid">
-          <div class="pay-field">
-            <label class="pay-label">Cheque Number *</label>
-            <input type="text" id="grnCheckNo" class="pay-input" placeholder="E.g. 992011" required>
-          </div>
-          <div class="pay-field">
-            <label class="pay-label">Issuing Bank & Account</label>
-            <input type="text" id="grnCheckBank" class="pay-input" placeholder="BOC A/C 772189 / Commercial">
-          </div>
-        </div>
-        <div class="pay-form-grid" style="margin-top: 10px;">
-          <div class="pay-field">
-            <label class="pay-label">Cheque Date</label>
-            <input type="date" id="grnCheckDate" class="pay-input" value="${new Date().toISOString().split("T")[0]}">
-          </div>
-          <div class="pay-field">
-            <label class="pay-label">Cheque Type</label>
-            <select id="grnCheckType" class="pay-select-field">
-              <option value="Account Payee Crossed">Account Payee Crossed</option>
-              <option value="Cash Cheque">Cash Cheque</option>
-            </select>
-          </div>
-        </div>`;
-    } else if (this.selectedMethod === "Bank Transfer") {
-      container.innerHTML = `
-        <div class="pay-form-grid">
-          <div class="pay-field">
-            <label class="pay-label">Supplier Bank Name</label>
-            <input type="text" id="grnTransferBank" class="pay-input" placeholder="Sampath / HNB / Commercial">
-          </div>
-          <div class="pay-field">
-            <label class="pay-label">Corporate Online Ref *</label>
-            <input type="text" id="grnTransferRef" class="pay-input" placeholder="FT Reference #">
-          </div>
-        </div>`;
-    } else if (this.selectedMethod === "Online / QR") {
-      container.innerHTML = `
-        <div class="pay-form-grid">
-          <div class="pay-field">
-            <label class="pay-label">Corporate QR App / Bank</label>
-            <input type="text" id="grnQrBank" class="pay-input" placeholder="BOC SmartPay / Commercial Q+">
-          </div>
-          <div class="pay-field">
-            <label class="pay-label">Transaction Reference # *</label>
-            <input type="text" id="grnQrRef" class="pay-input" placeholder="TXN-QR-00982">
-          </div>
+          ${displayHtml}
         </div>`;
     } else {
-      container.innerHTML = `
-        <div class="pay-form-grid">
-          <div class="pay-field">
-            <label class="pay-label">Petty Cash Voucher #</label>
-            <input type="text" id="grnCashReceipt" class="pay-input" value="PETTY-${Math.floor(100 + Math.random() * 900)}">
-          </div>
-          <div class="pay-field">
-            <label class="pay-label">Disbursed From</label>
-            <input type="text" class="pay-input" value="Main Shop Petty Cash" readonly style="opacity: 0.85;">
-          </div>
-        </div>`;
+      container.innerHTML = "";
     }
   }
 
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   async save() {
+    if (this.isSubmitting) return;
+
+    if (!this.selectedPOs || this.selectedPOs.length === 0) {
+      this.showToast("Please select at least one pending Purchase Order to add to this GRN.", "error");
+      return;
+    }
+
     const amountInput = document.getElementById("grnModalAmount");
     const amount = parseFloat(amountInput ? amountInput.value : 0);
+
+    if (isNaN(amount) || amount <= 0) {
+      this.showToast("Please enter a valid disbursement amount greater than Rs. 0.", "error");
+      return;
+    }
+
     const stage = document.getElementById("grnModalStageSelect")?.value || "Advance Payment";
     const payDate = document.getElementById("grnModalDate")?.value || new Date().toISOString().split("T")[0];
     const notes = document.getElementById("grnModalNotes")?.value.trim() || "";
+    const disbursedBy = document.getElementById("grnModalProcurementOfficer")?.value || "Procurement Manager";
 
     const methodDetails = {};
-    if (this.selectedMethod === "Card") {
-      methodDetails.last4 = document.getElementById("grnCardLast4")?.value || "";
-      methodDetails.auth = document.getElementById("grnCardAuth")?.value || "";
-    } else if (this.selectedMethod === "Check") {
-      methodDetails.chequeNo = document.getElementById("grnCheckNo")?.value || "";
-      methodDetails.bank = document.getElementById("grnCheckBank")?.value || "";
-    } else if (this.selectedMethod === "Bank Transfer") {
-      methodDetails.ref = document.getElementById("grnTransferRef")?.value || "";
-      methodDetails.bank = document.getElementById("grnTransferBank")?.value || "";
-    } else if (this.selectedMethod === "Online / QR") {
-      methodDetails.app = document.getElementById("grnQrBank")?.value || "LankaQR";
-      methodDetails.ref = document.getElementById("grnQrRef")?.value || "";
-    } else {
-      methodDetails.receipt = document.getElementById("grnCashReceipt")?.value || "";
+    if (this.selectedMethod === "Bank Transfer") {
+      methodDetails.bank = this.selectedSupplier
+        ? (this.selectedSupplier.bank_account || this.selectedSupplier.bank_details || "")
+        : "";
     }
 
-    const builder = new GrnPaymentBuilder();
-    builder.setPurchaseOrders(this.selectedPOs)
-           .setAmount(amount)
-           .setStage(stage)
-           .setMethod(this.selectedMethod, methodDetails)
-           .setDate(payDate)
-           .setNotes(notes);
+    this.isSubmitting = true;
+    const confirmBtn = document.getElementById("btnConfirmSaveGrnPayment");
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Settlement...`;
+    }
 
-    const grnPaymentData = builder.build();
-    const result = await this.processor.process(grnPaymentData);
+    try {
+      const builder = new GrnPaymentBuilder();
+      builder.setPurchaseOrders(this.selectedPOs)
+             .setAmount(amount)
+             .setStage(stage)
+             .setMethod(this.selectedMethod, methodDetails, this.selectedPaymentTypeId)
+             .setDate(payDate)
+             .setNotes(notes)
+             .setDisbursedBy(disbursedBy);
 
-    if (result.success) {
-      this.closeModal("modalRecordGrnPayment");
-      this.selectedPOs = [];
-      this.renderSelectedPoTable();
-      this.recalculateSummary();
+      const grnPaymentData = builder.build();
+      const result = await this.processor.process(grnPaymentData);
+
+      if (result.success) {
+        this.closeModal("modalRecordGrnPayment");
+        this.clearSelectedSupplier();
+        if (this.ctx.render) {
+          this.ctx.render();
+        }
+      }
+    } catch (err) {
+      console.error("[RecordGrnPaymentModal] Error saving GRN payment:", err);
+      this.showToast("An error occurred while saving GRN payment.", "error");
+    } finally {
+      this.isSubmitting = false;
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-check"></i> Save GRN Payment &amp; Generate Voucher`;
+      }
     }
   }
 }

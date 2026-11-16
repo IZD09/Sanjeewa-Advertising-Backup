@@ -72,6 +72,16 @@ export class OperatingExpenseEntity {
     return `Rs. ${(Number(val) || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
   }
 
+  getRowStatusClass(isPaid, isOverdue) {
+    if (isPaid) {
+      return "row-status-completed";
+    }
+    if (isOverdue) {
+      return "row-status-cancelled";
+    }
+    return "row-status-pending";
+  }
+
   /**
    * Render table row element (<tr>) for Operating Expenses Table
    * @returns {HTMLTableRowElement|string}
@@ -81,37 +91,7 @@ export class OperatingExpenseEntity {
     const isPaid = this.status === "Paid";
     const isOverdue = !isPaid && this.dueDate && (new Date(this.dueDate) < new Date());
     const statusBadge = this.getStatusBadge();
-
-    let settlementInfo = "";
-    if (isPaid) {
-      settlementInfo = `
-        <div style="font-size: 11.5px; font-weight: 700; color: #10b981;">
-          <i class="fa-solid fa-circle-check"></i> Settled (${this.formatCurrency(this.paidAmount || this.amount)})
-        </div>
-        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
-          ${this.paidDate || 'Paid'} ${this.paidMethod ? `via ${this.paidMethod}` : ''}
-        </div>
-        ${this.paidRef ? `<div style="font-size: 10.5px; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">Ref: ${this.paidRef}</div>` : ''}
-      `;
-    } else if (isOverdue) {
-      settlementInfo = `
-        <div style="font-size: 11.5px; font-weight: 700; color: #ef4444;">
-          <i class="fa-solid fa-triangle-exclamation"></i> Overdue Settlement
-        </div>
-        <div style="font-size: 10.5px; color: var(--text-muted);">
-          Due date elapsed on ${this.dueDate || 'month-end'}
-        </div>
-      `;
-    } else {
-      settlementInfo = `
-        <div style="font-size: 12px; font-weight: 700; color: #ef4444;">
-          <i class="fa-solid fa-hourglass-start"></i> Month-End Payable
-        </div>
-        <div style="font-size: 11px; color: var(--text-muted);">
-          Settlement pending by ${this.dueDate || 'month-end'}
-        </div>
-      `;
-    }
+    const rowStatusClass = this.getRowStatusClass(isPaid, isOverdue);
 
     const html = `
       <td>
@@ -150,16 +130,16 @@ export class OperatingExpenseEntity {
         ${statusBadge}
       </td>
       <td>
-        ${settlementInfo}
-      </td>
-      <td style="text-align: right;">
-        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+        <div class="pay-table-actions">
+          <button type="button" class="pay-btn-sm" data-view-receipt="${this.id}" data-type="expense" title="View Bill &amp; Settlement Details">
+            <i class="fa-solid fa-receipt"></i> Details
+          </button>
           ${!isPaid ? `
-            <button type="button" class="btn-mark-paid" data-mark-paid-id="${this.id}" title="Mark this bill as Paid">
-              <i class="fa-solid fa-circle-check"></i> Mark as Paid
+            <button type="button" class="pay-btn-sm green-sm" style="min-width: 86px;" data-mark-paid-id="${this.id}" title="Mark this bill as Paid">
+              <i class="fa-solid fa-circle-check"></i> Mark Paid
             </button>
           ` : `
-            <button type="button" class="btn-undo-paid" data-undo-paid-id="${this.id}" title="Revert status back to Pending">
+            <button type="button" class="pay-btn-sm" style="min-width: 86px;" data-undo-paid-id="${this.id}" title="Revert status back to Pending">
               <i class="fa-solid fa-rotate-left"></i> Revert
             </button>
           `}
@@ -170,12 +150,13 @@ export class OperatingExpenseEntity {
     if (typeof document !== "undefined" && typeof document.createElement === "function") {
       const tr = document.createElement("tr");
       tr.id = `expenseRow_${this.id}`;
+      tr.className = rowStatusClass;
       tr.setAttribute("data-expense-id", this.id);
       tr.innerHTML = html;
       return tr;
     }
 
-    return `<tr id="expenseRow_${this.id}" data-expense-id="${this.id}">${html}</tr>`;
+    return `<tr id="expenseRow_${this.id}" class="${rowStatusClass}" data-expense-id="${this.id}">${html}</tr>`;
   }
 
   renderTableRow() {

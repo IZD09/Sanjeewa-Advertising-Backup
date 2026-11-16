@@ -362,6 +362,7 @@ class TopbarController {
       return;
     }
 
+    this.initTheme();
     this.setDate();
     this.updatePinUI();
     this.bindEvents();

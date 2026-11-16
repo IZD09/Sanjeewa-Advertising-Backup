@@ -25,7 +25,7 @@ export class OperatingExpenseTableHandler extends BaseTableLoader {
       paginationInfoId: "payExpensePaginationInfo",
       paginationControlsId: "payExpensePaginationControls",
       pageSize: options.pageSize || 20,
-      colspan: 8,
+      colspan: 7,
       emptyIcon: "fa-receipt",
       emptyMessage: "No operating expenses match the selected filters.",
       itemLabel: "bills",
@@ -103,7 +103,10 @@ export class OperatingExpenseTableHandler extends BaseTableLoader {
 
       // Status match
       const status = b.status || "Pending";
-      const matchesStatus = (expenseStatusFilter === "ALL" || status === expenseStatusFilter);
+      const isOverdueRow = status !== "Paid" && b.dueDate && (new Date(b.dueDate) < new Date());
+      const matchesStatus = expenseStatusFilter === "ALL" ||
+        status === expenseStatusFilter ||
+        (expenseStatusFilter === "Overdue" && isOverdueRow);
 
       return matchesSearch && matchesCat && matchesStatus;
     });

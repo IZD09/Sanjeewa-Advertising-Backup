@@ -429,3 +429,85 @@
     display: none;
 }
 
+
+
+/* ==========================================================================
+   Theme Variable Fixes & Night / Dark Mode Overrides (html[data-theme="dark"])
+   ========================================================================== */
+.ap-tabs-header {
+    background: var(--surface-2, #f8fafc);
+}
+
+.ap-form-group input,
+.ap-lock-field input {
+    background: var(--surface, #ffffff);
+}
+
+.ap-form-group input:disabled,
+.ap-form-group input[readonly] {
+    background: var(--surface-2, #f1f5f9);
+}
+
+.ap-lock-btn-cancel:hover {
+    background: var(--surface-2, #f1f5f9);
+}
+
+html[data-theme="dark"] .ap-card,
+html[data-theme="dark"] .ap-tabs-card,
+html[data-theme="dark"] .ap-stat-card,
+html[data-theme="dark"] .ap-lock-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .ap-tabs-header {
+    background: var(--surface-2);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .ap-tab-btn {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .ap-tab-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="dark"] .ap-tab-btn.active {
+    color: #60a5fa;
+    border-bottom-color: #3b82f6;
+    background: var(--surface);
+}
+
+html[data-theme="dark"] .ap-badge-purple {
+    background: rgba(139, 92, 246, 0.16);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+html[data-theme="dark"] .ap-badge-green {
+    background: rgba(16, 185, 129, 0.16);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+html[data-theme="dark"] .ap-form-group input,
+html[data-theme="dark"] .ap-lock-field input {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ap-form-group input:disabled,
+html[data-theme="dark"] .ap-form-group input[readonly] {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .ap-lock-error {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.35);
+}

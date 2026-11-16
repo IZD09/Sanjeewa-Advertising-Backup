@@ -41,6 +41,10 @@ export class CreatePOModal extends BaseModalHandler {
     this.ctx = context;
     this.http = new RequestHandler();
     this.newPoItems = [];
+    this.selectedSupplier = null;
+    this.selectedCategory = "ALL";
+    this.selectedSubcategory = "ALL";
+    this.dbCategories = [];
     this.catalogItems = [];
     this.catalogLoaded = false;
 
@@ -79,27 +83,66 @@ export class CreatePOModal extends BaseModalHandler {
       quickAddPoBtn.addEventListener("click", () => this.openCreatePOModal());
     }
 
-    // Auto-fill phone on selecting supplier in PO Modal
+    // Supplier searchable selector bindings
+    const suppSearchInput = document.getElementById("newPoSuppSearchInput");
+    if (suppSearchInput && !suppSearchInput._poSuppSearchBound) {
+      suppSearchInput._poSuppSearchBound = true;
+      suppSearchInput.addEventListener("input", (e) => this.renderSupplierDropdown(e.target.value));
+      suppSearchInput.addEventListener("focus", (e) => this.renderSupplierDropdown(e.target.value));
+    }
+
+    const toggleSuppBtn = document.getElementById("newPoToggleSuppDropdownBtn");
+    if (toggleSuppBtn && !toggleSuppBtn._poToggleBound) {
+      toggleSuppBtn._poToggleBound = true;
+      toggleSuppBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleSupplierDropdown();
+      });
+    }
+
+    const clearSuppBtn = document.getElementById("newPoClearSupplierBtn");
+    if (clearSuppBtn && !clearSuppBtn._poClearBound) {
+      clearSuppBtn._poClearBound = true;
+      clearSuppBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.clearSelectedSupplier();
+      });
+    }
+
+    // Sync if external code (e.g. SupplierModal) sets #newPoSupplier value & dispatches change
     const newPoSupplier = document.getElementById("newPoSupplier");
     if (newPoSupplier && !newPoSupplier._poSupplierBound) {
       newPoSupplier._poSupplierBound = true;
-      const autoFillHandler = (e) => {
-        const val = (e.target.value || "").trim().toLowerCase();
-        const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
-        const found = suppliers.find(s => s.name && s.name.toLowerCase() === val);
-        const contactInput = document.getElementById("newPoContact");
-        if (contactInput) {
-          if (found) {
-            contactInput.value = found.mobile || found.phone || "";
-          } else if (e.target.selectedOptions && e.target.selectedOptions[0]?.dataset?.mobile) {
-            contactInput.value = e.target.selectedOptions[0].dataset.mobile;
-          } else {
-            contactInput.value = "";
-          }
+      newPoSupplier.addEventListener("change", (e) => {
+        const val = (e.target.value || "").trim();
+        if (val) {
+          this.selectSupplierByNameOrId(val);
         }
-      };
-      newPoSupplier.addEventListener("change", autoFillHandler);
-      newPoSupplier.addEventListener("input", autoFillHandler);
+      });
+    }
+
+    // Category & Subcategory filters for material items
+    const catFilter = document.getElementById("newPoItemCategoryFilter");
+    if (catFilter && !catFilter._poCatBound) {
+      catFilter._poCatBound = true;
+      catFilter.addEventListener("change", (e) => {
+        this.selectedCategory = e.target.value || "ALL";
+        this.selectedSubcategory = "ALL";
+        this.populateSubcategoryFilter();
+        const searchVal = document.getElementById("newPoItemSearchInput")?.value || "";
+        this.searchAndRenderCatalogItems(searchVal);
+      });
+    }
+
+    const subcatFilter = document.getElementById("newPoItemSubcategoryFilter");
+    if (subcatFilter && !subcatFilter._poSubcatBound) {
+      subcatFilter._poSubcatBound = true;
+      subcatFilter.addEventListener("change", (e) => {
+        this.selectedSubcategory = e.target.value || "ALL";
+        const searchVal = document.getElementById("newPoItemSearchInput")?.value || "";
+        this.searchAndRenderCatalogItems(searchVal);
+      });
     }
 
     // Search input for adding items from database
@@ -110,17 +153,38 @@ export class CreatePOModal extends BaseModalHandler {
       itemSearchInput.addEventListener("focus", (e) => this.searchAndRenderCatalogItems(e.target.value));
     }
 
-    // Close search dropdown on click outside
+    // Handle supplier dropdown selection & outside clicks
     document.addEventListener("click", (e) => {
+      const suppItem = e.target.closest(".newpo-supp-item");
+      if (suppItem) {
+        e.preventDefault();
+        const suppId = suppItem.getAttribute("data-supplier-id");
+        const suppName = suppItem.getAttribute("data-supplier-name");
+        this.selectSupplierByNameOrId(suppId || suppName);
+        return;
+      }
+
+      const suppGroup = document.getElementById("newPoSuppSearchGroup");
+      const suppDropdown = document.getElementById("newPoSuppDropdown");
+      if (suppDropdown && suppDropdown.style.display !== "none") {
+        if (!suppGroup || !suppGroup.contains(e.target)) {
+          this.hideSupplierDropdown();
+        }
+      }
+
       const dropdown = document.getElementById("newPoItemSearchDropdown");
       const searchInput = document.getElementById("newPoItemSearchInput");
       const addRowBtn = document.getElementById("newPoAddRowBtn");
+      const catFilterEl = document.getElementById("newPoItemCategoryFilter");
+      const subcatFilterEl = document.getElementById("newPoItemSubcategoryFilter");
       if (
         dropdown &&
         searchInput &&
         !searchInput.contains(e.target) &&
         !dropdown.contains(e.target) &&
-        (!addRowBtn || !addRowBtn.contains(e.target))
+        (!addRowBtn || !addRowBtn.contains(e.target)) &&
+        (!catFilterEl || !catFilterEl.contains(e.target)) &&
+        (!subcatFilterEl || !subcatFilterEl.contains(e.target))
       ) {
         dropdown.style.display = "none";
       }
@@ -146,6 +210,7 @@ export class CreatePOModal extends BaseModalHandler {
       const response = await this.http.get("/api/v1/inventory/stock-items/data");
       if (response && response.success && response.data) {
         const rawItems = response.data.stock_items || [];
+        this.dbCategories = Array.isArray(response.data.categories) ? response.data.categories : [];
         this.catalogItems = rawItems.map((item) => {
           let latestCost = 0;
           if (Array.isArray(item.stocks) && item.stocks.length > 0) {
@@ -170,14 +235,17 @@ export class CreatePOModal extends BaseModalHandler {
             name: item.name,
             unit: unit,
             unitPrice: latestCost > 0 ? latestCost : (parseFloat(item.unit_cost) || 0),
+            category_id: item.subcategory?.category?.id || null,
             category: item.subcategory?.category?.category || "General",
+            subcategory_id: item.subcategory?.id || item.subcategory_id || null,
             subcategory: item.subcategory?.subcategory || "",
           };
         });
 
         this.catalogLoaded = true;
+        this.populateCategoryFilters();
         if (hintEl) {
-          hintEl.textContent = `${this.catalogItems.length} database material items loaded. Type SKU code or name to search & add.`;
+          hintEl.textContent = `${this.catalogItems.length} database material items loaded. Filter by category or type SKU / name.`;
         }
       }
     } catch (err) {
@@ -195,6 +263,74 @@ export class CreatePOModal extends BaseModalHandler {
     return this.catalogItems;
   }
 
+  populateCategoryFilters() {
+    const catSelect = document.getElementById("newPoItemCategoryFilter");
+    if (!catSelect) return;
+
+    let optionsHtml = '<option value="ALL">All Categories</option>';
+    if (Array.isArray(this.dbCategories) && this.dbCategories.length > 0) {
+      optionsHtml += this.dbCategories
+        .map(c => `<option value="${this.escapeHtml(String(c.id))}">${this.escapeHtml(c.category)}</option>`)
+        .join("");
+    } else {
+      const categories = Array.from(
+        new Set((this.catalogItems || []).map(it => it.category).filter(Boolean))
+      ).sort((a, b) => a.localeCompare(b));
+      optionsHtml += categories
+        .map(c => `<option value="${this.escapeHtml(c)}">${this.escapeHtml(c)}</option>`)
+        .join("");
+    }
+
+    catSelect.innerHTML = optionsHtml;
+    catSelect.value = this.selectedCategory || "ALL";
+
+    this.populateSubcategoryFilter();
+  }
+
+  populateSubcategoryFilter() {
+    const subcatSelect = document.getElementById("newPoItemSubcategoryFilter");
+    if (!subcatSelect) return;
+
+    if (!this.selectedCategory || this.selectedCategory === "ALL") {
+      subcatSelect.innerHTML = '<option value="ALL">-- Select Category First --</option>';
+      subcatSelect.value = "ALL";
+      subcatSelect.disabled = true;
+      subcatSelect.style.opacity = "0.6";
+      subcatSelect.style.cursor = "not-allowed";
+      this.selectedSubcategory = "ALL";
+      return;
+    }
+
+    subcatSelect.disabled = false;
+    subcatSelect.style.opacity = "1";
+    subcatSelect.style.cursor = "pointer";
+
+    let subOptions = [];
+    if (Array.isArray(this.dbCategories) && this.dbCategories.length > 0) {
+      const matchedCat = this.dbCategories.find(
+        c => String(c.id) === String(this.selectedCategory) || c.category === this.selectedCategory
+      );
+      if (matchedCat && Array.isArray(matchedCat.subcategories)) {
+        subOptions = matchedCat.subcategories.map(sc => ({
+          value: String(sc.id),
+          label: sc.subcategory
+        }));
+      }
+    } else {
+      const items = (this.catalogItems || []).filter(it => it.category === this.selectedCategory);
+      subOptions = Array.from(new Set(items.map(it => it.subcategory).filter(Boolean)))
+        .sort((a, b) => a.localeCompare(b))
+        .map(sc => ({ value: sc, label: sc }));
+    }
+
+    subcatSelect.innerHTML = '<option value="ALL">All Subcategories</option>' +
+      subOptions.map(sc => `<option value="${this.escapeHtml(sc.value)}">${this.escapeHtml(sc.label)}</option>`).join("");
+
+    const hasCurrent = subOptions.some(sc => sc.value === String(this.selectedSubcategory));
+    subcatSelect.value = hasCurrent ? String(this.selectedSubcategory) : "ALL";
+    this.selectedSubcategory = subcatSelect.value;
+  }
+
   /**
    * Search and render matching stock items dropdown.
    * @param {string} query
@@ -205,6 +341,18 @@ export class CreatePOModal extends BaseModalHandler {
 
     const term = (query || "").toLowerCase().trim();
     let matches = this.catalogItems || [];
+
+    if (this.selectedCategory && this.selectedCategory !== "ALL") {
+      matches = matches.filter(it =>
+        String(it.category_id) === String(this.selectedCategory) || it.category === this.selectedCategory
+      );
+    }
+
+    if (this.selectedSubcategory && this.selectedSubcategory !== "ALL") {
+      matches = matches.filter(it =>
+        String(it.subcategory_id) === String(this.selectedSubcategory) || it.subcategory === this.selectedSubcategory
+      );
+    }
 
     if (term) {
       matches = matches.filter(
@@ -253,7 +401,7 @@ export class CreatePOModal extends BaseModalHandler {
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
           ${costBadge}
-          <span class="inv-cat-pill" style="font-size: 10px; padding: 2px 7px;">${item.category}</span>
+          <span class="inv-cat-pill" style="font-size: 10px; padding: 2px 7px;">${this.escapeHtml(item.category)}${item.subcategory ? ` / ${this.escapeHtml(item.subcategory)}` : ""}</span>
           <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" style="font-size: 11px; height: 24px; padding: 0 8px; pointer-events: none;">
             <i class="fa-solid fa-plus"></i> Add
           </button>
@@ -315,28 +463,30 @@ export class CreatePOModal extends BaseModalHandler {
   }
 
   async openCreatePOModal(defaultSupplier = null) {
-    const poNumInput = document.getElementById("newPoNumber");
-    const orderDateInput = document.getElementById("newPoDate");
     const expDateInput = document.getElementById("newPoExpectedDate");
     const remarksInput = document.getElementById("newPoRemarks");
     const searchInput = document.getElementById("newPoItemSearchInput");
 
-    const today = new Date().toISOString().split("T")[0];
     const expDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    if (poNumInput) poNumInput.value = this.ctx.generateNextPONumber ? this.ctx.generateNextPONumber() : `PO-${Date.now().toString().slice(-4)}`;
-    if (orderDateInput) orderDateInput.value = today;
     if (expDateInput) expDateInput.value = expDate;
     if (remarksInput) remarksInput.value = "";
     if (searchInput) searchInput.value = "";
 
     // Initialize with empty item list (no default items)
     this.newPoItems = [];
+    this.selectedSupplier = null;
+    this.selectedCategory = "ALL";
+    this.selectedSubcategory = "ALL";
+    this.clearSelectedSupplier();
+    if (this.catalogLoaded) {
+      this.populateCategoryFilters();
+    }
 
     this.renderNewPoItems();
     this.calculateNewPoTotal();
 
-    // Populate suppliers dropdown from database
+    // Load suppliers and pre-select if defaultSupplier was passed
     await this.populateSupplierSelect(defaultSupplier);
 
     this.openModal("createPOModal");
@@ -346,76 +496,145 @@ export class CreatePOModal extends BaseModalHandler {
   }
 
   /**
-   * Populate #newPoSupplier select box from database suppliers
-   * and auto-fill contact number.
+   * Ensure suppliers are loaded and optionally pre-select defaultSupplier.
    * @param {string|null} [defaultSupplier=null]
    */
   async populateSupplierSelect(defaultSupplier = null) {
-    const supplierInput = document.getElementById("newPoSupplier");
-    const contactInput = document.getElementById("newPoContact");
-    if (!supplierInput) return;
-
     let suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
     if ((!suppliers || suppliers.length === 0) && this.ctx.dataLoader?.fetchSuppliers) {
       await this.ctx.dataLoader.fetchSuppliers({ per_page: 100 }, true);
-      suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
     }
 
-    // Ensure change listener is bound
-    if (!supplierInput._poSupplierBound) {
-      supplierInput._poSupplierBound = true;
-      const autoFillHandler = (e) => {
-        const val = (e.target.value || "").trim().toLowerCase();
-        const currentSuppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
-        const found = currentSuppliers.find(s => s.name && s.name.toLowerCase() === val);
-        const contactEl = document.getElementById("newPoContact");
-        if (contactEl) {
-          if (found) {
-            contactEl.value = found.mobile || found.phone || "";
-          } else if (e.target.selectedOptions && e.target.selectedOptions[0]?.dataset?.mobile) {
-            contactEl.value = e.target.selectedOptions[0].dataset.mobile;
-          } else {
-            contactEl.value = "";
-          }
-        }
-      };
-      supplierInput.addEventListener("change", autoFillHandler);
-      supplierInput.addEventListener("input", autoFillHandler);
-    }
-
-    if (supplierInput.tagName === "SELECT") {
-      supplierInput.innerHTML = '<option value="" disabled' + (!defaultSupplier ? ' selected' : '') + '>-- Select Supplier / Vendor --</option>';
-
-      let matchedSupplier = null;
-
-      suppliers.forEach((s) => {
-        const opt = document.createElement("option");
-        opt.value = s.name;
-        opt.textContent = s.name;
-        const phone = s.mobile || s.phone || "";
-        opt.dataset.mobile = phone;
-
-        if (
-          defaultSupplier &&
-          (s.name.toLowerCase() === defaultSupplier.toLowerCase() || String(s.id) === String(defaultSupplier))
-        ) {
-          opt.selected = true;
-          matchedSupplier = s;
-        }
-        supplierInput.appendChild(opt);
-      });
-
-      if (matchedSupplier) {
-        if (contactInput) contactInput.value = matchedSupplier.mobile || matchedSupplier.phone || "";
-      } else if (!defaultSupplier) {
-        if (contactInput) contactInput.value = "";
-      }
+    if (defaultSupplier) {
+      this.selectSupplierByNameOrId(defaultSupplier);
     } else {
-      const supName = defaultSupplier || "";
-      const foundSup = suppliers.find(s => s.name && s.name.toLowerCase() === supName.toLowerCase());
-      supplierInput.value = supName;
-      if (contactInput) contactInput.value = foundSup ? (foundSup.mobile || foundSup.phone || "") : "";
+      this.clearSelectedSupplier();
     }
+  }
+
+  toggleSupplierDropdown() {
+    const dropdown = document.getElementById("newPoSuppDropdown");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "block") {
+      this.hideSupplierDropdown();
+    } else {
+      const searchInput = document.getElementById("newPoSuppSearchInput");
+      this.renderSupplierDropdown(searchInput ? searchInput.value : "");
+    }
+  }
+
+  hideSupplierDropdown() {
+    const dropdown = document.getElementById("newPoSuppDropdown");
+    const icon = document.getElementById("newPoSuppDropdownIcon");
+    if (dropdown) dropdown.style.display = "none";
+    if (icon) {
+      icon.classList.remove("fa-chevron-up");
+      icon.classList.add("fa-chevron-down");
+    }
+  }
+
+  renderSupplierDropdown(query = "") {
+    const dropdown = document.getElementById("newPoSuppDropdown");
+    const icon = document.getElementById("newPoSuppDropdownIcon");
+    if (!dropdown) return;
+
+    const suppliers = (this.ctx.getSuppliers ? this.ctx.getSuppliers() : [])
+      .filter(s => (s.status || "Active").toLowerCase() !== "disabled");
+
+    const q = String(query || "").trim().toLowerCase();
+    const matches = q
+      ? suppliers.filter(s =>
+          String(s.name || "").toLowerCase().includes(q) ||
+          String(s.mobile || s.phone || "").toLowerCase().includes(q) ||
+          String(s.code || "").toLowerCase().includes(q)
+        )
+      : suppliers;
+
+    if (matches.length === 0) {
+      dropdown.innerHTML = `
+        <div style="padding: 12px 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
+          <i class="fa-solid fa-truck-field" style="margin-right: 6px; opacity: 0.6;"></i>
+          No active suppliers found matching "<strong>${this.escapeHtml(query)}</strong>"
+        </div>`;
+    } else {
+      dropdown.innerHTML = matches.slice(0, 35).map(s => {
+        const phone = s.mobile || s.phone || "No Phone";
+        const code = s.code || (s.id ? `SUP-${String(s.id).padStart(3, "0")}` : "SUP");
+        return `
+          <div class="newpo-supp-item" data-supplier-id="${s.id || ""}" data-supplier-name="${this.escapeHtml(s.name)}" style="padding: 9px 12px; border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.06)); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s ease;">
+            <div style="min-width: 0;">
+              <strong style="color: var(--text); font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(s.name)}</strong>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">${this.escapeHtml(phone)} • ${this.escapeHtml(code)}</div>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #1677ff; flex-shrink: 0;">Select &rarr;</span>
+          </div>`;
+      }).join("");
+
+      dropdown.querySelectorAll(".newpo-supp-item").forEach(item => {
+        item.addEventListener("mouseenter", () => item.style.backgroundColor = "var(--surface-2, rgba(22,119,255,0.05))");
+        item.addEventListener("mouseleave", () => item.style.backgroundColor = "");
+      });
+    }
+
+    dropdown.style.display = "block";
+    if (icon) {
+      icon.classList.remove("fa-chevron-down");
+      icon.classList.add("fa-chevron-up");
+    }
+  }
+
+  selectSupplierByNameOrId(nameOrId) {
+    if (!nameOrId) return;
+    const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
+    const clean = String(nameOrId).trim().toLowerCase();
+    const found = suppliers.find(
+      s => String(s.id) === String(nameOrId) || String(s.name || "").trim().toLowerCase() === clean
+    );
+    if (found) {
+      this.selectSupplier(found);
+    } else {
+      this.selectSupplier({ id: null, name: String(nameOrId).trim(), mobile: "", code: "" });
+    }
+  }
+
+  selectSupplier(supplier) {
+    if (!supplier) return;
+    this.selectedSupplier = supplier;
+    this.hideSupplierDropdown();
+
+    const searchGroup = document.getElementById("newPoSuppSearchGroup");
+    const card = document.getElementById("newPoSelectedSupplierCard");
+    const nameEl = document.getElementById("newPoSelectedSuppName");
+    const metaEl = document.getElementById("newPoSelectedSuppMeta");
+    const hiddenName = document.getElementById("newPoSupplier");
+    const hiddenId = document.getElementById("newPoSupplierId");
+
+    const phone = supplier.mobile || supplier.phone || "No Phone";
+    const code = supplier.code || (supplier.id ? `SUP-${String(supplier.id).padStart(3, "0")}` : "SUP");
+
+    if (searchGroup) searchGroup.style.display = "none";
+    if (card) card.style.display = "flex";
+    if (nameEl) nameEl.textContent = supplier.name;
+    if (metaEl) metaEl.textContent = `${phone} • ${code}`;
+    if (hiddenName) hiddenName.value = supplier.name;
+    if (hiddenId) hiddenId.value = supplier.id || "";
+  }
+
+  clearSelectedSupplier() {
+    this.selectedSupplier = null;
+    const searchGroup = document.getElementById("newPoSuppSearchGroup");
+    const searchInput = document.getElementById("newPoSuppSearchInput");
+    const card = document.getElementById("newPoSelectedSupplierCard");
+    const hiddenName = document.getElementById("newPoSupplier");
+    const hiddenId = document.getElementById("newPoSupplierId");
+
+    if (searchGroup) searchGroup.style.display = "block";
+    if (searchInput) searchInput.value = "";
+    if (card) card.style.display = "none";
+    if (hiddenName) hiddenName.value = "";
+    if (hiddenId) hiddenId.value = "";
+    this.hideSupplierDropdown();
   }
 
   async addNewPoRow() {
@@ -564,20 +783,18 @@ export class CreatePOModal extends BaseModalHandler {
   }
 
   async saveNewPurchaseOrder() {
-    const poNum = document.getElementById("newPoNumber")?.value || (this.ctx.generateNextPONumber ? this.ctx.generateNextPONumber() : `PO-${Date.now().toString().slice(-4)}`);
-    const orderDate = document.getElementById("newPoDate")?.value;
     const expDate = document.getElementById("newPoExpectedDate")?.value;
-    const supplier = document.getElementById("newPoSupplier")?.value?.trim();
-    const contact = document.getElementById("newPoContact")?.value?.trim() || "";
-    const remarks = document.getElementById("newPoRemarks")?.value?.trim() || "";
+    const supplierId = document.getElementById("newPoSupplierId")?.value?.trim();
+    const supplier = (this.selectedSupplier?.name || document.getElementById("newPoSupplier")?.value || "").trim();
+    const notes = document.getElementById("newPoRemarks")?.value?.trim() || "";
 
-    if (!supplier) {
-      this.showToast("Please enter or select a Supplier for the Purchase Order", "error");
+    if (!supplier && !supplierId) {
+      this.showToast("Please search and select a Supplier for the Purchase Order", "error");
       return;
     }
 
-    if (!orderDate) {
-      this.showToast("Please select the Order Date", "error");
+    if (!expDate) {
+      this.showToast("Please select the Expected Delivery Date", "error");
       return;
     }
 
@@ -604,9 +821,12 @@ export class CreatePOModal extends BaseModalHandler {
 
       // 1. Resolve supplier against existing list
       const suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
-      const matchedSupplier = suppliers.find(
-        (s) => s.name?.toLowerCase() === supplier.toLowerCase() || String(s.id) === supplier
-      );
+      const matchedSupplier = this.selectedSupplier?.id
+        ? this.selectedSupplier
+        : suppliers.find(
+            (s) => (supplierId && String(s.id) === String(supplierId)) || (s.name?.toLowerCase() === supplier.toLowerCase())
+          );
+      const supplierContact = matchedSupplier?.mobile || matchedSupplier?.phone || "";
 
       // 2. Format items for API
       const itemsPayload = this.newPoItems.map((item) => ({
@@ -616,21 +836,21 @@ export class CreatePOModal extends BaseModalHandler {
         qty_received: 0,
       }));
 
-      // 3. Construct API payload
+      // 3. Construct API payload (PO Number & Order Date are auto-generated on backend)
       const payload = {
         suppliers_id: matchedSupplier ? matchedSupplier.id : null,
         supplier_name: supplier,
-        supplier_contact: contact,
-        add_date: orderDate ? `${orderDate} ${new Date().toTimeString().split(" ")[0]}` : null,
+        supplier_contact: supplierContact,
         expected_date: expDate || null,
-        remarks: remarks,
+        notes: notes || null,
+        remarks: notes || null,
         items: itemsPayload,
       };
 
       // 4. Send POST request to backend API
       const response = await this.http.post("/api/v1/purchase-orders", payload);
       const createdPo = response?.data?.formatted || response?.data || response;
-      const poCode = createdPo?.po_number || (createdPo?.id ? `PO-${String(createdPo.id).padStart(4, "0")}` : poNum);
+      const poCode = createdPo?.po_number || (createdPo?.id ? `PO-${String(createdPo.id).padStart(4, "0")}` : "PO-NEW");
 
       // 5. Re-fetch and sync purchase orders from database
       if (this.ctx.dataLoader?.fetchPurchaseOrders) {
@@ -678,6 +898,16 @@ export class CreatePOModal extends BaseModalHandler {
         saveBtn.innerHTML = originalBtnText;
       }
     }
+  }
+
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
 

@@ -164,10 +164,13 @@ class PurchaseOrderService
                 ? (int) $data['purchase_orders_status_id']
                 : PurchaseOrderStatus::STATUS_PENDING;
 
+            $notes = $data['notes'] ?? $data['remarks'] ?? null;
+
             $po = PurchaseOrder::create([
                 'suppliers_id' => $supplierId,
                 'add_date' => ! empty($data['add_date']) ? $data['add_date'] : now(),
                 'purchase_orders_status_id' => $statusId,
+                'notes' => $notes ? mb_substr(trim((string) $notes), 0, 255) : null,
             ]);
 
             if (! empty($data['items']) && is_array($data['items'])) {
@@ -232,6 +235,12 @@ class PurchaseOrderService
         if (isset($data['add_date'])) {
             $attributes['add_date'] = $data['add_date'];
         }
+        if (isset($data['purchase_orders_status_id'])) {
+            $attributes['purchase_orders_status_id'] = (int) $data['purchase_orders_status_id'];
+        }
+        if (array_key_exists('notes', $data)) {
+            $attributes['notes'] = $data['notes'];
+        }
 
         $purchaseOrder->update($attributes);
 
@@ -290,9 +299,30 @@ class PurchaseOrderService
 
         $kpis = $this->resolvePurchaseOrdersKpis($allOrdersFormatted);
 
+        $suppliers = Supplier::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'mobile', 'status'])
+            ->map(fn (Supplier $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'mobile' => $s->mobile,
+                'status' => $s->status ?? 'Active',
+            ])
+            ->values()
+            ->all();
+
+        $statuses = PurchaseOrderStatus::query()
+            ->orderBy('id')
+            ->pluck('purchase_orders_status')
+            ->filter()
+            ->values()
+            ->all();
+
         return [
             'purchase_orders' => $orders,
             'orders' => $orders,
+            'suppliers' => $suppliers,
+            'statuses' => $statuses,
             'kpis' => $kpis,
             'pagination' => [
                 'total' => $paginator->total(),
@@ -367,7 +397,8 @@ class PurchaseOrderService
             'purchase_orders_status_id' => $po->purchase_orders_status_id ?? 1,
             'total_amount' => $totalAmount,
             'created_by' => 'Admin User',
-            'remarks' => '',
+            'notes' => $po->notes ?? '',
+            'remarks' => $po->notes ?? '',
             'items' => $items,
         ];
     }

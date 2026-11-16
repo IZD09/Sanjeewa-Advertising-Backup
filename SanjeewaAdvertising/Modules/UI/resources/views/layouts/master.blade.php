@@ -7,6 +7,21 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="turbo-cache-control" content="no-preview">
 
+    <script>
+        (function () {
+            var applySavedTheme = function () {
+                try {
+                    var savedTheme = localStorage.getItem('sa-dashboard-theme') || 'light';
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                } catch (e) {}
+            };
+            applySavedTheme();
+            document.addEventListener('turbo:before-render', applySavedTheme);
+            document.addEventListener('turbo:render', applySavedTheme);
+            document.addEventListener('turbo:load', applySavedTheme);
+        })();
+    </script>
+
     <title>@yield('title', 'Dashboard') - SanjeewaAdvertising</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">

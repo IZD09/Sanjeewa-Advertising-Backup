@@ -726,6 +726,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     }
 
     tbody.innerHTML = this.selectedJobs.map(j => {
+      const safeAttrId = String(j.id).replace(/[^a-zA-Z0-9_-]/g, "_");
       return `
         <tr>
           <td style="padding: 10px 12px;">
@@ -742,7 +743,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
             Rs. ${j.balanceAmount.toLocaleString()}
           </td>
           <td style="padding: 8px 10px; text-align: right;">
-            <input type="number" class="pay-job-allocation pay-input" data-job-id="${j.id}" min="0" step="50" value="${j.allocatedAmount}" style="text-align: right; font-weight: 700; height: 34px; padding: 4px 8px; font-size: 13px;">
+            <input type="number" id="invJobAlloc_${safeAttrId}" name="inv_job_alloc[${safeAttrId}]" aria-label="Payment allocation for ${this.escapeHtml(j.id)}" class="pay-job-allocation pay-input" data-job-id="${this.escapeHtml(j.id)}" min="0" step="50" value="${j.allocatedAmount}" style="text-align: right; font-weight: 700; height: 34px; padding: 4px 8px; font-size: 13px;">
           </td>
           <td style="padding: 8px 8px; text-align: center;">
             <button type="button" class="btn-remove-job" data-job-id="${j.id}" title="Remove job from invoice" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 6px; font-size: 14px;">

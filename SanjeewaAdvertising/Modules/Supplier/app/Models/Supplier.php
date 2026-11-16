@@ -37,7 +37,25 @@ class Supplier extends Model
         'name',
         'mobile',
         'email',
+        'bank_account',
+        'status',
     ];
+
+    /**
+     * Check if the supplier is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'Active';
+    }
+
+    /**
+     * Check if the supplier is disabled.
+     */
+    public function isDisabled(): bool
+    {
+        return $this->status === 'Disabled';
+    }
 
     /**
      * Get the purchase orders for this supplier.

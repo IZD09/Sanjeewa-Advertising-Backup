@@ -7,26 +7,31 @@
 
 const CUSTOMER_CARD_THEMES = [
   {
+    themeClass: "cust-theme-blue",
     avatar: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
     bg: "#eff6ff",
     border: "#bfdbfe",
   },
   {
+    themeClass: "cust-theme-green",
     avatar: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
     bg: "#ecfdf5",
     border: "#a7f3d0",
   },
   {
+    themeClass: "cust-theme-purple",
     avatar: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
     bg: "#f5f3ff",
     border: "#ddd6fe",
   },
   {
+    themeClass: "cust-theme-amber",
     avatar: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
     bg: "#fffbeb",
     border: "#fde68a",
   },
   {
+    themeClass: "cust-theme-pink",
     avatar: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
     bg: "#fdf2f8",
     border: "#fbcfe8",
@@ -111,14 +116,20 @@ export class CustomerCardBuilder {
     return this.getCardTheme().avatar;
   }
 
+  getBadgeClass() {
+    if (this.badge === "VIP") return "badge-vip";
+    if (this.badge === "Corporate") return "badge-corporate";
+    return "badge-regular";
+  }
+
   getBadgeStyle() {
     if (this.badge === "VIP") {
-      return "background: var(--green-subtle, #e6f7ef); color: var(--green, #10b981);";
+      return "background: rgba(16, 185, 129, 0.14); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.28);";
     }
     if (this.badge === "Corporate") {
-      return "background: var(--purple-subtle, #f3e8ff); color: var(--purple, #8b5cf6);";
+      return "background: rgba(139, 92, 246, 0.14); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.28);";
     }
-    return "background: var(--blue-subtle, #eff6ff); color: var(--blue, #3b82f6);";
+    return "background: rgba(59, 130, 246, 0.14); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.28);";
   }
 
   build() {
@@ -133,13 +144,14 @@ export class CustomerCardBuilder {
     const initials = this.getInitials();
     const theme = this.getCardTheme();
     const badgeStyle = this.getBadgeStyle();
+    const badgeClass = this.getBadgeClass();
     const formattedSpent = Number(this.totalSpent || 0).toLocaleString("en-LK", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
 
     return `
-      <div class="customer-card-box" data-customer-id="${this.id || ""}" style="background: ${theme.bg}; border-color: ${theme.border};">
+      <div class="customer-card-box ${theme.themeClass || ""}" data-customer-id="${this.id || ""}" style="background: ${theme.bg}; border-color: ${theme.border};">
         <div class="cust-box-top">
           <div class="cust-avatar" style="background: ${theme.avatar};">${initials}</div>
           <div class="cust-box-meta">
@@ -147,7 +159,7 @@ export class CustomerCardBuilder {
             <span><i class="fa-solid fa-phone"></i> ${this.mobile}</span>
             <span><i class="fa-solid fa-location-dot"></i> ${this.location}</span>
           </div>
-          <span class="cust-item-badge" style="${badgeStyle}">${this.badge}</span>
+          <span class="cust-item-badge ${badgeClass}" style="${badgeStyle}">${this.badge}</span>
         </div>
         <div class="cust-stats-row">
           <div class="cust-stat-item"><span>Total Orders</span><strong>${this.totalOrders} Orders</strong></div>

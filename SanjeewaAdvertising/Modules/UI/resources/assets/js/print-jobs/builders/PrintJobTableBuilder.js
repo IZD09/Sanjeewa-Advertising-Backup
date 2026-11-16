@@ -29,13 +29,13 @@ export class PrintJobTableBuilder {
         return `
             <tr data-job-id="${job.id}"${statusRowClass ? ` class="${statusRowClass}"` : ''}>
                 <td>
-                    <div style="font-weight: 700; font-family: monospace; color: #0f172a;">${this.escapeHtml(job.job_number)}</div>
-                    <div style="font-size: 11px; color: #64748b;">${this.escapeHtml(job.order_number)}</div>
-                    ${job.date_formatted ? `<div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${this.escapeHtml(job.date_formatted)}${job.time_formatted && job.time_formatted !== '—' ? ` • ${this.escapeHtml(job.time_formatted)}` : ''}</div>` : ''}
+                    <div style="font-weight: 700; font-family: monospace; color: var(--text, #0f172a);">${this.escapeHtml(job.job_number)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted, #64748b);">${this.escapeHtml(job.order_number)}</div>
+                    ${job.date_formatted ? `<div style="font-size: 10.5px; color: var(--text-muted, #94a3b8); margin-top: 2px;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${this.escapeHtml(job.date_formatted)}${job.time_formatted && job.time_formatted !== '—' ? ` • ${this.escapeHtml(job.time_formatted)}` : ''}</div>` : ''}
                 </td>
                 <td>
                     <div style="font-weight: 600;">${this.escapeHtml(job.customer_name)}</div>
-                    <div style="font-size: 11px; color: #64748b;"><i class="fa-solid fa-phone"></i> ${this.escapeHtml(job.customer_mobile)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted, #64748b);"><i class="fa-solid fa-phone"></i> ${this.escapeHtml(job.customer_mobile)}</div>
                 </td>
                 <td>
                     <span class="pj-spec-tag"><i class="fa-solid fa-print"></i> ${this.escapeHtml(job.print_type_name)}</span>

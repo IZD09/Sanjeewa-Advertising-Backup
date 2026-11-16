@@ -234,7 +234,7 @@
                         <th style="width: 120px;">Order Date</th>
                         <th style="width: 130px;">Expected Date</th>
                         <th style="width: 180px;">Supplier / Vendor</th>
-                        <th>Ordered Materials & Quantities</th>
+                        <th style="min-width: 220px; max-width: 320px;">Ordered Materials</th>
                         <th class="text-right" style="width: 140px;">Estimated Total</th>
                         <th style="width: 120px;">Status</th>
                         <th class="text-center" style="width: 190px;">Actions</th>
@@ -258,9 +258,9 @@
                  VIEW D: SUPPLIERS DIRECTORY VIEW
                  ================================================================== -->
             <div id="grnSuppliersView" @if(request('view') !== 'suppliers') style="display: none;" @endif>
-              <div class="grn-card">
+              <div class="grn-suppliers-wrapper">
                 <!-- Supplier Toolbar Controls -->
-                <div class="grn-toolbar">
+                <div class="grn-toolbar supplier-toolbar">
                   <div class="grn-toolbar-left">
                     <div class="grn-search-wrap">
                       <i class="fa-solid fa-magnifying-glass"></i>
@@ -289,7 +289,7 @@
                 </div>
 
                 <!-- Suppliers Pagination (Visible only when results > 20) -->
-                <div class="grn-pagination-bar" id="supplierPaginationBar" style="display: none;">
+                <div class="grn-pagination-bar supplier-pagination-bar" id="supplierPaginationBar" style="display: none;">
                   <div class="grn-pagination-info" id="supplierPaginationInfo"></div>
                   <div class="grn-pagination-controls" id="supplierPaginationControls"></div>
                 </div>
@@ -320,63 +320,96 @@
               </div>
 
               <!-- Modal Body -->
+              @php
+                $grnAuthUser = Auth::guard('admin')->check()
+                  ? Auth::guard('admin')->user()
+                  : (Auth::guard('web')->user() ?? Auth::guard('admin')->user());
+                $grnReceivedByName = $grnAuthUser
+                  ? trim(($grnAuthUser->first_name ?? '') . ' ' . ($grnAuthUser->last_name ?? ''))
+                  : '';
+                if (empty($grnReceivedByName)) {
+                  $grnReceivedByName = $grnAuthUser->username ?? $grnAuthUser->name ?? 'Administrator';
+                }
+              @endphp
               <div class="po-modal-body" style="gap: 16px; padding: 18px 24px; max-height: calc(94vh - 130px); overflow-y: auto;">
                 
-                <!-- Top Row: GRN Meta Details -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; background: var(--surface-2, #fafafa); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                <!-- Top Row: Supplier Search Selector & Received By (Logged-in User) -->
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; align-items: start; background: var(--surface-2, #fafafa); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);">
+                  <!-- Searchable Supplier Selector -->
                   <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="grnModalNumber" style="margin-bottom: 2px;">
-                      <span>GRN Document Code</span>
-                      <span class="hint">System allocated</span>
-                    </label>
-                    <input type="text" id="grnModalNumber" name="grn_number" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <label class="po-label" for="grnCreateSuppSearchInput" style="margin: 0; font-weight: 700;">
+                        <i class="fa-solid fa-truck-field" style="color: #1677ff; margin-right: 4px;"></i>
+                        <span>Select Supplier / Vendor <span class="req" style="color: #ff4d4f;">*</span></span>
+                      </label>
+                      <span class="hint" style="font-size: 11px; color: var(--text-muted);">Search to load supplier's Approved POs</span>
+                    </div>
+
+                    <div id="grnCreateSuppSearchGroup" style="position: relative;">
+                      <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; color: var(--text-muted); font-size: 12.5px; z-index: 2; pointer-events: none;"></i>
+                        <input type="text" id="grnCreateSuppSearchInput" name="grn_supplier_search" class="grn-inline-input" placeholder="Search supplier by name or phone (or click to browse)..." autocomplete="off" style="padding-left: 34px; padding-right: 36px; height: 40px; width: 100%; border-radius: 8px;">
+                        <input type="hidden" id="grnCreateSelectedSupplierId" value="">
+                        <button type="button" id="grnCreateToggleSuppDropdownBtn" style="position: absolute; right: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; z-index: 2;" title="Browse suppliers">
+                          <i class="fa-solid fa-chevron-down" id="grnCreateSuppDropdownIcon"></i>
+                        </button>
+                      </div>
+                      <div id="grnCreateSuppDropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1050; box-shadow: 0 10px 25px rgba(0,0,0,0.15);"></div>
+                    </div>
+
+                    <!-- Selected Supplier Card -->
+                    <div id="grnCreateSelectedSupplierCard" style="display: none; align-items: center; justify-content: space-between; background: var(--surface, #fff); border: 1.5px solid #1677ff; border-radius: 8px; padding: 6px 10px; min-height: 40px; box-sizing: border-box;">
+                      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(22, 119, 255, 0.12); color: #1677ff; display: grid; place-items: center; font-size: 12px; flex-shrink: 0;">
+                          <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                          <div id="grnCreateSelectedSuppName" style="font-weight: 700; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Supplier Name</div>
+                          <div id="grnCreateSelectedSuppMeta" style="font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">077 123 4567 • 0 Approved POs</div>
+                        </div>
+                      </div>
+                      <button type="button" id="grnCreateClearSupplierBtn" class="ant-btn ant-btn-default ant-btn-sm" style="height: 26px; font-size: 11px; padding: 0 8px; flex-shrink: 0;">
+                        <i class="fa-solid fa-rotate"></i> Change
+                      </button>
+                    </div>
                   </div>
 
+                  <!-- Received By / Stock Custodian (Logged-in User) -->
                   <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="grnCreateModalDate" style="margin-bottom: 2px;">
-                      <span>Received Date <span class="req" style="color: #ff4d4f;">*</span></span>
-                    </label>
-                    <input type="date" id="grnCreateModalDate" name="grn_received_date" class="grn-inline-input" required>
-                  </div>
-
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="grnModalReceivedBy" style="margin-bottom: 2px;">
+                    <label class="po-label" for="grnModalReceivedBy" style="margin-bottom: 6px; font-weight: 700; display: block;">
+                      <i class="fa-solid fa-user-shield" style="color: #1677ff; margin-right: 4px;"></i>
                       <span>Received By / Stock Custodian</span>
                     </label>
-                    <input type="text" id="grnModalReceivedBy" name="received_by" class="grn-inline-input" value="Admin User" readonly>
+                    <input type="text" id="grnModalReceivedBy" name="received_by" class="grn-inline-input" style="height: 40px; border-radius: 8px; font-weight: 600; opacity: 0.9;" value="{{ $grnReceivedByName }}" data-logged-user="{{ $grnReceivedByName }}" readonly>
                   </div>
                 </div>
 
-                <!-- SECTION 1: SEARCH & LINK PURCHASE ORDERS -->
+                <!-- SECTION 1: LINK APPROVED PURCHASE ORDERS -->
                 <div style="border-top: 1px solid var(--border); padding-top: 14px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div style="font-size: 13.5px; font-weight: 700; color: var(--text);">
                       <i class="fa-solid fa-clipboard-list" style="color: #1677ff;"></i> 1. Linked Purchase Orders (PO) <span class="tab-count-badge" id="grnModalPoCount" style="margin-left: 6px;">0</span>
                     </div>
-                    <span style="font-size: 11.5px; color: var(--text-muted);">
-                      A single GRN can receive items from multiple Purchase Orders
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" id="grnCreateAddAllApprovedPoBtn" class="ant-btn ant-btn-default ant-btn-sm" style="display: none; height: 26px; font-size: 11px; color: #1677ff; border-color: rgba(22,119,255,0.35);">
+                        <i class="fa-solid fa-check-double"></i> Add All Approved POs
+                      </button>
+                      <span style="font-size: 11.5px; color: var(--text-muted);">
+                        Only Approved POs for the selected supplier can be linked
+                      </span>
+                    </div>
                   </div>
 
-                  <!-- Active PO Search Selector -->
-                  <div style="margin-bottom: 12px; position: relative;">
-                    <label class="po-label" for="grnModalPoSearchInput" style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-                      <span><i class="fa-solid fa-magnifying-glass" style="color: #1677ff;"></i> Search &amp; Add Active Purchase Order <span class="req" style="color: #ff4d4f;">*</span></span>
-                      <span class="hint" id="grnModalPoSearchHint" style="font-size: 11px; color: var(--text-muted);">Type PO #, supplier name, or click to browse active POs</span>
+                  <!-- Approved PO Selector for Selected Supplier -->
+                  <div style="margin-bottom: 12px;">
+                    <label class="po-label" for="grnModalApprovedPoSelect" style="margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                      <span><i class="fa-solid fa-file-circle-check" style="color: #1677ff;"></i> Select Approved Purchase Order <span class="req" style="color: #ff4d4f;">*</span></span>
+                      <span class="hint" id="grnModalPoSearchHint" style="font-size: 11px; color: var(--text-muted);">Select a supplier above to view their Approved Purchase Orders</span>
                     </label>
-                    <div style="position: relative; display: flex; align-items: center;">
-                      <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: var(--text-muted); font-size: 13px; z-index: 2;"></i>
-                      <input type="text" id="grnModalPoSearchInput" name="po_search_selector" aria-label="Search active Purchase Order to link" class="grn-inline-input" style="padding-left: 34px; padding-right: 145px; width: 100%; height: 38px; border-radius: 6px;" placeholder="Search active PO (e.g. PO-0001, supplier name, materials...) to add..." autocomplete="off">
-                      <span id="grnModalPoSearchLoading" style="display: none; position: absolute; right: 150px; top: 11px; color: #1677ff; font-size: 13px; z-index: 2;">
-                        <i class="fa-solid fa-spinner fa-spin"></i>
-                      </span>
-                      <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" id="grnModalAddPoItemBtn" style="position: absolute; right: 4px; top: 4px; bottom: 4px; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 4px; z-index: 3;" title="Load order items from active Purchase Order">
-                        <i class="fa-solid fa-plus"></i> Add GRN Item
-                      </button>
-                      <!-- Live Search Results Dropdown -->
-                      <div id="grnModalPoSearchDropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 250px; overflow-y: auto; margin-top: 4px;">
-                      </div>
-                    </div>
+                    <select id="grnModalApprovedPoSelect" name="approved_po_select" class="grn-inline-input" style="height: 40px; width: 100%; border-radius: 8px; font-weight: 600;" disabled>
+                      <option value="">-- Please select a supplier above first --</option>
+                    </select>
+                    <div id="grnCreateApprovedPoChips" style="display: none; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
                   </div>
 
                   <!-- Table of Currently Linked Purchase Orders -->
@@ -604,64 +637,67 @@
               </div>
 
               <div class="po-modal-body" style="gap: 16px;">
-                <!-- Header Info Grid -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                  <!-- PO Number -->
+                <!-- Header Info Grid: Supplier Search Selector & Expected Delivery -->
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; align-items: start; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;">
+                  <!-- Supplier / Vendor Searchable Selector -->
                   <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newPoNumber">
-                      <span>PO Number <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newPoNumber" name="po_number" class="grn-inline-input" style="font-family: ui-monospace; font-weight: 700; color: #1677ff;" readonly>
-                  </div>
-
-                  <!-- Order Date -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newPoDate">
-                      <span>Order Date <span class="req">*</span></span>
-                    </label>
-                    <input type="date" id="newPoDate" name="po_date" class="grn-inline-input" required>
-                  </div>
-
-                  <!-- Expected Date -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newPoExpectedDate">
-                      <span>Expected Delivery <span class="req">*</span></span>
-                    </label>
-                    <input type="date" id="newPoExpectedDate" name="po_expected_date" class="grn-inline-input" required>
-                  </div>
-
-                  <!-- Supplier (with Quick Add Supplier) -->
-                  <div class="po-field" style="margin: 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                      <label class="po-label" for="newPoSupplier" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <label class="po-label" for="newPoSuppSearchInput" style="margin: 0; font-weight: 700;">
+                        <i class="fa-solid fa-truck-field" style="color: #1677ff; margin-right: 4px;"></i>
                         <span>Supplier / Vendor <span class="req">*</span></span>
                       </label>
-                      <button type="button" id="poQuickAddSupplierBtn" style="background: none; border: none; color: #1677ff; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0;" title="Register a new supplier">
-                        <i class="fa-solid fa-user-plus"></i> New
+                      <button type="button" id="poQuickAddSupplierBtn" style="background: none; border: none; color: #1677ff; font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 0;" title="Register a new supplier">
+                        <i class="fa-solid fa-user-plus"></i> + New
                       </button>
                     </div>
-                    <select id="newPoSupplier" name="po_supplier" class="grn-inline-input" required>
-                      <option value="" disabled selected>-- Select Supplier / Vendor --</option>
-                    </select>
+
+                    <div id="newPoSuppSearchGroup" style="position: relative;">
+                      <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; color: var(--text-muted); font-size: 12.5px; z-index: 2; pointer-events: none;"></i>
+                        <input type="text" id="newPoSuppSearchInput" name="po_supplier_search" class="grn-inline-input" placeholder="Search supplier by name or phone (or click to browse)..." autocomplete="off" style="padding-left: 34px; padding-right: 36px; height: 40px; width: 100%; border-radius: 8px;">
+                        <input type="hidden" id="newPoSupplier" name="po_supplier" value="">
+                        <input type="hidden" id="newPoSupplierId" name="po_supplier_id" value="">
+                        <button type="button" id="newPoToggleSuppDropdownBtn" style="position: absolute; right: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; z-index: 2;" title="Browse suppliers">
+                          <i class="fa-solid fa-chevron-down" id="newPoSuppDropdownIcon"></i>
+                        </button>
+                      </div>
+                      <div id="newPoSuppDropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1050; box-shadow: 0 10px 25px rgba(0,0,0,0.15);"></div>
+                    </div>
+
+                    <!-- Selected Supplier Card -->
+                    <div id="newPoSelectedSupplierCard" style="display: none; align-items: center; justify-content: space-between; background: var(--surface, #fff); border: 1.5px solid #1677ff; border-radius: 8px; padding: 6px 10px; min-height: 40px; box-sizing: border-box;">
+                      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(22, 119, 255, 0.12); color: #1677ff; display: grid; place-items: center; font-size: 12px; flex-shrink: 0;">
+                          <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                          <div id="newPoSelectedSuppName" style="font-weight: 700; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Supplier Name</div>
+                          <div id="newPoSelectedSuppMeta" style="font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">077 123 4567 • SUP-001</div>
+                        </div>
+                      </div>
+                      <button type="button" id="newPoClearSupplierBtn" class="ant-btn ant-btn-default ant-btn-sm" style="height: 26px; font-size: 11px; padding: 0 8px; flex-shrink: 0;">
+                        <i class="fa-solid fa-rotate"></i> Change
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Expected Delivery Date -->
+                  <div class="po-field" style="margin: 0;">
+                    <label class="po-label" for="newPoExpectedDate" style="margin-bottom: 6px; font-weight: 700; display: block;">
+                      <i class="fa-solid fa-calendar-check" style="color: #1677ff; margin-right: 4px;"></i>
+                      <span>Expected Delivery <span class="req">*</span></span>
+                    </label>
+                    <input type="date" id="newPoExpectedDate" name="po_expected_date" class="grn-inline-input" style="height: 40px; width: 100%; border-radius: 8px;" required>
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-                  <!-- Supplier Contact -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newPoContact">
-                      <span>Supplier Contact / Tel <span class="req">*</span></span>
-                    </label>
-                    <input type="text" id="newPoContact" name="po_contact" class="grn-inline-input" placeholder="E.g. 077 123 4567 / 011 234 5678">
-                  </div>
-
-                  <!-- Remarks / Notes -->
-                  <div class="po-field" style="margin: 0;">
-                    <label class="po-label" for="newPoRemarks">
-                      <span>Order Instructions / Notes</span>
-                    </label>
-                    <input type="text" id="newPoRemarks" name="po_remarks" class="grn-inline-input" placeholder="Urgent order, standard packaging, batch requirement...">
-                  </div>
+                <!-- Order Instructions / Notes -->
+                <div class="po-field" style="margin: 0;">
+                  <label class="po-label" for="newPoRemarks" style="font-weight: 700;">
+                    <i class="fa-solid fa-note-sticky" style="color: #1677ff; margin-right: 4px;"></i>
+                    <span>Order Instructions / Notes</span>
+                  </label>
+                  <input type="text" id="newPoRemarks" name="po_remarks" maxlength="255" class="grn-inline-input" style="height: 38px; border-radius: 8px;" placeholder="Urgent order, standard packaging, batch requirement...">
                 </div>
 
                 <!-- Materials to Order Table -->
@@ -673,6 +709,26 @@
                     <span style="font-size: 11.5px; color: var(--text-muted);">
                       Search and select items from database, then adjust quantity or cost
                     </span>
+                  </div>
+
+                  <!-- Category & Subcategory Filters for Easy Material Item Search -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="po-field" style="margin: 0;">
+                      <label class="po-label" for="newPoItemCategoryFilter" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 700;">
+                        <i class="fa-solid fa-layer-group" style="color: #1677ff; margin-right: 4px;"></i> Category
+                      </label>
+                      <select id="newPoItemCategoryFilter" name="po_item_category_filter" class="grn-inline-input" style="height: 36px; width: 100%; border-radius: 6px; font-size: 12.5px;">
+                        <option value="ALL">All Categories</option>
+                      </select>
+                    </div>
+                    <div class="po-field" style="margin: 0;">
+                      <label class="po-label" for="newPoItemSubcategoryFilter" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 700;">
+                        <i class="fa-solid fa-tags" style="color: #1677ff; margin-right: 4px;"></i> Subcategory
+                      </label>
+                      <select id="newPoItemSubcategoryFilter" name="po_item_subcategory_filter" class="grn-inline-input" style="height: 36px; width: 100%; border-radius: 6px; font-size: 12.5px; opacity: 0.6; cursor: not-allowed;" disabled>
+                        <option value="ALL">-- Select Category First --</option>
+                      </select>
+                    </div>
                   </div>
 
                   <!-- Database Item Search & Add Selector -->
@@ -872,7 +928,7 @@
                   <label class="po-label" for="newSupName">
                     <span>Company / Business Name <span class="req">*</span></span>
                   </label>
-                  <input type="text" id="newSupName" name="name" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
+                  <input type="text" id="newSupName" name="name" maxlength="100" autocomplete="organization" class="grn-inline-input" placeholder="E.g. PrintCare Lanka (Pvt) Ltd" required>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -881,7 +937,7 @@
                     <label class="po-label" for="newSupPhone">
                       <span>Mobile / Phone No <span class="req">*</span></span>
                     </label>
-                    <input type="text" id="newSupPhone" name="mobile" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 077 123 4567" required>
+                    <input type="text" id="newSupPhone" name="mobile" maxlength="15" autocomplete="tel" class="grn-inline-input" placeholder="E.g. 0771234567" required>
                   </div>
 
                   <!-- Email -->
@@ -889,8 +945,16 @@
                     <label class="po-label" for="newSupEmail">
                       <span>Email Address</span>
                     </label>
-                    <input type="email" id="newSupEmail" name="email" autocomplete="email" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
+                    <input type="email" id="newSupEmail" name="email" maxlength="100" autocomplete="email" class="grn-inline-input" placeholder="E.g. orders@supplier.lk">
                   </div>
+                </div>
+
+                <!-- Bank Account -->
+                <div class="po-field" style="margin: 0;">
+                  <label class="po-label" for="newSupBankAccount">
+                    <span>Bank Account Details</span>
+                  </label>
+                  <input type="text" id="newSupBankAccount" name="bank_account" maxlength="50" class="grn-inline-input" placeholder="E.g. BOC - 0019283746 (Colombo 03)">
                 </div>
               </div>
 
@@ -898,6 +962,47 @@
                 <button type="button" class="ant-btn ant-btn-default" data-close-grn-modal="registerSupplierModal">Cancel</button>
                 <button type="button" class="ant-btn ant-btn-primary" id="saveNewSupplierBtn">
                   <i class="fa-solid fa-user-check"></i> Save & Register Supplier
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================================================================
+               GRN / PO ACTION CONFIRMATION MODAL (APPROVE / CANCEL / RESTORE)
+               ================================================================== -->
+          <div class="po-modal-overlay" id="grnActionConfirmModal" aria-hidden="true">
+            <div class="po-modal" style="max-width: 440px;" role="dialog" aria-modal="true" aria-labelledby="grnConfirmModalTitle">
+              <div class="po-modal-header">
+                <h3 id="grnConfirmModalTitle">
+                  <i id="grnConfirmTitleIcon" class="fa-solid fa-circle-check" style="color: #16a34a;"></i>
+                  <span id="grnConfirmTitleText">Confirm Action</span>
+                </h3>
+                <button type="button" class="modal-close-btn" id="grnConfirmCloseBtn" aria-label="Close">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              <div class="po-modal-body" style="gap: 12px;">
+                <div id="grnConfirmBanner" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(22, 163, 74, 0.08); border: 1px solid rgba(22, 163, 74, 0.22);">
+                  <i id="grnConfirmBannerIcon" class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 20px; margin-top: 2px;"></i>
+                  <div>
+                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text, #0f172a);">
+                      <span id="grnConfirmQuestionPrefix">Are you sure you want to proceed with</span>
+                      <span id="grnConfirmTargetLabel" style="color: #16a34a;">this record</span>?
+                    </div>
+                    <div id="grnConfirmSubtext" style="font-size: 12px; color: var(--text-muted, #64748b); margin-top: 4px;">
+                      This will update the status immediately.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="po-modal-footer">
+                <button type="button" class="ant-btn ant-btn-default" id="grnConfirmCancelBtn">
+                  Close
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary" id="grnConfirmSubmitBtn">
+                  <i class="fa-solid fa-check"></i> Confirm
                 </button>
               </div>
             </div>

@@ -25,20 +25,41 @@ export class MarkExpensePaidModal extends BaseModalHandler {
 
     this.ctx = context;
     this.http = new RequestHandler();
+    this._isSubmitting = false;
 
     this.bindEvents();
   }
 
   bindEvents() {
-    const confirmBtn = document.getElementById("btnConfirmMarkExpensePaid");
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", () => this.confirm());
+    if (!document._boundMarkExpensePaidEvents) {
+      document._boundMarkExpensePaidEvents = true;
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("#btnConfirmMarkExpensePaid")) {
+          e.preventDefault();
+          const inst = window.paymentsManager?.modalHandler?.markExpensePaidModal || this;
+          inst.confirm();
+        } else if (e.target.closest("#btnConfirmExpenseRevert")) {
+          e.preventDefault();
+          const inst = window.paymentsManager?.modalHandler?.markExpensePaidModal || this;
+          inst.confirmRevert();
+        }
+      });
     }
   }
 
-  openMarkExpensePaidModal(billId) {
+  findBillById(billId) {
     const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
-    const bill = expenses.find(b => b.id === billId);
+    return expenses.find(b => String(b.id) === String(billId)) || null;
+  }
+
+  getNumericExpenseId(bill) {
+    const raw = bill?.raw_id ?? bill?.id;
+    const numericId = parseInt(String(raw ?? "").replace(/[^0-9]/g, ""), 10);
+    return numericId && !isNaN(numericId) ? numericId : null;
+  }
+
+  openMarkExpensePaidModal(billId) {
+    const bill = this.findBillById(billId);
     if (!bill) return;
 
     const elId = document.getElementById("markExpBillId");
@@ -47,7 +68,6 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     const elAmount = document.getElementById("markExpAmountDisplay");
     const elPaidDate = document.getElementById("markExpPaidDate");
     const elPaidAmount = document.getElementById("markExpPaidAmount");
-    const elPaidMethod = document.getElementById("markExpPaidMethod");
     const elPaidRef = document.getElementById("markExpPaidRef");
     const elPaidNote = document.getElementById("markExpPaidNote");
 
@@ -59,76 +79,177 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     const todayStr = new Date().toISOString().split("T")[0];
     if (elPaidDate) elPaidDate.value = todayStr;
     if (elPaidAmount) elPaidAmount.value = bill.amount;
-    if (elPaidMethod) elPaidMethod.value = "Bank Transfer";
-    if (elPaidRef) elPaidRef.value = "";
-    if (elPaidNote) elPaidNote.value = `Month-end bill settlement (${bill.month})`;
+    if (elPaidRef) elPaidRef.value = bill.paidRef && bill.paidRef !== "TXN-AUTO" ? bill.paidRef : "";
+    if (elPaidNote) elPaidNote.value = bill.paidNote || `Month-end bill settlement (${bill.month})`;
+
+    const errBanner = document.getElementById("markExpErrorBanner");
+    if (errBanner) {
+      errBanner.style.display = "none";
+      errBanner.textContent = "";
+    }
 
     this.openModal("modalMarkExpensePaid");
   }
 
-  confirm() {
+  async confirm() {
+    if (this._isSubmitting) return;
+
     const billId = document.getElementById("markExpBillId")?.value;
-    const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
-    const bill = expenses.find(b => b.id === billId);
+    const bill = this.findBillById(billId);
     if (!bill) return;
 
     const paidDate = document.getElementById("markExpPaidDate")?.value || new Date().toISOString().split("T")[0];
-    const paidAmount = parseFloat(document.getElementById("markExpPaidAmount")?.value) || bill.amount;
-    const paidMethod = document.getElementById("markExpPaidMethod")?.value || "Bank Transfer";
+    const paidAmount = parseFloat(document.getElementById("markExpPaidAmount")?.value);
     const paidRef = document.getElementById("markExpPaidRef")?.value.trim() || "";
     const paidNote = document.getElementById("markExpPaidNote")?.value.trim() || "";
 
-    bill.status = "Paid";
-    bill.paidDate = paidDate;
-    bill.paidAmount = paidAmount;
-    bill.paidMethod = paidMethod;
-    bill.paidRef = paidRef;
-    bill.paidNote = paidNote;
-
-    if (this.ctx.saveExpenses) this.ctx.saveExpenses();
-
-    // Persist to Database API
-    const numericId = parseInt(String(bill.id).replace(/[^0-9]/g, ""), 10);
-    if (numericId && !isNaN(numericId)) {
-      this.http.put(`/api/v1/expenses/${numericId}`, {
-        expencesess_statuses_id: 3, // Paid
-        pay_at: `${paidDate} 12:00:00`
-      }).catch(err => console.warn("[MarkExpensePaidModal] API sync error:", err));
+    if (isNaN(paidAmount) || paidAmount <= 0) {
+      this.showToast("Please enter a valid Paid Amount greater than 0.", "error");
+      return;
     }
 
-    this.closeModal("modalMarkExpensePaid");
-    if (this.ctx.render) this.ctx.render();
+    if (paidRef.length > 50) {
+      this.showToast("Transaction Reference # cannot exceed 50 characters.", "error");
+      return;
+    }
 
-    this.showToast(`Bill "${bill.title}" marked as PAID (Rs. ${paidAmount.toLocaleString()})! Status updated.`);
+    if (paidNote.length > 255) {
+      this.showToast("Settlement Note cannot exceed 255 characters.", "error");
+      return;
+    }
+
+    const errBanner = document.getElementById("markExpErrorBanner");
+    if (errBanner) {
+      errBanner.style.display = "none";
+      errBanner.textContent = "";
+    }
+
+    const confirmBtn = document.getElementById("btnConfirmMarkExpensePaid");
+    const originalHtml = confirmBtn ? confirmBtn.innerHTML : "";
+    this._isSubmitting = true;
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+    }
+
+    try {
+      const numericId = this.getNumericExpenseId(bill);
+      if (numericId) {
+        const response = await this.http.put(`/api/v1/expenses/${numericId}`, {
+          expencesess_statuses_id: 3, // Paid
+          price: paidAmount,
+          pay_at: `${paidDate} 12:00:00`,
+          reference: paidRef || null,
+          settlement_note: paidNote || null
+        });
+        const updated = response?.data || response;
+        if (updated && updated.reference !== undefined) {
+          bill.paidRef = updated.reference || paidRef;
+        } else {
+          bill.paidRef = paidRef;
+        }
+        if (updated && updated.settlement_note !== undefined) {
+          bill.paidNote = updated.settlement_note || paidNote;
+          bill.notes = updated.settlement_note || paidNote;
+        } else {
+          bill.paidNote = paidNote;
+          bill.notes = paidNote;
+        }
+      } else {
+        bill.paidRef = paidRef;
+        bill.paidNote = paidNote;
+        bill.notes = paidNote;
+      }
+
+      bill.status = "Paid";
+      bill.amount = paidAmount;
+      bill.paidDate = paidDate;
+      bill.paidAmount = paidAmount;
+
+      if (this.ctx.saveExpenses) this.ctx.saveExpenses();
+
+      this.closeModal("modalMarkExpensePaid");
+      if (this.ctx.render) this.ctx.render();
+
+      this.showToast(`Bill "${bill.title}" marked as PAID (Rs. ${paidAmount.toLocaleString()})!`, "success");
+    } catch (err) {
+      console.error("[MarkExpensePaidModal] Mark Paid error:", err);
+      const errMsg = err?.data?.message || err?.message || "Failed to mark bill as Paid.";
+      if (errBanner) {
+        errBanner.textContent = errMsg;
+        errBanner.style.display = "block";
+      }
+      this.showToast(errMsg, "error");
+    } finally {
+      this._isSubmitting = false;
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalHtml;
+      }
+    }
   }
 
   undo(billId) {
-    const expenses = this.ctx.getExpenses ? this.ctx.getExpenses() : [];
-    const bill = expenses.find(b => b.id === billId);
+    const bill = this.findBillById(billId);
     if (!bill) return;
 
-    if (confirm(`Do you want to revert "${bill.title}" status back to Pending?`)) {
+    const idInput = document.getElementById("expConfirmBillId");
+    const titleEl = document.getElementById("expConfirmBillTitle");
+    if (idInput) idInput.value = String(bill.id);
+    if (titleEl) titleEl.textContent = `"${bill.title || "this bill"}"`;
+
+    this.openModal("expenseActionConfirmModal");
+  }
+
+  async confirmRevert() {
+    if (this._isSubmitting) return;
+
+    const billId = document.getElementById("expConfirmBillId")?.value;
+    const bill = this.findBillById(billId);
+    if (!bill) return;
+
+    const revertBtn = document.getElementById("btnConfirmExpenseRevert");
+    const originalHtml = revertBtn ? revertBtn.innerHTML : "";
+    this._isSubmitting = true;
+    if (revertBtn) {
+      revertBtn.disabled = true;
+      revertBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Reverting...`;
+    }
+
+    try {
+      const numericId = this.getNumericExpenseId(bill);
+      if (numericId) {
+        await this.http.put(`/api/v1/expenses/${numericId}`, {
+          expencesess_statuses_id: 1, // Pending
+          pay_at: null,
+          pay_by: null,
+          reference: null,
+          settlement_note: null
+        });
+      }
+
       bill.status = "Pending";
+      bill.paidAmount = 0;
       delete bill.paidDate;
-      delete bill.paidAmount;
       delete bill.paidMethod;
       delete bill.paidRef;
       delete bill.paidNote;
 
       if (this.ctx.saveExpenses) this.ctx.saveExpenses();
 
-      // Persist status reversal to Database API
-      const numericId = parseInt(String(bill.id).replace(/[^0-9]/g, ""), 10);
-      if (numericId && !isNaN(numericId)) {
-        this.http.put(`/api/v1/expenses/${numericId}`, {
-          expencesess_statuses_id: 1, // Pending
-          pay_at: null
-        }).catch(err => console.warn("[MarkExpensePaidModal] API sync error:", err));
-      }
-
+      this.closeModal("expenseActionConfirmModal");
       if (this.ctx.render) this.ctx.render();
 
-      this.showToast(`Bill "${bill.title}" status reverted to PENDING.`);
+      this.showToast(`Bill "${bill.title}" status reverted to PENDING.`, "info");
+    } catch (err) {
+      console.error("[MarkExpensePaidModal] Revert error:", err);
+      this.showToast(err?.message || "Failed to revert bill status.", "error");
+    } finally {
+      this._isSubmitting = false;
+      if (revertBtn) {
+        revertBtn.disabled = false;
+        revertBtn.innerHTML = originalHtml;
+      }
     }
   }
 }

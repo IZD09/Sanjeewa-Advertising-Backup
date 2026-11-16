@@ -35,7 +35,9 @@ export class GrnEntity {
     tr.id = `grnRow_${this.grn_number || ""}`;
 
     const statusKey = String(this.status || "").toLowerCase().trim();
-    if (statusKey === "completed") {
+    if (statusKey === "approved") {
+      tr.className = "row-status-approved";
+    } else if (statusKey === "completed") {
       tr.className = "row-status-completed";
     } else if (statusKey === "cancelled") {
       tr.className = "row-status-cancelled";
@@ -43,7 +45,24 @@ export class GrnEntity {
       tr.className = "row-status-pending";
     }
 
-    const isCompleted = this.status === "Completed";
+    const isApproved = statusKey === "approved";
+    const isCompleted = statusKey === "completed";
+    const isCancelled = statusKey === "cancelled";
+    const isDraft = !isApproved && !isCompleted && !isCancelled;
+
+    let badgeClass = "draft";
+    let badgeIcon = "fa-clock";
+    if (isApproved) {
+      badgeClass = "approved";
+      badgeIcon = "fa-thumbs-up";
+    } else if (isCompleted) {
+      badgeClass = "completed";
+      badgeIcon = "fa-circle-check";
+    } else if (isCancelled) {
+      badgeClass = "cancelled";
+      badgeIcon = "fa-ban";
+    }
+
     const itemCount = this.items && Array.isArray(this.items) ? this.items.length : 0;
 
     tr.innerHTML = `
@@ -70,21 +89,34 @@ export class GrnEntity {
       </td>
       <td><span style="font-size: 12px; color: var(--text-muted);">${this.received_by || "Admin User"}</span></td>
       <td>
-        <span class="grn-status-badge ${isCompleted ? "completed" : "draft"}">
-          <i class="fa-solid ${isCompleted ? "fa-circle-check" : "fa-clock"}"></i>
+        <span class="grn-status-badge ${badgeClass}">
+          <i class="fa-solid ${badgeIcon}"></i>
           ${this.status || "Draft"}
         </span>
       </td>
       <td class="text-center">
-        <div class="inv-actions-group">
-          <button type="button" class="ant-btn-action" title="View GRN Document" onclick="window.grnManager?.viewGRN('${this.grn_number}')">
-            <i class="fa-solid fa-eye"></i> View
+        <div class="po-action-group">
+          <button type="button" class="action-btn approve-action" title="${!isApproved && !isCancelled ? "Approve GRN" : (isApproved ? "Already Approved" : "Cannot Approve Cancelled GRN")}" onclick="window.grnManager?.approveGRN('${this.grn_number}')" ${!isApproved && !isCancelled ? "" : "disabled"}>
+            <i class="fa-solid fa-check"></i>
           </button>
-          ${!isCompleted ? `
-            <button type="button" class="ant-btn-action" style="color: #52c41a; border-color: #b7eb8f;" title="Complete GRN & Update Stock" onclick="window.grnManager?.finalizeDraftGRN('${this.grn_number}')">
-              <i class="fa-solid fa-check-double"></i> Complete
+          <button type="button" class="action-btn cancel-action" title="${!isCancelled ? "Cancel GRN" : "Already Cancelled"}" onclick="window.grnManager?.cancelGRN('${this.grn_number}')" ${!isCancelled ? "" : "disabled"}>
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="row-action-menu-wrap">
+            <button type="button" class="action-btn more-action" title="More Actions" onclick="window.grnManager?.toggleRowMenu(this)">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
-          ` : ""}
+            <div class="row-action-dropdown" style="display: none;">
+              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.viewGRN('${this.grn_number}')">
+                <i class="fa-solid fa-eye"></i><span>View GRN</span>
+              </button>
+              ${isDraft ? `
+                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.finalizeDraftGRN('${this.grn_number}')">
+                  <i class="fa-solid fa-check-double"></i><span>Complete GRN</span>
+                </button>
+              ` : ""}
+            </div>
+          </div>
         </div>
       </td>
     `;

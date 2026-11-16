@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Core\Support\MobileNumberHelper;
 use Modules\Inventory\Models\Stock;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\Supplier;
 
 class GrnService
 {
@@ -34,11 +35,7 @@ class GrnService
 
         $statusFilter = (string) ($filters['status'] ?? 'ALL');
         if ($statusFilter !== '' && strcasecmp($statusFilter, 'ALL') !== 0) {
-            if (strcasecmp($statusFilter, 'Completed') === 0) {
-                $query->whereHas('stocks');
-            } elseif (strcasecmp($statusFilter, 'Draft') === 0) {
-                $query->whereDoesntHave('stocks');
-            }
+            $query->where('status', $statusFilter);
         }
 
         if (! empty($filters['suppliers_id'])) {
@@ -119,8 +116,13 @@ class GrnService
     public function createGrn(array $data): Grn
     {
         return DB::transaction(function () use ($data) {
+            $status = ! empty($data['stocks'])
+                ? 'Completed'
+                : (! empty($data['status']) ? (string) $data['status'] : 'Draft');
+
             $grn = Grn::create([
                 'at_time' => ! empty($data['at_time']) ? $data['at_time'] : now(),
+                'status' => $status,
             ]);
 
             $attachedPos = [];
@@ -202,6 +204,16 @@ class GrnService
     }
 
     /**
+     * Update GRN status (Approved, Cancelled, Completed, Draft).
+     */
+    public function updateGrnStatus(Grn $grn, string $status): Grn
+    {
+        $grn->update(['status' => $status]);
+
+        return $this->getGrnById($grn->id) ?? $grn->fresh();
+    }
+
+    /**
      * Delete a GRN.
      */
     public function deleteGrn(Grn $grn): bool
@@ -231,9 +243,36 @@ class GrnService
 
         $kpis = $this->resolveDatabaseGrnKpis();
 
+        $suppliers = Supplier::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'mobile', 'status'])
+            ->map(fn (Supplier $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'mobile' => $s->mobile,
+                'status' => $s->status ?? 'Active',
+            ])
+            ->values()
+            ->all();
+
+        $dbStatuses = Grn::query()
+            ->whereNotNull('status')
+            ->distinct()
+            ->pluck('status')
+            ->filter()
+            ->values()
+            ->all();
+
+        $statuses = array_values(array_unique(array_merge(
+            ['Completed', 'Approved', 'Draft', 'Cancelled'],
+            $dbStatuses
+        )));
+
         return [
             'grns' => $grns,
             'records' => $grns,
+            'suppliers' => $suppliers,
+            'statuses' => $statuses,
             'kpis' => $kpis,
             'pagination' => [
                 'total' => $paginator->total(),
@@ -304,7 +343,9 @@ class GrnService
 
         $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
         $poCode = count($poCodes) > 0 ? implode(', ', $poCodes) : 'N/A';
-        $status = count($items) > 0 ? 'Completed' : 'Draft';
+        $status = ! empty($grn->status)
+            ? $grn->status
+            : (count($items) > 0 ? 'Completed' : 'Draft');
 
         return [
             'id' => $grn->id,
@@ -338,8 +379,8 @@ class GrnService
     protected function resolveDatabaseGrnKpis(): array
     {
         $totalCount = Grn::query()->count();
-        $completedCount = Grn::query()->whereHas('stocks')->count();
-        $draftCount = max(0, $totalCount - $completedCount);
+        $completedCount = Grn::query()->whereIn('status', ['Completed', 'Approved'])->count();
+        $draftCount = Grn::query()->where('status', 'Draft')->count();
         $totalValue = (float) Stock::query()
             ->whereNotNull('grn_id')
             ->selectRaw('COALESCE(SUM(qty * buy), 0) as total_val')

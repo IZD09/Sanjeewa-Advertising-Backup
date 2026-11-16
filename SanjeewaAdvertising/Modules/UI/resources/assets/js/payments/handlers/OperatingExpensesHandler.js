@@ -23,7 +23,7 @@ export class OperatingExpensesHandler {
    */
   constructor(context = {}) {
     this.ctx = context;
-    this.expenseMonthFilter = "2026-10";
+    this.expenseMonthFilter = "ALL";
     this.expenseSearch = "";
     this.expenseCategoryFilter = "ALL";
     this.expenseStatusFilter = "ALL";

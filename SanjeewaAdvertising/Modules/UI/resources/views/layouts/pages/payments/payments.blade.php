@@ -326,7 +326,6 @@
                   <th>Bill Total</th>
                   <th>Paid Amount</th>
                   <th>Balance Due</th>
-                  <th>Narration</th>
                   <th style="text-align: center;">Actions</th>
                 </tr>
               </thead>
@@ -362,11 +361,11 @@
             </div>
             <div class="month-controls">
               <select id="expMonthSelect" class="pay-select" style="min-width: 170px; font-weight: 700;">
-                <option value="2026-10" selected>October 2026 (Current)</option>
+                <option value="ALL" selected>All Months</option>
+                <option value="2026-11">November 2026 (Current)</option>
+                <option value="2026-10">October 2026</option>
                 <option value="2026-09">September 2026</option>
                 <option value="2026-08">August 2026</option>
-                <option value="2026-11">November 2026</option>
-                <option value="ALL">All Months</option>
               </select>
               <button type="button" class="po-btn po-btn-secondary" id="btnExpThisMonth" style="height: 38px; padding: 0 12px; font-size: 12px; border-radius: 8px;">
                 <i class="fa-solid fa-calendar-day"></i> This Month
@@ -511,8 +510,7 @@
                   <th>Due Date</th>
                   <th>Bill Amount (Rs.)</th>
                   <th>Status</th>
-                  <th>Settlement Info</th>
-                  <th style="text-align: right;">Action</th>
+                  <th style="text-align: center;">Actions</th>
                 </tr>
               </thead>
               <tbody id="payExpenseTableBody">
@@ -532,44 +530,83 @@
 
     <!-- TAB PANE 4: OVERVIEW -->
     <div id="payTabPaneOverview" class="pay-tab-pane" style="display: none;">
-      <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 22px;">
+        <!-- Top Reconciliation KPI Grid -->
         <div class="pay-metric-grid">
-          <div class="pay-metric-card" style="border-bottom: 3px solid #2563eb;">
+          <div class="pay-metric-card ov-kpi-card" style="border-bottom: 3px solid #2563eb;">
             <div class="pay-metric-label">
-              <span>Job Cash Inflow (Invoice Payments)</span>
-              <i class="fa-solid fa-arrow-down-left" style="color: #2563eb;"></i>
+              <span>Job Cash Inflow (Invoice)</span>
+              <span class="ov-kpi-icon" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
+                <i class="fa-solid fa-arrow-down-left"></i>
+              </span>
             </div>
             <div class="pay-metric-value" id="ovJobCashInflow" style="color: #2563eb;">Rs. 0.00</div>
             <div class="pay-metric-sub">Money collected from printing jobs</div>
           </div>
 
-          <div class="pay-metric-card" style="border-bottom: 3px solid #ef4444;">
+          <div class="pay-metric-card ov-kpi-card" style="border-bottom: 3px solid #ef4444;">
             <div class="pay-metric-label">
-              <span>Stock Cash Outflow (GRN Payments)</span>
-              <i class="fa-solid fa-arrow-up-right" style="color: #ef4444;"></i>
+              <span>Stock Cash Outflow (GRN)</span>
+              <span class="ov-kpi-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+                <i class="fa-solid fa-arrow-up-right"></i>
+              </span>
             </div>
             <div class="pay-metric-value" id="ovGrnCashOutflow" style="color: #ef4444;">Rs. 0.00</div>
             <div class="pay-metric-sub">Money paid for stock materials &amp; supplies</div>
           </div>
 
-          <div class="pay-metric-card" style="border-bottom: 3px solid #10b981;">
+          <div class="pay-metric-card ov-kpi-card" style="border-bottom: 3px solid #10b981;">
             <div class="pay-metric-label">
               <span>Net Operating Cash Position</span>
-              <i class="fa-solid fa-vault" style="color: #10b981;"></i>
+              <span class="ov-kpi-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                <i class="fa-solid fa-vault"></i>
+              </span>
             </div>
             <div class="pay-metric-value" id="ovNetOperatingCash" style="color: #10b981;">Rs. 0.00</div>
             <div class="pay-metric-sub">Inflow minus Outflow surplus</div>
           </div>
 
-          <div class="pay-metric-card" style="border-bottom: 3px solid #8b5cf6;">
+          <div class="pay-metric-card ov-kpi-card" style="border-bottom: 3px solid #8b5cf6;">
             <div class="pay-metric-label">
-              <span>Pending Receivables vs Payables</span>
-              <i class="fa-solid fa-scale-balanced" style="color: #8b5cf6;"></i>
+              <span>Receivables vs Payables</span>
+              <span class="ov-kpi-icon" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </span>
             </div>
-            <div class="pay-metric-sub" style="font-size: 12px; margin-top: 6px;">
-              Receivable: <strong id="ovReceivablesTotal">Rs. 0</strong><br>
-              Payable: <strong id="ovPayablesTotal" style="color: #ef4444;">Rs. 0</strong>
+            <div class="ov-balance-split">
+              <div class="ov-split-row">
+                <span class="ov-split-label"><i class="fa-solid fa-circle-arrow-down" style="color: #10b981;"></i> Receivable</span>
+                <strong id="ovReceivablesTotal" style="color: #10b981;">Rs. 0</strong>
+              </div>
+              <div class="ov-split-row">
+                <span class="ov-split-label"><i class="fa-solid fa-circle-arrow-up" style="color: #ef4444;"></i> Payable</span>
+                <strong id="ovPayablesTotal" style="color: #ef4444;">Rs. 0</strong>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Cashflow Reconciliation Progress Bar Card -->
+        <div class="ov-reconcile-card">
+          <div class="ov-reconcile-header">
+            <div>
+              <h3 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-chart-simple" style="color: #2563eb;"></i>
+                Inflow vs Outflow Reconciliation Balance
+              </h3>
+              <p style="margin: 3px 0 0; font-size: 11.5px; color: var(--text-muted);">
+                Live comparison between collected customer invoice payments and supplier GRN disbursements
+              </p>
+            </div>
+            <div class="ov-reconcile-pills">
+              <span class="ov-rec-pill inflow">Inflow: <strong id="overviewTotalInflow">Rs. 0.00</strong></span>
+              <span class="ov-rec-pill outflow">Outflow: <strong id="overviewTotalOutflow">Rs. 0.00</strong></span>
+              <span class="ov-rec-pill net">Net: <strong id="overviewNetCashPosition">Rs. 0.00</strong></span>
+            </div>
+          </div>
+          <div class="ov-reconcile-bar">
+            <div id="barInflowShare" class="ov-bar-inflow" style="width: 50%;"></div>
+            <div id="barOutflowShare" class="ov-bar-outflow" style="width: 50%;"></div>
           </div>
         </div>
 
@@ -776,7 +813,7 @@
               <h4 style="margin: 0 0 8px; color: #10b981; font-size: 14px;"><i class="fa-solid fa-circle-dot"></i> Channel 2: GRN Payments (Stock Items &amp; Suppliers)</h4>
               <ul style="margin: 0; padding-left: 20px; color: var(--text-muted);">
                 <li><strong>Complete Payment:</strong> Consignment bills fully paid upon receiving inspected materials.</li>
-                <li><strong>Pending Payment:</strong> Raw materials received under 14 to 45 days credit credit facilities.</li>
+                <li><strong>Pending Payment:</strong> Raw materials received under 14 to 45 days credit facilities.</li>
                 <li><strong>Advance Payment:</strong> Advance purchase order deposits paid to overseas or local importers.</li>
                 <li><strong>Supported Channels:</strong> Commercial cheques, corporate online transfers, petty cash, or corporate card.</li>
               </ul>

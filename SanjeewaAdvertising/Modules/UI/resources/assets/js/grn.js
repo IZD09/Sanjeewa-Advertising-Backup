@@ -22,6 +22,7 @@ import {
   ExportProcess,
   MetricsProcess
 } from "./grn/index.js";
+import { toggleRowActionMenu, closeAllActionMenus } from "./core/ActionMenuHelper.js";
 
 export class GRNManager {
   constructor() {
@@ -70,11 +71,17 @@ export class GRNManager {
       setSuppliers: (sups) => { this.dataLoader.suppliers = sups; },
       getSupplierPagination: () => this.dataLoader.supplierPagination,
       getGrnRecords: () => this.dataLoader.grnRecords,
+      getGrnSuppliers: () => this.dataLoader.grnSuppliers,
+      getGrnStatuses: () => this.dataLoader.grnStatuses,
       getPurchaseOrders: () => this.dataLoader.purchaseOrders,
+      getPoSuppliers: () => this.dataLoader.poSuppliers,
+      getPoStatuses: () => this.dataLoader.poStatuses,
       saveSupplierData: () => this.dataLoader.saveSupplierData(),
       createSupplier: (data) => this.dataLoader.createSupplier(data),
       updateSupplier: (id, data) => this.dataLoader.updateSupplier(id, data),
       deleteSupplier: (id) => this.dataLoader.deleteSupplier(id),
+      toggleSupplierStatus: (id) => this.dataLoader.toggleSupplierStatus(id),
+      fetchSuppliers: (params, force) => this.dataLoader.fetchSuppliers(params, force),
       generateNextSupplierCode: () => this.dataLoader.generateNextSupplierCode(),
       openRegisterSupplierModal: (caller, code) => this.modalHandler.openRegisterSupplierModal(caller, code),
       openEditSupplierModal: (code) => this.modalHandler.openEditSupplierModal(code),
@@ -298,6 +305,7 @@ export class GRNManager {
     await this.dataLoader.fetchPurchaseOrders({ page: this.poTableHandler.currentPage || 1, per_page: 20 }, forceRefresh);
     this.renderPOTable();
     this.supplierHandler.populatePOSupplierFilter();
+    this.supplierHandler.populatePOStatusFilter();
     this.metricsProcess.renderOpenPoBadge();
   }
 
@@ -311,6 +319,7 @@ export class GRNManager {
     await this.dataLoader.fetchGrns({ page: this.grnTableHandler.currentPage || 1, per_page: 20 }, forceRefresh);
     this.renderTable();
     this.supplierHandler.populateSupplierFilter();
+    this.supplierHandler.populateGrnStatusFilter();
     this.metricsProcess.renderKPIs();
   }
 
@@ -353,6 +362,7 @@ export class GRNManager {
   }
   createGrnForSupplier(name) { this.modalHandler.openCreateGrnModal(null, name); }
   deleteSupplier(code) { this.supplierHandler.deleteSupplier(code); }
+  toggleSupplierStatus(code) { this.supplierHandler.toggleSupplierStatus(code); }
 
   // Table Render Delegations
   renderTable() {
@@ -393,6 +403,257 @@ export class GRNManager {
   calculateFinancials() { return this.grnFormProcess.calculateFinancials(); }
   saveGRN(isCompleted = false) { this.grnFormProcess.saveGRN(isCompleted); }
   finalizeDraftGRN(num) { this.grnFormProcess.finalizeDraftGRN(num); }
+  toggleRowMenu(triggerBtn) { toggleRowActionMenu(triggerBtn); }
+  closeRowMenus() { closeAllActionMenus(); }
+  openActionConfirmModal({
+    type = "approve",
+    title = "Confirm Action",
+    questionPrefix = "Are you sure you want to proceed with",
+    targetLabel = "this record",
+    subtext = "This will update the status immediately.",
+    confirmHtml = '<i class="fa-solid fa-check"></i> Confirm',
+    loadingHtml = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...',
+    onConfirm
+  } = {}) {
+    const modal = document.getElementById("grnActionConfirmModal");
+    if (!modal) {
+      if (typeof onConfirm === "function") onConfirm();
+      return;
+    }
+
+    const titleIcon = document.getElementById("grnConfirmTitleIcon");
+    const titleText = document.getElementById("grnConfirmTitleText");
+    const banner = document.getElementById("grnConfirmBanner");
+    const bannerIcon = document.getElementById("grnConfirmBannerIcon");
+    const prefixEl = document.getElementById("grnConfirmQuestionPrefix");
+    const targetEl = document.getElementById("grnConfirmTargetLabel");
+    const subtextEl = document.getElementById("grnConfirmSubtext");
+    const submitBtn = document.getElementById("grnConfirmSubmitBtn");
+    const cancelBtn = document.getElementById("grnConfirmCancelBtn");
+    const closeBtn = document.getElementById("grnConfirmCloseBtn");
+
+    const palette = {
+      approve: {
+        color: "#16a34a",
+        bg: "rgba(22, 163, 74, 0.08)",
+        border: "rgba(22, 163, 74, 0.22)",
+        icon: "fa-circle-check",
+        btnBg: "#16a34a",
+        btnBorder: "#15803d"
+      },
+      cancel: {
+        color: "#dc2626",
+        bg: "rgba(220, 38, 38, 0.08)",
+        border: "rgba(220, 38, 38, 0.22)",
+        icon: "fa-triangle-exclamation",
+        btnBg: "#dc2626",
+        btnBorder: "#b91c1c"
+      },
+      restore: {
+        color: "#1677ff",
+        bg: "rgba(22, 119, 255, 0.08)",
+        border: "rgba(22, 119, 255, 0.22)",
+        icon: "fa-rotate-left",
+        btnBg: "#1677ff",
+        btnBorder: "#0958d9"
+      }
+    }[type] || {
+      color: "#16a34a",
+      bg: "rgba(22, 163, 74, 0.08)",
+      border: "rgba(22, 163, 74, 0.22)",
+      icon: "fa-circle-check",
+      btnBg: "#16a34a",
+      btnBorder: "#15803d"
+    };
+
+    if (titleIcon) {
+      titleIcon.className = `fa-solid ${palette.icon}`;
+      titleIcon.style.color = palette.color;
+    }
+    if (titleText) titleText.textContent = title;
+    if (banner) {
+      banner.style.background = palette.bg;
+      banner.style.borderColor = palette.border;
+    }
+    if (bannerIcon) {
+      bannerIcon.className = `fa-solid ${palette.icon}`;
+      bannerIcon.style.color = palette.color;
+    }
+    if (prefixEl) prefixEl.textContent = questionPrefix;
+    if (targetEl) {
+      targetEl.textContent = targetLabel;
+      targetEl.style.color = palette.color;
+    }
+    if (subtextEl) subtextEl.textContent = subtext;
+    if (submitBtn) {
+      submitBtn.innerHTML = confirmHtml;
+      submitBtn.style.background = palette.btnBg;
+      submitBtn.style.borderColor = palette.btnBorder;
+      submitBtn.style.color = "#ffffff";
+    }
+
+    this._pendingConfirmAction = onConfirm;
+    this._pendingConfirmLoadingHtml = loadingHtml;
+    this._pendingConfirmDefaultHtml = confirmHtml;
+
+    if (!modal._grnConfirmBound) {
+      modal._grnConfirmBound = true;
+      const closeModalFn = () => this.closeActionConfirmModal();
+      if (closeBtn) closeBtn.addEventListener("click", closeModalFn);
+      if (cancelBtn) cancelBtn.addEventListener("click", closeModalFn);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModalFn();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.classList.contains("open")) closeModalFn();
+      });
+      if (submitBtn) {
+        submitBtn.addEventListener("click", async () => {
+          if (typeof this._pendingConfirmAction !== "function") {
+            closeModalFn();
+            return;
+          }
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = this._pendingConfirmLoadingHtml || '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+          try {
+            await this._pendingConfirmAction();
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = this._pendingConfirmDefaultHtml || '<i class="fa-solid fa-check"></i> Confirm';
+            closeModalFn();
+          }
+        });
+      }
+    }
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  closeActionConfirmModal() {
+    const modal = document.getElementById("grnActionConfirmModal");
+    if (!modal) return;
+    if (document.activeElement && modal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    this._pendingConfirmAction = null;
+  }
+
+  async approveGRN(grnNumber) {
+    const rec = this.dataLoader.grnRecords.find(r => r.grn_number === grnNumber || String(r.id) === String(grnNumber));
+    const id = rec?.id || parseInt(String(grnNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = rec?.grn_number || grnNumber;
+
+    this.openActionConfirmModal({
+      type: "approve",
+      title: "Approve GRN",
+      questionPrefix: "Are you sure you want to approve",
+      targetLabel: label,
+      subtext: "This will update the GRN status to Approved.",
+      confirmHtml: '<i class="fa-solid fa-check"></i> Yes, Approve GRN',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Approving...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updateGrnStatus(id, "Approved");
+          this.renderTable();
+          this.supplierHandler.populateGrnStatusFilter();
+          this.metricsProcess.renderKPIs();
+          this.showToast(`GRN ${label} approved successfully!`, "success");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to approve GRN", "error");
+        }
+      }
+    });
+  }
+
+  async cancelGRN(grnNumber) {
+    const rec = this.dataLoader.grnRecords.find(r => r.grn_number === grnNumber || String(r.id) === String(grnNumber));
+    const id = rec?.id || parseInt(String(grnNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = rec?.grn_number || grnNumber;
+
+    this.openActionConfirmModal({
+      type: "cancel",
+      title: "Cancel GRN",
+      questionPrefix: "Are you sure you want to cancel",
+      targetLabel: label,
+      subtext: "This will update the GRN status to Cancelled.",
+      confirmHtml: '<i class="fa-solid fa-xmark"></i> Yes, Cancel GRN',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updateGrnStatus(id, "Cancelled");
+          this.renderTable();
+          this.supplierHandler.populateGrnStatusFilter();
+          this.metricsProcess.renderKPIs();
+          this.showToast(`GRN ${label} cancelled.`, "info");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to cancel GRN", "error");
+        }
+      }
+    });
+  }
+
+  async approvePO(poNumber) {
+    const po = this.dataLoader.purchaseOrders.find(p => p.po_number === poNumber || String(p.id) === String(poNumber));
+    const id = po?.id || parseInt(String(poNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = po?.po_number || poNumber;
+
+    this.openActionConfirmModal({
+      type: "approve",
+      title: "Approve Purchase Order",
+      questionPrefix: "Are you sure you want to approve",
+      targetLabel: label,
+      subtext: "This will update the Purchase Order status to Approved.",
+      confirmHtml: '<i class="fa-solid fa-check"></i> Yes, Approve PO',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Approving...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updatePoStatus(id, 2);
+          this.renderPOTable();
+          this.renderSuppliersGrid();
+          this.supplierHandler.populatePOStatusFilter();
+          this.metricsProcess.renderOpenPoBadge();
+          this.showToast(`Purchase Order ${label} approved successfully!`, "success");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to approve Purchase Order", "error");
+        }
+      }
+    });
+  }
+
+  async cancelPO(poNumber) {
+    const po = this.dataLoader.purchaseOrders.find(p => p.po_number === poNumber || String(p.id) === String(poNumber));
+    const id = po?.id || parseInt(String(poNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = po?.po_number || poNumber;
+
+    this.openActionConfirmModal({
+      type: "cancel",
+      title: "Cancel Purchase Order",
+      questionPrefix: "Are you sure you want to cancel",
+      targetLabel: label,
+      subtext: "This will update the Purchase Order status to Cancelled.",
+      confirmHtml: '<i class="fa-solid fa-xmark"></i> Yes, Cancel PO',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updatePoStatus(id, 4);
+          this.renderPOTable();
+          this.renderSuppliersGrid();
+          this.supplierHandler.populatePOStatusFilter();
+          this.metricsProcess.renderOpenPoBadge();
+          this.showToast(`Purchase Order ${label} cancelled.`, "info");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to cancel Purchase Order", "error");
+        }
+      }
+    });
+  }
   updatePurchaseOrderStatus(num, items) { this.grnFormProcess.updatePurchaseOrderStatus(num, items); }
 
   // Modal Delegations (Backward compatibility for HTML onclick and external calls)
@@ -405,6 +666,38 @@ export class GRNManager {
   triggerPrintGrn() { this.modalHandler.triggerPrintGrn(); }
 
   viewPO(poNumber) { this.modalHandler.viewPO(poNumber); }
+  printPO(poNumber) {
+    this.viewPO(poNumber);
+    setTimeout(() => this.triggerPrintPO(), 150);
+  }
+  async restorePO(poNumber) {
+    const po = this.dataLoader.purchaseOrders.find(p => p.po_number === poNumber || String(p.id) === String(poNumber));
+    const id = po?.id || parseInt(String(poNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = po?.po_number || poNumber;
+
+    this.openActionConfirmModal({
+      type: "restore",
+      title: "Restore Purchase Order",
+      questionPrefix: "Are you sure you want to restore",
+      targetLabel: label,
+      subtext: "This will move the Purchase Order back to Pending status.",
+      confirmHtml: '<i class="fa-solid fa-rotate-left"></i> Yes, Restore PO',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Restoring...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updatePoStatus(id, 1);
+          this.renderPOTable();
+          this.renderSuppliersGrid();
+          this.supplierHandler.populatePOStatusFilter();
+          this.metricsProcess.renderOpenPoBadge();
+          this.showToast(`Purchase Order ${label} restored to Pending.`, "success");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to restore Purchase Order", "error");
+        }
+      }
+    });
+  }
   triggerPrintPO() { this.modalHandler.triggerPrintPO(); }
 
   openCreatePOModal(defaultSupplier = null) { this.modalHandler.openCreatePOModal(defaultSupplier); }

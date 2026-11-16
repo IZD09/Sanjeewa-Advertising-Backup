@@ -34,7 +34,7 @@
               <div id="billModalInfoTitle" style="font-size: 14px; font-weight: 800; color: var(--text);">-</div>
               <div id="billModalInfoMeta" style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">Provider • Account #</div>
             </div>
-            <div style="text-align: right;">
+            <div style="text-align: right; white-space: nowrap; flex-shrink: 0;">
               <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Amount Due</span>
               <div id="billModalInfoDueAmount" style="font-size: 17px; font-weight: 900; color: #ef4444; margin-top: 2px;">Rs. 0.00</div>
             </div>

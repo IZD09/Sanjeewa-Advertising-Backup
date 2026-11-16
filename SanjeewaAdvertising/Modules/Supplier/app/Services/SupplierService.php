@@ -44,6 +44,11 @@ class SupplierService
             });
         }
 
+        $status = $filters['status'] ?? null;
+        if (! empty($status) && $status !== 'ALL') {
+            $query->where('status', $status);
+        }
+
         $sortBy = (string) ($filters['sort_by'] ?? 'id');
         $sortOrder = strtolower((string) ($filters['sort_order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $allowedSorts = ['id', 'name', 'mobile', 'email'];
@@ -102,7 +107,8 @@ class SupplierService
         return Supplier::create([
             'name' => trim((string) ($data['name'] ?? '')),
             'mobile' => trim((string) ($data['mobile'] ?? '')),
-            'email' => ! empty($data['email']) ? trim((string) $data['email']) : null,
+            'email' => ! empty($data['email']) ? trim((string) $data['email']) : '',
+            'bank_account' => ! empty($data['bank_account']) ? trim((string) $data['bank_account']) : null,
         ]);
     }
 
@@ -116,13 +122,16 @@ class SupplierService
         $attributes = [];
 
         if (isset($data['name'])) {
-            $attributes['name'] = trim((string) $data['name']);
+            $attributes['name'] = trim((string) ($data['name']));
         }
         if (isset($data['mobile'])) {
-            $attributes['mobile'] = trim((string) $data['mobile']);
+            $attributes['mobile'] = trim((string) ($data['mobile']));
         }
         if (array_key_exists('email', $data)) {
-            $attributes['email'] = ! empty($data['email']) ? trim((string) $data['email']) : null;
+            $attributes['email'] = ! empty($data['email']) ? trim((string) $data['email']) : '';
+        }
+        if (array_key_exists('bank_account', $data)) {
+            $attributes['bank_account'] = ! empty($data['bank_account']) ? trim((string) $data['bank_account']) : null;
         }
 
         $supplier->update($attributes);
@@ -131,11 +140,22 @@ class SupplierService
     }
 
     /**
-     * Delete a supplier.
+     * Disable a supplier instead of permanent delete.
      */
     public function deleteSupplier(Supplier $supplier): bool
     {
-        return (bool) $supplier->delete();
+        return $supplier->update(['status' => 'Disabled']);
+    }
+
+    /**
+     * Toggle supplier active/disabled status.
+     */
+    public function toggleSupplierStatus(Supplier $supplier): Supplier
+    {
+        $newStatus = $supplier->status === 'Disabled' ? 'Active' : 'Disabled';
+        $supplier->update(['status' => $newStatus]);
+
+        return $supplier->fresh();
     }
 
     /**
@@ -190,8 +210,9 @@ class SupplierService
             'payment_terms' => '30 Days Credit',
             'address' => '',
             'tax_no' => '',
-            'bank_details' => '',
-            'status' => 'Active',
+            'bank_account' => $supplier->bank_account ?? '',
+            'bank_details' => $supplier->bank_account ?? '',
+            'status' => $supplier->status ?? 'Active',
             'purchase_orders_count' => (int) ($supplier->purchase_orders_count ?? 0),
             'pending_purchase_orders_count' => (int) ($supplier->pending_purchase_orders_count ?? 0),
         ];

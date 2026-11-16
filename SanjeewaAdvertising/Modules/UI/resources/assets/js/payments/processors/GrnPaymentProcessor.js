@@ -83,13 +83,15 @@ export class GrnPaymentProcessor {
     // 1. Dispatch request to Transaction Module via RequestHandler (POST /api/v1/grn-payments)
     let backendPayment = null;
     try {
-      const grnId = paymentData.grn_id || (parseInt(String(paymentData.grnNumber || "").replace(/\D/g, ""), 10) || 101);
+      const grnId = paymentData.grn_id || null;
 
       const grnPayload = {
-        payment: paymentData.amount,
+        payment: Number(paymentData.amount) || 0,
         grn_id: grnId,
-        payment_types_id: paymentData.payment_types_id || 1,
-        payment_statuses_id: paymentData.payment_statuses_id || (paymentData.balance <= 0 ? 2 : 3),
+        supplier_id: paymentData.supplier_id || null,
+        purchase_order_ids: paymentData.purchase_order_ids || [],
+        payment_types_id: parseInt(paymentData.payment_types_id, 10) || 1,
+        payment_statuses_id: parseInt(paymentData.payment_statuses_id, 10) || (paymentData.balance <= 0 ? 2 : 3),
         pay_date: paymentData.pay_date || `${paymentData.date} 12:00:00`,
         po_numbers: paymentData.poNumbers || [],
         notes: paymentData.notes || "",
@@ -98,6 +100,12 @@ export class GrnPaymentProcessor {
 
       const response = await this.http.post("/api/v1/grn-payments", grnPayload);
       backendPayment = response?.data || response;
+      if (backendPayment && backendPayment.grn_id) {
+        paymentData.grn_id = backendPayment.grn_id;
+        const resolvedGrnNum = `GRN-0${backendPayment.grn_id}`;
+        paymentData.grnId = resolvedGrnNum;
+        paymentData.grnNumber = resolvedGrnNum;
+      }
     } catch (apiErr) {
       console.warn("[GrnPaymentProcessor] Transaction Module API error (proceeding with local synchronization):", apiErr);
     }

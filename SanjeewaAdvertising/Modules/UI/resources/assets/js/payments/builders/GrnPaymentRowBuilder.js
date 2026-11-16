@@ -148,11 +148,6 @@ export class GrnPaymentEntity {
       <td style="font-weight: 800; color: #10b981;">${paidFormatted}</td>
       <td style="font-weight: 700; color: ${balanceColor};">${balanceFormatted}</td>
       <td>
-        <span style="font-size: 11.5px; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="${this.note || ""}">
-          ${this.note || "-"}
-        </span>
-      </td>
-      <td>
         <div class="pay-table-actions">
           <button type="button" class="pay-btn-sm" data-view-receipt="${this.payment_id || this.grn_number}" data-type="grn" title="View & Print Payment Voucher">
             <i class="fa-solid fa-receipt"></i> Voucher

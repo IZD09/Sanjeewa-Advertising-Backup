@@ -4,6 +4,7 @@ namespace Modules\Transaction\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreExpencesessRequest extends FormRequest
 {
@@ -25,6 +26,8 @@ class StoreExpencesessRequest extends FormRequest
             'pay_by' => ['nullable', 'integer', 'exists:users,id'],
             'add_date' => ['nullable', 'date'],
             'pay_at' => ['nullable', 'date'],
+            'reference' => ['nullable', 'string', 'max:50', Rule::unique('expencesess', 'reference')],
+            'settlement_note' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

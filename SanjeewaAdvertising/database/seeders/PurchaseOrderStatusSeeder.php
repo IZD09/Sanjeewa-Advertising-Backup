@@ -14,7 +14,7 @@ class PurchaseOrderStatusSeeder extends Seeder
     {
         $statuses = [
             1 => 'Pending',
-            2 => 'Partial',
+            2 => 'Approved',
             3 => 'Completed',
             4 => 'Cancelled',
         ];
