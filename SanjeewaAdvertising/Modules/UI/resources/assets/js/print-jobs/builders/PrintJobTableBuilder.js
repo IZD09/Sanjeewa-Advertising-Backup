@@ -1,4 +1,4 @@
-import { getStatusRowClass } from '../../core/StatusHelper.js';
+import { StatusHelper } from '../../core/StatusHelper.js';
 
 /**
  * PrintJobTableBuilder - Builds HTML table rows for the Print Jobs table view
@@ -24,7 +24,7 @@ export class PrintJobTableBuilder {
         const statusLower = String(job.status_name || '').toLowerCase().trim();
         const isApproved = statusLower === 'approved';
         const isCancelled = statusLower === 'cancelled' || statusLower === 'rejected';
-        const statusRowClass = getStatusRowClass(job.status_name);
+        const statusRowClass = StatusHelper.getStatusRowClass(job.status_name);
 
         return `
             <tr data-job-id="${job.id}"${statusRowClass ? ` class="${statusRowClass}"` : ''}>

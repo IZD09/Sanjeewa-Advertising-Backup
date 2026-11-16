@@ -1,4 +1,9 @@
 /**
- * SanjeewaAdvertising Dashboard Entry Point (Delegates to admin/dashboard.js)
+ * SanjeewaAdvertising Dashboard Entry Point Class (Delegates to admin/dashboard.js)
  */
-export { AdminDashboard, SanjeewaAdvertisingDashboard } from './admin/dashboard.js';
+import { AdminDashboard as BaseAdminDashboard } from "./admin/dashboard.js";
+
+export class AdminDashboard extends BaseAdminDashboard {}
+export class SanjeewaAdvertisingDashboard extends BaseAdminDashboard {}
+
+export default AdminDashboard;

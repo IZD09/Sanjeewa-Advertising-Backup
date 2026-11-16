@@ -21,7 +21,7 @@ import {
     PrintJobExportProcess,
     PrintJobMetricsProcess
 } from "./print-jobs/index.js";
-import { openCancelOrderModal } from "./core/ConfirmModalHelper.js";
+import { ConfirmModalHelper } from "./core/ConfirmModalHelper.js";
 
 export class PrintJobsManager {
     constructor() {
@@ -49,7 +49,7 @@ export class PrintJobsManager {
             onCancelJob: (jobId) => {
                 const job = this.allJobs.find(j => j.id === jobId);
                 const label = job?.order_number || job?.job_number || `Job #${jobId}`;
-                openCancelOrderModal({
+                ConfirmModalHelper.openCancelOrderModal({
                     targetLabel: label,
                     onConfirm: () => this.handleQuickStatusChange(jobId, 'Cancelled')
                 });

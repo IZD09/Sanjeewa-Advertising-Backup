@@ -7,7 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
-import { getPaymentStageRowClass } from "../../core/StatusHelper.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 
 /**
  * GrnPaymentEntity - Entity model for a GRN Stock Payment record
@@ -93,7 +93,7 @@ export class GrnPaymentEntity {
   }
 
   getStageRowClass() {
-    const fromHelper = getPaymentStageRowClass(this.stage);
+    const fromHelper = StatusHelper.getPaymentStageRowClass(this.stage);
     if (fromHelper) return fromHelper;
 
     const s = String(this.stage || "").toLowerCase().trim();

@@ -2,7 +2,7 @@
  * PrintJobTableHandler - Manages the Data Table View, filtering, and pagination
  */
 import { PrintJobTableBuilder } from "../builders/PrintJobTableBuilder.js";
-import { toggleRowActionMenu, closeAllActionMenus } from "../../core/ActionMenuHelper.js";
+import { ActionMenuHelper } from "../../core/ActionMenuHelper.js";
 
 export class PrintJobTableHandler {
     constructor(options = {}) {
@@ -90,13 +90,13 @@ export class PrintJobTableHandler {
         this.tableBody.querySelectorAll('.btn-action-more').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                toggleRowActionMenu(btn);
+                ActionMenuHelper.toggleRowActionMenu(btn);
             };
         });
 
         this.tableBody.querySelectorAll('.btn-action-details').forEach(btn => {
             btn.onclick = () => {
-                closeAllActionMenus();
+                ActionMenuHelper.closeAllActionMenus();
                 const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
                 this.onViewDetails(jobId);
             };
@@ -104,7 +104,7 @@ export class PrintJobTableHandler {
 
         this.tableBody.querySelectorAll('.btn-action-status').forEach(btn => {
             btn.onclick = () => {
-                closeAllActionMenus();
+                ActionMenuHelper.closeAllActionMenus();
                 const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
                 this.onChangeStatus(jobId);
             };
@@ -112,7 +112,7 @@ export class PrintJobTableHandler {
 
         this.tableBody.querySelectorAll('.btn-action-allocate').forEach(btn => {
             btn.onclick = () => {
-                closeAllActionMenus();
+                ActionMenuHelper.closeAllActionMenus();
                 const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
                 this.onAllocateStock(jobId);
             };

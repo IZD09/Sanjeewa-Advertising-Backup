@@ -1,5 +1,5 @@
 /**
- * User Profile Manager (Bridge & Compatibility Wrapper)
+ * User Profile Manager Class (Bridge & Compatibility Wrapper)
  * Sanjeewa Advertising Digital Printing Management System
  */
 
@@ -7,5 +7,7 @@
 
 import { ProfileManager, UserProfileManager as BaseUserProfileManager } from "../profile.js";
 
-export { ProfileManager, BaseUserProfileManager as UserProfileManager };
+export class UserProfileManager extends BaseUserProfileManager {}
+
+export { ProfileManager };
 export default ProfileManager;

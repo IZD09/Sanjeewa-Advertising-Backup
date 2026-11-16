@@ -1,5 +1,8 @@
 /**
- * Admin Login Entry Point
+ * Admin Login Entry Point Class
  */
-export { AdminLoginManager } from "./login.js";
+import { AdminLoginManager as BaseAdminLoginManager } from "./login.js";
 
+export class AdminLoginManager extends BaseAdminLoginManager {}
+
+export default AdminLoginManager;

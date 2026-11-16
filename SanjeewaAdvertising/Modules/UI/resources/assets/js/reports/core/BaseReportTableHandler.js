@@ -7,7 +7,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
-import { matchesMobile } from "../../core/MobileNumberHelper.js";
+import { MobileNumberHelper } from "../../core/MobileNumberHelper.js";
 
 export class BaseReportTableHandler extends BaseTableLoader {
   /**
@@ -239,7 +239,7 @@ export class BaseReportTableHandler extends BaseTableLoader {
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach((row) => {
       const text = row.textContent.toLowerCase();
-      const matchSearch = !q || text.includes(q) || matchesMobile(text, q);
+      const matchSearch = !q || text.includes(q) || MobileNumberHelper.matchesMobile(text, q);
       const matchFilter = !f || f === "all" || text.includes(f);
       row.style.display = matchSearch && matchFilter ? "" : "none";
     });

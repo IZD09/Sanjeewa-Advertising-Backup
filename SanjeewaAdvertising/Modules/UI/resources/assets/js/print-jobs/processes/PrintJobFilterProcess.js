@@ -1,4 +1,4 @@
-import { matchesMobile } from '../../core/MobileNumberHelper.js';
+import { MobileNumberHelper } from '../../core/MobileNumberHelper.js';
 
 /**
  * PrintJobFilterProcess - Filters and partitions print jobs
@@ -21,7 +21,7 @@ export class PrintJobFilterProcess {
                     job.job_number.toLowerCase().includes(query) ||
                     job.order_number.toLowerCase().includes(query);
                 const matchCustomer = job.customer_name.toLowerCase().includes(query) ||
-                    matchesMobile(job.customer_mobile, query);
+                    MobileNumberHelper.matchesMobile(job.customer_mobile, query);
                 const matchType = job.print_type_name.toLowerCase().includes(query);
                 const dateHaystack = [
                     job.date_search,

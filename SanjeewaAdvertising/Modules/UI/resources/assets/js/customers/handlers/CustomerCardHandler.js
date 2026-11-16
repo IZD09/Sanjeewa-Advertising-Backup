@@ -7,7 +7,7 @@
  */
 
 import { BasePaginationHandler } from "../../core/BasePaginationHandler.js";
-import { matchesMobile } from "../../core/MobileNumberHelper.js";
+import { MobileNumberHelper } from "../../core/MobileNumberHelper.js";
 import { CustomerCardBuilder } from "../builders/CustomerCardBuilder.js";
 
 export class CustomerCardHandler extends BasePaginationHandler {
@@ -70,7 +70,7 @@ export class CustomerCardHandler extends BasePaginationHandler {
     return (customers || []).filter((cust) => {
       const name = (cust.name || "").toLowerCase();
       const email = (cust.email || "").toLowerCase();
-      return name.includes(term) || matchesMobile(cust.mobile, term) || email.includes(term);
+      return name.includes(term) || MobileNumberHelper.matchesMobile(cust.mobile, term) || email.includes(term);
     });
   }
 

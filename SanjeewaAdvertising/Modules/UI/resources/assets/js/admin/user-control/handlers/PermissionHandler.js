@@ -11,7 +11,7 @@
 "use strict";
 
 import { RequestHandler } from "../../../core/RequestHandler.js";
-import { matchesMobile } from "../../../core/MobileNumberHelper.js";
+import { MobileNumberHelper } from "../../../core/MobileNumberHelper.js";
 import { PermissionMatrixBuilder } from "../builders/PermissionMatrixBuilder.js";
 
 export class PermissionHandler {
@@ -345,7 +345,7 @@ export class PermissionHandler {
         (u.first_name || "").toLowerCase().includes(query) ||
         (u.last_name || "").toLowerCase().includes(query);
       const matchUsername = (u.username || "").toLowerCase().includes(query);
-      const matchMobile = matchesMobile(u.mobile, query);
+      const matchMobile = MobileNumberHelper.matchesMobile(u.mobile, query);
       const matchRole = (u.role || "").toLowerCase().includes(query);
 
       return matchId || matchName || matchUsername || matchMobile || matchRole;

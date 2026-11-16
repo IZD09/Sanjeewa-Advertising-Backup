@@ -1,10 +1,11 @@
 /**
- * SanjeewaAdvertising - Payment Receipt Handler (Alias / Re-export)
+ * SanjeewaAdvertising - Payment Receipt Handler Class
  */
 
 import { PaymentModalHandler } from "./PaymentModalHandler.js";
 import { ReceiptModal } from "../modals/ReceiptModal.js";
 
-export { PaymentModalHandler, ReceiptModal as PaymentReceiptHandler };
-export default PaymentModalHandler;
+export class PaymentReceiptHandler extends ReceiptModal {}
 
+export { PaymentModalHandler };
+export default PaymentModalHandler;

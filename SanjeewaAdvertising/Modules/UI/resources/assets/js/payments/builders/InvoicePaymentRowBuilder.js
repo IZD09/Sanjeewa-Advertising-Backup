@@ -7,7 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
-import { getPaymentStageRowClass } from "../../core/StatusHelper.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 
 /**
  * InvoicePaymentEntity - Entity model for an Invoice / Print Job Payment record
@@ -91,7 +91,7 @@ export class InvoicePaymentEntity {
   }
 
   getStageRowClass() {
-    const fromHelper = getPaymentStageRowClass(this.stage);
+    const fromHelper = StatusHelper.getPaymentStageRowClass(this.stage);
     if (fromHelper) return fromHelper;
 
     const s = String(this.stage || "").toLowerCase().trim();

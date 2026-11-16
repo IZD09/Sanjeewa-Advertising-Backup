@@ -5,7 +5,7 @@
  */
 
 import { RequestHandler } from "../../core/RequestHandler.js";
-import { matchesMobile } from "../../core/MobileNumberHelper.js";
+import { MobileNumberHelper } from "../../core/MobileNumberHelper.js";
 
 export class CustomerHandler {
   /**
@@ -178,7 +178,7 @@ export class CustomerHandler {
     const list = this.customers || [];
     const filtered = q
       ? list.filter((c) =>
-          matchesMobile(c.mobile, q) ||
+          MobileNumberHelper.matchesMobile(c.mobile, q) ||
           (c.name && c.name.toLowerCase().includes(q)) ||
           (c.email && c.email.toLowerCase().includes(q))
         )

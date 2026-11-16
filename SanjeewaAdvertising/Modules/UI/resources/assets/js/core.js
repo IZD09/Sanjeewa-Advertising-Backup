@@ -1,33 +1,55 @@
 /**
- * SanjeewaAdvertising - Core Module
+ * SanjeewaAdvertising - Core Module Registry Class
  */
 
 import {
+  BasePaginationHandler,
   BaseTableLoader,
   BaseTableRowBuilder,
   BaseModalHandler,
   FormValidator,
   ValidatBuilder,
   RequestHandler,
-  BaseRequestHandler
+  BaseRequestHandler,
+  MobileNumberHelper,
+  ActionMenuHelper,
+  ConfirmModalHelper,
+  StatusHelper
 } from "./core/index.js";
 
+export class CoreModule {
+  static registerGlobals(target = typeof window !== "undefined" ? window : null) {
+    if (!target) return;
+    target.BasePaginationHandler = BasePaginationHandler;
+    target.BaseTableLoader = BaseTableLoader;
+    target.BaseTableRowBuilder = BaseTableRowBuilder;
+    target.BaseModalHandler = BaseModalHandler;
+    target.FormValidator = FormValidator;
+    target.ValidatBuilder = ValidatBuilder;
+    target.RequestHandler = RequestHandler;
+    target.BaseRequestHandler = BaseRequestHandler;
+    target.MobileNumberHelper = MobileNumberHelper;
+    target.ActionMenuHelper = ActionMenuHelper;
+    target.ConfirmModalHelper = ConfirmModalHelper;
+    target.StatusHelper = StatusHelper;
+  }
+}
+
+CoreModule.registerGlobals();
+
 export {
+  BasePaginationHandler,
   BaseTableLoader,
   BaseTableRowBuilder,
   BaseModalHandler,
   FormValidator,
   ValidatBuilder,
   RequestHandler,
-  BaseRequestHandler
+  BaseRequestHandler,
+  MobileNumberHelper,
+  ActionMenuHelper,
+  ConfirmModalHelper,
+  StatusHelper
 };
 
-if (typeof window !== "undefined") {
-  window.BaseTableLoader = BaseTableLoader;
-  window.BaseTableRowBuilder = BaseTableRowBuilder;
-  window.BaseModalHandler = BaseModalHandler;
-  window.FormValidator = FormValidator;
-  window.ValidatBuilder = ValidatBuilder;
-  window.RequestHandler = RequestHandler;
-  window.BaseRequestHandler = BaseRequestHandler;
-}
+export default CoreModule;

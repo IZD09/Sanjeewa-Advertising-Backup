@@ -22,7 +22,7 @@ import {
   ExportProcess,
   MetricsProcess
 } from "./grn/index.js";
-import { toggleRowActionMenu, closeAllActionMenus } from "./core/ActionMenuHelper.js";
+import { ActionMenuHelper } from "./core/ActionMenuHelper.js";
 
 export class GRNManager {
   constructor() {
@@ -403,8 +403,8 @@ export class GRNManager {
   calculateFinancials() { return this.grnFormProcess.calculateFinancials(); }
   saveGRN(isCompleted = false) { this.grnFormProcess.saveGRN(isCompleted); }
   finalizeDraftGRN(num) { this.grnFormProcess.finalizeDraftGRN(num); }
-  toggleRowMenu(triggerBtn) { toggleRowActionMenu(triggerBtn); }
-  closeRowMenus() { closeAllActionMenus(); }
+  toggleRowMenu(triggerBtn) { ActionMenuHelper.toggleRowActionMenu(triggerBtn); }
+  closeRowMenus() { ActionMenuHelper.closeAllActionMenus(); }
   openActionConfirmModal({
     type = "approve",
     title = "Confirm Action",

@@ -7,7 +7,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
-import { getStatusRowClass } from "../../core/StatusHelper.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 
 /**
  * PrintingOrder - Constructed Order Entity
@@ -29,7 +29,7 @@ export class PrintingOrder {
     const isCancelled = statusLower === "cancelled" || statusLower === "rejected";
     const canApprove = statusLower === "pending" || isCancelled;
     const canCancel = !isCancelled;
-    const statusRowClass = getStatusRowClass(this.orderStatus);
+    const statusRowClass = StatusHelper.getStatusRowClass(this.orderStatus);
     const dimensions = `${this.width} × ${this.height} ${this.unit}`;
     const totalFormatted = `Rs. ${Number(this.totalAmount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
 

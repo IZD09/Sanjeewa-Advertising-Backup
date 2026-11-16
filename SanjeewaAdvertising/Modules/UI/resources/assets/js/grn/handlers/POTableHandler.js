@@ -6,7 +6,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
-import { matchesMobile } from "../../core/MobileNumberHelper.js";
+import { MobileNumberHelper } from "../../core/MobileNumberHelper.js";
 import { PurchaseOrderRowBuilder, PurchaseOrderEntity } from "../builders/PurchaseOrderRowBuilder.js";
 
 export class POTableHandler extends BaseTableLoader {
@@ -52,7 +52,7 @@ export class POTableHandler extends BaseTableLoader {
       const matchesSearch = !term ||
         (po.po_number && po.po_number.toLowerCase().includes(term)) ||
         (po.supplier_name && po.supplier_name.toLowerCase().includes(term)) ||
-        matchesMobile(po.supplier_contact, term) ||
+        MobileNumberHelper.matchesMobile(po.supplier_contact, term) ||
         itemNames.toLowerCase().includes(term);
 
       const matchesStatus = statusFilter === "ALL" || po.status === statusFilter;

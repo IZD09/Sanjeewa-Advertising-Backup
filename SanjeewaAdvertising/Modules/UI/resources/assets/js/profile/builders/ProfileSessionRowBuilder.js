@@ -21,7 +21,16 @@ export class ProfileSessionEntity {
     this.id = data.id || "";
     this.login = data.login || "—";
     this.logout = data.logout || "—";
-    this.isActive = data.is_active ?? data.isActive ?? emptySessionLogout(data.logout);
+    this.isActive = data.is_active ?? data.isActive ?? ProfileSessionEntity.isEmptySessionLogout(data.logout);
+  }
+
+  /**
+   * Check whether a session logout value is empty or unset.
+   * @param {string|null|undefined} logoutVal
+   * @returns {boolean}
+   */
+  static isEmptySessionLogout(logoutVal) {
+    return !logoutVal || logoutVal === "—";
   }
 
   /**
@@ -44,10 +53,6 @@ export class ProfileSessionEntity {
 
     return row;
   }
-}
-
-function emptySessionLogout(logoutVal) {
-  return !logoutVal || logoutVal === "—";
 }
 
 /**

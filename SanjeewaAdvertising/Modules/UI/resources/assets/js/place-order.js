@@ -30,8 +30,8 @@ import {
   ExportProcess,
   MetricsProcess
 } from "./place-order/index.js";
-import { toggleRowActionMenu, closeAllActionMenus } from "./core/ActionMenuHelper.js";
-import { openCancelOrderModal } from "./core/ConfirmModalHelper.js";
+import { ActionMenuHelper } from "./core/ActionMenuHelper.js";
+import { ConfirmModalHelper } from "./core/ConfirmModalHelper.js";
 
 class PlaceOrderManager {
   constructor() {
@@ -328,11 +328,11 @@ class PlaceOrderManager {
   }
 
   toggleRowMenu(triggerBtn) {
-    toggleRowActionMenu(triggerBtn);
+    ActionMenuHelper.toggleRowActionMenu(triggerBtn);
   }
 
   closeRowMenus() {
-    closeAllActionMenus();
+    ActionMenuHelper.closeAllActionMenus();
   }
 
   async approveOrder(orderId) {
@@ -340,7 +340,7 @@ class PlaceOrderManager {
   }
 
   cancelOrder(orderId) {
-    openCancelOrderModal({
+    ConfirmModalHelper.openCancelOrderModal({
       targetLabel: `order ${orderId}`,
       onConfirm: () => this.updateOrderQuickStatus(orderId, "Cancelled"),
     });
