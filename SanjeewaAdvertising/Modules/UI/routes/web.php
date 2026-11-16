@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Models\Admin;
 use Modules\UI\Http\Controllers\DashboardController;
+use Modules\UI\Http\Controllers\SettingsController;
 use Modules\UI\Http\Controllers\UIController;
 use Modules\User\Http\Controllers\UserProfileController;
 use Modules\User\Models\User;
@@ -98,9 +99,17 @@ Route::middleware(['auth:web,admin'])->group(function () {
         ->middleware('module.permission:Reports')
         ->name('ui.reports');
 
-    Route::view('/settings', 'ui::layouts.pages.settings.settings')
+    Route::get('/settings', [SettingsController::class, 'index'])
         ->middleware('module.permission:Settings')
         ->name('ui.settings');
+
+    Route::post('/settings', [SettingsController::class, 'update'])
+        ->middleware('module.permission:Settings')
+        ->name('ui.settings.update');
+
+    Route::get('/settings/data', [SettingsController::class, 'getSettings'])
+        ->middleware('module.permission:Settings')
+        ->name('ui.settings.data');
 
     Route::view('/inventory', 'ui::layouts.pages.inventory.inventory')
         ->middleware('module.permission:Inventory')
