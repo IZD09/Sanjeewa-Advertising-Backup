@@ -140,7 +140,7 @@
                                             <div class="ap-tab-pane" id="tabSecurity">
                                                 <div class="ap-form-grid">
                                                     <div class="ap-form-group full">
-                                                        <label for="profCurrentPassword">Current Password <span style="color: #64748b; font-weight: 400;">(Required only when changing password)</span></label>
+                                                        <label for="profCurrentPassword">Current Password <span style="color: var(--text-muted); font-weight: 400;">(Required only when changing password)</span></label>
                                                         <input type="password" id="profCurrentPassword" name="current_password" placeholder="Enter current password" autocomplete="current-password">
                                                     </div>
                                                     <div class="ap-form-group">

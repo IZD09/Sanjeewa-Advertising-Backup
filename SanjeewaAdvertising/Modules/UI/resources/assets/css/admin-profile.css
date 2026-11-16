@@ -511,3 +511,28 @@ html[data-theme="dark"] .ap-lock-error {
     color: #fca5a5;
     border-color: rgba(239, 68, 68, 0.35);
 }
+
+html[data-theme="dark"] .ap-lock-icon-wrap {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+}
+
+html[data-theme="dark"] .ap-page-title-wrap h2 i {
+    color: #a78bfa;
+}
+
+html[data-theme="dark"] .ap-lock-btn-cancel {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ap-lock-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .ap-form-group input::placeholder,
+html[data-theme="dark"] .ap-lock-field input::placeholder {
+    color: var(--text-muted);
+}

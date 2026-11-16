@@ -915,3 +915,418 @@
     pointer-events: auto;
 }
 
+
+/* ==========================================================================
+   Theme Variable Alignment & Night / Dark Mode Support (html[data-theme="dark"])
+   ========================================================================== */
+.ant-btn {
+    text-decoration: none;
+}
+
+.uc-page-subtitle {
+    color: var(--text-muted, #64748b);
+}
+
+.uc-kpi-card,
+.uc-card,
+.uc-modal-card,
+.uc-toast {
+    background: var(--surface, #ffffff);
+    border-color: var(--border, #e2e8f0);
+}
+
+.uc-kpi-label,
+.uc-user-meta span,
+.uc-module-desc {
+    color: var(--text-muted, #64748b);
+}
+
+.uc-kpi-val,
+.uc-user-meta strong,
+.uc-module-title,
+.uc-modal-header h3,
+.uc-perm-item-name {
+    color: var(--text, #0f172a);
+}
+
+/* Dark Mode Overrides */
+html[data-theme="dark"] .ant-btn {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .ant-btn:hover {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: #3b82f6;
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .ant-btn-primary {
+    background: #1677ff;
+    border-color: #1677ff;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .ant-btn-primary:hover {
+    background: #4096ff;
+    border-color: #4096ff;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .ant-btn-secondary {
+    background: #722ed1;
+    border-color: #722ed1;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .ant-btn-secondary:hover {
+    background: #9254de;
+    border-color: #9254de;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .ant-btn-success {
+    background: #52c41a;
+    border-color: #52c41a;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .ant-btn-success:hover {
+    background: #73d13d;
+    border-color: #73d13d;
+    color: #ffffff;
+}
+
+/* KPI Summary Cards */
+html[data-theme="dark"] .uc-kpi-card {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .uc-kpi-label {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-kpi-val {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-kpi-desc {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-kpi-icon.blue {
+    background: rgba(22, 119, 255, 0.16);
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .uc-kpi-icon.purple {
+    background: rgba(114, 46, 209, 0.18);
+    color: #c4b5fd;
+}
+
+html[data-theme="dark"] .uc-kpi-icon.green {
+    background: rgba(82, 196, 26, 0.16);
+    color: #86efac;
+}
+
+html[data-theme="dark"] .uc-kpi-icon.orange {
+    background: rgba(250, 140, 22, 0.16);
+    color: #fdba74;
+}
+
+/* Main Card & Tabs */
+html[data-theme="dark"] .uc-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .uc-tabs-nav {
+    background: var(--surface-2);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .uc-tab-btn {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-tab-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="dark"] .uc-tab-btn.active {
+    color: #60a5fa;
+    border-bottom-color: #3b82f6;
+    background: var(--surface);
+}
+
+html[data-theme="dark"] .uc-tab-badge {
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-tab-btn.active .uc-tab-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+}
+
+/* Search Box & Filters */
+html[data-theme="dark"] .uc-search-box input,
+html[data-theme="dark"] .ant-select {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-search-box input:focus,
+html[data-theme="dark"] .ant-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Tables (.ant-table used across User Control & Admin Profile) */
+html[data-theme="dark"] .uc-table-responsive {
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .ant-table th {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .ant-table td {
+    color: var(--text);
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .ant-table tbody tr:hover {
+    background: var(--surface-2);
+}
+
+/* User Cells & Avatars */
+html[data-theme="dark"] .uc-user-avatar {
+    background: rgba(14, 165, 233, 0.18);
+    color: #7dd3fc;
+}
+
+html[data-theme="dark"] .uc-user-avatar.admin {
+    background: rgba(168, 85, 247, 0.2);
+    color: #d8b4fe;
+}
+
+html[data-theme="dark"] .uc-user-meta strong {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-user-meta span {
+    color: var(--text-muted);
+}
+
+/* Tags / Status Pills */
+html[data-theme="dark"] .ant-tag-green {
+    background: rgba(82, 196, 26, 0.15);
+    border-color: rgba(82, 196, 26, 0.35);
+    color: #86efac;
+}
+
+html[data-theme="dark"] .ant-tag-blue {
+    background: rgba(22, 119, 255, 0.16);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .ant-tag-purple {
+    background: rgba(114, 46, 209, 0.18);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: #c4b5fd;
+}
+
+html[data-theme="dark"] .ant-tag-orange {
+    background: rgba(250, 140, 22, 0.16);
+    border-color: rgba(250, 140, 22, 0.35);
+    color: #fdba74;
+}
+
+html[data-theme="dark"] .ant-tag-red {
+    background: rgba(245, 34, 45, 0.16);
+    border-color: rgba(245, 34, 45, 0.35);
+    color: #fca5a5;
+}
+
+html[data-theme="dark"] .ant-tag-default {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+/* Table Action Buttons */
+html[data-theme="dark"] .ant-action-btn {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .ant-action-btn:hover {
+    background: rgba(59, 130, 246, 0.16);
+    border-color: #3b82f6;
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .ant-action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+/* Permissions Matrix Toolbar & Combobox */
+html[data-theme="dark"] .uc-perm-header {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .uc-perm-user-picker label {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-perm-search-box input {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-perm-search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-perm-dropdown-toggle {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-perm-dropdown-toggle:hover {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.15);
+}
+
+html[data-theme="dark"] .uc-perm-search-results {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .uc-perm-search-item {
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .uc-perm-search-item:hover,
+html[data-theme="dark"] .uc-perm-search-item.highlighted {
+    background: var(--surface-2);
+}
+
+html[data-theme="dark"] .uc-perm-item-id {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .uc-perm-item-name {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-perm-item-name small {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-perm-item-role {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .uc-module-title {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-module-desc {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .ant-switch {
+    background-color: rgba(148, 163, 184, 0.3);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="dark"] .ant-switch.checked {
+    background-color: #1677ff;
+    border-color: transparent;
+}
+
+/* Modals (Add User / Add Admin) */
+html[data-theme="dark"] .uc-modal-overlay {
+    background: rgba(2, 6, 23, 0.72);
+}
+
+html[data-theme="dark"] .uc-modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .uc-modal-header {
+    border-bottom-color: var(--border);
+}
+
+html[data-theme="dark"] .uc-modal-header h3 {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-modal-close {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-modal-close:hover {
+    color: var(--text);
+    background: var(--surface-2);
+}
+
+html[data-theme="dark"] .uc-form-group label {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-form-group input,
+html[data-theme="dark"] .uc-form-group select {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .uc-form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .uc-form-group input:focus,
+html[data-theme="dark"] .uc-form-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="dark"] .uc-modal-footer {
+    background: var(--surface-2);
+    border-top-color: var(--border);
+}
+
+/* Toast Notification */
+html[data-theme="dark"] .uc-toast {
+    background: var(--surface);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
