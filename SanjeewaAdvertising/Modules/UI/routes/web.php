@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Modules\Admin\Models\Admin;
 use Modules\UI\Http\Controllers\DashboardController;
+use Modules\UI\Http\Controllers\SettingsController;
 use Modules\UI\Http\Controllers\UIController;
 use Modules\User\Http\Controllers\UserProfileController;
 use Modules\User\Models\User;
@@ -13,13 +15,25 @@ use Modules\User\Models\User;
 
 Route::get('/login', function () {
     if (Auth::guard('admin')->check()) {
-        return redirect()->route('admin.dashboard');
+        /** @var Admin|null $admin */
+        $admin = Auth::guard('admin')->user();
+        if ($admin && method_exists($admin, 'canAccessModule') && $admin->canAccessModule('Dashboard')) {
+            return redirect()->route('admin.dashboard');
+        }
+        Auth::guard('admin')->logout();
     }
     if (Auth::guard('web')->check()) {
         /** @var User|null $user */
         $user = Auth::guard('web')->user();
+        $target = $user && method_exists($user, 'getDefaultLandingRoute')
+            ? $user->getDefaultLandingRoute()
+            : route('ui.user-profile');
 
-        return redirect($user && method_exists($user, 'getDefaultLandingRoute') ? $user->getDefaultLandingRoute() : route('ui.dashboard'));
+        if (empty($target) || $target === route('login') || $target === url('/login')) {
+            $target = route('ui.user-profile');
+        }
+
+        return redirect($target);
     }
 
     return view('ui::layouts.pages.login.login');
@@ -27,7 +41,12 @@ Route::get('/login', function () {
 
 Route::get('/admin/login', function () {
     if (Auth::guard('admin')->check()) {
-        return redirect()->route('admin.dashboard');
+        /** @var Admin|null $admin */
+        $admin = Auth::guard('admin')->user();
+        if ($admin && method_exists($admin, 'canAccessModule') && $admin->canAccessModule('Dashboard')) {
+            return redirect()->route('admin.dashboard');
+        }
+        Auth::guard('admin')->logout();
     }
     if (Auth::guard('web')->check()) {
         /** @var User|null $user */
@@ -37,7 +56,15 @@ Route::get('/admin/login', function () {
             return redirect()->route('admin.dashboard');
         }
 
-        return redirect($user && method_exists($user, 'getDefaultLandingRoute') ? $user->getDefaultLandingRoute() : route('ui.dashboard'));
+        $target = $user && method_exists($user, 'getDefaultLandingRoute')
+            ? $user->getDefaultLandingRoute()
+            : route('ui.user-profile');
+
+        if (empty($target) || $target === route('admin.login') || $target === url('/admin/login')) {
+            $target = route('ui.user-profile');
+        }
+
+        return redirect($target);
     }
 
     return view('ui::layouts.admin.pages.login.login');
@@ -72,9 +99,17 @@ Route::middleware(['auth:web,admin'])->group(function () {
         ->middleware('module.permission:Reports')
         ->name('ui.reports');
 
-    Route::view('/settings', 'ui::layouts.pages.settings.settings')
+    Route::get('/settings', [SettingsController::class, 'index'])
         ->middleware('module.permission:Settings')
         ->name('ui.settings');
+
+    Route::post('/settings', [SettingsController::class, 'update'])
+        ->middleware('module.permission:Settings')
+        ->name('ui.settings.update');
+
+    Route::get('/settings/data', [SettingsController::class, 'getSettings'])
+        ->middleware('module.permission:Settings')
+        ->name('ui.settings.data');
 
     Route::view('/inventory', 'ui::layouts.pages.inventory.inventory')
         ->middleware('module.permission:Inventory')

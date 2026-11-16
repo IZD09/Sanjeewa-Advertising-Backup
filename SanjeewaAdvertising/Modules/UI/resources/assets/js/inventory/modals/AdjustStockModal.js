@@ -2,20 +2,23 @@
  * SanjeewaAdvertising - Adjust Stock Modal
  *
  * Handles stock adjustment modal dialog (#adjustStockModal),
- * ADD / DEDUCT mode switching, batch calculations, and saving adjustments.
+ * displays selected item name (editable false), initializes adjustment quantity with current stock,
+ * enables (+) Add Stock / (-) Deduct Stock quantity steppers, and persists stock adjustment
+ * to the backend database with audit movement logging.
  *
  * Extends BaseModalHandler core class.
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { RequestHandler } from "../../core/RequestHandler.js";
 
 export class AdjustStockModal extends BaseModalHandler {
   /**
    * @param {Object} context
    * @param {Function} context.getItems
-   * @param {Function} context.saveData
-   * @param {Function} context.render
-   * @param {Function} context.formatCurrency
+   * @param {Function} [context.saveData]
+   * @param {Function} [context.render]
+   * @param {Function} [context.formatCurrency]
    */
   constructor(context) {
     super({
@@ -27,29 +30,30 @@ export class AdjustStockModal extends BaseModalHandler {
     });
 
     this.ctx = context;
+    this.http = new RequestHandler();
     this.currentContextItem = null;
+    this.currentStockId = null;
+    this.baseQty = 0;
     this.currentAdjustmentType = "ADD"; // "ADD" or "DEDUCT"
 
     this.bindEvents();
   }
 
   bindEvents() {
-    // Adjustment modal segmented options toggle
+    // Adjustment modal segmented options toggle + quantity stepper
     const addOption = document.getElementById("adjTypeAdd");
     const deductOption = document.getElementById("adjTypeDeduct");
-    if (addOption && deductOption) {
-      addOption.addEventListener("click", () => this.setAdjustmentType("ADD"));
-      deductOption.addEventListener("click", () => this.setAdjustmentType("DEDUCT"));
+    if (addOption) {
+      addOption.addEventListener("click", () => this.stepAdjustment("ADD"));
+    }
+    if (deductOption) {
+      deductOption.addEventListener("click", () => this.stepAdjustment("DEDUCT"));
     }
 
-    // Adjustment quantity input & batch live calculation
+    // Adjustment quantity input live calculation and automatic type detection
     const adjQtyInput = document.getElementById("adjQtyInput");
-    const adjBatchSelect = document.getElementById("adjBatchSelect");
     if (adjQtyInput) {
-      adjQtyInput.addEventListener("input", () => this.updateAdjustmentImpact());
-    }
-    if (adjBatchSelect) {
-      adjBatchSelect.addEventListener("change", () => this.updateAdjustmentImpact());
+      adjQtyInput.addEventListener("input", () => this.onQtyInputChange());
     }
 
     // Save Adjustment button
@@ -59,12 +63,30 @@ export class AdjustStockModal extends BaseModalHandler {
     }
   }
 
-  openAdjustModal(itemCode) {
+  /**
+   * Open the Adjust Stock modal for a selected stock batch.
+   *
+   * @param {string|number} itemCode
+   * @param {string|number|null} [stockId=null]
+   */
+  openAdjustModal(itemCode, stockId = null) {
     const items = this.ctx.getItems ? this.ctx.getItems() : [];
-    const item = items.find(i => i.code === itemCode);
+    let item = null;
+
+    if (stockId) {
+      item = items.find(i => String(i.id) === String(stockId) || String(i.stock_id) === String(stockId));
+    }
+    if (!item && itemCode) {
+      item = items.find(i => i.code === itemCode);
+    }
+    if (!item && items.length > 0) {
+      item = items.find(i => String(i.id) === String(itemCode) || String(i.stock_id) === String(itemCode));
+    }
     if (!item) return;
 
     this.currentContextItem = item;
+    this.currentStockId = stockId || item.id || item.stock_id || null;
+    this.baseQty = parseInt(item.qty ?? item.currentStock ?? 0, 10) || 0;
     this.currentAdjustmentType = "ADD";
 
     // Set Modal Title
@@ -73,37 +95,94 @@ export class AdjustStockModal extends BaseModalHandler {
       titleElem.innerHTML = `<i class="fa-solid fa-sliders" style="color: #faad14;"></i> Adjust Stock — ${item.name} <span class="inv-item-code" style="margin-left: 8px;">${item.code}</span>`;
     }
 
-    // Populate Batch Dropdown
-    const batchSelect = document.getElementById("adjBatchSelect");
-    if (batchSelect) {
-      batchSelect.innerHTML = "";
-      if (item.batches && item.batches.length > 0) {
-        item.batches.forEach(b => {
-          const opt = document.createElement("option");
-          opt.value = b.id;
-          const costStr = this.ctx.formatCurrency ? this.ctx.formatCurrency(b.unitCost) : b.unitCost;
-          opt.textContent = `${b.id} — Available: ${b.availableQty} ${item.unit} (Unit Cost: ${costStr})`;
-          batchSelect.appendChild(opt);
-        });
-      } else {
-        batchSelect.innerHTML = `<option value="">No existing batches available</option>`;
-      }
+    // Set Item Name (readonly / editable false input field)
+    const itemNameInput = document.getElementById("adjItemNameInput");
+    if (itemNameInput) {
+      itemNameInput.value = item.name || item.code || "";
+    }
+    const stockIdInput = document.getElementById("adjStockId");
+    if (stockIdInput) {
+      stockIdInput.value = String(this.currentStockId || "");
+    }
+    const batchHidden = document.getElementById("adjBatchSelect");
+    if (batchHidden) {
+      batchHidden.value = String(this.currentStockId || "");
     }
 
-    // Reset Form Fields
-    this.setAdjustmentType("ADD");
+    // Set Adjustment Quantity input to selected value's current quantity
     const qtyInput = document.getElementById("adjQtyInput");
-    if (qtyInput) qtyInput.value = "";
+    if (qtyInput) {
+      qtyInput.value = this.baseQty;
+    }
+
+    // Set Adjustment Type back to default
+    this.setAdjustmentType("ADD", false);
+
+    // Reset Reason & Remarks
     const reasonSelect = document.getElementById("adjReasonSelect");
-    if (reasonSelect) reasonSelect.selectedIndex = 0;
+    if (reasonSelect) {
+      reasonSelect.selectedIndex = 0;
+    }
     const remarksInput = document.getElementById("adjRemarksInput");
-    if (remarksInput) remarksInput.value = "";
+    if (remarksInput) {
+      remarksInput.value = "";
+    }
 
     this.updateAdjustmentImpact();
     this.openModal("adjustStockModal");
   }
 
-  setAdjustmentType(type) {
+  /**
+   * Handle click on (+) Add Stock or (-) Deduct Stock button:
+   * switches the active mode and steps the quantity up or down.
+   *
+   * @param {"ADD" | "DEDUCT"} type
+   */
+  stepAdjustment(type) {
+    this.setAdjustmentType(type, false);
+    const qtyInput = document.getElementById("adjQtyInput");
+    if (!qtyInput) return;
+
+    let currentVal = parseInt(qtyInput.value, 10);
+    if (isNaN(currentVal)) {
+      currentVal = this.baseQty;
+    }
+
+    if (type === "ADD") {
+      qtyInput.value = currentVal + 1;
+    } else if (type === "DEDUCT") {
+      if (currentVal > 0) {
+        qtyInput.value = currentVal - 1;
+      }
+    }
+
+    this.updateAdjustmentImpact();
+  }
+
+  /**
+   * Handle user typing directly into the Adjustment Quantity field.
+   */
+  onQtyInputChange() {
+    const qtyInput = document.getElementById("adjQtyInput");
+    if (!qtyInput) return;
+
+    const val = parseInt(qtyInput.value, 10) || 0;
+    if (val >= this.baseQty) {
+      this.setAdjustmentType("ADD", false);
+    } else {
+      this.setAdjustmentType("DEDUCT", false);
+    }
+
+    this.updateAdjustmentImpact();
+  }
+
+  /**
+   * Update active segmented state between (+) Add Stock and (-) Deduct Stock.
+   *
+   * @param {"ADD" | "DEDUCT"} type
+   * @param {boolean} [triggerImpact=true]
+   */
+  setAdjustmentType(type, triggerImpact = true) {
     this.currentAdjustmentType = type;
     const addBtn = document.getElementById("adjTypeAdd");
     const deductBtn = document.getElementById("adjTypeDeduct");
@@ -117,95 +196,116 @@ export class AdjustStockModal extends BaseModalHandler {
         deductBtn.className = "inv-segmented-option active deduct";
       }
     }
-    this.updateAdjustmentImpact();
+
+    if (triggerImpact) {
+      this.updateAdjustmentImpact();
+    }
   }
 
+  /**
+   * Calculate and render financial impact and difference preview.
+   */
   updateAdjustmentImpact() {
     if (!this.currentContextItem) return;
 
-    const batchSelect = document.getElementById("adjBatchSelect");
     const qtyInput = document.getElementById("adjQtyInput");
     const impactElem = document.getElementById("adjImpactValue");
     if (!impactElem) return;
 
-    const selectedBatchId = batchSelect?.value;
-    const batch = this.currentContextItem.batches?.find(b => b.id === selectedBatchId);
-    const unitCost = batch ? (parseFloat(batch.unitCost) || 0) : (this.currentContextItem.unitPrice || 0);
-    const qty = parseFloat(qtyInput?.value) || 0;
-    const totalImpact = qty * unitCost;
+    const targetQty = parseInt(qtyInput?.value, 10) || 0;
+    const diff = targetQty - this.baseQty;
+    const unitPrice = parseFloat(this.currentContextItem.unitPrice ?? this.currentContextItem.buyPrice ?? 0) || 0;
+    const impactVal = Math.abs(diff) * unitPrice;
 
-    const prefix = this.currentAdjustmentType === "ADD" ? "(+) " : "(-) ";
-    const color = this.currentAdjustmentType === "ADD" ? "#52c41a" : "#ff4d4f";
-    const costStr = this.ctx.formatCurrency ? this.ctx.formatCurrency(unitCost) : unitCost;
-    const totalStr = this.ctx.formatCurrency ? this.ctx.formatCurrency(totalImpact) : totalImpact;
+    const formatCurrency = this.ctx.formatCurrency || ((amt) => `Rs. ${(parseFloat(amt) || 0).toLocaleString("en-LK", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`);
 
-    impactElem.innerHTML = `<span style="color: ${color}; font-weight: 800;">${prefix}${totalStr}</span> <span style="font-size: 11px; color: var(--text-muted);">(${qty} × ${costStr})</span>`;
+    const unit = this.currentContextItem.unit || "Units";
+    const costStr = formatCurrency(unitPrice);
+    const impactStr = formatCurrency(impactVal);
+
+    if (diff > 0) {
+      impactElem.innerHTML = `<span style="color: #52c41a; font-weight: 800;">(+) ${impactStr}</span> <span style="font-size: 11px; color: var(--text-muted);">(+${diff} ${unit} × ${costStr})</span>`;
+    } else if (diff < 0) {
+      impactElem.innerHTML = `<span style="color: #ff4d4f; font-weight: 800;">(-) ${impactStr}</span> <span style="font-size: 11px; color: var(--text-muted);">(${diff} ${unit} × ${costStr})</span>`;
+    } else {
+      impactElem.innerHTML = `<span style="color: var(--text-muted); font-weight: 600;">Rs. 0.00</span> <span style="font-size: 11px; color: var(--text-muted);">(No quantity change)</span>`;
+    }
   }
 
-  saveStockAdjustment() {
+  /**
+   * Persist stock adjustment to the database via API endpoint.
+   */
+  async saveStockAdjustment() {
     if (!this.currentContextItem) return;
 
-    const batchSelect = document.getElementById("adjBatchSelect");
+    const stockId = this.currentStockId || this.currentContextItem.id || this.currentContextItem.stock_id;
     const qtyInput = document.getElementById("adjQtyInput");
     const reasonSelect = document.getElementById("adjReasonSelect");
     const remarksInput = document.getElementById("adjRemarksInput");
+    const saveBtn = document.getElementById("saveStockAdjustmentBtn");
 
-    const batchId = batchSelect?.value;
-    const qty = parseFloat(qtyInput?.value);
-    const reason = reasonSelect?.value;
+    if (!stockId) {
+      this.showToast("Stock identifier missing for adjustment", "error");
+      return;
+    }
+
+    const targetQty = parseInt(qtyInput?.value, 10);
+    if (isNaN(targetQty) || targetQty < 0) {
+      this.showToast("Please enter a valid non-negative adjustment quantity", "error");
+      return;
+    }
+
+    const diff = targetQty - this.baseQty;
+    const reason = reasonSelect?.value || "Physical Count Mismatch";
     const remarks = remarksInput?.value?.trim() || "";
 
-    if (!batchId) {
-      this.showToast("Please select a batch for this adjustment", "error");
-      return;
-    }
-
-    if (!qty || qty <= 0) {
-      this.showToast("Please enter a valid positive adjustment quantity", "error");
-      return;
-    }
-
-    const batch = this.currentContextItem.batches?.find(b => b.id === batchId);
-    if (!batch) {
-      this.showToast("Selected batch could not be found", "error");
-      return;
-    }
-
-    if (this.currentAdjustmentType === "DEDUCT") {
-      if (qty > batch.availableQty) {
-        this.showToast(`Cannot deduct ${qty} ${this.currentContextItem.unit}. Batch ${batchId} only has ${batch.availableQty} available.`, "error");
-        return;
-      }
-      batch.availableQty -= qty;
-    } else {
-      batch.availableQty += qty;
-    }
-
-    const now = new Date();
-    const dateStr = now.toISOString().replace("T", " ").substring(0, 16);
-    const txnId = `TXN-${Date.now().toString().slice(-4)}`;
-
-    if (!this.currentContextItem.transactions) {
-      this.currentContextItem.transactions = [];
-    }
-
-    this.currentContextItem.transactions.unshift({
-      id: txnId,
-      date: dateStr,
-      type: this.currentAdjustmentType,
-      batchId: batchId,
-      qty: qty,
+    const payload = {
+      stock_id: stockId,
+      adjustment_type: this.currentAdjustmentType,
+      new_qty: targetQty,
+      qty: Math.abs(diff),
       reason: reason,
-      operator: "Admin User",
       remarks: remarks
-    });
+    };
 
-    if (this.ctx.saveData) this.ctx.saveData();
-    this.closeModal("adjustStockModal");
-    if (this.ctx.render) this.ctx.render();
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
 
-    const actionText = this.currentAdjustmentType === "ADD" ? "added to" : "deducted from";
-    this.showToast(`Successfully ${actionText} ${this.currentContextItem.code} (${qty} ${this.currentContextItem.unit})!`, "success");
+    try {
+      const response = await this.http.post(`/api/v1/inventory/stocks/${stockId}/adjust`, payload);
+
+      if (response && response.success) {
+        this.closeModal("adjustStockModal");
+        const actionWord = diff >= 0 ? "increased to" : "reduced to";
+        this.showToast(`Stock for ${this.currentContextItem.name || this.currentContextItem.code} successfully adjusted (${this.baseQty} -> ${targetQty})!`, "success");
+
+        // Refresh live tables and statistics
+        if (window.inventoryManager?.tableHandler) {
+          await window.inventoryManager.tableHandler.fetchData();
+        }
+        if (window.inventoryManager?.movementsHandler) {
+          window.inventoryManager.movementsHandler.fetchStats();
+          window.inventoryManager.movementsHandler.fetchMovements(1);
+        }
+        if (window.inventoryManager?.stockItemsHandler) {
+          window.inventoryManager.stockItemsHandler.fetchData();
+        }
+      } else {
+        throw new Error(response?.message || "Failed to adjust stock");
+      }
+    } catch (err) {
+      console.error("Error saving stock adjustment:", err);
+      this.showToast(err.message || "Failed to save stock adjustment", "error");
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Adjustment';
+      }
+    }
   }
 }
-

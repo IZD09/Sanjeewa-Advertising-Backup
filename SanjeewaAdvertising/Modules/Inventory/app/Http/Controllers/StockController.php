@@ -68,4 +68,37 @@ class StockController extends BaseApiController
 
         return $this->success($transformed, 'Stock record retrieved successfully.');
     }
+
+    /**
+     * Adjust an existing stock entry (Quantity adjustment, audit, damage, etc.).
+     */
+    public function adjust(Request $request, Stock $stock): JsonResponse
+    {
+        $validated = $request->validate([
+            'adjustment_type' => ['nullable', 'string', 'in:ADD,DEDUCT,add,deduct'],
+            'qty' => ['nullable', 'numeric'],
+            'new_qty' => ['nullable', 'numeric'],
+            'reason' => ['nullable', 'string', 'max:100'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $updated = $this->stockService->adjustStock($stock, $validated);
+        $transformed = $this->stockService->transformStockRecord($updated);
+
+        return $this->success($transformed, 'Stock quantity adjusted successfully.');
+    }
+
+    /**
+     * Adjust stock directly by providing stock_id in request body.
+     */
+    public function adjustDirect(Request $request): JsonResponse
+    {
+        $request->validate([
+            'stock_id' => ['required', 'integer', 'exists:stock,id'],
+        ]);
+
+        $stock = Stock::findOrFail((int) $request->input('stock_id'));
+
+        return $this->adjust($request, $stock);
+    }
 }

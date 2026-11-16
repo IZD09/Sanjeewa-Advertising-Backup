@@ -45,7 +45,7 @@ export class InventoryModalHandler extends BaseModalHandler {
   openViewModal(itemCode) { this.viewStockModal.openViewModal(itemCode); }
 
   // Adjust Stock Modal Delegations
-  openAdjustModal(itemCode) { this.adjustStockModal.openAdjustModal(itemCode); }
+  openAdjustModal(itemCode, stockId = null) { this.adjustStockModal.openAdjustModal(itemCode, stockId); }
   onAdjustmentTypeChange(type) { this.adjustStockModal.onAdjustmentTypeChange(type); }
   onAdjustBatchSelect(batchId) { this.adjustStockModal.onAdjustBatchSelect(batchId); }
   onAdjustQtyChange(qty) { this.adjustStockModal.onAdjustQtyChange(qty); }

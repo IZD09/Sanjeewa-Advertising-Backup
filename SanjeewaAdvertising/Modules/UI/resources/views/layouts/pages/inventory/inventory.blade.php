@@ -898,15 +898,15 @@
               </div>
 
               <div class="po-modal-body" style="gap: 16px;">
-                <!-- 1. Select Batch Dropdown -->
+                <!-- 1. Item Name Input (Read-only / Editable False) -->
                 <div class="po-field">
-                  <label class="po-label" for="adjBatchSelect">
-                    <span>Select Batch <span class="req">*</span></span>
-                    <span class="hint">Includes batch available quantity & unit cost</span>
+                  <label class="po-label" for="adjItemNameInput">
+                    <span>Item Name <span class="req">*</span></span>
+                    <span class="hint">Selected material item from detailed stock batches</span>
                   </label>
-                  <select id="adjBatchSelect" name="adj_batch" class="inv-select" style="width: 100%;">
-                    <!-- Populated dynamically -->
-                  </select>
+                  <input type="text" id="adjItemNameInput" name="adj_item_name" class="inv-search-input" readonly style="background-color: #f5f5f5; cursor: not-allowed; font-weight: 600;" placeholder="Material Item Name">
+                  <input type="hidden" id="adjStockId" name="adj_stock_id" value="">
+                  <input type="hidden" id="adjBatchSelect" name="adj_batch" value="">
                 </div>
 
                 <!-- 2. Adjustment Type: (+) Add or (-) Deduct -->

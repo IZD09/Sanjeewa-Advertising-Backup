@@ -95,7 +95,7 @@ class AuthenticationAndPermissionTest extends TestCase
         $responseDash->assertStatus(200);
     }
 
-    public function test_user_without_module_permission_is_redirected_to_dashboard(): void
+    public function test_user_with_zero_module_permissions_is_redirected_to_profile(): void
     {
         $activeStatus = UserStatus::where('user_status', 'Active')->first();
         $user = User::create([
@@ -109,9 +109,57 @@ class AuthenticationAndPermissionTest extends TestCase
             'user_statuses_id' => $activeStatus->id,
         ]);
 
-        // User has no permission for Inventory
+        // User has zero permissions; attempting to access Inventory redirects to /profile
         $response = $this->actingAs($user, 'web')->get('/inventory');
 
+        $response->assertRedirect('/profile');
+        $response->assertSessionHas('error');
+    }
+
+    public function test_authenticated_user_with_zero_module_permissions_visiting_login_redirects_to_profile(): void
+    {
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'No',
+            'last_name' => 'Perms',
+            'mobile' => '0779998811',
+            'username' => 'noperms_'.uniqid(),
+            'password' => Hash::make('secret123'),
+            'register_at' => now(),
+            'is_login' => 0,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get('/login');
+        $response->assertRedirect('/profile');
+    }
+
+    public function test_user_with_dashboard_permission_is_redirected_to_dashboard_from_unauthorized_module(): void
+    {
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'Dash',
+            'last_name' => 'User',
+            'mobile' => '0779998822',
+            'username' => 'dashuser_'.uniqid(),
+            'password' => Hash::make('secret123'),
+            'register_at' => now(),
+            'is_login' => 0,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        $dashboardModule = SystemModule::where('system_module', 'Dashboard')->first();
+        SystemModuleUser::create([
+            'users_id' => $user->id,
+            'system_modules_id' => $dashboardModule->id,
+            'view' => 1,
+            'create' => 0,
+            'edit' => 0,
+            'delete' => 0,
+            'export' => 0,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get('/inventory');
         $response->assertRedirect('/dashboard');
         $response->assertSessionHas('error');
     }
@@ -160,6 +208,17 @@ class AuthenticationAndPermissionTest extends TestCase
             'user_statuses_id' => $activeStatus->id,
         ]);
 
+        $dashboardModule = SystemModule::where('system_module', 'Dashboard')->first();
+        SystemModuleUser::create([
+            'users_id' => $user->id,
+            'system_modules_id' => $dashboardModule->id,
+            'view' => 1,
+            'create' => 0,
+            'edit' => 0,
+            'delete' => 0,
+            'export' => 0,
+        ]);
+
         $customerModule = SystemModule::where('system_module', 'Customers')->first();
 
         SystemModuleUser::create([
@@ -174,6 +233,36 @@ class AuthenticationAndPermissionTest extends TestCase
 
         $response = $this->actingAs($user, 'web')->get('/customers');
         $response->assertRedirect('/dashboard');
+    }
+
+    public function test_inactive_admin_cannot_access_admin_dashboard_and_is_logged_out(): void
+    {
+        $inactiveAdmin = Admin::create([
+            'first_name' => 'Inactive',
+            'last_name' => 'Admin',
+            'username' => 'inactive_admin_'.uniqid(),
+            'password' => Hash::make('secret123'),
+            'mobile' => '0778887766',
+            'email' => 'inactive@test.com',
+            'add_time' => now(),
+            'is_log' => false,
+            'admin_statuses_id' => 2, // Inactive
+            'admin_types_id' => 1,
+        ]);
+
+        $response = $this->actingAs($inactiveAdmin, 'admin')->get('/admin/dashboard');
+
+        $response->assertRedirect('/admin/login');
+        $this->assertFalse(Auth::guard('admin')->check());
+    }
+
+    public function test_unauthenticated_user_can_access_login_page(): void
+    {
+        $response = $this->get('/login');
+        $response->assertStatus(200);
+
+        $responseAdmin = $this->get('/admin/login');
+        $responseAdmin->assertStatus(200);
     }
 
     public function test_authenticated_user_visiting_login_redirects_to_dashboard(): void

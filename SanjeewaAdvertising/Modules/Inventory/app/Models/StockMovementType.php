@@ -34,6 +34,7 @@ class StockMovementType extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'id',
         'stock_movements_type',
     ];
 
