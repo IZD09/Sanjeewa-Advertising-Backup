@@ -7,13 +7,24 @@
             $shopSettings = $saved;
         }
     }
-    $shopName = $shopSettings['shop_name'] ?? 'Sanjeewa Advertising';
-    $shopLogoUrl = $shopSettings['logo_url'] ?? null;
+    $shopName = $shopSettings['shop_name'] ?? 'Visual Line Advertising';
+    $shopLogoUrl = $shopSettings['logo_url'] ?? '/uploads/branding/visual_line_advertising_logo.png';
     $shopLogoIcon = $shopSettings['logo_icon'] ?? 'fa-solid fa-print';
 
-    $brandNameParts = explode(' ', $shopName, 2);
-    $brandName = $brandName ?? ($brandNameParts[0] ?? 'Sanjeewa');
-    $brandSubtitle = $brandSubtitle ?? ($brandNameParts[1] ?? ($isAdmin ?? false ? 'ADMINISTRATOR' : 'ADVERTISING'));
+    $words = explode(' ', trim($shopName));
+    if (count($words) >= 3 && strtolower(end($words)) === 'advertising') {
+        $defaultMain = implode(' ', array_slice($words, 0, -1)); // "Visual Line"
+        $defaultSub = end($words); // "Advertising"
+    } elseif (count($words) === 2) {
+        $defaultMain = $words[0];
+        $defaultSub = $words[1];
+    } else {
+        $defaultMain = $shopName;
+        $defaultSub = ($isAdmin ?? false) ? 'ADMINISTRATOR' : 'ADVERTISING';
+    }
+
+    $brandName = $brandName ?? $defaultMain;
+    $brandSubtitle = ($isAdmin ?? false) ? 'ADMINISTRATOR' : strtoupper($defaultSub);
     $brandIcon = $brandIcon ?? $shopLogoIcon;
 @endphp
 <div class="brand">

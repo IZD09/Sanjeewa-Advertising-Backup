@@ -792,7 +792,7 @@
                                             @endif
                                         </div>
                                         <div class="mock-brand-info">
-                                            <h3 class="mock-shop-name" id="mockShopName">{{ $settings['shop_name'] ?? 'Sanjeewa Advertising & Printing' }}</h3>
+                                            <h3 class="mock-shop-name" id="mockShopName">{{ $settings['shop_name'] ?? 'Visual Line Advertising' }}</h3>
                                             <p class="mock-shop-sub">Advertising & Digital Printing</p>
                                         </div>
                                     </div>
@@ -863,7 +863,7 @@
                                         </label>
                                         <div class="po-input-group">
                                             <i class="fa-solid fa-building"></i>
-                                            <input type="text" id="settingShopName" name="shop_name" class="po-input" value="{{ $settings['shop_name'] ?? 'Sanjeewa Advertising & Printing' }}" placeholder="e.g. Sanjeewa Advertising & Printing" required autocomplete="organization">
+                                            <input type="text" id="settingShopName" name="shop_name" class="po-input" value="{{ $settings['shop_name'] ?? 'Visual Line Advertising' }}" placeholder="e.g. Visual Line Advertising" required autocomplete="organization">
                                         </div>
                                         <p class="po-field-hint">Displayed on topbar brand, login portal, quotation banners, and receipt headers.</p>
                                     </div>
@@ -1131,11 +1131,11 @@
 
             // Default fallback values
             const defaultSettings = {
-                shop_name: 'Sanjeewa Advertising & Printing',
+                shop_name: 'Visual Line Advertising',
                 shop_address: 'No. 42 Main Street, Colombo 03, Sri Lanka',
                 shop_phone: '+94 11 234 5678',
                 currency_symbol: 'Rs.',
-                logo_url: null,
+                logo_url: '/uploads/branding/visual_line_advertising_logo.png',
                 logo_icon: 'fa-solid fa-print',
                 theme_mode: 'light',
                 theme_color: '#2563eb'
@@ -1150,7 +1150,7 @@
             }
 
             shopNameInput?.addEventListener('input', (e) => {
-                const val = e.target.value.trim() || 'Sanjeewa Advertising & Printing';
+                const val = e.target.value.trim() || 'Visual Line Advertising';
                 if (mockShopName) mockShopName.textContent = val;
                 const sidebarBrandName = document.getElementById('sidebarBrandName');
                 if (sidebarBrandName) {

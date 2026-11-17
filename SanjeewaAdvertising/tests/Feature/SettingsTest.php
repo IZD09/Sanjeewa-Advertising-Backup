@@ -103,5 +103,37 @@ class SettingsTest extends TestCase
             ],
         ]);
     }
-}
 
+    public function test_authenticated_admin_can_update_shop_name_and_logo_to_visual_line_advertising(): void
+    {
+        $admin = Admin::where('username', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $payload = [
+            'shop_name' => 'Visual Line Advertising',
+            'shop_address' => 'No. 42 Main Street, Colombo 03, Sri Lanka',
+            'shop_phone' => '+94 11 234 5678',
+            'currency_symbol' => 'Rs.',
+            'logo_url' => '/uploads/branding/visual_line_advertising_logo.png',
+            'logo_icon' => 'fa-solid fa-print',
+            'theme_mode' => 'light',
+            'theme_color' => '#2563eb',
+        ];
+
+        $response = $this->actingAs($admin, 'admin')->postJson('/settings', $payload);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'data' => [
+                'shop_name' => 'Visual Line Advertising',
+                'logo_url' => '/uploads/branding/visual_line_advertising_logo.png',
+            ],
+        ]);
+
+        $this->assertFileExists(storage_path('app/settings.json'));
+        $content = json_decode((string) file_get_contents(storage_path('app/settings.json')), true);
+        $this->assertSame('Visual Line Advertising', $content['shop_name']);
+        $this->assertSame('/uploads/branding/visual_line_advertising_logo.png', $content['logo_url']);
+    }
+}
