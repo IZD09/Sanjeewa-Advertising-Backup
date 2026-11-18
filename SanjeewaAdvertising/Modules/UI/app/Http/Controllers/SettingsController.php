@@ -33,11 +33,11 @@ class SettingsController extends BaseApiController
     public static function getAppSettings(): array
     {
         $defaults = [
-            'shop_name' => 'Sanjeewa Advertising & Printing',
+            'shop_name' => 'Visual Line Advertising',
             'shop_address' => 'No. 42 Main Street, Colombo 03, Sri Lanka',
             'shop_phone' => '+94 11 234 5678',
             'currency_symbol' => 'Rs.',
-            'logo_url' => null,
+            'logo_url' => '/uploads/branding/visual_line_advertising_logo.png',
             'logo_icon' => 'fa-solid fa-print',
             'theme_mode' => 'light',
             'theme_color' => '#2563eb',
@@ -111,11 +111,11 @@ class SettingsController extends BaseApiController
     protected function getDefaultSettings(): array
     {
         return [
-            'shop_name' => 'Sanjeewa Advertising & Printing',
+            'shop_name' => 'Visual Line Advertising',
             'shop_address' => 'No. 42 Main Street, Colombo 03, Sri Lanka',
             'shop_phone' => '+94 11 234 5678',
             'currency_symbol' => 'Rs.',
-            'logo_url' => null,
+            'logo_url' => '/uploads/branding/visual_line_advertising_logo.png',
             'logo_icon' => 'fa-solid fa-print',
             'theme_mode' => 'light',
             'theme_color' => '#2563eb',

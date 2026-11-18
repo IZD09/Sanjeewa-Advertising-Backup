@@ -80,7 +80,7 @@
                                             @endif
                                         </div>
                                         <div class="mock-brand-info">
-                                            <h3 class="mock-shop-name" id="mockShopName">{{ $settings['shop_name'] ?? 'Sanjeewa Advertising & Printing' }}</h3>
+                                            <h3 class="mock-shop-name" id="mockShopName">{{ $settings['shop_name'] ?? 'Visual Line Advertising' }}</h3>
                                             <p class="mock-shop-sub">Advertising & Digital Printing</p>
                                         </div>
                                     </div>
@@ -152,7 +152,7 @@
                                         </label>
                                         <div class="po-input-group">
                                             <i class="fa-solid fa-building"></i>
-                                            <input type="text" id="settingShopName" name="shop_name" class="po-input" value="{{ $settings['shop_name'] ?? 'Sanjeewa Advertising & Printing' }}" placeholder="e.g. Sanjeewa Advertising & Printing" required autocomplete="organization">
+                                            <input type="text" id="settingShopName" name="shop_name" class="po-input" value="{{ $settings['shop_name'] ?? 'Visual Line Advertising' }}" placeholder="e.g. Visual Line Advertising" required autocomplete="organization">
                                         </div>
                                         <p class="po-field-hint">Displayed on topbar brand, login portal, quotation banners, and receipt headers.</p>
                                     </div>
