@@ -9,16 +9,19 @@ export class PrintJobModalHandler {
     constructor(dataLoader, options = {}) {
         this.dataLoader = dataLoader;
         this.onJobUpdated = options.onJobUpdated || (() => {});
+        this.onStartPrintingSuccess = options.onStartPrintingSuccess || null;
         this.showToast = options.showToast || ((msg, type) => alert(msg));
 
         // Sub-modals
         this.detailsModal = new PrintJobDetailsModal(this.dataLoader);
         this.statusModal = new PrintJobStatusModal(this.dataLoader, {
             onJobUpdated: this.onJobUpdated,
-            showToast: this.showToast
+            showToast: this.showToast,
+            onNeedMaterials: (job) => this.openAllocateMaterial(job, { forStartPrinting: true })
         });
         this.materialModal = new PrintJobMaterialModal(this.dataLoader, {
             onJobUpdated: this.onJobUpdated,
+            onStartPrintingSuccess: this.onStartPrintingSuccess,
             showToast: this.showToast
         });
 
@@ -44,9 +47,10 @@ export class PrintJobModalHandler {
         });
     }
 
-    setReferenceData(statuses = [], stocks = []) {
+    setReferenceData(statuses = [], stocks = [], categories = [], subcategories = []) {
         this.statusModal.setStatuses(statuses);
-        this.materialModal.setAvailableStocks(stocks);
+        this.materialModal.setReferenceData(stocks, categories, subcategories);
+        this.materialModal.setStatuses(statuses);
     }
 
     openDetails(job) {
@@ -57,8 +61,8 @@ export class PrintJobModalHandler {
         this.statusModal.open(job);
     }
 
-    openAllocateMaterial(job) {
-        this.materialModal.open(job);
+    openAllocateMaterial(job, options = {}) {
+        this.materialModal.open(job, options);
     }
 
     closeAll() {

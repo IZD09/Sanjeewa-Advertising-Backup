@@ -23,8 +23,11 @@ class AssignStockItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stock_id' => ['required', 'integer', 'exists:stock,id'],
-            'qty' => ['required', 'integer', 'min:1'],
+            'stock_id' => ['required_without:stock_items', 'nullable', 'integer', 'exists:stock,id'],
+            'qty' => ['required_without:stock_items', 'nullable', 'integer', 'min:1'],
+            'stock_items' => ['sometimes', 'array'],
+            'stock_items.*.stock_id' => ['required_with:stock_items', 'integer', 'exists:stock,id'],
+            'stock_items.*.qty' => ['required_with:stock_items', 'integer', 'min:1'],
         ];
     }
 }

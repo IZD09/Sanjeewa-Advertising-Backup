@@ -37,6 +37,8 @@ class PrintJobController extends BaseApiController
             'statuses' => $floorData['statuses'],
             'printTypes' => $floorData['print_types'],
             'availableStocks' => $floorData['available_stocks'],
+            'materialCategories' => $floorData['material_categories'] ?? [],
+            'materialSubcategories' => $floorData['material_subcategories'] ?? [],
         ]);
     }
 
@@ -241,15 +243,22 @@ class PrintJobController extends BaseApiController
             return $this->notFound('Print job not found.');
         }
 
-        $updatedJob = $this->printJobService->assignStockItem(
-            $printJob,
-            $request->integer('stock_id'),
-            $request->integer('qty')
-        );
+        if ($request->has('stock_items')) {
+            $updatedJob = $this->printJobService->syncStockItems(
+                $printJob,
+                (array) $request->input('stock_items', [])
+            );
+        } else {
+            $updatedJob = $this->printJobService->assignStockItem(
+                $printJob,
+                $request->integer('stock_id'),
+                $request->integer('qty')
+            );
+        }
 
         return $this->success(
             new PrintJobResource($updatedJob),
-            'Stock item assigned to print job successfully.'
+            'Stock materials assigned to print job successfully.'
         );
     }
 

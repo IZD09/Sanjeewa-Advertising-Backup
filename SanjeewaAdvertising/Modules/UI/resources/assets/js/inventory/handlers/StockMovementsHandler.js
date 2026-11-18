@@ -17,7 +17,7 @@ export class StockMovementsHandler extends BaseTableLoader {
       paginationInfoId: options.paginationInfoId || "movementsPaginationInfo",
       paginationControlsId: options.paginationControlsId || "movementsPaginationControls",
       pageSize: 20,
-      colspan: 10,
+      colspan: 8,
       emptyIcon: "fa-clock-rotate-left",
       emptyMessage: "No stock movement logs found matching your criteria",
       itemLabel: "movements",

@@ -18,6 +18,12 @@ export class StatusHelper {
     delivered: "row-status-delivered",
     cancelled: "row-status-cancelled",
     rejected: "row-status-cancelled",
+    "in stock": "row-status-completed",
+    "in-stock": "row-status-completed",
+    "low stock": "row-status-pending",
+    "low-stock": "row-status-pending",
+    "out of stock": "row-status-cancelled",
+    "out-of-stock": "row-status-cancelled",
   };
 
   /**

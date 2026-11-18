@@ -160,7 +160,7 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "55%",
+        cutout: "0%",
         plugins: {
           legend: {
             display: true,

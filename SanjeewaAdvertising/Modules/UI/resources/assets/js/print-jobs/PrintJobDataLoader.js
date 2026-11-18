@@ -34,6 +34,20 @@ export class PrintJobDataLoader {
     }
 
     /**
+     * Fetch single print job details
+     * @param {number} jobId 
+     */
+    async fetchJob(jobId) {
+        const url = `/print-jobs/${jobId}`;
+        const response = await fetch(url, { credentials: 'same-origin', headers: this.getHeaders() });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to fetch print job details.');
+        }
+        return result.data;
+    }
+
+    /**
      * Update job production status
      * @param {number} jobId 
      * @param {number} statusId 
@@ -84,6 +98,21 @@ export class PrintJobDataLoader {
         const result = await response.json();
         if (!response.ok || !result.success) {
             throw new Error(result.message || 'Failed to assign stock item.');
+        }
+        return result.data;
+    }
+
+    async syncStockItems(jobId, stockItems) {
+        const url = `/print-jobs/${jobId}/stock-items`;
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ stock_items: stockItems })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to save materials.');
         }
         return result.data;
     }

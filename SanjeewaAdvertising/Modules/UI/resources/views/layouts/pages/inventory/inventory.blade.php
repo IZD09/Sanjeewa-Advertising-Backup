@@ -171,20 +171,18 @@
                 </div>
 
                 <!-- VIEW 1: Aggregated Item Summary Table -->
-                <div class="inv-table-responsive" id="invAggregatedTableWrap" style="display: block;">
-                  <table class="ant-table">
+                <div class="po-table-responsive inv-table-responsive" id="invAggregatedTableWrap" style="display: block;">
+                  <table class="po-table">
                     <thead>
                       <tr>
                         <th style="width: 50px;">#</th>
-                        <th style="width: 105px;">Item Code</th>
+                        <th style="width: 110px;">Item Code</th>
                         <th>Material Item Name</th>
-                        <th style="width: 170px;">Category &amp; Subcategory</th>
-                        <th style="width: 170px;">Compatible Brands</th>
-                        <th class="text-center" style="width: 110px;">Batches</th>
-                        <th class="text-right" style="width: 140px;">Total Stock Qty</th>
-                        <th class="text-right" style="width: 145px;">Total Valuation</th>
-                        <th style="width: 120px;">Status</th>
-                        <th class="text-center" style="width: 170px;">Actions</th>
+                        <th style="width: 200px;">Category &amp; Subcategory</th>
+                        <th class="text-center" style="width: 120px;">Batches</th>
+                        <th class="text-right" style="width: 150px;">Total Stock Qty</th>
+                        <th style="width: 130px;">Status</th>
+                        <th class="text-center" style="width: 140px;">Actions</th>
                       </tr>
                     </thead>
                     <tbody id="invAggregatedTableBody">
@@ -194,11 +192,11 @@
                 </div>
 
                 <!-- VIEW 2: Detailed Stock Batches Table -->
-                <div class="inv-table-responsive" id="invBatchesTableWrap" style="display: none;">
-                  <table class="ant-table">
+                <div class="po-table-responsive inv-table-responsive" id="invBatchesTableWrap" style="display: none;">
+                  <table class="po-table">
                     <thead>
                       <tr>
-                        <th style="width: 105px;">Item Code</th>
+                        <th style="width: 110px;">Item Code</th>
                         <th>Item Name</th>
                         <th style="width: 160px;">Category</th>
                         <th style="width: 170px;">Supplier</th>
@@ -328,8 +326,8 @@
                 </div>
 
                 <!-- Movements Table -->
-                <div class="inv-table-responsive">
-                  <table class="ant-table" id="invMovementsTable">
+                <div class="po-table-responsive inv-table-responsive">
+                  <table class="po-table" id="invMovementsTable">
                     <thead>
                       <tr>
                         <th style="width: 110px;">Ref Code</th>
@@ -340,8 +338,6 @@
                         <th style="width: 95px;">Direction</th>
                         <th style="width: 145px;">Source / Ref</th>
                         <th class="text-right" style="width: 115px;">Quantity</th>
-                        <th class="text-right" style="width: 125px;">Unit Price</th>
-                        <th class="text-right" style="width: 135px;">Total Value</th>
                       </tr>
                     </thead>
                     <tbody id="invMovementsTableBody">

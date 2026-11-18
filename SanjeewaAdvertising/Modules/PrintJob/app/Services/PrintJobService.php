@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Modules\Core\Support\MobileNumberHelper;
 use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintType;
+use Modules\Inventory\Models\Category;
 use Modules\Inventory\Models\Stock;
+use Modules\Inventory\Models\Subcategory;
 use Modules\PrintJob\Models\DeliveryMethod;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\PrintJob\Models\PrintJobCost;
@@ -140,6 +142,7 @@ class PrintJobService
                 'statusHistory.status',
                 'cost.printCosts.printCostType',
                 'stockItems.stockItem',
+                'stockItems.brand',
                 'payments',
                 'invoices',
             ])
@@ -406,6 +409,27 @@ class PrintJobService
     }
 
     /**
+     * Sync multiple stock materials allocated to the print job.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    public function syncStockItems(PrintJob $printJob, array $items): PrintJob
+    {
+        $syncData = [];
+        foreach ($items as $item) {
+            $stockId = (int) ($item['stock_id'] ?? 0);
+            $qty = max(1, (int) ($item['qty'] ?? 1));
+            if ($stockId > 0) {
+                $syncData[$stockId] = ['qty' => $qty];
+            }
+        }
+
+        $printJob->stockItems()->sync($syncData);
+
+        return $this->getPrintJobById($printJob->id) ?? $printJob;
+    }
+
+    /**
      * Remove a stock item from the print job.
      */
     public function removeStockItem(PrintJob $printJob, int $stockId): PrintJob
@@ -449,9 +473,20 @@ class PrintJobService
         $statuses = PrintJobStatus::query()->orderBy('id')->get();
         $printTypes = PrintType::query()->orderBy('id')->get();
 
-        // 2. Load available stocks with stock item name and brand
+        // 2. Load available stocks with stock item name, code, brand, category and subcategory
+        $categories = Category::query()->orderBy('category')->get()->map(fn ($c) => [
+            'id' => (int) $c->id,
+            'name' => $c->category,
+        ])->values()->all();
+
+        $subcategories = Subcategory::query()->orderBy('subcategory')->get()->map(fn ($sc) => [
+            'id' => (int) $sc->id,
+            'category_id' => (int) $sc->categories_id,
+            'name' => $sc->subcategory,
+        ])->values()->all();
+
         $availableStocks = Stock::query()
-            ->with(['stockItem', 'brand'])
+            ->with(['stockItem.subcategory.category', 'brand'])
             ->where('qty', '>', 0)
             ->orderBy('id')
             ->get()
@@ -459,7 +494,12 @@ class PrintJobService
                 return [
                     'id' => (int) $s->id,
                     'name' => $s->stockItem?->name ?? 'Stock #'.$s->id,
-                    'brand' => $s->brand?->brand ?? '',
+                    'code' => $s->stockItem?->code ?? '',
+                    'brand' => $s->brand?->brand ?? 'Generic',
+                    'category' => $s->stockItem?->subcategory?->category?->category ?? '',
+                    'category_id' => (int) ($s->stockItem?->subcategory?->categories_id ?? 0),
+                    'subcategory' => $s->stockItem?->subcategory?->subcategory ?? '',
+                    'subcategory_id' => (int) ($s->stockItem?->subcategories_id ?? 0),
                     'qty' => (int) $s->qty,
                     'price' => (float) $s->price,
                 ];
@@ -650,6 +690,8 @@ class PrintJobService
             'print_types' => $printTypes->map(fn ($pt) => ['id' => (int) $pt->id, 'name' => $pt->print_type])->values()->all(),
             'units' => Unit::all()->map(fn ($u) => ['id' => (int) $u->id, 'simble' => $u->simble, 'name' => $u->name])->values()->all(),
             'available_stocks' => $availableStocks->values()->all(),
+            'material_categories' => $categories,
+            'material_subcategories' => $subcategories,
         ];
     }
 

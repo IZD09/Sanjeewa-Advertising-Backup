@@ -391,44 +391,111 @@
          MODAL 3: ALLOCATE MATERIAL & RAW STOCK MODAL
          ================================================================== -->
     <div class="pj-modal-overlay" id="modalAllocateMaterial">
-        <div class="pj-modal">
+        <div class="pj-modal" style="max-width: 760px; width: 95%;">
             <div class="pj-modal-header">
-                <h3><i class="fa-solid fa-boxes-stacked" style="color: #fa8c16;"></i> Material & Raw Stock Allocation</h3>
+                <h3 id="modalAllocTitle"><i class="fa-solid fa-boxes-stacked" style="color: #0284c7;"></i> Select Printing Materials</h3>
                 <button type="button" class="pj-modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="pj-modal-body">
                 <div style="font-size: 13px; font-weight: 600; color: var(--text);" id="allocJobHeader">—</div>
 
-                <!-- Form to Add Material -->
-                <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text);">Assign Material from Warehouse Stock</div>
-                    <div class="pj-alloc-form">
-                        <div class="pj-form-group">
-                            <label for="selectAllocateStock">Warehouse Stock Item</label>
-                            <select class="pj-select" id="selectAllocateStock" style="width: 100%;">
-                                <option value="">-- Choose Raw Material / Stock Item --</option>
+                <!-- Info Notice for Start Printing -->
+                <div id="allocNoticeBanner" style="display: none; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 6px; padding: 10px 14px; font-size: 12px; color: var(--text);">
+                    <i class="fa-solid fa-circle-info" style="color: #0284c7; margin-right: 6px;"></i>
+                    <span>Please select the required materials for this print job. You can add multiple materials.</span>
+                </div>
+
+                <!-- Material Selector Box -->
+                <div class="pj-material-selector-box" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--text);">
+                            <i class="fa-solid fa-dolly" style="color: #0284c7; margin-right: 5px;"></i> Warehouse Stock Selector
+                        </div>
+                        <!-- Search input for materials -->
+                        <div style="position: relative; width: 220px;">
+                            <input type="text" id="inputMaterialFilter" class="pj-input" placeholder="Search material / code..." style="height: 32px; font-size: 11.5px; padding-left: 28px;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 9px; top: 10px; font-size: 11px; color: var(--text-muted);"></i>
+                        </div>
+                    </div>
+
+                    <!-- Row 1: Category Selector & Subcategory Selector -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="pj-form-group" style="margin-bottom: 0;">
+                            <label for="selectMaterialCategory" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">
+                                <i class="fa-solid fa-layer-group" style="color: #0284c7; margin-right: 4px;"></i> 1. Category
+                            </label>
+                            <select class="pj-select" id="selectMaterialCategory" style="width: 100%; height: 38px;">
+                                <option value="">-- All Categories --</option>
+                                @foreach($materialCategories ?? [] as $cat)
+                                    <option value="{{ $cat['id'] }}">{{ $cat['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="pj-form-group" style="margin-bottom: 0;">
+                            <label for="selectMaterialSubcategory" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">
+                                <i class="fa-solid fa-tags" style="color: #0284c7; margin-right: 4px;"></i> 2. Subcategory
+                            </label>
+                            <select class="pj-select" id="selectMaterialSubcategory" style="width: 100%; height: 38px;">
+                                <option value="">-- All Subcategories --</option>
+                                @foreach($materialSubcategories ?? [] as $sc)
+                                    <option value="{{ $sc['id'] }}" data-category-id="{{ $sc['category_id'] }}">{{ $sc['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Material Selector, Quantity, Add Button -->
+                    <div style="display: grid; grid-template-columns: 1fr 110px 105px; gap: 10px; align-items: flex-end;">
+                        <div class="pj-form-group" style="margin-bottom: 0;">
+                            <label for="selectAllocateStock" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">
+                                <i class="fa-solid fa-box" style="color: #0284c7; margin-right: 4px;"></i> 3. Material / Stock Item <span style="color: #ff4d4f;">*</span>
+                            </label>
+                            <select class="pj-select" id="selectAllocateStock" style="width: 100%; height: 38px;">
+                                <option value="">-- Choose Stock Item --</option>
                                 @foreach($availableStocks as $stk)
-                                    <option value="{{ $stk['id'] }}">
-                                        {{ $stk['name'] }} {{ $stk['brand'] ? "[{$stk['brand']}]" : '' }} - (Available: {{ $stk['qty'] }} in stock)
+                                    <option value="{{ $stk['id'] }}" data-code="{{ $stk['code'] ?? '' }}" data-brand="{{ $stk['brand'] ?? '' }}" data-category-id="{{ $stk['category_id'] ?? '' }}" data-subcategory-id="{{ $stk['subcategory_id'] ?? '' }}" data-qty="{{ $stk['qty'] ?? 0 }}">
+                                        {{ $stk['name'] }} {{ !empty($stk['code']) ? "[{$stk['code']}]" : '' }} {{ !empty($stk['brand']) ? "({$stk['brand']})" : '' }} - Avail: {{ $stk['qty'] }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="pj-form-group">
-                            <label for="inputMaterialQty">Qty Required</label>
-                            <input type="number" class="pj-input" id="inputMaterialQty" value="1" min="1" />
+                        <div class="pj-form-group" style="margin-bottom: 0;">
+                            <label for="inputMaterialQty" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">Quantity <span style="color: #ff4d4f;">*</span></label>
+                            <input type="number" class="pj-input" id="inputMaterialQty" value="1" min="1" style="height: 38px; font-weight: 700; text-align: center;" />
                         </div>
                         <div>
-                            <button type="button" class="ant-btn ant-btn-primary" id="btnSubmitAssignMaterial" style="height: 35px;">
-                                <i class="fa-solid fa-plus"></i> Assign
+                            <button type="button" class="ant-btn ant-btn-primary" id="btnSubmitAssignMaterial" style="height: 38px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; background: #0284c7; border-color: #0284c7; font-weight: 600;">
+                                <i class="fa-solid fa-plus"></i> <span>+ Add</span>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Stock Info Preview Box (Shows when an item is selected in dropdown) -->
+                    <div id="allocStockItemPreview" style="display: none; margin-top: 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 11.5px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <span style="color: var(--text-muted);">Code:</span> <strong id="previewStockCode" style="font-family: monospace;">—</strong> •
+                                <span style="color: var(--text-muted);">Brand:</span> <span id="previewStockBrand" style="font-weight: 600;">—</span> •
+                                <span style="color: var(--text-muted);">Category:</span> <span id="previewStockCategory" style="font-weight: 500;">—</span>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted);">Available in Warehouse:</span> <strong id="previewStockQty" style="color: #16a34a;">0</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Currently Allocated Materials Table -->
-                <div>
-                    <div style="font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Currently Linked Raw Materials</div>
+                <div style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <div style="font-size: 13px; font-weight: 700; color: var(--text);">
+                            <i class="fa-solid fa-boxes-stacked" style="color: #0284c7; margin-right: 5px;"></i>
+                            Selected Materials for this Print Job:
+                        </div>
+                        <span id="allocCountBadge" style="font-size: 11.5px; padding: 2px 9px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); font-weight: 600; color: var(--text-muted);">
+                            0 materials added
+                        </span>
+                    </div>
                     <div id="allocatedMaterialsList">
                         <!-- Populated by JS -->
                     </div>
@@ -436,6 +503,9 @@
             </div>
             <div class="pj-modal-footer">
                 <button type="button" class="ant-btn ant-btn-default pj-modal-close">Close</button>
+                <button type="button" class="ant-btn ant-btn-primary" id="btnModalStartPrinting" style="display: none; background: #0284c7; border-color: #0284c7; height: 35px; align-items: center; gap: 6px; font-weight: 600;">
+                    <i class="fa-solid fa-print"></i> <span>Start Printing</span>
+                </button>
             </div>
         </div>
     </div>

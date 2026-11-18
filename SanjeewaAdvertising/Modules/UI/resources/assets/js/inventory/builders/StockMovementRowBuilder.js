@@ -29,23 +29,30 @@ export class StockMovementEntity {
     const tr = document.createElement("tr");
     tr.id = `movRow_${this.id || ""}`;
 
-    // Direction badge style
+    // Direction badge style & status row highlight class
     let dirBadgeClass = "mov-dir-adjust";
     let dirIcon = "fa-arrows-left-right";
     let dirLabel = "ADJUST";
     let qtyColorClass = "text-adjust";
+    let rowStatusClass = "row-dir-adjust row-status-pending";
 
-    if (this.direction === "IN") {
+    const dirUpper = String(this.direction || "").toUpperCase().trim();
+
+    if (dirUpper === "IN") {
       dirBadgeClass = "mov-dir-in";
       dirIcon = "fa-arrow-down-long";
       dirLabel = "IN";
       qtyColorClass = "text-in";
-    } else if (this.direction === "OUT") {
+      rowStatusClass = "row-dir-in row-status-completed";
+    } else if (dirUpper === "OUT") {
       dirBadgeClass = "mov-dir-out";
       dirIcon = "fa-arrow-up-long";
       dirLabel = "OUT";
       qtyColorClass = "text-out";
+      rowStatusClass = "row-dir-out row-status-approved";
     }
+
+    tr.className = rowStatusClass;
 
     // Type badge style
     let typeBadgeClass = "ant-tag-default";
@@ -96,12 +103,6 @@ export class StockMovementEntity {
         <span class="mov-qty-badge ${qtyColorClass}">
           ${this.qty_display || this.qty || 0}
         </span>
-      </td>
-      <td class="text-right" style="font-weight: 500; font-size: 12.5px;">
-        ${this.formatCurrency(this.unit_price)}
-      </td>
-      <td class="text-right" style="font-weight: 700; color: var(--text); font-size: 13px;">
-        ${this.formatCurrency(this.total_value)}
       </td>
     `;
 

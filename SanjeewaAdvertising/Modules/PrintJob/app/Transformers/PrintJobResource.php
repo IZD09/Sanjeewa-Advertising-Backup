@@ -79,12 +79,23 @@ class PrintJobResource extends JsonResource
             'cost' => new PrintJobCostResource($this->whenLoaded('cost')),
             'stock_items' => $this->whenLoaded('stockItems', function () {
                 return $this->stockItems->map(fn ($stock) => [
-                    'stock_id' => $stock->id,
+                    'stock_id' => (int) $stock->id,
                     'qty' => $stock->pivot ? (int) $stock->pivot->qty : 0,
                     'price' => (float) $stock->price,
-                    'item_name' => $stock->relationLoaded('stockItem') ? $stock->stockItem?->item_name : null,
+                    'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? $stock->stockItem?->item_name) : null,
+                    'item_name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? $stock->stockItem?->item_name) : null,
+                    'brand' => $stock->relationLoaded('brand') ? $stock->brand?->brand : null,
                 ]);
             }),
+            'materials' => $this->whenLoaded('stockItems', function () {
+                return $this->stockItems->map(fn ($stock) => [
+                    'stock_id' => (int) $stock->id,
+                    'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? 'Material #'.$stock->id) : 'Material #'.$stock->id,
+                    'brand' => $stock->relationLoaded('brand') ? ($stock->brand?->brand ?? '') : '',
+                    'qty' => $stock->pivot ? (int) $stock->pivot->qty : 1,
+                ])->values()->all();
+            }),
+            'materials_count' => $this->relationLoaded('stockItems') ? $this->stockItems->count() : 0,
             'payments_count' => $this->whenCounted('payments'),
             'invoices_count' => $this->whenCounted('invoices'),
         ];

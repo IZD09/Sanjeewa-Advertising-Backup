@@ -29,7 +29,11 @@ export class PrintJobsManager {
 
         // 1. Modals Orchestrator
         this.modalHandler = new PrintJobModalHandler(this.dataLoader, {
-            onJobUpdated: () => this.reloadFloorData(),
+            onJobUpdated: () => this.reloadFloorData(true),
+            onStartPrintingSuccess: async () => {
+                await this.reloadFloorData(true);
+                this.tabHandler.switchTab('printing');
+            },
             showToast: (msg, type) => this.showToast(msg, type)
         });
 
@@ -146,13 +150,17 @@ export class PrintJobsManager {
         }
     }
 
-    async reloadFloorData() {
+    async reloadFloorData(silent = false) {
         try {
             const data = await this.dataLoader.fetchFloorData();
             this.processFloorData(data);
-            this.showToast('Production floor data refreshed.', 'success');
+            if (!silent) {
+                this.showToast('Production floor data refreshed.', 'success');
+            }
         } catch (err) {
-            this.showToast(err.message || 'Error refreshing floor data.', 'error');
+            if (!silent) {
+                this.showToast(err.message || 'Error refreshing floor data.', 'error');
+            }
         }
     }
 
@@ -164,9 +172,16 @@ export class PrintJobsManager {
         this.statuses = data.statuses || [];
         this.printTypes = data.print_types || [];
         this.availableStocks = data.available_stocks || [];
+        this.materialCategories = data.material_categories || [];
+        this.materialSubcategories = data.material_subcategories || [];
 
         // Reference data for modals
-        this.modalHandler.setReferenceData(this.statuses, this.availableStocks);
+        this.modalHandler.setReferenceData(
+            this.statuses,
+            this.availableStocks,
+            this.materialCategories,
+            this.materialSubcategories
+        );
 
         // Update KPIs
         PrintJobMetricsProcess.update(this.kpis);
@@ -239,6 +254,16 @@ export class PrintJobsManager {
         const job = this.allJobs.find(j => j.id === jobId);
         if (!job) return;
 
+        // When in Printing on Machine, moving to Finishing requires materials to be selected
+        if (job.stage_key === 'printing') {
+            const hasMaterials = (job.materials || []).length > 0;
+            if (!hasMaterials) {
+                this.showToast('Please select the materials used for this print before moving to Finishing.', 'warning');
+                this.modalHandler.openAllocateMaterial(job, { forStartPrinting: false });
+                return;
+            }
+        }
+
         const nextStatusByStage = {
             prepress: 'Printing',
             printing: 'Finishing',
@@ -264,10 +289,26 @@ export class PrintJobsManager {
 
     handleAllocateStock(jobId) {
         const job = this.allJobs.find(j => j.id === jobId);
-        if (job) this.modalHandler.openAllocateMaterial(job);
+        if (job) {
+            this.modalHandler.openAllocateMaterial(job);
+        }
     }
 
     async handleQuickStatusChange(jobId, targetStatusName) {
+        const job = this.allJobs.find(j => j.id === jobId);
+
+        // Guard: Moving to Finishing strictly requires at least one allocated material from Printing
+        if (String(targetStatusName).toLowerCase() === 'finishing') {
+            const hasMaterials = (job?.materials || []).length > 0;
+            if (!hasMaterials) {
+                this.showToast('Please select the materials used for this print before moving to Finishing.', 'warning');
+                if (job) {
+                    this.modalHandler.openAllocateMaterial(job, { forStartPrinting: false });
+                }
+                return;
+            }
+        }
+
         const statusObj = (this.statuses || []).find(
             s => String(s.name || '').toLowerCase().trim() === targetStatusName.toLowerCase()
         );

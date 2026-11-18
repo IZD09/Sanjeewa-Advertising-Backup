@@ -53,25 +53,22 @@ export class StockItemAggregatedEntity {
   render(helpers = {}) {
     const formatCurrency = helpers.formatCurrency || ((amt) => this.formatCurrency(amt));
 
+    const statusObj = this.status && this.status.label ? this.status : this.calculateStatus();
+    const statusLabel = String(statusObj.label || "").toLowerCase();
+    let rowStatusClass = "row-status-completed"; // default In Stock -> Green highlight
+    if (statusLabel.includes("out of stock") || this.totalQty <= 0) {
+      rowStatusClass = "row-status-cancelled"; // Red highlight
+    } else if (statusLabel.includes("low stock") || this.totalQty <= this.lowStockQty) {
+      rowStatusClass = "row-status-pending"; // Amber highlight
+    }
+
     const tr = document.createElement("tr");
     tr.id = `invAggRow_${this.code}`;
+    tr.className = rowStatusClass;
     tr.dataset.itemId = String(this.id);
     tr.dataset.itemCode = this.code;
 
     const displayIndex = this.rowNumber !== null ? this.rowNumber : (this.id ? `#${this.id}` : "-");
-
-    // Format brand badges
-    let brandsHtml = "";
-    if (this.brands.length > 0) {
-      brandsHtml = this.brands
-        .map((b) => {
-          const brandName = typeof b === "object" ? (b.brand || b.name) : b;
-          return `<span class="ant-tag ant-tag-blue" style="font-size: 11px; margin: 1px 2px;">${brandName}</span>`;
-        })
-        .join("");
-    } else {
-      brandsHtml = '<span style="color: var(--text-muted); font-size: 11.5px;">Generic / All</span>';
-    }
 
     const batchesBadge = this.batchesCount > 0
       ? `<span class="ant-tag ant-tag-blue" style="font-weight: 600; font-size: 11px; cursor: pointer;" title="Click to view detailed batches" onclick="window.inventoryManager?.viewItemBatches('${this.code}')"><i class="fa-solid fa-boxes-stacked"></i> ${this.batchesCount} ${this.batchesCount === 1 ? "Batch" : "Batches"}</span>`
@@ -99,11 +96,6 @@ export class StockItemAggregatedEntity {
           <i class="fa-solid fa-tag" style="font-size: 10px;"></i> ${this.subcategory}
         </div>
       </td>
-      <td>
-        <div style="display: flex; flex-wrap: wrap; gap: 3px; max-width: 170px;">
-          ${brandsHtml}
-        </div>
-      </td>
       <td class="text-center">
         ${batchesBadge}
       </td>
@@ -111,18 +103,15 @@ export class StockItemAggregatedEntity {
         <strong style="font-size: 13.5px; color: var(--text);">${this.totalQty.toLocaleString()}</strong>
         <span class="inv-unit-badge" style="margin-left: 3px;">${this.unit}</span>
       </td>
-      <td class="text-right" style="font-weight: 700; color: var(--text);">
-        ${formatCurrency(this.totalVal)}
-      </td>
       <td>
-        <span class="ant-tag ${this.status.class}">
+        <span class="ant-tag ${statusObj.class}">
           <span class="ant-tag-dot"></span>
-          ${this.status.label}
+          ${statusObj.label}
         </span>
       </td>
       <td class="text-center">
         <div class="inv-actions-group" style="display: inline-flex; gap: 4px; justify-content: center;">
-          <button type="button" class="ant-btn-action" title="View Detailed Batches" onclick="window.inventoryManager?.viewItemBatches('${this.code}')" style="padding: 3px 8px; font-size: 11.5px;">
+          <button type="button" class="ant-btn-action" title="View Detailed Batches" onclick="window.inventoryManager?.viewItemBatches('${this.code}')" style="padding: 4px 10px; font-size: 12px;">
             <i class="fa-solid fa-boxes-stacked"></i> Batches
           </button>
         </div>

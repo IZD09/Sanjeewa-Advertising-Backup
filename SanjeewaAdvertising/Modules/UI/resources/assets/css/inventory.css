@@ -299,7 +299,197 @@
     border-radius: 4px;
 }
 
-/* Ant Design Table Styles */
+/* ==========================================================================
+   Place Order Style Table Design for Material Stock Inventory
+   ========================================================================== */
+.po-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px 14px 16px;
+}
+
+.po-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    font-size: 12px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* Header Columns */
+.po-table th {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+.po-table th:first-child {
+    border-left: 1px solid var(--border);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.po-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    text-align: center;
+}
+
+.po-table th.text-right,
+.po-table td.text-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-table th.text-center,
+.po-table td.text-center {
+    text-align: center;
+}
+
+/* Body Table Cells (Rows & Columns Separation) */
+.po-table td {
+    padding: 13px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+    color: var(--text);
+    vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Row Front (First Column: # / SKU) */
+.po-table td:first-child {
+    border-left: 5px solid var(--border);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding-left: 16px;
+}
+
+/* Row Back (Last Column: Action Buttons) */
+.po-table td:last-child {
+    border-right: 5px solid var(--border);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding-right: 16px;
+    text-align: center;
+}
+
+.po-table tr:hover td {
+    background: var(--surface-hover);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Remove awkward flat/inset box-shadow overrides from core.css */
+.po-table tr[class*="row-"] > td:first-child,
+.po-table tr[class*="row-"] > td:last-child {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Status & Direction-specific Row Highlights with Styled Front & Back */
+/* In Stock / Inward - Green */
+.po-table tr.row-status-completed > td,
+.po-table tr.row-status-instock > td,
+.po-table tr.row-dir-in > td {
+    background-color: rgba(22, 163, 74, 0.08) !important;
+    border-top-color: rgba(22, 163, 74, 0.22) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.22) !important;
+    border-right-color: rgba(22, 163, 74, 0.20) !important;
+}
+.po-table tr.row-status-completed:hover > td,
+.po-table tr.row-status-instock:hover > td,
+.po-table tr.row-dir-in:hover > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+}
+.po-table tr.row-status-completed > td:first-child,
+.po-table tr.row-status-instock > td:first-child,
+.po-table tr.row-dir-in > td:first-child {
+    border-left: 5px solid #16a34a !important;
+}
+.po-table tr.row-status-completed > td:last-child,
+.po-table tr.row-status-instock > td:last-child,
+.po-table tr.row-dir-in > td:last-child {
+    border-right: 5px solid #16a34a !important;
+}
+
+/* Low Stock / Adjustments - Amber / Yellow */
+.po-table tr.row-status-pending > td,
+.po-table tr.row-status-lowstock > td,
+.po-table tr.row-dir-adjust > td {
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-top-color: rgba(245, 158, 11, 0.22) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.22) !important;
+    border-right-color: rgba(245, 158, 11, 0.20) !important;
+}
+.po-table tr.row-status-pending:hover > td,
+.po-table tr.row-status-lowstock:hover > td,
+.po-table tr.row-dir-adjust:hover > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.po-table tr.row-status-pending > td:first-child,
+.po-table tr.row-status-lowstock > td:first-child,
+.po-table tr.row-dir-adjust > td:first-child {
+    border-left: 5px solid #f59e0b !important;
+}
+.po-table tr.row-status-pending > td:last-child,
+.po-table tr.row-status-lowstock > td:last-child,
+.po-table tr.row-dir-adjust > td:last-child {
+    border-right: 5px solid #f59e0b !important;
+}
+
+/* Stock Out / Outward - Light Blue (Sky) */
+.po-table tr.row-dir-out > td,
+.po-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+    border-top-color: rgba(2, 132, 199, 0.22) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.22) !important;
+    border-right-color: rgba(2, 132, 199, 0.20) !important;
+}
+.po-table tr.row-dir-out:hover > td,
+.po-table tr.row-status-approved:hover > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+}
+.po-table tr.row-dir-out > td:first-child,
+.po-table tr.row-status-approved > td:first-child {
+    border-left: 5px solid #0284c7 !important;
+}
+.po-table tr.row-dir-out > td:last-child,
+.po-table tr.row-status-approved > td:last-child {
+    border-right: 5px solid #0284c7 !important;
+}
+
+/* Out of Stock - Red */
+.po-table tr.row-status-cancelled > td,
+.po-table tr.row-status-outofstock > td {
+    background-color: rgba(220, 38, 38, 0.08) !important;
+    border-top-color: rgba(220, 38, 38, 0.22) !important;
+    border-bottom-color: rgba(220, 38, 38, 0.22) !important;
+    border-right-color: rgba(220, 38, 38, 0.20) !important;
+}
+.po-table tr.row-status-cancelled:hover > td,
+.po-table tr.row-status-outofstock:hover > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+}
+.po-table tr.row-status-cancelled > td:first-child,
+.po-table tr.row-status-outofstock > td:first-child {
+    border-left: 5px solid #dc2626 !important;
+}
+.po-table tr.row-status-cancelled > td:last-child,
+.po-table tr.row-status-outofstock > td:last-child {
+    border-right: 5px solid #dc2626 !important;
+}
+
+/* Ant Design Table Styles (Legacy for other tabs) */
 .inv-table-responsive {
     width: 100%;
     overflow-x: auto;
@@ -819,9 +1009,9 @@ html[data-theme="dark"] .ant-tag-red {
 }
 
 .mov-dir-out {
-    background: rgba(22, 119, 255, 0.12);
-    color: #0958d9;
-    border: 1px solid rgba(22, 119, 255, 0.25);
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+    border: 1px solid rgba(2, 132, 199, 0.25);
 }
 
 .mov-dir-adjust {
@@ -860,7 +1050,7 @@ html[data-theme="dark"] .ant-tag-red {
 }
 
 .mov-qty-badge.text-out {
-    color: #cf1322;
+    color: #0284c7;
 }
 
 .mov-qty-badge.text-adjust {
@@ -1161,6 +1351,54 @@ html[data-theme="dark"] .ant-table td {
 
 html[data-theme="dark"] .ant-table tbody tr:hover td {
     background: var(--surface-2);
+}
+
+html[data-theme="dark"] .po-table th {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .po-table td {
+    background: var(--surface);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    border-right-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .po-table tr:hover td {
+    background: var(--surface-hover);
+}
+
+html[data-theme="dark"] .po-table tr[class*="row-"] > td:first-child,
+html[data-theme="dark"] .po-table tr[class*="row-"] > td:last-child {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-status-completed > td,
+html[data-theme="dark"] .po-table tr.row-status-instock > td,
+html[data-theme="dark"] .po-table tr.row-dir-in > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+    border-right-color: rgba(22, 163, 74, 0.35) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-status-pending > td,
+html[data-theme="dark"] .po-table tr.row-status-lowstock > td,
+html[data-theme="dark"] .po-table tr.row-dir-adjust > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-right-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-dir-out > td,
+html[data-theme="dark"] .po-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+    border-right-color: rgba(2, 132, 199, 0.35) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-status-cancelled > td,
+html[data-theme="dark"] .po-table tr.row-status-outofstock > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+    border-right-color: rgba(220, 38, 38, 0.35) !important;
 }
 
 html[data-theme="dark"] .cat-list-item.active {

@@ -33,25 +33,71 @@ export class PrintJobDetailsModal {
         // Assigned Materials List
         const matContainer = document.getElementById('detailsMaterialsList');
         if (matContainer) {
-            if (job.materials && job.materials.length > 0) {
+            let materials = Array.isArray(job.materials) ? job.materials : [];
+
+            // If empty in memory, attempt to fetch fresh details from API
+            if (materials.length === 0 && this.dataLoader && typeof this.dataLoader.fetchJob === 'function') {
+                try {
+                    const fresh = await this.dataLoader.fetchJob(job.id);
+                    if (fresh) {
+                        if (Array.isArray(fresh.materials) && fresh.materials.length > 0) {
+                            materials = fresh.materials;
+                        } else if (Array.isArray(fresh.stock_items) && fresh.stock_items.length > 0) {
+                            materials = fresh.stock_items.map(s => ({
+                                stock_id: s.stock_id,
+                                name: s.name || s.item_name || `Stock #${s.stock_id}`,
+                                brand: s.brand || '',
+                                qty: s.qty || 1
+                            }));
+                        }
+                        job.materials = materials;
+                        job.materials_count = materials.length;
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch fresh materials for job details:', e);
+                }
+            }
+
+            if (materials && materials.length > 0) {
                 matContainer.innerHTML = `
+                    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; margin-bottom: 6px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-boxes-stacked" style="color: #0284c7; margin-right: 5px;"></i> Materials allocated for printing</span>
+                        <strong style="color: var(--text);">${materials.length} item${materials.length > 1 ? 's' : ''}</strong>
+                    </div>
                     <table class="pj-assigned-table">
                         <thead>
-                            <tr><th>Material</th><th>Brand</th><th>Assigned Qty</th></tr>
+                            <tr>
+                                <th style="width: 30px;">#</th>
+                                <th>Material / Stock Item</th>
+                                <th>Brand</th>
+                                <th style="text-align: right; width: 110px;">Assigned Qty</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            ${job.materials.map(m => `
+                            ${materials.map((m, idx) => `
                                 <tr>
-                                    <td><strong>${this.escapeHtml(m.name)}</strong></td>
-                                    <td>${this.escapeHtml(m.brand || '—')}</td>
-                                    <td>${m.qty}</td>
+                                    <td style="color: var(--text-muted); font-size: 11px;">${idx + 1}</td>
+                                    <td>
+                                        <strong style="color: var(--text);">
+                                            <i class="fa-solid fa-box" style="color: #0284c7; margin-right: 4px; font-size: 11px;"></i>
+                                            ${this.escapeHtml(m.name || m.item_name || 'Material')}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span style="background: var(--surface-2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; font-size: 11px; color: var(--text);">
+                                            ${this.escapeHtml(m.brand || 'Generic')}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: right; font-weight: 700; font-family: monospace; color: #0284c7;">
+                                        ${m.qty}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 `;
             } else {
-                matContainer.innerHTML = '<div style="font-size: 12px; color: #94a3b8; font-style: italic;">No stock materials currently linked to this job.</div>';
+                matContainer.innerHTML = '<div style="font-size: 12px; color: #94a3b8; font-style: italic; padding: 8px 0;"><i class="fa-solid fa-circle-exclamation" style="margin-right: 4px;"></i> No stock materials currently linked to this job.</div>';
             }
         }
 

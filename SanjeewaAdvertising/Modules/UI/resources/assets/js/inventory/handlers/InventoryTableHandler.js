@@ -34,7 +34,7 @@ export class InventoryTableHandler extends BaseTableLoader {
       paginationInfoId: "invPaginationInfo",
       paginationControlsId: "invPaginationControls",
       pageSize: 20,
-      colspan: 10,
+      colspan: 8,
       emptyIcon: "fa-boxes-stacked",
       emptyMessage: "No stock records found matching criteria.",
       itemLabel: "records",
@@ -188,6 +188,7 @@ export class InventoryTableHandler extends BaseTableLoader {
     if (viewName === "aggregated") {
       this.tbodyId = "invAggregatedTableBody";
       this.rowBuilder = StockItemAggregatedRowBuilder;
+      this.colspan = 8;
       this.emptyMessage = "No matching material catalog items found";
 
       if (aggBtn) {
@@ -208,6 +209,7 @@ export class InventoryTableHandler extends BaseTableLoader {
     } else {
       this.tbodyId = "invTableBody";
       this.rowBuilder = InventoryRowBuilder;
+      this.colspan = 10;
       this.emptyMessage = "No matching stock batch consignments found";
 
       if (batBtn) {

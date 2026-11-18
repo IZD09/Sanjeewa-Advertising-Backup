@@ -131,7 +131,7 @@ export class JobStatusSlide extends DashboardBaseSlide {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "60%",
+        cutout: "0%",
         plugins: {
           legend: {
             display: true,

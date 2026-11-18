@@ -5,6 +5,7 @@ export class PrintJobStatusModal {
     constructor(dataLoader, options = {}) {
         this.dataLoader = dataLoader;
         this.onJobUpdated = options.onJobUpdated || (() => {});
+        this.onNeedMaterials = options.onNeedMaterials || null;
         this.showToast = options.showToast || ((msg, type) => alert(msg));
         this.modal = document.getElementById('modalChangeStatus');
         this.currentJob = null;
@@ -60,6 +61,19 @@ export class PrintJobStatusModal {
 
         if (!newStatusId) {
             this.showToast('Please select a new production stage.', 'warning');
+            return;
+        }
+
+        // Prevent moving to Finishing without materials allocated in Printing
+        const isFinishingStatus = newStatusId === 5 || (this.statuses.find(s => s.id === newStatusId)?.name?.toLowerCase() === 'finishing');
+        const hasMaterials = (this.currentJob.materials || []).length > 0;
+        if (isFinishingStatus && !hasMaterials) {
+            this.showToast('Please allocate materials used during printing before moving to Finishing.', 'warning');
+            const targetJob = this.currentJob;
+            this.close();
+            if (typeof this.onNeedMaterials === 'function') {
+                this.onNeedMaterials(targetJob);
+            }
             return;
         }
 

@@ -834,6 +834,31 @@ html[data-theme="dark"] .ant-btn-default:hover {
     box-shadow: none;
 }
 
+.pj-btn-advance-status.btn-need-materials {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(2, 132, 199, 0.18) 100%) !important;
+    border: 1px dashed #0284c7 !important;
+    color: #0284c7 !important;
+    box-shadow: none !important;
+}
+
+.pj-btn-advance-status.btn-need-materials:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    border-style: solid !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.32) !important;
+}
+
+html[data-theme="dark"] .pj-btn-advance-status.btn-need-materials {
+    background: rgba(2, 132, 199, 0.18) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+}
+
+html[data-theme="dark"] .pj-btn-advance-status.btn-need-materials:hover:not(:disabled) {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
 /* ==========================================================================
    6. TABLE VIEW STYLING
    ========================================================================== */
@@ -1120,6 +1145,49 @@ html[data-theme="dark"] .ant-btn-default:hover {
 
 .pj-input:focus {
     border-color: #1677ff;
+}
+
+.pj-cat-pill {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border, #cbd5e1);
+    background: var(--surface, #ffffff);
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.pj-cat-pill:hover {
+    border-color: #0284c7;
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.06);
+}
+
+.pj-cat-pill.active {
+    background: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .pj-cat-pill {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .pj-cat-pill:hover {
+    border-color: #38bdf8;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+}
+
+html[data-theme="dark"] .pj-cat-pill.active {
+    background: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
 }
 
 .pj-assigned-table {

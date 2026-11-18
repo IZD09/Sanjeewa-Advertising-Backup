@@ -48,6 +48,14 @@ export class InventoryEntity {
     const totalVal = this.totalValue || (availQty * (this.unitPrice || 0));
     const status = getItemStatus(this);
 
+    const statusLabel = String(status.label || "").toLowerCase();
+    let rowStatusClass = "row-status-completed"; // default In Stock -> Green highlight
+    if (statusLabel.includes("out of stock") || availQty <= 0) {
+      rowStatusClass = "row-status-cancelled"; // Red highlight
+    } else if (statusLabel.includes("low stock") || availQty <= (this.minThreshold || 10)) {
+      rowStatusClass = "row-status-pending"; // Amber highlight
+    }
+
     // Format batches string if present
     let batchInfo = "";
     if (Array.isArray(this.batches) && this.batches.length > 0) {
@@ -57,6 +65,7 @@ export class InventoryEntity {
 
     const tr = document.createElement("tr");
     tr.id = `invRow_${this.code || this.id || ""}`;
+    tr.className = rowStatusClass;
     tr.dataset.stockId = String(this.id || "");
     tr.dataset.itemCode = this.code || "";
     tr.innerHTML = `
