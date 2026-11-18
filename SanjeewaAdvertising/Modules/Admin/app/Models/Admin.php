@@ -108,6 +108,14 @@ class Admin extends Authenticatable
     }
 
     /**
+     * Disable remember_token column lookup as admins table does not have remember_token.
+     */
+    public function getRememberTokenName(): string
+    {
+        return '';
+    }
+
+    /**
      * Check if the administrator can access a system module.
      */
     public function canAccessModule(string|int $module): bool

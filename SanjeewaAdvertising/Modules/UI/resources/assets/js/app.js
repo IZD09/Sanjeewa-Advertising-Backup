@@ -323,6 +323,25 @@ if (typeof window !== "undefined") {
     bootApp();
   });
 
+  // Force a full browser reload if Turbo is redirected to or renders the Login / Admin Login page
+  document.addEventListener("turbo:before-render", (e) => {
+    const newBody = e.detail?.newBody;
+    const isAuthPage =
+      window.location.pathname === "/login" ||
+      window.location.pathname === "/admin/login" ||
+      !!(
+        newBody &&
+        (newBody.querySelector("#adminLoginForm") ||
+          newBody.querySelector("#form[action*='login']") ||
+          newBody.querySelector("main.page > section.brand"))
+      );
+
+    if (isAuthPage) {
+      e.preventDefault();
+      window.location.replace(window.location.href);
+    }
+  });
+
   // Clean up active streams and timers when navigating away or logging out
   document.addEventListener("turbo:before-visit", (e) => {
     try {

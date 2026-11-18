@@ -33,23 +33,29 @@ body {
 }
 
 .page {
-  display: grid;
-  grid-template-columns: 45fr 55fr;
-  min-height: 100vh;
-  min-height: 100dvh;
+  display: grid !important;
+  grid-template-columns: 45fr 55fr !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  width: 100% !important;
 }
 
 /* Branding */
+.page > .brand,
 .brand {
-  position: relative;
-  overflow: hidden;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  padding: 40px 56px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 32px;
+  position: relative !important;
+  overflow: hidden !important;
+  background: var(--panel) !important;
+  border-right: 1px solid var(--line) !important;
+  border-bottom: none !important;
+  height: auto !important;
+  min-height: 100% !important;
+  padding: 40px 56px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  gap: 32px !important;
   animation: inL .8s cubic-bezier(.2, .7, .2, 1) both;
 }
 

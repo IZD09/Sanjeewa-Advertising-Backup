@@ -1,11 +1,21 @@
+@php
+    $appSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
+    $appShopName = $appSettings['shop_name'] ?? 'Sanjeewa Advertising';
+    $appFaviconHref = \Modules\UI\Http\Controllers\SettingsController::getFaviconHref($appSettings);
+    $appThemeColor = $appSettings['theme_color'] ?? '#1677ff';
+    $appLogoUrl = $appSettings['logo_url'] ?? null;
+    $appLogoIcon = $appSettings['logo_icon'] ?? 'fa-solid fa-shield-halved';
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="turbo-cache-control" content="no-cache">
 
-    <title>Administrator Sign in - Sanjeewa Advertising</title>
+    <title>Administrator Sign in - {{ $appShopName }}</title>
+    <link id="appFavicon" rel="icon" href="{{ $appFaviconHref }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +24,24 @@
 
     {{-- Admin Login Dedicated Stylesheet (Matches Project Design System) --}}
     {{ module_vite('build-ui', 'resources/assets/css/admin-login.css') }}
+    <style>:root { --blue: {{ $appThemeColor }}; }</style>
 </head>
 <body>
+<script>
+    (function () {
+        document.querySelectorAll('head link[rel="stylesheet"]').forEach(function (link) {
+            var href = link.getAttribute('href') || '';
+            if (href && !href.includes('admin-login') && !href.includes('fonts.googleapis.com') && !href.includes('font-awesome')) {
+                link.disabled = true;
+                link.remove();
+            }
+        });
+        document.body.className = '';
+        if (window.appRouter) {
+            window.location.reload();
+        }
+    })();
+</script>
 <main class="page">
     {{-- Left Brand Section --}}
     <section class="brand" aria-label="Administrator portal introduction">
@@ -30,10 +56,14 @@
         </div>
 
         <div class="logo">
-            <span class="logo-mark" aria-hidden="true">
-                <i class="fa-solid fa-shield-halved"></i>
+            <span class="logo-mark" aria-hidden="true" style="overflow: hidden;">
+                @if(!empty($appLogoUrl))
+                    <img src="{{ $appLogoUrl }}" alt="{{ $appShopName }}" style="width: 100%; height: 100%; object-fit: cover;">
+                @else
+                    <i class="{{ $appLogoIcon }}"></i>
+                @endif
             </span>
-            <span>Sanjeewa Advertising</span>
+            <span>{{ $appShopName }}</span>
         </div>
 
         <div class="brand-body">
@@ -67,7 +97,7 @@
             </ul>
         </div>
 
-        <div class="foot">&copy; <span id="adminCopyrightYear">{{ date('Y') }}</span> Sanjeewa Advertising. Enterprise Administration.</div>
+        <div class="foot">&copy; <span id="adminCopyrightYear">{{ date('Y') }}</span> {{ $appShopName }}. Enterprise Administration.</div>
     </section>
 
     {{-- Right Form Section --}}
@@ -76,7 +106,7 @@
             <h2>Administrator Sign In</h2>
             <p class="sub">Enter your administrative credentials to continue.</p>
 
-            <form id="adminLoginForm" method="POST" action="{{ route('admin.login.submit', [], false) }}" data-redirect="{{ route('ui.dashboard') }}" novalidate autocomplete="off">
+            <form id="adminLoginForm" method="POST" action="{{ route('admin.login.submit', [], false) }}" data-redirect="{{ route('admin.dashboard') }}" data-turbo="false" novalidate autocomplete="off">
                 @csrf
 
                 {{-- Admin Identifier Field --}}
@@ -145,7 +175,7 @@
 
                 {{-- Switch to Staff Portal --}}
                 <div class="portal-switch">
-                    <a href="{{ route('login') }}" class="portal-switch-btn" title="Switch to Staff / User Login">
+                    <a href="{{ route('login') }}" class="portal-switch-btn" data-turbo="false" title="Switch to Staff / User Login">
                         <i class="fa-solid fa-user" aria-hidden="true"></i>
                         <span>Staff / User Login</span>
                         <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>

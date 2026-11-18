@@ -11,10 +11,13 @@
     </div>
     <div class="po-modal-body" style="background: var(--surface-2); padding: 16px;">
       <div class="receipt-paper" id="printableReceipt">
+        @php
+          $rcptSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
+        @endphp
         <div class="receipt-header">
-          <h2>SANJEEWA ADVERTISING</h2>
-          <p>Digital Large Format & Offset Printing Solutions</p>
-          <p>No. 42 Main Street, Colombo 03, Sri Lanka &bull; Tel: +94 11 234 5678</p>
+          <h2>{{ strtoupper($rcptSettings['shop_name'] ?? 'SANJEEWA ADVERTISING') }}</h2>
+          <p>Digital Large Format &amp; Offset Printing Solutions</p>
+          <p>{{ $rcptSettings['shop_address'] ?? 'No. 42 Main Street, Colombo 03, Sri Lanka' }} &bull; Tel: {{ $rcptSettings['shop_phone'] ?? '+94 11 234 5678' }}</p>
           <span class="receipt-badge-title">OFFICIAL PAYMENT RECEIPT</span>
         </div>
 

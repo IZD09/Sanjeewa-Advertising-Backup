@@ -53,14 +53,11 @@ class AuthController extends BaseApiController
         }
 
         if (Auth::guard('web')->hasUser() || $request->hasSession()) {
-            Auth::guard('web')->login($authData['user']);
-        }
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return $this->success(
-                new AuthResource($authData),
-                'Login successful.'
-            );
+            Auth::guard('web')->login($authData['user'], $request->boolean('remember'));
+            if ($request->hasSession()) {
+                $portal = ($authData['user']->username ?? '') === 'admin' ? 'admin' : 'user';
+                $request->session()->put('active_portal', $portal);
+            }
         }
 
         /** @var User $user */
@@ -68,6 +65,15 @@ class AuthController extends BaseApiController
         $landingUrl = method_exists($user, 'getDefaultLandingRoute')
             ? $user->getDefaultLandingRoute()
             : route('ui.dashboard');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $authData['redirect_url'] = $landingUrl;
+
+            return $this->success(
+                new AuthResource($authData),
+                'Login successful.'
+            );
+        }
 
         return redirect()->intended($landingUrl);
     }

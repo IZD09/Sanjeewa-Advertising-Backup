@@ -16,6 +16,9 @@ import { InvoicePaymentBuilder } from "../builders/InvoicePaymentBuilder.js";
 import { InvoicePaymentProcessor } from "../processors/InvoicePaymentProcessor.js";
 
 export class RecordInvoicePaymentModal extends BaseModalHandler {
+  static __eventsBound = false;
+  static isGlobalSubmitting = false;
+
   /**
    * @param {Object} context
    * @param {Function} context.getOrders
@@ -46,17 +49,24 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     this.selectedMethod = "Cash";
     this.isSubmitting = false;
 
+    window.__activeRecordInvoicePaymentModal = this;
     this.bindEvents();
   }
 
   bindEvents() {
+    if (RecordInvoicePaymentModal.__eventsBound) {
+      return;
+    }
+    RecordInvoicePaymentModal.__eventsBound = true;
+
     // Open triggers across the application
     document.addEventListener("click", (e) => {
       const openBtn = e.target.closest("#btnOpenRecordInvoicePayment, [data-action='record-invoice']");
       if (openBtn) {
         e.preventDefault();
         const prefillId = openBtn.getAttribute("data-order-id") || null;
-        this.openRecordInvoicePaymentModal(prefillId);
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.openRecordInvoicePaymentModal(prefillId);
         return;
       }
 
@@ -67,7 +77,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         e.stopPropagation();
         const jobId = removeBtn.getAttribute("data-job-id");
         if (jobId) {
-          this.removeJob(jobId);
+          const handler = window.__activeRecordInvoicePaymentModal || this;
+          handler.removeJob(jobId);
         }
         return;
       }
@@ -76,7 +87,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const payFullBtn = e.target.closest("#btnInvPayFull");
       if (payFullBtn) {
         e.preventDefault();
-        this.payFullBalance();
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.payFullBalance();
         return;
       }
 
@@ -86,7 +98,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         e.preventDefault();
         const typeId = parseInt(methodChoice.getAttribute("data-type-id"), 10) || 1;
         const methodName = methodChoice.getAttribute("data-method") || "Cash";
-        this.setPaymentType(typeId, methodName);
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.setPaymentType(typeId, methodName);
         return;
       }
 
@@ -95,7 +108,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       if (toggleCustBtn) {
         e.preventDefault();
         e.stopPropagation();
-        this.toggleCustomerDropdown();
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.toggleCustomerDropdown();
         return;
       }
 
@@ -104,9 +118,10 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       if (custItem) {
         e.preventDefault();
         const custId = parseInt(custItem.getAttribute("data-customer-id"), 10);
-        const cust = this.customers.find(c => Number(c.id) === custId);
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        const cust = handler.customers.find(c => Number(c.id) === custId);
         if (cust) {
-          this.selectCustomer(cust);
+          handler.selectCustomer(cust);
         }
         return;
       }
@@ -115,7 +130,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const clearCustBtn = e.target.closest("#invClearCustomerBtn");
       if (clearCustBtn) {
         e.preventDefault();
-        this.clearSelectedCustomer();
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.clearSelectedCustomer();
         return;
       }
 
@@ -123,7 +139,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const addAllBtn = e.target.closest("#invBtnAddAllJobs");
       if (addAllBtn) {
         e.preventDefault();
-        this.addAllPendingJobs();
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.addAllPendingJobs();
         return;
       }
 
@@ -131,7 +148,14 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const confirmBtn = e.target.closest("#btnConfirmSaveInvoicePayment");
       if (confirmBtn) {
         e.preventDefault();
-        this.save();
+        e.stopPropagation();
+        if (confirmBtn.disabled || RecordInvoicePaymentModal.isGlobalSubmitting) {
+          return;
+        }
+        confirmBtn.disabled = true;
+        confirmBtn.style.pointerEvents = "none";
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.save();
         return;
       }
 
@@ -140,7 +164,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const dropdown = document.getElementById("invCustDropdown");
       if (dropdown && dropdown.style.display !== "none") {
         if (!searchGroup || !searchGroup.contains(e.target)) {
-          this.hideCustomerDropdown();
+          const handler = window.__activeRecordInvoicePaymentModal || this;
+          handler.hideCustomerDropdown();
         }
       }
     });
@@ -165,7 +190,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       jobSelect.addEventListener("change", (e) => {
         const val = e.target.value;
         if (val) {
-          this.addJobById(val);
+          const handler = window.__activeRecordInvoicePaymentModal || this;
+          handler.addJobById(val);
           jobSelect.value = "";
         }
       });
@@ -174,7 +200,10 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     // Total Amount Input
     const amountInput = document.getElementById("invModalAmount");
     if (amountInput) {
-      amountInput.addEventListener("input", () => this.onTotalAmountChanged());
+      amountInput.addEventListener("input", () => {
+        const handler = window.__activeRecordInvoicePaymentModal || this;
+        handler.onTotalAmountChanged();
+      });
     }
 
     // Individual Job Allocation Input change / input
@@ -185,7 +214,8 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         if (allocInput) {
           const jobId = allocInput.getAttribute("data-job-id");
           const val = parseFloat(allocInput.value) || 0;
-          this.onJobAllocationChanged(jobId, val);
+          const handler = window.__activeRecordInvoicePaymentModal || this;
+          handler.onJobAllocationChanged(jobId, val);
         }
       });
     }
@@ -196,6 +226,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
    * @param {string|number|null} prefillOrderId
    */
   async openRecordInvoicePaymentModal(prefillOrderId = null) {
+    window.__activeRecordInvoicePaymentModal = this;
     const modal = document.getElementById("modalRecordInvoicePayment");
     if (!modal) return;
 
@@ -233,8 +264,12 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
   /**
    * Load all customers from API
+   * @param {boolean} [forceRefresh=false]
    */
-  async loadCustomers() {
+  async loadCustomers(forceRefresh = false) {
+    if (!forceRefresh && Array.isArray(this.customers) && this.customers.length > 0) {
+      return;
+    }
     try {
       const res = await this.http.get("/api/v1/customers/all");
       const data = res?.data || res;
@@ -257,9 +292,21 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     const payments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
 
     const clean = String(orderId).trim().toLowerCase();
-    let found = orders.find(o => String(o.id ?? "").toLowerCase() === clean || String(o.id ?? "").toLowerCase().endsWith(clean));
+    let found = orders.find(o =>
+      String(o.rawId ?? o.jobId ?? "") === clean ||
+      String(o.id ?? "").toLowerCase() === clean
+    );
     if (!found) {
-      found = payments.find(p => String(p.orderId ?? p.id ?? "").toLowerCase() === clean || String(p.orderId ?? p.id ?? "").toLowerCase().endsWith(clean));
+      found = orders.find(o => String(o.id ?? "").toLowerCase().endsWith(clean));
+    }
+    if (!found) {
+      found = payments.find(p =>
+        String(p.orderId ?? p.id ?? "").toLowerCase() === clean ||
+        (Array.isArray(p.jobIds) && p.jobIds.some(jid => String(jid).toLowerCase() === clean))
+      );
+    }
+    if (!found) {
+      found = payments.find(p => String(p.orderId ?? p.id ?? "").toLowerCase().endsWith(clean));
     }
 
     let customerToSelect = null;
@@ -461,12 +508,12 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
     // If an autoSelectJobId was passed, add that job immediately
     if (autoSelectJobId) {
+      const q = String(autoSelectJobId).toLowerCase();
       const match = this.pendingJobs.find(j => {
         const c1 = String(j.id).toLowerCase();
-        const c2 = String(j.rawId);
-        const q = String(autoSelectJobId).toLowerCase();
-        return c1 === q || c1.endsWith(q) || c2 === q;
-      });
+        const c2 = String(j.rawId).toLowerCase();
+        return c2 === q || c1 === q;
+      }) || this.pendingJobs.find(j => String(j.id).toLowerCase().endsWith(q));
       if (match) {
         this.addJobObject(match);
       }
@@ -661,7 +708,13 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
   addJobObject(order) {
     const jobId = order.id || order.orderId;
     if (!jobId) return;
-    if (this.selectedJobs.some(j => String(j.id).toLowerCase() === String(jobId).toLowerCase())) return;
+    const rawId = order.rawId || order.jobId || (typeof order.id === "number" ? order.id : null);
+    if (this.selectedJobs.some(j => {
+      return String(j.id).toLowerCase() === String(jobId).toLowerCase() ||
+             (rawId && j.rawId && Number(j.rawId) === Number(rawId));
+    })) {
+      return;
+    }
 
     const tot = Number(order.totalAmount !== undefined ? order.totalAmount : order.totalBill) || 0;
     const paid = Number(order.paidAmount !== undefined ? order.paidAmount : order.amount) || 0;
@@ -913,15 +966,17 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
    * Save Invoice Settlement
    */
   async save() {
-    if (this.isSubmitting) return;
+    if (this.isSubmitting || RecordInvoicePaymentModal.isGlobalSubmitting) return;
 
     if (!this.selectedCustomer) {
       this.showToast("Please search and select a customer first.", "error");
+      this.resetConfirmButton();
       return;
     }
 
     if (!this.selectedJobs || this.selectedJobs.length === 0) {
       this.showToast("Please select at least one pending print job for this invoice.", "error");
+      this.resetConfirmButton();
       return;
     }
 
@@ -930,13 +985,17 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
 
     if (totalAmount <= 0) {
       this.showToast("Please enter a valid payment amount greater than Rs. 0.", "error");
+      this.resetConfirmButton();
       return;
     }
 
     this.isSubmitting = true;
+    RecordInvoicePaymentModal.isGlobalSubmitting = true;
+
     const confirmBtn = document.getElementById("btnConfirmSaveInvoicePayment");
     if (confirmBtn) {
       confirmBtn.disabled = true;
+      confirmBtn.style.pointerEvents = "none";
       confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Settlement...`;
     }
 
@@ -945,6 +1004,29 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const payDate = document.getElementById("invModalDate")?.value || new Date().toISOString().split("T")[0];
       const notes = document.getElementById("invModalNotes")?.value.trim() || "";
       const receivedBy = document.getElementById("invModalAuthorizedOfficer")?.value || document.getElementById("invModalOfficer")?.value || "Cashier";
+
+      // Ensure single-job invoices explicitly assign totalAmount, and multi-job invoices distribute totalAmount
+      if (this.selectedJobs.length === 1) {
+        this.selectedJobs[0].allocatedAmount = totalAmount;
+      } else {
+        const sumAlloc = this.selectedJobs.reduce((s, j) => s + (Number(j.allocatedAmount) || 0), 0);
+        if (Math.abs(sumAlloc - totalAmount) > 0.01) {
+          let remaining = totalAmount;
+          this.selectedJobs.forEach(job => {
+            const needed = job.balanceAmount > 0 ? job.balanceAmount : job.totalAmount;
+            if (remaining >= needed) {
+              job.allocatedAmount = needed;
+              remaining -= needed;
+            } else {
+              job.allocatedAmount = remaining;
+              remaining = 0;
+            }
+          });
+          if (remaining > 0 && this.selectedJobs.length > 0) {
+            this.selectedJobs[0].allocatedAmount += remaining;
+          }
+        }
+      }
 
       const builder = new InvoicePaymentBuilder();
       builder.setCustomer(this.selectedCustomer)
@@ -964,7 +1046,9 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
         this.clearSelectedCustomer();
         this.showToast("Invoice payment recorded successfully!", "success");
 
-        if (this.ctx.render) {
+        if (this.ctx.refreshInvoiceData) {
+          await this.ctx.refreshInvoiceData();
+        } else if (this.ctx.render) {
           this.ctx.render();
         }
       }
@@ -973,12 +1057,23 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       this.showToast("An error occurred while saving invoice settlement.", "error");
     } finally {
       this.isSubmitting = false;
-      if (confirmBtn) {
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = `
-          <i class="fa-solid fa-check-circle"></i>
-          <span id="btnConfirmSaveInvoiceText">Save Invoice Payment &amp; Generate Voucher</span>`;
-      }
+      RecordInvoicePaymentModal.isGlobalSubmitting = false;
+      this.resetConfirmButton();
+    }
+  }
+
+  /**
+   * Reset Confirm Save button to active state
+   */
+  resetConfirmButton() {
+    const confirmBtn = document.getElementById("btnConfirmSaveInvoicePayment");
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.style.pointerEvents = "";
+      const jobCount = (this.selectedJobs || []).length;
+      confirmBtn.innerHTML = `
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="btnConfirmSaveInvoiceText">${jobCount > 1 ? `Save Invoice Payment (${jobCount} Orders) & Generate Voucher` : `Save Invoice Payment & Generate Voucher`}</span>`;
     }
   }
 

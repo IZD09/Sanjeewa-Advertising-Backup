@@ -110,19 +110,68 @@ export class RevenueComparisonSlide extends DashboardBaseSlide {
     const labels = paymentData?.labels || [];
     const values = paymentData?.values || [];
 
+    const methodColorMap = {
+      "cash": "#10b981",               // Emerald Green
+      "bank transfer": "#2563eb",       // Royal Blue
+      "credit card": "#8b5cf6",         // Purple
+      "debit card": "#06b6d4",          // Cyan / Teal
+      "cheque": "#f59e0b",              // Amber Orange
+      "online / qr payment": "#ec4899", // Hot Pink
+      "online / qr": "#ec4899",
+      "online": "#ec4899",
+      "qr payment": "#ec4899",
+      "qr": "#ec4899"
+    };
+
+    const fallbackPalette = [
+      "#10b981", // Emerald Green
+      "#2563eb", // Royal Blue
+      "#8b5cf6", // Purple
+      "#06b6d4", // Cyan
+      "#f59e0b", // Amber Orange
+      "#ec4899", // Pink
+      "#f97316", // Coral Orange
+      "#14b8a6", // Teal
+      "#6366f1", // Indigo
+      "#e11d48", // Crimson
+      "#84cc16", // Lime
+      "#a855f7"  // Violet
+    ];
+
+    const colors = paymentData?.colors && paymentData.colors.length >= labels.length
+      ? paymentData.colors
+      : labels.map((label, idx) => {
+          const key = String(label).toLowerCase().trim();
+          return methodColorMap[key] || fallbackPalette[idx % fallbackPalette.length];
+        });
+
     this.createChart("paymentMethodsChart", {
       type: "doughnut",
       data: {
         labels: labels,
         datasets: [{
           data: values,
-          backgroundColor: ["#10b981", "#2563eb", "#8b5cf6", "#f59e0b", "#64748b"],
-          borderWidth: 0,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: "#ffffff",
           hoverOffset: 4
         }]
       },
       options: {
-        cutout: "50%"
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "55%",
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: {
+              boxWidth: 12,
+              padding: 10,
+              usePointStyle: true
+            }
+          }
+        }
       }
     });
   }

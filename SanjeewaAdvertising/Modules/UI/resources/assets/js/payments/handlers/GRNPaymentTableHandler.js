@@ -7,6 +7,7 @@
  */
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 import { GrnPaymentRowBuilder, GrnPaymentEntity } from "../builders/GrnPaymentRowBuilder.js";
 
 export class GRNPaymentTableHandler extends BaseTableLoader {
@@ -78,7 +79,7 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
 
       const stage = p.stage || (p.payment_status === "Paid" ? "Complete Payment" : "Pending Payment");
       const matchesStatus = grnStatusFilter === "ALL" || stage === grnStatusFilter;
-      const matchesMethod = grnMethodFilter === "ALL" || p.method === grnMethodFilter;
+      const matchesMethod = StatusHelper.matchesPaymentMethod(p.method, grnMethodFilter);
 
       return matchesSearch && matchesStatus && matchesMethod;
     });

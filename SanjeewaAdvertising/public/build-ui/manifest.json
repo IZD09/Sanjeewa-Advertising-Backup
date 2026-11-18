@@ -38,16 +38,24 @@
     "file": "assets/RequestHandler-DGIgTA7N.js",
     "name": "RequestHandler"
   },
-  "_StatusHelper-B-_P9z0f.js": {
-    "file": "assets/StatusHelper-B-_P9z0f.js",
+  "_StatusHelper-CxnHzA1T.js": {
+    "file": "assets/StatusHelper-CxnHzA1T.js",
     "name": "StatusHelper"
   },
   "_ValidatBuilder-DPg4PYww.js": {
     "file": "assets/ValidatBuilder-DPg4PYww.js",
     "name": "ValidatBuilder"
   },
+  "_ViewOrderModal-BEUuCzD2.js": {
+    "file": "assets/ViewOrderModal-BEUuCzD2.js",
+    "name": "ViewOrderModal",
+    "imports": [
+      "_BaseModalHandler-BzI2OdAS.js",
+      "_RequestHandler-DGIgTA7N.js"
+    ]
+  },
   "resources/assets/css/admin-login.css": {
-    "file": "assets/admin-login-B1c6h-Pf.css",
+    "file": "assets/admin-login-CTUvoob_.css",
     "name": "admin-login",
     "names": [
       "admin-login.css"
@@ -74,7 +82,7 @@
     "isEntry": true
   },
   "resources/assets/css/components/sidebar.css": {
-    "file": "assets/sidebar-CGNHHnv0.css",
+    "file": "assets/sidebar-kuei_92V.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -83,7 +91,7 @@
     "isEntry": true
   },
   "resources/assets/css/core.css": {
-    "file": "assets/core-B1-CxdKF.css",
+    "file": "assets/core-CMell4iq.css",
     "name": "core",
     "names": [
       "core.css"
@@ -119,7 +127,7 @@
     "isEntry": true
   },
   "resources/assets/css/login.css": {
-    "file": "assets/login-DBpjXoVc.css",
+    "file": "assets/login-C6_XK6Pt.css",
     "name": "login",
     "names": [
       "login.css"
@@ -137,7 +145,7 @@
     "isEntry": true
   },
   "resources/assets/css/payments.css": {
-    "file": "assets/payments-B-L03gh5.css",
+    "file": "assets/payments-BwUluBsk.css",
     "name": "payments",
     "names": [
       "payments.css"
@@ -164,12 +172,21 @@
     "isEntry": true
   },
   "resources/assets/css/reports.css": {
-    "file": "assets/reports-BtkKOyUt.css",
+    "file": "assets/reports-DxAkwdrT.css",
     "name": "reports",
     "names": [
       "reports.css"
     ],
     "src": "resources/assets/css/reports.css",
+    "isEntry": true
+  },
+  "resources/assets/css/settings.css": {
+    "file": "assets/settings-CG-3X-qX.css",
+    "name": "settings",
+    "names": [
+      "settings.css"
+    ],
+    "src": "resources/assets/css/settings.css",
     "isEntry": true
   },
   "resources/assets/css/user-profile.css": {
@@ -182,7 +199,7 @@
     "isEntry": true
   },
   "resources/assets/js/admin/admin-login.js": {
-    "file": "assets/admin-login-C95-p-if.js",
+    "file": "assets/admin-login-BG-Lp_Nb.js",
     "name": "admin-login",
     "src": "resources/assets/js/admin/admin-login.js",
     "isEntry": true,
@@ -192,7 +209,7 @@
     ]
   },
   "resources/assets/js/admin/dashboard.js": {
-    "file": "assets/dashboard-CNhoSVWw.js",
+    "file": "assets/dashboard-SUYhxdjv.js",
     "name": "dashboard",
     "src": "resources/assets/js/admin/dashboard.js",
     "isEntry": true,
@@ -201,7 +218,7 @@
     ]
   },
   "resources/assets/js/admin/login.js": {
-    "file": "assets/login-BTwTwBKp.js",
+    "file": "assets/login-B2Xevzqe.js",
     "name": "login",
     "src": "resources/assets/js/admin/login.js",
     "isEntry": true,
@@ -230,7 +247,7 @@
     ]
   },
   "resources/assets/js/app.js": {
-    "file": "assets/app-CZiShAJ3.js",
+    "file": "assets/app-Sg_7J12S.js",
     "name": "app",
     "src": "resources/assets/js/app.js",
     "isEntry": true
@@ -248,7 +265,7 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-DQNy0Fel.js",
+    "file": "assets/core-BOYFIowV.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
@@ -263,7 +280,7 @@
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
-      "_StatusHelper-B-_P9z0f.js"
+      "_StatusHelper-CxnHzA1T.js"
     ]
   },
   "resources/assets/js/customers.js": {
@@ -278,7 +295,7 @@
     ]
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-BUEDdU9V.js",
+    "file": "assets/dashboard-V_r1e5R8.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
     "isEntry": true,
@@ -316,7 +333,7 @@
     ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-DHULc1YM.js",
+    "file": "assets/login-_-KH0F1x.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
     "isEntry": true,
@@ -326,7 +343,7 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-DdocSixR.js",
+    "file": "assets/payments-CTHz8w1O.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
@@ -336,11 +353,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_RequestHandler-DGIgTA7N.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_StatusHelper-B-_P9z0f.js"
+      "_StatusHelper-CxnHzA1T.js",
+      "_ViewOrderModal-BEUuCzD2.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-CKbR3J0e.js",
+    "file": "assets/place-order-qyrh-wPf.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
@@ -352,11 +370,12 @@
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
-      "_StatusHelper-B-_P9z0f.js"
+      "_StatusHelper-CxnHzA1T.js",
+      "_ViewOrderModal-BEUuCzD2.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-hmaBGrhi.js",
+    "file": "assets/print-jobs-Bona6IN3.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,
@@ -364,7 +383,7 @@
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
-      "_StatusHelper-B-_P9z0f.js"
+      "_StatusHelper-CxnHzA1T.js"
     ]
   },
   "resources/assets/js/profile.js": {
@@ -389,7 +408,7 @@
     ]
   },
   "resources/assets/js/reports.js": {
-    "file": "assets/reports-Dp2R1pJ_.js",
+    "file": "assets/reports-BOlP66Yf.js",
     "name": "reports",
     "src": "resources/assets/js/reports.js",
     "isEntry": true,
@@ -397,7 +416,17 @@
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_RequestHandler-DGIgTA7N.js",
-      "_MobileNumberHelper-Cjypt2Ll.js"
+      "_MobileNumberHelper-Cjypt2Ll.js",
+      "_StatusHelper-CxnHzA1T.js"
+    ]
+  },
+  "resources/assets/js/settings.js": {
+    "file": "assets/settings-DYzT77t-.js",
+    "name": "settings",
+    "src": "resources/assets/js/settings.js",
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-DGIgTA7N.js"
     ]
   },
   "resources/assets/sass/app.scss": {

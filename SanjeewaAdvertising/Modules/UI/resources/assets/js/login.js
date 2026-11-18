@@ -350,9 +350,17 @@ export class LoginManager {
   }
 }
 
-// Global auto-initialization on DOM ready
+// Global auto-initialization on DOM ready or Turbo load
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
-    window.loginManager = new LoginManager();
-  });
+  const bootLogin = () => {
+    const formEl = document.getElementById("form");
+    if (formEl && !formEl.dataset.loginBooted) {
+      formEl.dataset.loginBooted = "1";
+      window.loginManager = new LoginManager();
+    }
+  };
+
+  bootLogin();
+  document.addEventListener("DOMContentLoaded", bootLogin);
+  document.addEventListener("turbo:load", bootLogin);
 }

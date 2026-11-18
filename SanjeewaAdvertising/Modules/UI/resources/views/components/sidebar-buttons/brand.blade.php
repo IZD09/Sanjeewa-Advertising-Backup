@@ -1,17 +1,10 @@
 @php
-    $settingsPath = storage_path('app/settings.json');
-    $shopSettings = [];
-    if (file_exists($settingsPath)) {
-        $saved = json_decode((string) file_get_contents($settingsPath), true);
-        if (is_array($saved)) {
-            $shopSettings = $saved;
-        }
-    }
+    $shopSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
     $shopName = $shopSettings['shop_name'] ?? 'Sanjeewa Advertising';
     $shopLogoUrl = $shopSettings['logo_url'] ?? null;
     $shopLogoIcon = $shopSettings['logo_icon'] ?? 'fa-solid fa-print';
 
-    $brandNameParts = explode(' ', $shopName, 2);
+    $brandNameParts = explode(' ', trim($shopName), 2);
     $brandName = $brandName ?? ($brandNameParts[0] ?? 'Sanjeewa');
     $brandSubtitle = $brandSubtitle ?? ($brandNameParts[1] ?? ($isAdmin ?? false ? 'ADMINISTRATOR' : 'ADVERTISING'));
     $brandIcon = $brandIcon ?? $shopLogoIcon;

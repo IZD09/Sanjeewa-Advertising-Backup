@@ -31,6 +31,10 @@ export class FilterProcess {
     this.invoiceStatusFilter = "ALL";
     this.invoiceMethodFilter = "ALL";
 
+    // Filters for Collectable Payments
+    this.collectionSearch = "";
+    this.collectionStatusFilter = "ALL";
+
     // Filters for GRN Payments
     this.grnSearch = "";
     this.grnStatusFilter = "ALL";
@@ -73,6 +77,34 @@ export class FilterProcess {
         if (invStatus) invStatus.value = "ALL";
         if (invMethod) invMethod.value = "ALL";
         if (this.ctx.renderInvoiceTable) this.ctx.renderInvoiceTable(true);
+      });
+    }
+
+    // 1b. Collectable Payments Filters
+    const colSearch = document.getElementById("payCollectionSearch");
+    if (colSearch) {
+      colSearch.addEventListener("input", (e) => {
+        this.collectionSearch = e.target.value.toLowerCase().trim();
+        if (this.ctx.renderCollectionTable) this.ctx.renderCollectionTable(true);
+      });
+    }
+
+    const colStatus = document.getElementById("payCollectionStatusFilter");
+    if (colStatus) {
+      colStatus.addEventListener("change", (e) => {
+        this.collectionStatusFilter = e.target.value;
+        if (this.ctx.renderCollectionTable) this.ctx.renderCollectionTable(true);
+      });
+    }
+
+    const colReset = document.getElementById("payCollectionResetFilters");
+    if (colReset) {
+      colReset.addEventListener("click", () => {
+        this.collectionSearch = "";
+        this.collectionStatusFilter = "ALL";
+        if (colSearch) colSearch.value = "";
+        if (colStatus) colStatus.value = "ALL";
+        if (this.ctx.renderCollectionTable) this.ctx.renderCollectionTable(true);
       });
     }
 

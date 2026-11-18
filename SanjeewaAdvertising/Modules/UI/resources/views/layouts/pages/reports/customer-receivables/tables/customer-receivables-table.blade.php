@@ -6,6 +6,13 @@
             <input type="text" id="searchReceivablesTable" name="searchReceivablesTable" class="rep-table-search" data-target-table="receivablesTable" placeholder="Search customer name or phone..." aria-label="Search customer name or phone">
         </div>
         <div class="rep-toolbar-controls">
+            <select id="filterReceivablesStatus" name="filterReceivablesStatus" class="rep-filter-select rep-table-filter" data-target-table="receivablesTable" aria-label="Filter Payment Status">
+                <option value="all">All Payment Statuses</option>
+                <option value="paid">Paid (Cleared)</option>
+                <option value="partial">Partial Paid</option>
+                <option value="pending">Pending</option>
+                <option value="overdue">Overdue (31+ Days)</option>
+            </select>
             <div class="rep-sort-group">
                 <span class="rep-sort-label"><i class="fa-solid fa-arrow-up-wide-short"></i> Sort:</span>
                 <select id="sortReceivablesTable" name="sortReceivablesTable" class="rep-sort-select" data-target-table="receivablesTable" aria-label="Sort Receivables">
@@ -31,7 +38,7 @@
                     <th class="rep-sortable" data-sort-col="1" data-sort-type="text">Customer Name <i class="fa-solid fa-sort rep-sort-icon"></i></th>
                     <th class="rep-sortable" data-sort-col="2" data-sort-type="text">Mobile Phone <i class="fa-solid fa-sort rep-sort-icon"></i></th>
                     <th class="rep-sortable" data-sort-col="3" data-sort-type="date">Registered Date <i class="fa-solid fa-sort rep-sort-icon"></i></th>
-                    <th class="rep-sortable" data-sort-col="4" data-sort-type="text">Aging Status <i class="fa-solid fa-sort rep-sort-icon"></i></th>
+                    <th class="rep-sortable" data-sort-col="4" data-sort-type="text">Payment Status <i class="fa-solid fa-sort rep-sort-icon"></i></th>
                     <th class="num-col rep-sortable" data-sort-col="5" data-sort-type="number">Total Invoiced <i class="fa-solid fa-sort rep-sort-icon"></i></th>
                     <th class="num-col rep-sortable" data-sort-col="6" data-sort-type="number">Amount Paid <i class="fa-solid fa-sort rep-sort-icon"></i></th>
                     <th class="num-col rep-sortable" data-sort-col="7" data-sort-type="number">Balance Due (Rs.) <i class="fa-solid fa-sort rep-sort-icon"></i></th>
@@ -50,23 +57,62 @@
                         $custId = $isObj ? ($cust->id ?? ($i + 1)) : ($cust['id'] ?? ($i + 1));
                         $custName = $isObj ? ($cust->name ?? $cust->customer_name ?? '—') : ($cust['customer_name'] ?? $cust['name'] ?? '—');
                         $custMobile = $isObj ? ($cust->mobile ?? '—') : ($cust['mobile'] ?? '—');
-                        $custDate = $isObj ? ($cust->last_invoice_date ?? $cust->register_at ?? '—') : ($cust['last_invoice_date'] ?? $cust['register_at'] ?? '—');
+                        $rawDate = $isObj ? ($cust->register_at ?? $cust->last_invoice_date ?? null) : ($cust['register_at'] ?? $cust['last_invoice_date'] ?? null);
+                        $custDate = $rawDate ? \Carbon\Carbon::parse($rawDate)->format('Y-m-d') : '—';
                         $custInvoiced = (float) ($isObj ? ($cust->total_invoiced ?? 0) : ($cust['total_invoiced'] ?? 0));
                         $custPaid = (float) ($isObj ? ($cust->amount_paid ?? 0) : ($cust['amount_paid'] ?? 0));
                         $due = (float) ($isObj ? ($cust->outstanding_balance ?? max(0, $custInvoiced - $custPaid)) : ($cust['outstanding_balance'] ?? max(0, $custInvoiced - $custPaid)));
-                        $aging = $due <= 0 ? 'Cleared' : ($isObj ? ($cust->status ?? '1-30 Days') : ($cust['status'] ?? '1-30 Days'));
-                        if ($aging === 'Pending') { $aging = '1-30 Days'; }
-                        $badge = $due <= 0 ? 'badge-paid' : ($aging === '1-30 Days' ? 'badge-pending' : 'badge-overdue');
+                        $rawStatus = $isObj ? ($cust->status ?? '') : ($cust['status'] ?? '');
+                        $rawAging = $isObj ? ($cust->aging ?? '') : ($cust['aging'] ?? '');
+
+                        if ($rawStatus === '') {
+                            if ($custInvoiced <= 0 && $custPaid <= 0) {
+                                $rawStatus = 'No Orders';
+                            } elseif ($due <= 0) {
+                                $rawStatus = 'Paid';
+                            } elseif ($custPaid > 0) {
+                                $rawStatus = 'Partial';
+                            } else {
+                                $rawStatus = 'Pending';
+                            }
+                        }
+
+                        if ($rawStatus === 'Paid' || $rawStatus === 'Settled' || $rawStatus === 'Cleared') {
+                            $rowClass = 'row-stage-complete row-status-completed';
+                            $badge = 'badge-paid';
+                            $displayStatus = 'Paid (Cleared)';
+                            $dueColor = '#059669';
+                        } elseif ($rawStatus === 'Partial') {
+                            $rowClass = 'row-stage-advance row-status-approved';
+                            $badge = 'badge-info';
+                            $displayStatus = $rawAging ?: 'Partial Paid';
+                            $dueColor = '#dc2626';
+                        } elseif ($rawStatus === 'Overdue') {
+                            $rowClass = 'row-stage-overdue row-status-cancelled';
+                            $badge = 'badge-overdue';
+                            $displayStatus = $rawAging ? "Overdue • {$rawAging}" : 'Overdue';
+                            $dueColor = '#dc2626';
+                        } elseif ($rawStatus === 'Pending') {
+                            $rowClass = 'row-stage-pending row-status-pending';
+                            $badge = 'badge-pending';
+                            $displayStatus = $rawAging && $rawAging !== 'Pending' ? "Pending • {$rawAging}" : 'Pending';
+                            $dueColor = '#dc2626';
+                        } else {
+                            $rowClass = 'row-stage-neutral';
+                            $badge = 'badge-neutral';
+                            $displayStatus = 'No Orders';
+                            $dueColor = 'var(--text-muted, #64748b)';
+                        }
                     @endphp
-                    <tr>
+                    <tr class="{{ $rowClass }}">
                         <td><strong>#CUST-{{ str_pad((string)$custId, 4, '0', STR_PAD_LEFT) }}</strong></td>
                         <td><strong>{{ $custName }}</strong></td>
                         <td>{{ $custMobile ?: '—' }}</td>
-                        <td>{{ $custDate ?: '—' }}</td>
-                        <td><span class="rep-badge {{ $badge }}">{{ $aging }}</span></td>
+                        <td>{{ $custDate }}</td>
+                        <td><span class="rep-badge {{ $badge }}">{{ $displayStatus }}</span></td>
                         <td class="num-col">Rs. {{ number_format($custInvoiced, 2) }}</td>
                         <td class="num-col">Rs. {{ number_format($custPaid, 2) }}</td>
-                        <td class="num-col" style="color: {{ $due > 0 ? '#dc2626' : '#059669' }}; font-weight: 700;">
+                        <td class="num-col" style="color: {{ $dueColor }}; font-weight: 700;">
                             Rs. {{ number_format($due, 2) }}
                         </td>
                     </tr>

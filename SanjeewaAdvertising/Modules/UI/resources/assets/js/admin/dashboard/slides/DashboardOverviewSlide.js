@@ -299,7 +299,8 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
         datasets: [{
           data: values,
           backgroundColor: ["#10b981", "#2563eb", "#8b5cf6", "#f59e0b"],
-          borderWidth: 0,
+          borderWidth: 2,
+          borderColor: "#ffffff",
           hoverOffset: 4
         }]
       },

@@ -6,6 +6,7 @@
  */
 
 import { PaymentKpiCardBuilder } from "../builders/PaymentKpiCardBuilder.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 
 export class PaymentsOverviewHandler {
   /**
@@ -27,22 +28,19 @@ export class PaymentsOverviewHandler {
   }
 
   renderMethodBadge(method, ref = "") {
-    if (method === "Card") {
-      return `<span class="method-pill card"><i class="fa-solid fa-credit-card"></i> Card</span>`;
-    } else if (method === "Cash") {
-      return `<span class="method-pill cash"><i class="fa-solid fa-money-bill-wave"></i> Cash</span>`;
-    } else if (method === "Check") {
-      return `<span class="method-pill check"><i class="fa-solid fa-money-check"></i> Check</span>`;
-    } else {
-      return `<span class="method-pill transfer"><i class="fa-solid fa-building-columns"></i> Bank Transfer</span>`;
-    }
+    return StatusHelper.renderPaymentMethodBadge(method, ref);
   }
 
-  updateKPIs(orderPayments = [], grnPayments = []) {
+  updateKPIs(orderPayments = [], grnPayments = [], orders = []) {
     // 1. Invoice Payments Top KPI Cards
     PaymentKpiCardBuilder.buildInvoiceMetrics(orderPayments);
 
-    // 2. GRN Payments Top KPI Cards
+    // 2. Collectable Payments Top KPI Cards
+    if (orders && orders.length > 0) {
+      PaymentKpiCardBuilder.buildCollectionMetrics(orders);
+    }
+
+    // 3. GRN Payments Top KPI Cards
     PaymentKpiCardBuilder.buildGrnMetrics(grnPayments);
   }
 

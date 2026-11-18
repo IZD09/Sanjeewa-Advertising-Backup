@@ -128,20 +128,44 @@ class CustomerReceivablesReportService extends BaseReportService
     public function getCustomerReceivablesTable(array $filters = []): array
     {
         $search = trim($filters['search'] ?? '');
+        $statusFilter = strtolower(trim((string) ($filters['filter'] ?? 'all')));
         $perPage = max(5, min(100, (int) ($filters['per_page'] ?? 15)));
         $page = max(1, (int) ($filters['page'] ?? 1));
 
+        $jobCostsSub = DB::table('print_job_cost')
+            ->leftJoin('print_job_has_cost', 'print_job_cost.print_jobs_id', '=', 'print_job_has_cost.print_job_cost_print_jobs_id')
+            ->leftJoin('print_cost', 'print_job_has_cost.print_cost_id', '=', 'print_cost.id')
+            ->select(
+                'print_job_cost.print_jobs_id',
+                DB::raw('GREATEST(0, COALESCE(SUM(print_cost.price), 0) - COALESCE(MAX(print_job_cost.discount), 0)) as cost_total')
+            )
+            ->groupBy('print_job_cost.print_jobs_id');
+
+        $jobPaymentsSub = DB::table('payments')
+            ->select(
+                'print_jobs_id',
+                DB::raw('COALESCE(SUM(payment), 0) as paid_total')
+            )
+            ->groupBy('print_jobs_id');
+
+        $custTotalsSub = DB::table('print_jobs')
+            ->leftJoinSub($jobCostsSub, 'jc', 'print_jobs.id', '=', 'jc.print_jobs_id')
+            ->leftJoinSub($jobPaymentsSub, 'jp', 'print_jobs.id', '=', 'jp.print_jobs_id')
+            ->select(
+                'print_jobs.customer_id',
+                DB::raw('COALESCE(SUM(CASE WHEN COALESCE(jc.cost_total, 0) > 0 THEN jc.cost_total ELSE COALESCE(print_jobs.qty, 1) * 650 END), 0) as total_invoiced'),
+                DB::raw('COALESCE(SUM(COALESCE(jp.paid_total, 0)), 0) as total_paid'),
+                DB::raw('MAX(print_jobs.add_date) as last_job_date')
+            )
+            ->groupBy('print_jobs.customer_id');
+
+        $invoicedExpr = 'COALESCE(cust_totals.total_invoiced, 0)';
+        $paidExpr = 'COALESCE(cust_totals.total_paid, 0)';
+        $balanceExpr = "GREATEST(0, {$invoicedExpr} - {$paidExpr})";
+
         $query = DB::table('customer')
             ->leftJoinSub(
-                DB::table('print_jobs')
-                    ->leftJoin('payments', 'print_jobs.id', '=', 'payments.print_jobs_id')
-                    ->select(
-                        'print_jobs.customer_id',
-                        DB::raw('COALESCE(SUM(print_jobs.qty * 650), 0) as total_invoiced'),
-                        DB::raw('COALESCE(SUM(payments.payment), 0) as total_paid'),
-                        DB::raw('MAX(print_jobs.add_date) as last_job_date')
-                    )
-                    ->groupBy('print_jobs.customer_id'),
+                $custTotalsSub,
                 'cust_totals',
                 'customer.id',
                 '=',
@@ -156,18 +180,34 @@ class CustomerReceivablesReportService extends BaseReportService
             });
         }
 
-        $sortCol = (int) ($filters['sort_col'] ?? 0);
+        if ($statusFilter !== '' && $statusFilter !== 'all') {
+            if ($statusFilter === 'paid' || $statusFilter === 'settled') {
+                $query->whereRaw("{$invoicedExpr} > 0 AND {$balanceExpr} <= 0");
+            } elseif ($statusFilter === 'partial') {
+                $query->whereRaw("{$paidExpr} > 0 AND {$balanceExpr} > 0");
+            } elseif ($statusFilter === 'pending') {
+                $query->whereRaw("{$paidExpr} <= 0 AND {$balanceExpr} > 0 AND (cust_totals.last_job_date IS NULL OR DATEDIFF(NOW(), cust_totals.last_job_date) <= 30)");
+            } elseif ($statusFilter === 'overdue') {
+                $query->whereRaw("{$balanceExpr} > 0 AND cust_totals.last_job_date IS NOT NULL AND DATEDIFF(NOW(), cust_totals.last_job_date) > 30");
+            }
+        }
+
+        $sortCol = (int) ($filters['sort_col'] ?? 7);
         $sortDir = ($filters['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $colMap = [
             0 => 'customer.id',
             1 => 'customer.name',
             2 => 'customer.mobile',
-            3 => 'cust_totals.total_invoiced',
-            4 => 'cust_totals.total_paid',
+            3 => 'customer.register_at',
+            4 => DB::raw($balanceExpr),
+            5 => DB::raw($invoicedExpr),
+            6 => DB::raw($paidExpr),
+            7 => DB::raw($balanceExpr),
         ];
-        $orderBy = $colMap[$sortCol] ?? 'customer.id';
+        $orderBy = $colMap[$sortCol] ?? DB::raw($balanceExpr);
         $query->orderBy($orderBy, $sortDir);
 
+        $now = Carbon::now();
         $total = $query->count();
         $items = $query->skip(($page - 1) * $perPage)->take($perPage)
             ->select(
@@ -176,24 +216,44 @@ class CustomerReceivablesReportService extends BaseReportService
                 'customer.mobile',
                 'customer.email',
                 'customer.register_at',
-                'cust_totals.total_invoiced',
-                'cust_totals.total_paid',
+                DB::raw("{$invoicedExpr} as total_invoiced"),
+                DB::raw("{$paidExpr} as total_paid"),
+                DB::raw("{$balanceExpr} as outstanding_balance"),
                 'cust_totals.last_job_date'
             )
             ->get()
-            ->map(function ($c) {
+            ->map(function ($c) use ($now) {
                 $invoiced = (float) ($c->total_invoiced ?: 0);
                 $paid = (float) ($c->total_paid ?: 0);
                 $balance = max(0.0, $invoiced - $paid);
+                $daysOld = $c->last_job_date ? $now->diffInDays(Carbon::parse($c->last_job_date)) : 0;
+
+                if ($invoiced <= 0 && $paid <= 0) {
+                    $paymentStatus = 'No Orders';
+                    $aging = 'No Orders';
+                } elseif ($balance <= 0) {
+                    $paymentStatus = 'Paid';
+                    $aging = 'Cleared';
+                } elseif ($paid > 0) {
+                    $paymentStatus = $daysOld > 30 ? 'Overdue' : 'Partial';
+                    $aging = $daysOld > 30 ? 'Overdue (31+ Days)' : 'Partial Paid';
+                } else {
+                    $paymentStatus = $daysOld > 30 ? 'Overdue' : 'Pending';
+                    $aging = $daysOld > 30 ? 'Overdue (31+ Days)' : '1-30 Days';
+                }
 
                 return [
                     'id' => $c->id,
                     'customer_name' => $c->name,
                     'mobile' => $c->mobile ?: '—',
+                    'register_at' => $c->register_at
+                        ? Carbon::parse($c->register_at)->format('Y-m-d')
+                        : '—',
                     'total_invoiced' => round($invoiced, 2),
                     'amount_paid' => round($paid, 2),
                     'outstanding_balance' => round($balance, 2),
-                    'status' => $balance > 0 ? 'Pending' : 'Settled',
+                    'status' => $paymentStatus,
+                    'aging' => $aging,
                     'last_invoice_date' => $c->last_job_date
                         ? Carbon::parse($c->last_job_date)->format('Y-m-d')
                         : ($c->register_at ? Carbon::parse($c->register_at)->format('Y-m-d') : '—'),

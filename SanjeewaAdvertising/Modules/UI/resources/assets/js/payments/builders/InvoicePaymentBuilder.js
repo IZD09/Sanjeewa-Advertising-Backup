@@ -116,23 +116,40 @@ export class InvoicePaymentBuilder {
 
     const paymentStatusId = remainingBalance <= 0 ? 2 : (this.amount > 0 ? 3 : 1);
     const paymentId = `PAY-INV-${Date.now().toString().slice(-6)}`;
-    const jobIdsList = this.jobs.map(j => j.id);
-    const numericJobIds = this.jobs.map(j => resolveNumericJobId(j));
+    const jobIdsList = [...new Set(this.jobs.map(j => j.id))];
+    const numericJobIds = [...new Set(this.jobs.map(j => resolveNumericJobId(j)).filter(id => id > 0))];
 
     const invoiceNo = this.jobs.length === 1
       ? `INV-${primaryJob.id}`
       : `INV-${primaryJob.id}-${this.jobs.length}J`;
 
-    const allocations = this.jobs.map(j => ({
-      job_id: resolveNumericJobId(j),
-      id: j.id,
-      productName: j.productName,
-      total: Number(j.totalAmount) || 0,
-      paidBefore: Number(j.paidAmount) || 0,
-      allocated_amount: Number(j.allocatedAmount !== undefined ? j.allocatedAmount : this.amount) || 0,
-      allocatedNow: Number(j.allocatedAmount !== undefined ? j.allocatedAmount : this.amount) || 0,
-      balanceRemaining: Math.max(0, (Number(j.balanceAmount) || 0) - (Number(j.allocatedAmount) || 0))
-    }));
+    // Deduplicate and aggregate allocations by numeric job_id so a job appears only once
+    const isSingleJob = this.jobs.length === 1;
+    const allocationMap = new Map();
+    for (const j of this.jobs) {
+      const jobId = resolveNumericJobId(j);
+      if (jobId <= 0) continue;
+      const allocAmt = isSingleJob
+        ? this.amount
+        : (Number(j.allocatedAmount !== undefined ? j.allocatedAmount : this.amount) || 0);
+      if (allocationMap.has(jobId)) {
+        const existing = allocationMap.get(jobId);
+        existing.allocated_amount += allocAmt;
+        existing.allocatedNow += allocAmt;
+      } else {
+        allocationMap.set(jobId, {
+          job_id: jobId,
+          id: j.id,
+          productName: j.productName,
+          total: Number(j.totalAmount) || 0,
+          paidBefore: Number(j.paidAmount) || 0,
+          allocated_amount: allocAmt,
+          allocatedNow: allocAmt,
+          balanceRemaining: Math.max(0, (Number(j.balanceAmount) || 0) - allocAmt)
+        });
+      }
+    }
+    const allocations = Array.from(allocationMap.values());
 
     return {
       paymentId,

@@ -238,7 +238,7 @@ a {
     color: var(--sidebar-text);
 }
 
-.brand {
+.sidebar .brand {
     height: var(--header-height);
     padding: 0 18px;
     display: flex;

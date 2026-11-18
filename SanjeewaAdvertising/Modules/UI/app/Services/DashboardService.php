@@ -396,6 +396,17 @@ class DashboardService
             $methodValues = [0];
         }
 
+        $methodColors = [
+            '#10b981', // Cash - Emerald Green
+            '#2563eb', // Bank Transfer - Royal Blue
+            '#8b5cf6', // Credit Card - Purple
+            '#06b6d4', // Debit Card - Cyan
+            '#f59e0b', // Cheque - Amber Orange
+            '#ec4899', // Online / QR Payment - Hot Pink
+            '#f97316', // Orange
+            '#14b8a6', // Teal
+        ];
+
         return [
             'states' => (object) [],
             'income' => [
@@ -408,6 +419,7 @@ class DashboardService
             'paymentMethods' => [
                 'labels' => $methodLabels,
                 'values' => $methodValues,
+                'colors' => array_slice($methodColors, 0, count($methodLabels)),
             ],
         ];
     }
@@ -421,7 +433,7 @@ class DashboardService
     {
         $dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $weeklyOutputValues = [0, 0, 0, 0, 0, 0, 0];
-        $colors = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+        $colors = ['#2563eb', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
         if (Schema::hasTable('print_jobs')) {
             $jobs = PrintJob::select('add_date', 'qty')->get();
@@ -459,6 +471,19 @@ class DashboardService
             $materialValues = [0];
         }
 
+        $materialColors = [
+            '#2563eb', // Flex Banner - Royal Blue
+            '#10b981', // Sticker / Vinyl - Emerald Green
+            '#8b5cf6', // Visiting Cards - Purple
+            '#f59e0b', // Leaflets & Flyers - Amber Orange
+            '#06b6d4', // Signage & Backlit - Cyan
+            '#ec4899', // Custom Printing - Hot Pink
+            '#f97316', // Coral Orange
+            '#14b8a6', // Teal
+            '#6366f1', // Indigo
+            '#e11d48', // Crimson
+        ];
+
         return [
             'states' => (object) [],
             'weeklyOutput' => [
@@ -469,6 +494,7 @@ class DashboardService
             'materialUsage' => [
                 'labels' => $materialLabels,
                 'values' => $materialValues,
+                'colors' => array_slice($materialColors, 0, count($materialLabels)),
             ],
         ];
     }
@@ -483,7 +509,7 @@ class DashboardService
         $health = [];
         $levelsLabels = [];
         $levelsValues = [];
-        $palette = ['#ef4444', '#f59e0b', '#8b5cf6', '#0ea5e9', '#2563eb', '#10b981'];
+        $palette = ['#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#2563eb', '#10b981'];
 
         if (Schema::hasTable('stock_items') && Schema::hasTable('stock')) {
             // Aggregate remaining stock by stock item

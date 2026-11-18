@@ -20,12 +20,13 @@ export class MetricsProcess {
   updateMetrics() {
     const orderPayments = this.ctx.getOrderPayments ? this.ctx.getOrderPayments() : [];
     const grnPayments = this.ctx.getGrnPayments ? this.ctx.getGrnPayments() : [];
+    const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
 
     if (this.ctx.updateKPIs) {
-      this.ctx.updateKPIs(orderPayments, grnPayments);
+      this.ctx.updateKPIs(orderPayments, grnPayments, orders);
     }
     if (this.ctx.renderOverviewTab) {
-      this.ctx.renderOverviewTab(orderPayments, grnPayments);
+      this.ctx.renderOverviewTab(orderPayments, grnPayments, orders);
     }
   }
 }

@@ -5,7 +5,6 @@
  * - RecordInvoicePaymentModal: Customer job order payments (#modalRecordInvoicePayment)
  * - RecordGrnPaymentModal: Stock supplier purchase disbursements (#modalRecordGrnPayment)
  * - RecordBillPaymentModal: Monthly operating utility settlements (#modalRecordBillPayment)
- * - RecordPaymentModal: Dual-channel fallback payment modal (#recordPaymentModal)
  * - ReceiptModal: View & print official receipt voucher (#printableReceiptModal)
  * - AddExpenseBillModal: Create new operating utility bill (#modalAddExpenseBill)
  * - MarkExpensePaidModal: Quick bill settlement dialog (#modalMarkExpensePaid)
@@ -14,8 +13,8 @@
  */
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
+import { ViewOrderModal } from "../../place-order/modals/ViewOrderModal.js";
 import {
-  RecordPaymentModal,
   ReceiptModal,
   RecordInvoicePaymentModal,
   RecordGrnPaymentModal,
@@ -40,11 +39,6 @@ export class PaymentModalHandler extends BaseModalHandler {
     this.ctx = context;
 
     // Instantiate modular modal handlers
-    this.recordPaymentModal = new RecordPaymentModal({
-      ...this.ctx,
-      openReceiptModal: (id, type) => this.openReceiptModal(id, type)
-    });
-
     this.receiptModal = new ReceiptModal(this.ctx);
 
     this.recordInvoicePaymentModal = new RecordInvoicePaymentModal({
@@ -64,19 +58,24 @@ export class PaymentModalHandler extends BaseModalHandler {
 
     this.addExpenseBillModal = new AddExpenseBillModal(this.ctx);
     this.markExpensePaidModal = new MarkExpensePaidModal(this.ctx);
+
+    this.viewOrderModal = new ViewOrderModal({
+      ...this.ctx,
+      getOrders: () => this.ctx.getOrders ? this.ctx.getOrders() : [],
+      openAddPaymentModal: (orderId) => this.openRecordInvoicePaymentModal(orderId)
+    });
   }
 
-  // Dual Fallback Modal Delegations
-  openRecordPaymentModal(prefillType = "invoice", prefillId = null) {
-    this.recordPaymentModal.openRecordPaymentModal(prefillType, prefillId);
-  }
-  savePayment() {
-    this.recordPaymentModal.savePayment();
+  // View Order Modal Delegation
+  openViewOrderModal(orderOrId) {
+    if (this.viewOrderModal) {
+      this.viewOrderModal.openViewModal(orderOrId);
+    }
   }
 
   // Invoice Payment Modal Delegations
   openRecordInvoicePaymentModal(prefillOrderId = null) {
-    this.recordInvoicePaymentModal.open(prefillOrderId);
+    this.recordInvoicePaymentModal.openRecordInvoicePaymentModal(prefillOrderId);
   }
   saveInvoicePayment() {
     this.recordInvoicePaymentModal.save();
@@ -84,7 +83,7 @@ export class PaymentModalHandler extends BaseModalHandler {
 
   // GRN Payment Modal Delegations
   openRecordGrnPaymentModal(prefillGrnId = null) {
-    this.recordGrnPaymentModal.open(prefillGrnId);
+    this.recordGrnPaymentModal.openRecordGrnPaymentModal(prefillGrnId);
   }
   saveGrnPayment() {
     this.recordGrnPaymentModal.save();
@@ -92,7 +91,7 @@ export class PaymentModalHandler extends BaseModalHandler {
 
   // Operating Bill Payment Modal Delegations
   openRecordBillPaymentModal(prefillBillId = null) {
-    this.recordBillPaymentModal.open(prefillBillId);
+    this.recordBillPaymentModal.openRecordBillPaymentModal(prefillBillId);
   }
   saveBillPayment() {
     this.recordBillPaymentModal.save();
@@ -100,7 +99,7 @@ export class PaymentModalHandler extends BaseModalHandler {
 
   // Expense Management Modals Delegations
   openAddExpenseBillModal() {
-    this.addExpenseBillModal.open();
+    this.addExpenseBillModal.openAddExpenseBillModal();
   }
   saveExpenseBill() {
     this.addExpenseBillModal.save();

@@ -293,9 +293,17 @@ export class AdminLoginManager {
   }
 }
 
-// Auto-initialize on DOM ready
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("adminLoginForm")) {
-    window.adminLoginManager = new AdminLoginManager();
-  }
-});
+// Auto-initialize on DOM ready or Turbo load
+if (typeof document !== "undefined") {
+  const bootAdminLogin = () => {
+    const formEl = document.getElementById("adminLoginForm");
+    if (formEl && !formEl.dataset.adminLoginBooted) {
+      formEl.dataset.adminLoginBooted = "1";
+      window.adminLoginManager = new AdminLoginManager();
+    }
+  };
+
+  bootAdminLogin();
+  document.addEventListener("DOMContentLoaded", bootAdminLogin);
+  document.addEventListener("turbo:load", bootAdminLogin);
+}

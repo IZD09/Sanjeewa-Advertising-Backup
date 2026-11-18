@@ -80,16 +80,7 @@ export class GrnPaymentEntity {
   }
 
   renderMethodBadge() {
-    const m = this.method || "Check";
-    if (m === "Card") {
-      return `<span class="method-pill card"><i class="fa-solid fa-credit-card"></i> Card</span>`;
-    } else if (m === "Cash") {
-      return `<span class="method-pill cash"><i class="fa-solid fa-money-bill-wave"></i> Cash</span>`;
-    } else if (m === "Check") {
-      return `<span class="method-pill check"><i class="fa-solid fa-money-check"></i> Check</span>`;
-    } else {
-      return `<span class="method-pill transfer"><i class="fa-solid fa-building-columns"></i> Bank Transfer</span>`;
-    }
+    return StatusHelper.renderPaymentMethodBadge(this.method);
   }
 
   getStageRowClass() {

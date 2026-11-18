@@ -141,7 +141,10 @@ export class InvoicePaymentProcessor {
     const orders = this.ctx.getOrders ? this.ctx.getOrders() : [];
     if (Array.isArray(paymentData.jobs)) {
       paymentData.jobs.forEach(job => {
-        const matched = orders.find(o => String(o.id).toLowerCase() === String(job.id).toLowerCase());
+        const matched = orders.find(o =>
+          (job.rawId && Number(o.rawId) === Number(job.rawId)) ||
+          String(o.id).toLowerCase() === String(job.id).toLowerCase()
+        );
         if (matched) {
           const allocAmount = Number(job.allocatedNow !== undefined ? job.allocatedNow : job.allocated_amount) || 0;
           matched.paidAmount = (Number(matched.paidAmount) || 0) + allocAmount;
@@ -156,8 +159,10 @@ export class InvoicePaymentProcessor {
       }
     }
 
-    // 4. Trigger UI re-render
-    if (this.ctx.render) {
+    // 4. Trigger live server sync & UI re-render
+    if (this.ctx.refreshInvoiceData) {
+      await this.ctx.refreshInvoiceData();
+    } else if (this.ctx.render) {
       this.ctx.render();
     }
 

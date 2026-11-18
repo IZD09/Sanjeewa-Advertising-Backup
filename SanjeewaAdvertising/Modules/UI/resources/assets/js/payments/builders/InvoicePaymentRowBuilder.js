@@ -30,9 +30,9 @@ export class InvoicePaymentEntity {
     // Normalize stage / payment_status
     if (data.stage) {
       this.stage = data.stage;
-    } else if (data.payment_status === "Paid" || this.balance <= 0) {
+    } else if (data.payment_status === "Paid" || (this.balance <= 0.01 && (this.paid_amount > 0 || this.total_bill > 0))) {
       this.stage = "Complete Payment";
-    } else if (data.payment_status === "Partial" || (this.paid_amount > 0 && this.balance > 0)) {
+    } else if (data.payment_status === "Partial" || (this.paid_amount > 0 && this.balance > 0.01)) {
       this.stage = "Advance Payment";
     } else {
       this.stage = "Pending Payment";
@@ -46,6 +46,12 @@ export class InvoicePaymentEntity {
     this.jobs_count = data.jobs_count || data.jobsCount || (data.jobs && data.jobs.length) || 1;
     this.job_ids = data.job_ids || data.jobIds || [this.order_id];
 
+    // Multi-installment tracking
+    this.installment_number = Number(data.installment_number || data.installmentNumber || 1);
+    this.total_installments = Number(data.total_installments || data.totalInstallments || 1);
+    this.is_multi_installment = Boolean(data.is_multi_installment || data.isMultiInstallment || (this.total_installments > 1));
+    this.cumulative_paid = Number(data.cumulative_paid_amount ?? data.cumulativePaidAmount ?? this.paid_amount);
+
     // Field aliases for compatibility
     this.orderId = this.order_id;
     this.paymentId = this.payment_id;
@@ -56,7 +62,11 @@ export class InvoicePaymentEntity {
     this.totalBill = this.total_bill;
     this.amount = this.paid_amount;
     this.paidAmount = this.paid_amount;
+    this.cumulativePaidAmount = this.cumulative_paid;
     this.balanceAmount = this.balance;
+    this.installmentNumber = this.installment_number;
+    this.totalInstallments = this.total_installments;
+    this.isMultiInstallment = this.is_multi_installment;
     this.paymentStatus = this.payment_status;
     this.orderStatus = this.order_status;
     this.jobsCount = this.jobs_count;
@@ -68,26 +78,23 @@ export class InvoicePaymentEntity {
   }
 
   renderStageBadge() {
-    if (this.stage === "Complete Payment" || this.stage === "Paid") {
-      return `<span class="status-pill complete"><i class="fa-solid fa-circle-check"></i> Complete Payment</span>`;
-    } else if (this.stage === "Advance Payment" || this.stage === "Partial") {
-      return `<span class="status-pill advance"><i class="fa-solid fa-hourglass-half"></i> Advance Payment</span>`;
+    if (this.stage === "Complete Payment" || this.stage === "Paid" || this.balance <= 0.01) {
+      const label = this.is_multi_installment
+        ? `Complete (${this.installment_number}/${this.total_installments})`
+        : "Complete Payment";
+      return `<span class="status-pill complete"><i class="fa-solid fa-circle-check"></i> ${label}</span>`;
+    } else if (this.stage === "Advance Payment" || this.stage === "Partial" || this.cumulative_paid > 0) {
+      const label = this.is_multi_installment
+        ? `Part Paid (${this.installment_number}/${this.total_installments})`
+        : "Advance Payment";
+      return `<span class="status-pill advance"><i class="fa-solid fa-hourglass-half"></i> ${label}</span>`;
     } else {
       return `<span class="status-pill pending"><i class="fa-solid fa-clock"></i> Pending Payment</span>`;
     }
   }
 
   renderMethodBadge() {
-    const m = this.method || "Cash";
-    if (m === "Card") {
-      return `<span class="method-pill card"><i class="fa-solid fa-credit-card"></i> Card</span>`;
-    } else if (m === "Cash") {
-      return `<span class="method-pill cash"><i class="fa-solid fa-money-bill-wave"></i> Cash</span>`;
-    } else if (m === "Check") {
-      return `<span class="method-pill check"><i class="fa-solid fa-money-check"></i> Check</span>`;
-    } else {
-      return `<span class="method-pill transfer"><i class="fa-solid fa-building-columns"></i> Bank Transfer</span>`;
-    }
+    return StatusHelper.renderPaymentMethodBadge(this.method);
   }
 
   getStageRowClass() {
@@ -95,10 +102,10 @@ export class InvoicePaymentEntity {
     if (fromHelper) return fromHelper;
 
     const s = String(this.stage || "").toLowerCase().trim();
-    if (s.includes("complete") || s === "paid" || (this.total_bill > 0 && this.balance <= 0)) {
+    if (s.includes("complete") || s === "paid" || this.balance <= 0.01) {
       return "row-stage-complete row-status-completed";
     }
-    if (s.includes("advance") || s.includes("partial") || (this.paid_amount > 0 && this.balance > 0)) {
+    if (s.includes("advance") || s.includes("partial") || this.cumulative_paid > 0) {
       return "row-stage-advance row-status-approved";
     }
     return "row-stage-pending row-status-pending";
@@ -116,20 +123,32 @@ export class InvoicePaymentEntity {
     const stagePill = this.renderStageBadge();
     const methodPill = this.renderMethodBadge();
     const jobsBadge = (this.jobs_count > 1 || (this.job_ids && this.job_ids.length > 1))
-      ? `<span class="inv-job-badge" style="font-size: 10px; padding: 1px 6px; margin-left: 5px;"><i class="fa-solid fa-layer-group" style="margin-right: 3px;"></i>${this.jobs_count || this.job_ids.length} Jobs</span>`
+      ? `<span class="inv-job-badge" style="font-size: 10px; padding: 1px 6px;"><i class="fa-solid fa-layer-group" style="margin-right: 3px;"></i>${this.jobs_count || this.job_ids.length} Jobs</span>`
       : "";
+
+    const installmentBadge = this.is_multi_installment
+      ? `<span class="installment-badge" title="Installment ${this.installment_number} of ${this.total_installments}">
+           <i class="fa-solid fa-clock-rotate-left"></i> Part ${this.installment_number}/${this.total_installments}
+         </span>`
+      : "";
+
     const primaryJobId = (this.job_ids && this.job_ids.length > 0) ? this.job_ids[0] : (this.order_id || this.id);
     const displayJobRef = (this.job_ids && this.job_ids.length > 1) ? this.job_ids.join(", ") : (this.order_id || "");
     const totalFormatted = this.formatCurrency(this.total_bill);
     const paidFormatted = this.formatCurrency(this.paid_amount);
     const balanceFormatted = this.formatCurrency(this.balance);
-    const balanceColor = this.balance > 0 ? "#ef4444" : "var(--text-muted)";
+    const balanceColor = this.balance > 0.01 ? "#ef4444" : "#16a34a";
 
     tr.innerHTML = `
       <td>
-        <strong style="color: var(--blue);">${this.invoice_no || this.order_id}</strong>
-        ${jobsBadge}
-        <div style="font-size: 11px; color: var(--text-muted);">${this.date}</div>
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+          <strong style="color: var(--blue); font-size: 13px;">${this.invoice_no || this.order_id}</strong>
+          ${jobsBadge}
+          ${installmentBadge}
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+          <i class="fa-regular fa-calendar" style="margin-right: 3px;"></i>${this.date}
+        </div>
       </td>
       <td>
         <strong>${this.customer_name}</strong>
@@ -140,14 +159,24 @@ export class InvoicePaymentEntity {
       <td>${stagePill}</td>
       <td>${methodPill}</td>
       <td style="font-weight: 700;">${totalFormatted}</td>
-      <td style="font-weight: 800; color: #10b981;">${paidFormatted}</td>
-      <td style="font-weight: 700; color: ${balanceColor};">${balanceFormatted}</td>
+      <td style="font-weight: 800; color: #10b981;">
+        ${paidFormatted}
+        ${this.is_multi_installment ? `
+        <div style="font-size: 10px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">
+          Installment ${this.installment_number} of ${this.total_installments}
+          <span style="display: block; color: #10b981;">Total Paid: ${this.formatCurrency(this.cumulative_paid)}</span>
+        </div>` : ""}
+      </td>
+      <td style="font-weight: 700; color: ${balanceColor};">
+        ${balanceFormatted}
+        ${this.balance <= 0.01 ? `<div style="font-size: 10px; color: #10b981; font-weight: 600; margin-top: 2px;"><i class="fa-solid fa-check-double" style="margin-right: 3px;"></i>Fully Settled</div>` : ""}
+      </td>
       <td>
         <div class="pay-table-actions">
           <button type="button" class="pay-btn-sm" data-view-receipt="${this.payment_id || this.order_id}" data-type="invoice" title="View & Print Payment Voucher">
             <i class="fa-solid fa-receipt"></i> Voucher
           </button>
-          ${this.balance > 0 ? `
+          ${this.balance > 0.01 ? `
           <button type="button" class="pay-btn-sm primary-sm" data-open-pay-modal data-pay-type="invoice" data-pay-ref="${primaryJobId}" title="Record settlement installment">
             <i class="fa-solid fa-plus"></i> Pay
           </button>` : ""}

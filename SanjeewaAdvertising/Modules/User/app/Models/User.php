@@ -76,6 +76,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Disable remember_token column lookup as users table does not have remember_token.
+     */
+    public function getRememberTokenName(): string
+    {
+        return '';
+    }
+
+    /**
      * Get the status of the user.
      */
     public function status(): BelongsTo

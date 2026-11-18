@@ -1,20 +1,47 @@
+@php
+    $appSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
+    $appShopName = $appSettings['shop_name'] ?? 'Sanjeewa Advertising';
+    $appFaviconHref = \Modules\UI\Http\Controllers\SettingsController::getFaviconHref($appSettings);
+    $appThemeColor = $appSettings['theme_color'] ?? '#2563EB';
+    $appLogoUrl = $appSettings['logo_url'] ?? null;
+    $appLogoIcon = $appSettings['logo_icon'] ?? 'fa-solid fa-print';
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="turbo-cache-control" content="no-cache">
 
-    <title>Sign in - Sanjeewa Advertising</title>
+    <title>Sign in - {{ $appShopName }}</title>
+    <link id="appFavicon" rel="icon" href="{{ $appFaviconHref }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     {{-- Separated Login Stylesheet --}}
     {{ module_vite('build-ui', 'resources/assets/css/login.css') }}
+    <style>:root { --blue: {{ $appThemeColor }}; }</style>
 </head>
 <body>
+<script>
+    (function () {
+        document.querySelectorAll('head link[rel="stylesheet"]').forEach(function (link) {
+            var href = link.getAttribute('href') || '';
+            if (href && !href.includes('login') && !href.includes('fonts.googleapis.com') && !href.includes('font-awesome')) {
+                link.disabled = true;
+                link.remove();
+            }
+        });
+        document.body.className = '';
+        if (window.appRouter) {
+            window.location.reload();
+        }
+    })();
+</script>
 <main class="page">
     {{-- Left Brand Section --}}
     <section class="brand" aria-label="Product introduction">
@@ -29,12 +56,14 @@
         </div>
 
         <div class="logo">
-            <span class="logo-mark" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12l5 5L19 7"/>
-                </svg>
+            <span class="logo-mark" aria-hidden="true" style="overflow: hidden; color: #fff;">
+                @if(!empty($appLogoUrl))
+                    <img src="{{ $appLogoUrl }}" alt="{{ $appShopName }}" style="width: 100%; height: 100%; object-fit: cover;">
+                @else
+                    <i class="{{ $appLogoIcon }}"></i>
+                @endif
             </span>
-            <span>Sanjeewa Advertising</span>
+            <span>{{ $appShopName }}</span>
         </div>
 
         <div class="brand-body">
@@ -72,7 +101,7 @@
             </ul>
         </div>
 
-        <div class="foot">&copy; <span id="yr">{{ date('Y') }}</span> Sanjeewa Advertising. All rights reserved.</div>
+        <div class="foot">&copy; <span id="yr">{{ date('Y') }}</span> {{ $appShopName }}. All rights reserved.</div>
     </section>
 
     {{-- Right Form Section --}}
@@ -81,7 +110,7 @@
             <h2>Welcome Back</h2>
             <p class="sub">Sign in to continue to your account.</p>
 
-            <form id="form" method="POST" action="{{ route('user.auth.login') }}" data-redirect="{{ route('ui.dashboard') }}" novalidate>
+            <form id="form" method="POST" action="{{ route('user.auth.login') }}" data-redirect="{{ route('ui.dashboard') }}" data-turbo="false" novalidate>
                 @csrf
 
                 {{-- Username / Email Field --}}
@@ -134,7 +163,7 @@
                 <p class="status" id="status" role="status" aria-live="polite"></p>
 
                 <div class="portal-switch">
-                    <a href="{{ route('admin.login') }}" class="portal-switch-btn" title="Switch to Administrator Login">
+                    <a href="{{ route('admin.login') }}" class="portal-switch-btn" data-turbo="false" title="Switch to Administrator Login">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>

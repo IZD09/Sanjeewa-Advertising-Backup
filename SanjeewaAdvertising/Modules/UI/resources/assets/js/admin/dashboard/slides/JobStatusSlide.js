@@ -46,7 +46,7 @@ export class JobStatusSlide extends DashboardBaseSlide {
     const values = outputData?.values || [];
     const defaultColors = [
       "#2563eb", // Mon - Blue
-      "#0ea5e9", // Tue - Sky Blue
+      "#06b6d4", // Tue - Cyan
       "#10b981", // Wed - Green
       "#f59e0b", // Thu - Amber Orange
       "#ef4444", // Fri - Red
@@ -82,18 +82,67 @@ export class JobStatusSlide extends DashboardBaseSlide {
     const labels = usageData?.labels || [];
     const values = usageData?.values || [];
 
+    const materialColorMap = {
+      "flex banner": "#2563eb",        // Royal Blue
+      "sticker / vinyl": "#10b981",    // Emerald Green
+      "visiting cards": "#8b5cf6",     // Purple
+      "leaflets & flyers": "#f59e0b",  // Amber Orange
+      "signage & backlit": "#06b6d4",  // Cyan
+      "custom printing": "#ec4899",    // Hot Pink / Magenta
+      "banner": "#2563eb",
+      "sticker": "#10b981",
+      "vinyl": "#10b981"
+    };
+
+    const fallbackPalette = [
+      "#2563eb", // Royal Blue
+      "#10b981", // Emerald Green
+      "#8b5cf6", // Purple
+      "#f59e0b", // Amber Orange
+      "#06b6d4", // Cyan
+      "#ec4899", // Hot Pink
+      "#f97316", // Coral Orange
+      "#14b8a6", // Teal
+      "#6366f1", // Indigo
+      "#e11d48", // Crimson
+      "#84cc16", // Lime
+      "#a855f7"  // Violet
+    ];
+
+    const colors = usageData?.colors && usageData.colors.length >= labels.length
+      ? usageData.colors
+      : labels.map((label, idx) => {
+          const key = String(label).toLowerCase().trim();
+          return materialColorMap[key] || fallbackPalette[idx % fallbackPalette.length];
+        });
+
     this.createChart("materialUsageChart", {
       type: "doughnut",
       data: {
         labels: labels,
         datasets: [{
           data: values,
-          backgroundColor: ["#2563eb", "#0ea5e9", "#f59e0b", "#10b981", "#8b5cf6"],
-          borderWidth: 0
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: "#ffffff",
+          hoverOffset: 4
         }]
       },
       options: {
-        cutout: "65%"
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "60%",
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: {
+              boxWidth: 12,
+              padding: 10,
+              usePointStyle: true
+            }
+          }
+        }
       }
     });
   }

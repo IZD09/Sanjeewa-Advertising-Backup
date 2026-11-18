@@ -1,4 +1,5 @@
 export { InvoicePaymentTableHandler } from "./InvoicePaymentTableHandler.js";
+export { CollectablePaymentsTableHandler } from "./CollectablePaymentsTableHandler.js";
 export { GRNPaymentTableHandler } from "./GRNPaymentTableHandler.js";
 export { OperatingExpenseTableHandler } from "./OperatingExpenseTableHandler.js";
 export { OperatingExpensesHandler } from "./OperatingExpensesHandler.js";

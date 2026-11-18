@@ -17,11 +17,11 @@ Route::prefix('v1')->group(function () {
 
     // Authentication endpoints
     Route::prefix('auth')->group(function () {
-        Route::post('register', [AuthController::class, 'register'])->name('user.auth.register');
-        Route::post('login', [AuthController::class, 'login'])->name('user.auth.login');
-        Route::post('logout', [AuthController::class, 'logout'])->name('user.auth.logout');
-        Route::get('me', [AuthController::class, 'me'])->name('user.auth.me');
-        Route::post('change-password', [AuthController::class, 'changePassword'])->name('user.auth.change-password');
+        Route::post('register', [AuthController::class, 'register'])->name('api.user.auth.register');
+        Route::post('login', [AuthController::class, 'login'])->name('api.user.auth.login');
+        Route::post('logout', [AuthController::class, 'logout'])->name('api.user.auth.logout');
+        Route::get('me', [AuthController::class, 'me'])->name('api.user.auth.me');
+        Route::post('change-password', [AuthController::class, 'changePassword'])->name('api.user.auth.change-password');
     });
 
     // Dedicated search & all endpoints (defined before apiResource to avoid route collision with {user})

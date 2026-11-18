@@ -20,7 +20,6 @@
 @include('ui::layouts.modals.payments.record-invoice-payment-modal')
 @include('ui::layouts.modals.payments.record-grn-payment-modal')
 @include('ui::layouts.modals.payments.record-bill-payment-modal')
-@include('ui::layouts.modals.payments.record-payment-modal')
 @include('ui::layouts.modals.payments.printable-receipt-modal')
 @include('ui::layouts.modals.payments.add-expense-bill-modal')
 @include('ui::layouts.modals.payments.mark-expense-paid-modal')

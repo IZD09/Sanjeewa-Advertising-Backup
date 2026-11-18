@@ -1090,3 +1090,228 @@ th.num-col {
         display: none !important;
     }
 }
+
+
+/* ==========================================================================
+   Customer Receivables Table: Place-Order Card Row Design (Light & Dark)
+   ========================================================================== */
+.rep-table-wrap:has(#receivablesTable) {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+#receivablesTable.rep-table {
+    border-collapse: separate;
+    border-spacing: 0 6px;
+}
+
+#receivablesTable.rep-table th {
+    background: var(--surface-2, #f8fafc);
+    border-top: 1px solid var(--border, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    padding: 11px 16px;
+}
+
+#receivablesTable.rep-table th:first-child {
+    border-left: 1px solid var(--border, #e2e8f0);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+#receivablesTable.rep-table th:last-child {
+    border-right: 1px solid var(--border, #e2e8f0);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+#receivablesTable.rep-table td {
+    padding: 13px 16px;
+    background: var(--surface, #ffffff);
+    border-top: 1px solid var(--border-light, #f1f5f9);
+    border-bottom: 1px solid var(--border-light, #f1f5f9);
+    border-right: 1px solid var(--border-light, #f1f5f9);
+    color: var(--text, #1e293b);
+    vertical-align: middle;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#receivablesTable.rep-table td:first-child {
+    border-left: 5px solid var(--border, #e2e8f0);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding-left: 16px;
+}
+
+#receivablesTable.rep-table td:last-child {
+    border-right: 5px solid var(--border, #e2e8f0);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding-right: 16px;
+}
+
+#receivablesTable.rep-table tbody tr:hover td {
+    background: var(--surface-hover, #f8fafc);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================================================
+   Payment Status Row Highlighting (Light & Dark Modes)
+   ========================================================================== */
+.badge-neutral {
+    background: rgba(148, 163, 184, 0.14);
+    color: var(--text-muted, #64748b);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Paid / Cleared - Green */
+.rep-table tr.row-stage-complete > td,
+.rep-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.08) !important;
+    border-top-color: rgba(22, 163, 74, 0.22) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.22) !important;
+    border-right-color: rgba(22, 163, 74, 0.20) !important;
+}
+.rep-table tr.row-stage-complete:hover > td,
+.rep-table tr.row-status-completed:hover > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+}
+.rep-table tr.row-stage-complete > td:first-child,
+.rep-table tr.row-status-completed > td:first-child {
+    border-left: 5px solid #16a34a !important;
+}
+.rep-table tr.row-stage-complete > td:last-child,
+.rep-table tr.row-status-completed > td:last-child {
+    border-right: 5px solid #16a34a !important;
+}
+
+/* Partial / Advance Paid - Sky Blue */
+.rep-table tr.row-stage-advance > td,
+.rep-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+    border-top-color: rgba(2, 132, 199, 0.22) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.22) !important;
+    border-right-color: rgba(2, 132, 199, 0.20) !important;
+}
+.rep-table tr.row-stage-advance:hover > td,
+.rep-table tr.row-status-approved:hover > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+}
+.rep-table tr.row-stage-advance > td:first-child,
+.rep-table tr.row-status-approved > td:first-child {
+    border-left: 5px solid #0284c7 !important;
+}
+.rep-table tr.row-stage-advance > td:last-child,
+.rep-table tr.row-status-approved > td:last-child {
+    border-right: 5px solid #0284c7 !important;
+}
+
+/* Pending - Amber */
+.rep-table tr.row-stage-pending > td,
+.rep-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-top-color: rgba(245, 158, 11, 0.22) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.22) !important;
+    border-right-color: rgba(245, 158, 11, 0.20) !important;
+}
+.rep-table tr.row-stage-pending:hover > td,
+.rep-table tr.row-status-pending:hover > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.rep-table tr.row-stage-pending > td:first-child,
+.rep-table tr.row-status-pending > td:first-child {
+    border-left: 5px solid #f59e0b !important;
+}
+.rep-table tr.row-stage-pending > td:last-child,
+.rep-table tr.row-status-pending > td:last-child {
+    border-right: 5px solid #f59e0b !important;
+}
+
+/* Overdue - Red */
+.rep-table tr.row-stage-overdue > td,
+.rep-table tr.row-status-cancelled > td {
+    background-color: rgba(220, 38, 38, 0.08) !important;
+    border-top-color: rgba(220, 38, 38, 0.22) !important;
+    border-bottom-color: rgba(220, 38, 38, 0.22) !important;
+    border-right-color: rgba(220, 38, 38, 0.20) !important;
+}
+.rep-table tr.row-stage-overdue:hover > td,
+.rep-table tr.row-status-cancelled:hover > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+}
+.rep-table tr.row-stage-overdue > td:first-child,
+.rep-table tr.row-status-cancelled > td:first-child {
+    border-left: 5px solid #dc2626 !important;
+}
+.rep-table tr.row-stage-overdue > td:last-child,
+.rep-table tr.row-status-cancelled > td:last-child {
+    border-right: 5px solid #dc2626 !important;
+}
+
+/* No Orders / Neutral - Slate */
+.rep-table tr.row-stage-neutral > td {
+    background-color: var(--surface, #ffffff) !important;
+    border-top-color: var(--border-light, #f1f5f9) !important;
+    border-bottom-color: var(--border-light, #f1f5f9) !important;
+    border-right-color: var(--border-light, #f1f5f9) !important;
+}
+.rep-table tr.row-stage-neutral:hover > td {
+    background-color: var(--surface-hover, #f8fafc) !important;
+}
+.rep-table tr.row-stage-neutral > td:first-child {
+    border-left: 5px solid #94a3b8 !important;
+}
+.rep-table tr.row-stage-neutral > td:last-child {
+    border-right: 5px solid #94a3b8 !important;
+}
+
+/* Dark Mode Overrides */
+html[data-theme="dark"] #receivablesTable.rep-table th {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+html[data-theme="dark"] #receivablesTable.rep-table td {
+    background: var(--surface);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    border-right-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+html[data-theme="dark"] .rep-table tr.row-stage-complete > td,
+html[data-theme="dark"] .rep-table tr.row-status-completed > td {
+    background-color: rgba(22, 163, 74, 0.14) !important;
+    border-top-color: rgba(22, 163, 74, 0.32) !important;
+    border-bottom-color: rgba(22, 163, 74, 0.32) !important;
+    border-right-color: rgba(22, 163, 74, 0.30) !important;
+}
+html[data-theme="dark"] .rep-table tr.row-stage-advance > td,
+html[data-theme="dark"] .rep-table tr.row-status-approved > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+    border-top-color: rgba(2, 132, 199, 0.32) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.32) !important;
+    border-right-color: rgba(2, 132, 199, 0.30) !important;
+}
+html[data-theme="dark"] .rep-table tr.row-stage-pending > td,
+html[data-theme="dark"] .rep-table tr.row-status-pending > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-top-color: rgba(245, 158, 11, 0.32) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.32) !important;
+    border-right-color: rgba(245, 158, 11, 0.30) !important;
+}
+html[data-theme="dark"] .rep-table tr.row-stage-overdue > td,
+html[data-theme="dark"] .rep-table tr.row-status-cancelled > td {
+    background-color: rgba(220, 38, 38, 0.14) !important;
+    border-top-color: rgba(220, 38, 38, 0.32) !important;
+    border-bottom-color: rgba(220, 38, 38, 0.32) !important;
+    border-right-color: rgba(220, 38, 38, 0.30) !important;
+}
+html[data-theme="dark"] .rep-table tr.row-stage-neutral > td {
+    background-color: var(--surface) !important;
+    border-top-color: var(--border) !important;
+    border-bottom-color: var(--border) !important;
+    border-right-color: var(--border) !important;
+}
+html[data-theme="dark"] .rep-table tr.row-stage-neutral:hover > td {
+    background-color: var(--surface-hover) !important;
+}

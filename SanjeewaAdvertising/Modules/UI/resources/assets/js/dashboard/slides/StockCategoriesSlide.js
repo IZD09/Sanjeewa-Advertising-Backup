@@ -101,8 +101,9 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
       "#ef4444",
       "#f59e0b",
       "#8b5cf6",
-      "#0ea5e9",
-      "#2563eb"
+      "#06b6d4",
+      "#2563eb",
+      "#10b981"
     ];
     const colors = levelsData?.colors && levelsData.colors.length > 0 ? levelsData.colors : defaultColors;
 

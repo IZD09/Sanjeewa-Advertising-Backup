@@ -15,6 +15,7 @@
 import {
   PaymentsDataLoader,
   InvoicePaymentTableHandler,
+  CollectablePaymentsTableHandler,
   GRNPaymentTableHandler,
   OperatingExpenseTableHandler,
   OperatingExpensesHandler,
@@ -40,6 +41,8 @@ export class PaymentsManager {
       renderMethodBadge: (m, r) => this.overviewHandler.renderMethodBadge(m, r),
       formatCurrency: (amt) => this.dataLoader.formatCurrency(amt)
     });
+
+    this.collectionTableHandler = new CollectablePaymentsTableHandler();
 
     this.grnTableHandler = new GRNPaymentTableHandler({
       renderStageBadge: (s) => this.overviewHandler.renderStageBadge(s),
@@ -67,12 +70,14 @@ export class PaymentsManager {
       saveExpenses: () => this.dataLoader.saveExpenses(),
       getCurrentMonth: () => this.expensesHandler.expenseMonthFilter,
       setCurrentMonth: (m) => this.expensesHandler.setMonthFilter(m),
+      refreshInvoiceData: () => this.loadAndRenderInvoice(true),
       render: () => this.render()
     });
 
     // 2. Processes (Navigation, Filters, Metrics)
     this.navigationProcess = new NavigationProcess({
       loadAndRenderInvoice: () => this.loadAndRenderInvoice(),
+      loadAndRenderCollections: () => this.loadAndRenderCollections(),
       loadAndRenderGrn: () => this.loadAndRenderGrn(),
       loadAndRenderExpenses: () => this.loadAndRenderExpenses(),
       loadAndRenderOverview: () => this.loadAndRenderOverview(),
@@ -82,6 +87,7 @@ export class PaymentsManager {
 
     this.filterProcess = new FilterProcess({
       renderInvoiceTable: (resetPage = false) => this.renderInvoiceTable(resetPage),
+      renderCollectionTable: (resetPage = false) => this.renderCollectionTable(resetPage),
       renderGrnTable: (resetPage = false) => this.renderGrnTable(resetPage),
       renderExpenses: (resetPage = false) => this.renderExpenses(resetPage),
       setExpenseMonth: (m) => this.expensesHandler.setMonthFilter(m),
@@ -92,10 +98,11 @@ export class PaymentsManager {
     });
 
     this.metricsProcess = new MetricsProcess({
-      updateKPIs: (orders, grns) => this.overviewHandler.updateKPIs(orders, grns),
-      renderOverviewTab: (orders, grns) => this.overviewHandler.renderOverviewTab(orders, grns),
+      updateKPIs: (orderPayments, grnPayments, orders) => this.overviewHandler.updateKPIs(orderPayments, grnPayments, orders),
+      renderOverviewTab: (orderPayments, grnPayments) => this.overviewHandler.renderOverviewTab(orderPayments, grnPayments),
       getOrderPayments: () => this.dataLoader.orderPayments,
-      getGrnPayments: () => this.dataLoader.grnPayments
+      getGrnPayments: () => this.dataLoader.grnPayments,
+      getOrders: () => this.dataLoader.orders
     });
 
     this.init();
@@ -111,6 +118,11 @@ export class PaymentsManager {
   set invoiceStatusFilter(val) { this.filterProcess.invoiceStatusFilter = val; }
   get invoiceMethodFilter() { return this.filterProcess.invoiceMethodFilter; }
   set invoiceMethodFilter(val) { this.filterProcess.invoiceMethodFilter = val; }
+
+  get collectionSearch() { return this.filterProcess.collectionSearch; }
+  set collectionSearch(val) { this.filterProcess.collectionSearch = val; }
+  get collectionStatusFilter() { return this.filterProcess.collectionStatusFilter; }
+  set collectionStatusFilter(val) { this.filterProcess.collectionStatusFilter = val; }
 
   get grnSearch() { return this.filterProcess.grnSearch; }
   set grnSearch(val) { this.filterProcess.grnSearch = val; }
@@ -153,7 +165,9 @@ export class PaymentsManager {
     this.render();
 
     // On-demand server fetch based on active tab
-    if (initialTab === "grn") {
+    if (initialTab === "collections") {
+      await this.loadAndRenderCollections();
+    } else if (initialTab === "grn") {
       await this.loadAndRenderGrn();
     } else if (initialTab === "expenses") {
       await this.loadAndRenderExpenses();
@@ -172,7 +186,19 @@ export class PaymentsManager {
    */
   async loadAndRenderInvoice(forceRefresh = false) {
     await this.dataLoader.fetchInvoicePayments({}, forceRefresh);
-    this.renderInvoiceTable();
+    this.renderInvoiceTable(forceRefresh);
+    this.renderCollectionTable(forceRefresh);
+    this.updateKPIs();
+  }
+
+  /**
+   * On-demand data loading & rendering for Collectable Payments tab.
+   *
+   * @param {boolean} [forceRefresh=false]
+   */
+  async loadAndRenderCollections(forceRefresh = false) {
+    await this.dataLoader.fetchCollectableOrders(forceRefresh);
+    this.renderCollectionTable(forceRefresh);
     this.updateKPIs();
   }
 
@@ -212,6 +238,15 @@ export class PaymentsManager {
 
   bindGlobalActionButtons() {
     document.addEventListener("click", (e) => {
+      // View Order Details
+      const viewOrderBtn = e.target.closest("[data-view-order]");
+      if (viewOrderBtn) {
+        e.preventDefault();
+        const orderRef = viewOrderBtn.getAttribute("data-view-order");
+        this.openViewOrderModal(orderRef);
+        return;
+      }
+
       // Table Voucher view
       const viewReceiptBtn = e.target.closest("[data-view-receipt]");
       if (viewReceiptBtn) {
@@ -232,8 +267,8 @@ export class PaymentsManager {
           this.openRecordInvoicePayment(payRef);
         } else if (payType === "grn") {
           this.openRecordGrnPayment(payRef);
-        } else {
-          this.openRecordPaymentModal(payType, payRef);
+        } else if (payType === "bill" || payType === "expense") {
+          this.openRecordBillPayment(payRef);
         }
       }
     });
@@ -246,6 +281,7 @@ export class PaymentsManager {
   render() {
     this.updateKPIs();
     this.renderInvoiceTable();
+    this.renderCollectionTable();
     this.renderGrnTable();
     this.renderExpenses();
     this.renderOverviewTab();
@@ -254,6 +290,7 @@ export class PaymentsManager {
   updateKPIs() {
     this.metricsProcess.updateMetrics();
     PaymentKpiCardBuilder.buildInvoiceMetrics(this.dataLoader.orderPayments);
+    PaymentKpiCardBuilder.buildCollectionMetrics(this.dataLoader.orders);
     PaymentKpiCardBuilder.buildGrnMetrics(this.dataLoader.grnPayments);
     PaymentKpiCardBuilder.buildExpenseMetrics(this.dataLoader.expenses, this.expensesHandler.expenseMonthFilter);
     PaymentKpiCardBuilder.buildOverviewMetrics(this.dataLoader.orderPayments, this.dataLoader.grnPayments);
@@ -265,6 +302,15 @@ export class PaymentsManager {
       this.invoiceSearch,
       this.invoiceStatusFilter,
       this.invoiceMethodFilter,
+      resetPage
+    );
+  }
+
+  renderCollectionTable(resetPage = false) {
+    this.collectionTableHandler.render(
+      this.dataLoader.orders,
+      this.collectionSearch,
+      this.collectionStatusFilter,
       resetPage
     );
   }
@@ -299,6 +345,10 @@ export class PaymentsManager {
   }
 
   // Modal Delegations
+  openViewOrderModal(orderRef) {
+    this.modalHandler.openViewOrderModal(orderRef);
+  }
+
   openRecordInvoicePayment(prefillOrderId = null) {
     this.modalHandler.openRecordInvoicePaymentModal(prefillOrderId);
   }
@@ -321,10 +371,6 @@ export class PaymentsManager {
 
   undoExpensePaid(billId) {
     this.modalHandler.undoExpensePaid(billId);
-  }
-
-  openRecordPaymentModal(prefillType = "invoice", prefillId = null) {
-    this.modalHandler.openRecordPaymentModal(prefillType, prefillId);
   }
 
   openReceiptModal(paymentId, type = "invoice") {

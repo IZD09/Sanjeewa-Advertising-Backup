@@ -11,6 +11,7 @@
  */
 
 import { BaseTableRowBuilder } from "../../core/BaseTableRowBuilder.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 
 /**
  * PaymentKpiCardEntity - Entity model for a Payment KPI metric card
@@ -162,9 +163,22 @@ export class PaymentKpiCardBuilder extends BaseTableRowBuilder {
   static buildInvoiceMetrics(orderPayments = []) {
     const list = Array.isArray(orderPayments) ? orderPayments : [];
 
-    const totalBilled = list.reduce((sum, p) => sum + (Number(p.totalBill ?? p.total_amount ?? p.totalAmount) || 0), 0);
-    const totalCollected = list.reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
-    const totalPending = list.reduce((sum, p) => sum + (Number(p.balanceAmount ?? p.balance_amount ?? p.balance) || 0), 0);
+    // Deduplicate by jobIds signature so multiple installment invoices for the same print job don't double-count KPIs
+    const seenJobSigs = new Set();
+    const uniqueJobInvoices = [];
+    for (const p of list) {
+      const ids = Array.isArray(p.jobIds) && p.jobIds.length > 0
+        ? [...p.jobIds].map(String).sort().join(",")
+        : String(p.orderId ?? p.id ?? "");
+      if (!seenJobSigs.has(ids)) {
+        seenJobSigs.add(ids);
+        uniqueJobInvoices.push(p);
+      }
+    }
+
+    const totalBilled = uniqueJobInvoices.reduce((sum, p) => sum + (Number(p.totalBill ?? p.total_amount ?? p.totalAmount) || 0), 0);
+    const totalCollected = uniqueJobInvoices.reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const totalPending = uniqueJobInvoices.reduce((sum, p) => sum + (Number(p.balanceAmount ?? p.balance_amount ?? p.balance) || 0), 0);
 
     const completeCount = list.filter(p => p.stage === "Complete Payment" || p.payment_status === "Paid").length;
     const advanceCount = list.filter(p => p.stage === "Advance Payment" || p.payment_status === "Partial").length;
@@ -200,11 +214,11 @@ export class PaymentKpiCardBuilder extends BaseTableRowBuilder {
     const tabBadge = document.getElementById("tabBadgeInvoiceCount");
     if (tabBadge) tabBadge.textContent = String(list.length);
 
-    // Method Breakdown Badges
-    const cardAmt = list.filter(p => p.method === "Card").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const cashAmt = list.filter(p => p.method === "Cash").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const checkAmt = list.filter(p => p.method === "Check").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const transferAmt = list.filter(p => p.method === "Bank Transfer").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
+    // Method Breakdown Badges (using unique job invoices)
+    const cardAmt = uniqueJobInvoices.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Card")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const cashAmt = uniqueJobInvoices.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Cash")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const checkAmt = uniqueJobInvoices.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Check")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const transferAmt = uniqueJobInvoices.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Bank Transfer")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
 
     const elCard = document.getElementById("invMethodCardTotal");
     const elCash = document.getElementById("invMethodCashTotal");
@@ -217,6 +231,51 @@ export class PaymentKpiCardBuilder extends BaseTableRowBuilder {
     if (elTransfer) elTransfer.textContent = this.formatAmount(transferAmt);
 
     return { totalBilled, totalCollected, totalPending, completeCount, advanceCount, pendingCount };
+  }
+
+  /**
+   * Build and update all KPI summary cards on the Collectable Payments tab.
+   * @param {Array} orders
+   */
+  static buildCollectionMetrics(orders = []) {
+    const list = (Array.isArray(orders) ? orders : []).filter((job) => {
+      const bal = Number(job.balanceAmount ?? job.balance_amount ?? Math.max(0, (Number(job.totalAmount || 0) - Number(job.paidAmount || 0))));
+      return bal > 0.009;
+    });
+
+    const totalCollectable = list.reduce((sum, j) => sum + (Number(j.balanceAmount ?? j.balance_amount ?? 0) || 0), 0);
+    const totalBilled = list.reduce((sum, j) => sum + (Number(j.totalAmount ?? j.total_amount ?? 0) || 0), 0);
+    const totalAdvancePaid = list.reduce((sum, j) => sum + (Number(j.paidAmount ?? j.paid_amount ?? 0) || 0), 0);
+
+    const partialCount = list.filter((j) => Number(j.paidAmount ?? j.paid_amount ?? 0) > 0).length;
+    const unpaidCount = list.length - partialCount;
+
+    new PaymentKpiCardBuilder()
+      .setValueId("kpiColTotalDue")
+      .setValue(this.formatAmount(totalCollectable))
+      .setValueColor("#ef4444")
+      .update();
+
+    new PaymentKpiCardBuilder()
+      .setValueId("kpiColTotalBilled")
+      .setValue(this.formatAmount(totalBilled))
+      .update();
+
+    new PaymentKpiCardBuilder()
+      .setValueId("kpiColAdvancePaid")
+      .setValue(this.formatAmount(totalAdvancePaid))
+      .setValueColor("#10b981")
+      .update();
+
+    new PaymentKpiCardBuilder()
+      .setValueId("kpiColStageCounts")
+      .setValue(`<strong>${unpaidCount}</strong> Unpaid | <strong>${partialCount}</strong> Partial`)
+      .update();
+
+    const tabBadge = document.getElementById("tabBadgeCollectionsCount");
+    if (tabBadge) tabBadge.textContent = String(list.length);
+
+    return { totalCollectable, totalBilled, totalAdvancePaid, unpaidCount, partialCount, count: list.length };
   }
 
   /**
@@ -265,10 +324,10 @@ export class PaymentKpiCardBuilder extends BaseTableRowBuilder {
     if (tabBadge) tabBadge.textContent = String(list.length);
 
     // Method Breakdown Badges
-    const cardAmt = list.filter(p => p.method === "Card").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const cashAmt = list.filter(p => p.method === "Cash").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const checkAmt = list.filter(p => p.method === "Check").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
-    const transferAmt = list.filter(p => p.method === "Bank Transfer").reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
+    const cardAmt = list.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Card")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const cashAmt = list.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Cash")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const checkAmt = list.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Check")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
+    const transferAmt = list.filter(p => StatusHelper.matchesPaymentMethod(p.method, "Bank Transfer")).reduce((sum, p) => sum + (Number(p.paidAmount ?? p.paid_amount ?? p.amount) || 0), 0);
 
     const elCard = document.getElementById("grnMethodCardTotal");
     const elCash = document.getElementById("grnMethodCashTotal");

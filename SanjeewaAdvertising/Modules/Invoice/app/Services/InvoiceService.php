@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\Core\Support\MobileNumberHelper;
 use Modules\Invoice\Models\Invoice;
@@ -23,7 +24,15 @@ class InvoiceService
      */
     public function buildQuery(array $filters = []): Builder
     {
-        $query = Invoice::query()->with(['customer', 'printJobs'])->withCount('printJobs');
+        $query = Invoice::query()->with([
+            'customer',
+            'printJobs.customer',
+            'printJobs.printType',
+            'printJobs.cost.printCosts',
+            'printJobs.unit',
+            'printJobs.payments.paymentType',
+            'printJobs.invoices',
+        ])->withCount('printJobs');
 
         $search = $filters['search'] ?? $filters['q'] ?? null;
         if (! empty($search)) {
@@ -71,23 +80,76 @@ class InvoiceService
      * @return Collection<int, Invoice>
      */
     /**
-     * Auto-sync initial invoices from print jobs in database if invoice table is empty.
+     * Auto-sync initial invoices from print jobs in database if invoice table is empty or missing installments.
      */
     public function syncInvoicesFromPrintJobs(): void
     {
-        if (Invoice::count() > 0) {
+        // 1. Initial bulk seed if invoices table is completely empty
+        if (Invoice::count() === 0) {
+            $printJobs = PrintJob::orderBy('id')->get();
+            foreach ($printJobs as $job) {
+                $addDate = $job->add_date ? Carbon::parse($job->add_date) : now();
+                $invoice = Invoice::create([
+                    'customer_id' => $job->customer_id,
+                    'invoice_at' => $addDate,
+                    'due_date' => $addDate->copy()->addDays(14),
+                ]);
+                $invoice->printJobs()->syncWithoutDetaching([$job->id]);
+            }
+
             return;
         }
 
-        $printJobs = PrintJob::orderBy('id')->get();
+        // 2. Incremental sync: ensure print jobs with payments have corresponding invoices for their installments
+        $printJobs = PrintJob::with([
+            'payments' => fn ($q) => $q->orderBy('id'),
+            'invoices' => fn ($q) => $q->orderBy('id'),
+        ])->orderBy('id')->get();
+
         foreach ($printJobs as $job) {
-            $addDate = $job->add_date ? Carbon::parse($job->add_date) : now();
-            $invoice = Invoice::create([
-                'customer_id' => $job->customer_id,
-                'invoice_at' => $addDate,
-                'due_date' => $addDate->copy()->addDays(14),
-            ]);
-            $invoice->printJobs()->syncWithoutDetaching([$job->id]);
+            $payments = $job->payments;
+            if ($payments->isEmpty()) {
+                continue;
+            }
+
+            $invoices = $job->invoices;
+
+            // If job has payments but zero invoices, create the invoice for the first payment
+            if ($invoices->isEmpty()) {
+                $firstPayment = $payments->first();
+                $payDate = $firstPayment->pay_date ? Carbon::parse($firstPayment->pay_date) : ($job->add_date ? Carbon::parse($job->add_date) : now());
+                $invoice = Invoice::create([
+                    'customer_id' => $job->customer_id,
+                    'invoice_at' => $payDate,
+                    'due_date' => $payDate->copy()->addDays(14),
+                ]);
+                $invoice->printJobs()->syncWithoutDetaching([$job->id]);
+                $invoices->push($invoice);
+            }
+
+            // If there are more payments than invoices, create missing invoices for earlier payments
+            if ($payments->count() > $invoices->count()) {
+                foreach ($payments as $p) {
+                    $pDate = $p->pay_date ? Carbon::parse($p->pay_date) : null;
+                    if (! $pDate) {
+                        continue;
+                    }
+                    $hasMatchingInv = $invoices->contains(function ($inv) use ($pDate) {
+                        $invDate = $inv->invoice_at ? Carbon::parse($inv->invoice_at) : null;
+
+                        return $invDate && abs($invDate->getTimestamp() - $pDate->getTimestamp()) <= 60;
+                    });
+                    if (! $hasMatchingInv) {
+                        $newInv = Invoice::create([
+                            'customer_id' => $job->customer_id,
+                            'invoice_at' => $pDate,
+                            'due_date' => $pDate->copy()->addDays(14),
+                        ]);
+                        $newInv->printJobs()->syncWithoutDetaching([$job->id]);
+                        $invoices->push($newInv);
+                    }
+                }
+            }
         }
     }
 
@@ -116,9 +178,22 @@ class InvoiceService
         $resources = InvoiceResource::collection($invoices);
         $invoicesData = $resources->resolve();
 
-        $totalBilled = (float) array_sum(array_column($invoicesData, 'total_amount'));
-        $totalCollected = (float) array_sum(array_column($invoicesData, 'paid_amount'));
-        $totalPending = (float) array_sum(array_column($invoicesData, 'balance_amount'));
+        $totalBilled = 0.0;
+        $totalCollected = 0.0;
+        $totalPending = 0.0;
+        $seenJobSignatures = [];
+
+        foreach ($invoicesData as $inv) {
+            $jobIds = $inv['job_ids'] ?? [$inv['id'] ?? 0];
+            sort($jobIds);
+            $sig = implode(',', $jobIds);
+            if (! isset($seenJobSignatures[$sig])) {
+                $seenJobSignatures[$sig] = true;
+                $totalBilled += (float) ($inv['total_amount'] ?? 0);
+                $totalCollected += (float) ($inv['paid_amount'] ?? 0);
+                $totalPending += (float) ($inv['balance_amount'] ?? 0);
+            }
+        }
 
         $completeCount = count(array_filter($invoicesData, fn ($i) => ($i['stage'] ?? '') === 'Complete Payment' || ($i['payment_status'] ?? '') === 'Paid'));
         $advanceCount = count(array_filter($invoicesData, fn ($i) => ($i['stage'] ?? '') === 'Advance Payment' || ($i['payment_status'] ?? '') === 'Partial'));
@@ -214,6 +289,9 @@ class InvoiceService
             $totalAmount = max(0, $subtotal - $discount);
 
             $paidAmount = (float) $job->payments->sum('payment');
+            if ($costSum <= 0 && $paidAmount > $totalAmount) {
+                $totalAmount = $paidAmount;
+            }
             $balanceAmount = max(0, $totalAmount - $paidAmount);
 
             if (! empty($filters['pending_only']) && $balanceAmount <= 0.01) {
@@ -250,48 +328,85 @@ class InvoiceService
 
     /**
      * Create a new invoice and associate print jobs.
+     * Prevents duplicate rapid submissions and aggregates allocations per print job.
      *
      * @param  array<string, mixed>  $data
      */
     public function createInvoice(array $data): Invoice
     {
-        return DB::transaction(function () use ($data) {
+        $customerId = (int) ($data['customer_id'] ?? 0);
+        $rawJobIds = ! empty($data['print_job_ids']) && is_array($data['print_job_ids']) ? $data['print_job_ids'] : [];
+        $cleanJobIds = array_values(array_unique(array_filter(array_map('intval', $rawJobIds))));
+        $paymentAmount = (float) ($data['payment_amount'] ?? 0);
+
+        // Deduplication & concurrency guard: prevent duplicate rapid submissions (within 5 seconds)
+        $lockKey = sprintf('invoice_create_%d_%s_%d', $customerId, implode('_', $cleanJobIds), (int) round($paymentAmount * 100));
+        if (! Cache::add($lockKey, true, 5)) {
+            // Duplicate rapid request detected: find matching existing invoice and return it safely
+            $existingInvoice = Invoice::query()
+                ->where('customer_id', $customerId)
+                ->whereHas('printJobs', function ($q) use ($cleanJobIds) {
+                    $q->whereIn('print_jobs.id', $cleanJobIds);
+                })
+                ->latest('id')
+                ->first();
+
+            if ($existingInvoice) {
+                return $existingInvoice->load(['customer', 'printJobs']);
+            }
+        }
+
+        return DB::transaction(function () use ($data, $customerId, $cleanJobIds, $paymentAmount) {
             $invoice = Invoice::create([
-                'customer_id' => (int) $data['customer_id'],
+                'customer_id' => $customerId,
                 'invoice_at' => ! empty($data['invoice_at']) ? $data['invoice_at'] : now(),
                 'due_date' => ! empty($data['due_date']) ? $data['due_date'] : now()->addDays(30),
             ]);
 
-            if (! empty($data['print_job_ids']) && is_array($data['print_job_ids'])) {
-                $invoice->printJobs()->sync($data['print_job_ids']);
+            if (! empty($cleanJobIds)) {
+                $invoice->printJobs()->sync($cleanJobIds);
 
                 // If payment amount is included, record payment transactions for print jobs
-                $paymentAmount = (float) ($data['payment_amount'] ?? 0);
                 if ($paymentAmount > 0) {
                     $allocations = ! empty($data['allocations']) && is_array($data['allocations']) ? $data['allocations'] : [];
                     $paymentTypeId = (int) ($data['payment_types_id'] ?? 1);
                     $paymentStatusId = (int) ($data['payment_statuses_id'] ?? 2);
                     $payDate = ! empty($data['invoice_at']) ? $data['invoice_at'] : now();
 
-                    if (! empty($allocations)) {
+                    // Merge and aggregate allocations by job_id so a job cannot have duplicate payments created
+                    $mergedAllocations = [];
+                    if (count($cleanJobIds) === 1) {
+                        // For a single print job, the recorded payment is strictly the authorized payment_amount
+                        $singleJobId = $cleanJobIds[0];
+                        $mergedAllocations[$singleJobId] = $paymentAmount;
+                    } elseif (! empty($allocations)) {
+                        $totalAllocSum = 0.0;
                         foreach ($allocations as $alloc) {
                             $jobId = (int) ($alloc['job_id'] ?? $alloc['id'] ?? 0);
                             $allocAmount = (float) ($alloc['allocated_amount'] ?? $alloc['amount'] ?? $alloc['allocatedNow'] ?? 0);
                             if ($jobId > 0 && $allocAmount > 0) {
-                                Payment::create([
-                                    'payment' => $allocAmount,
-                                    'print_jobs_id' => $jobId,
-                                    'payment_types_id' => $paymentTypeId,
-                                    'pay_date' => $payDate,
-                                    'payment_statuses_id' => $paymentStatusId,
-                                ]);
+                                $mergedAllocations[$jobId] = ($mergedAllocations[$jobId] ?? 0.0) + $allocAmount;
+                                $totalAllocSum += $allocAmount;
+                            }
+                        }
+                        // If total allocations sum differs from payment_amount, scale allocations to exact payment_amount
+                        if ($paymentAmount > 0 && abs($totalAllocSum - $paymentAmount) > 0.01 && $totalAllocSum > 0) {
+                            $ratio = $paymentAmount / $totalAllocSum;
+                            foreach ($mergedAllocations as $jId => $amt) {
+                                $mergedAllocations[$jId] = round($amt * $ratio, 2);
                             }
                         }
                     } else {
-                        $firstJobId = (int) $data['print_job_ids'][0];
+                        $firstJobId = (int) $cleanJobIds[0];
+                        if ($firstJobId > 0) {
+                            $mergedAllocations[$firstJobId] = $paymentAmount;
+                        }
+                    }
+
+                    foreach ($mergedAllocations as $jobId => $allocAmount) {
                         Payment::create([
-                            'payment' => $paymentAmount,
-                            'print_jobs_id' => $firstJobId,
+                            'payment' => $allocAmount,
+                            'print_jobs_id' => $jobId,
                             'payment_types_id' => $paymentTypeId,
                             'pay_date' => $payDate,
                             'payment_statuses_id' => $paymentStatusId,

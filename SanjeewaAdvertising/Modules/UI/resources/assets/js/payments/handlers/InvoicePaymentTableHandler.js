@@ -8,6 +8,7 @@
 
 import { BaseTableLoader } from "../../core/BaseTableLoader.js";
 import { MobileNumberHelper } from "../../core/MobileNumberHelper.js";
+import { StatusHelper } from "../../core/StatusHelper.js";
 import { InvoicePaymentRowBuilder, InvoicePaymentEntity } from "../builders/InvoicePaymentRowBuilder.js";
 
 export class InvoicePaymentTableHandler extends BaseTableLoader {
@@ -79,7 +80,7 @@ export class InvoicePaymentTableHandler extends BaseTableLoader {
 
       const stage = p.stage || (p.payment_status === "Paid" ? "Complete Payment" : "Pending Payment");
       const matchesStatus = invoiceStatusFilter === "ALL" || stage === invoiceStatusFilter;
-      const matchesMethod = invoiceMethodFilter === "ALL" || p.method === invoiceMethodFilter;
+      const matchesMethod = StatusHelper.matchesPaymentMethod(p.method, invoiceMethodFilter);
 
       return matchesSearch && matchesStatus && matchesMethod;
     });

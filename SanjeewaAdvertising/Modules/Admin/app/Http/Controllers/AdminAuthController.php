@@ -58,6 +58,9 @@ class AdminAuthController extends BaseApiController
 
         if (Auth::guard('admin')->hasUser() || $request->hasSession()) {
             Auth::guard('admin')->login($admin, $remember);
+            if ($request->hasSession()) {
+                $request->session()->put('active_portal', 'admin');
+            }
         }
 
         try {
@@ -76,15 +79,18 @@ class AdminAuthController extends BaseApiController
             report($e);
         }
 
+        $landingUrl = route('admin.dashboard');
+
         if ($request->wantsJson() || $request->ajax()) {
             return $this->success([
                 'admin' => new AdminResource($admin),
                 'login_id' => $loginRecord->id,
                 'login_at' => $loginRecord->login,
+                'redirect_url' => $landingUrl,
             ], 'Admin authentication successful.');
         }
 
-        return redirect()->intended(route('ui.dashboard'));
+        return redirect()->intended($landingUrl);
     }
 
     /**

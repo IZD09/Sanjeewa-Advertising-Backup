@@ -64,7 +64,7 @@
                     </section>
 
                     <footer class="dashboard-footer" id="dashboardFooter">
-                        <span>© 2026 SanjeewaAdvertising</span>
+                        <span>&copy; {{ date('Y') }} {{ \Modules\UI\Http\Controllers\SettingsController::getAppSettings()['shop_name'] ?? 'Sanjeewa Advertising' }}</span>
                         <span>Enterprise Administrative Visual Analytics</span>
                     </footer>
                 </div>

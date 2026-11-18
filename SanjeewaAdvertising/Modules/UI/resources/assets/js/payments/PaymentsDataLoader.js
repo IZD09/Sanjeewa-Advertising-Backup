@@ -62,6 +62,61 @@ export class PaymentsDataLoader {
   }
 
   /**
+   * Fetch live collectable print jobs directly from Invoice module / database.
+   *
+   * @param {boolean} [forceRefresh=false]
+   * @returns {Promise<Array>}
+   */
+  async fetchCollectableOrders(forceRefresh = false) {
+    if (this.orders.length > 0 && !forceRefresh) {
+      return this.orders;
+    }
+
+    try {
+      const jobsRes = await this.http.get("/api/v1/invoices/available-jobs");
+      const jobsData = jobsRes?.data || jobsRes;
+      const liveJobs = Array.isArray(jobsData) ? jobsData : (jobsData?.jobs || []);
+      if (Array.isArray(liveJobs) && liveJobs.length > 0) {
+        this.orders = liveJobs.map(j => ({
+          id: j.formattedId || j.orderId || `ORD-2026-${1000 + Number(j.id)}`,
+          formattedId: j.formattedId || j.orderId || `ORD-2026-${1000 + Number(j.id)}`,
+          jobId: j.job_id || j.id,
+          rawId: j.id,
+          customerId: j.customerId || "CUST-001",
+          customerName: j.customerName || "Customer",
+          customerMobile: j.customerMobile || "",
+          productName: j.productName || "Print Job",
+          qty: Number(j.qty) || 1,
+          width: j.width ?? "",
+          height: j.height ?? "",
+          unit: j.unit || "ft",
+          addDate: j.addDate || "-",
+          orderDate: j.addDate || "-",
+          totalAmount: Number(j.totalAmount) || 0,
+          paidAmount: Number(j.paidAmount) || 0,
+          balanceAmount: Number(j.balanceAmount) || 0,
+          status: j.status || (j.balanceAmount <= 0 ? "Paid" : "Pending"),
+          paymentStatus: j.status || (j.balanceAmount <= 0 ? "Paid" : "Pending")
+        }));
+        this.saveOrders(this.orders);
+        return this.orders;
+      }
+    } catch (err) {
+      console.warn("[PaymentsDataLoader] Failed to fetch live print jobs from database:", err);
+    }
+
+    const savedOrders = localStorage.getItem(this.storageKeys.orders);
+    if (savedOrders) {
+      try {
+        this.orders = JSON.parse(savedOrders);
+      } catch (err) {
+        this.orders = [];
+      }
+    }
+    return this.orders;
+  }
+
+  /**
    * Fetch customer invoice payments from Invoice module via RequestHandler.
    *
    * @param {Object} [filters={}]
@@ -75,29 +130,7 @@ export class PaymentsDataLoader {
 
     try {
       // 1. Fetch live available print jobs directly from Invoice module / database
-      try {
-        const jobsRes = await this.http.get("/api/v1/invoices/available-jobs");
-        const jobsData = jobsRes?.data || jobsRes;
-        const liveJobs = Array.isArray(jobsData) ? jobsData : (jobsData?.jobs || []);
-        if (Array.isArray(liveJobs) && liveJobs.length > 0) {
-          this.orders = liveJobs.map(j => ({
-            id: j.formattedId || j.orderId || `ORD-2026-${1000 + Number(j.id)}`,
-            jobId: j.job_id || j.id,
-            rawId: j.id,
-            customerId: j.customerId || "CUST-001",
-            customerName: j.customerName || "Customer",
-            customerMobile: j.customerMobile || "",
-            productName: j.productName || "Print Job",
-            totalAmount: Number(j.totalAmount) || 0,
-            paidAmount: Number(j.paidAmount) || 0,
-            balanceAmount: Number(j.balanceAmount) || 0,
-            paymentStatus: j.status || (j.balanceAmount <= 0 ? "Paid" : "Pending")
-          }));
-          this.saveOrders(this.orders);
-        }
-      } catch (err) {
-        console.warn("[PaymentsDataLoader] Failed to fetch live print jobs from database:", err);
-      }
+      await this.fetchCollectableOrders(forceRefresh);
 
       // 2. Fetch invoice payments and KPIs from Invoice module
       const response = await this.http.get("/api/v1/invoices/data", filters);
@@ -330,6 +363,7 @@ export class PaymentsDataLoader {
   async fetchAll(forceRefresh = false) {
     return Promise.allSettled([
       this.fetchInvoicePayments({}, forceRefresh),
+      this.fetchCollectableOrders(forceRefresh),
       this.fetchGrnPayments({}, forceRefresh),
       this.fetchOperatingExpenses({}, forceRefresh)
     ]);
@@ -431,8 +465,9 @@ export class PaymentsDataLoader {
   normalizeInvoice(inv = {}) {
     const total = Number(inv.total_amount ?? inv.totalAmount ?? inv.totalBill ?? inv.total ?? 0);
     const paid = Number(inv.paid_amount ?? inv.paidAmount ?? inv.amount ?? 0);
-    const balance = Number(inv.balance_amount ?? inv.balanceAmount ?? inv.balance ?? Math.max(0, total - paid));
-    const stage = inv.stage || (inv.payment_status === "Paid" || balance <= 0 ? "Complete Payment" : (paid > 0 ? "Advance Payment" : "Pending Payment"));
+    const cumulativePaid = Number(inv.cumulative_paid_amount ?? inv.cumulativePaidAmount ?? paid);
+    const balance = Number(inv.balance_amount ?? inv.balanceAmount ?? inv.balance ?? Math.max(0, total - cumulativePaid));
+    const stage = inv.stage || (inv.payment_status === "Paid" || balance <= 0.01 ? "Complete Payment" : (cumulativePaid > 0 ? "Advance Payment" : "Pending Payment"));
 
     return {
       id: inv.id || inv.order_id || inv.orderId || `ORD-${Date.now()}`,
@@ -446,8 +481,12 @@ export class PaymentsDataLoader {
       totalAmount: total,
       amount: paid,
       paidAmount: paid,
+      cumulativePaidAmount: cumulativePaid,
       balance: balance,
       balanceAmount: balance,
+      installmentNumber: Number(inv.installment_number || inv.installmentNumber || 1),
+      totalInstallments: Number(inv.total_installments || inv.totalInstallments || 1),
+      isMultiInstallment: Boolean(inv.is_multi_installment || inv.isMultiInstallment || (Number(inv.total_installments || inv.totalInstallments) > 1)),
       stage: stage,
       paymentStatus: inv.payment_status || (stage === "Complete Payment" ? "Paid" : (stage === "Advance Payment" ? "Partial" : "Pending")),
       orderStatus: inv.order_status || inv.status || "Completed",

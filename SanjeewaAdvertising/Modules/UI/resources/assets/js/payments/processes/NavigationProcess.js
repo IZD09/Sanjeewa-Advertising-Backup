@@ -29,6 +29,8 @@ export class NavigationProcess {
     const viewParam = urlParams ? urlParams.get("view") : null;
     if (viewParam === "grn-payment" || viewParam === "grn") {
       this.activeTab = "grn";
+    } else if (viewParam === "collections" || viewParam === "collect-payments" || viewParam === "collectable") {
+      this.activeTab = "collections";
     } else if (viewParam === "expenses" || viewParam === "expense") {
       this.activeTab = "expenses";
     } else if (viewParam === "overview") {
@@ -69,6 +71,8 @@ export class NavigationProcess {
   switchTab(tab) {
     if (tab === "grn" || tab === "grn-payment") {
       this.activeTab = "grn";
+    } else if (tab === "collections" || tab === "collect-payments" || tab === "collectable") {
+      this.activeTab = "collections";
     } else if (tab === "expenses" || tab === "expense") {
       this.activeTab = "expenses";
     } else if (tab === "overview") {
@@ -83,11 +87,13 @@ export class NavigationProcess {
     });
 
     const invPane = document.getElementById("payTabPaneInvoice");
+    const colPane = document.getElementById("payTabPaneCollections");
     const grnPane = document.getElementById("payTabPaneGrn");
     const expPane = document.getElementById("payTabPaneExpenses");
     const ovPane = document.getElementById("payTabPaneOverview");
 
     if (invPane) invPane.style.display = (this.activeTab === "invoice") ? "block" : "none";
+    if (colPane) colPane.style.display = (this.activeTab === "collections") ? "block" : "none";
     if (grnPane) grnPane.style.display = (this.activeTab === "grn") ? "block" : "none";
     if (expPane) expPane.style.display = (this.activeTab === "expenses") ? "block" : "none";
     if (ovPane) ovPane.style.display = (this.activeTab === "overview") ? "block" : "none";
@@ -96,9 +102,11 @@ export class NavigationProcess {
     if (typeof window !== "undefined" && window.history && window.history.replaceState) {
       const viewVal = this.activeTab === "grn"
         ? "grn-payment"
-        : (this.activeTab === "expenses"
-          ? "expenses"
-          : (this.activeTab === "overview" ? "overview" : "invoice-payment"));
+        : (this.activeTab === "collections"
+          ? "collections"
+          : (this.activeTab === "expenses"
+            ? "expenses"
+            : (this.activeTab === "overview" ? "overview" : "invoice-payment")));
       const newUrl = `${window.location.pathname}?view=${viewVal}`;
       window.history.replaceState({ path: newUrl }, "", newUrl);
     }
@@ -106,14 +114,18 @@ export class NavigationProcess {
     if (window.sidebarComponent) {
       const subRoute = (this.activeTab === "invoice"
         ? "invoice-payment"
-        : (this.activeTab === "grn"
-          ? "grn-payment"
-          : (this.activeTab === "expenses" ? "expenses" : null)));
+        : (this.activeTab === "collections"
+          ? "collections"
+          : (this.activeTab === "grn"
+            ? "grn-payment"
+            : (this.activeTab === "expenses" ? "expenses" : null))));
       window.sidebarComponent.setActiveRoute("payments", subRoute);
     }
 
     if (this.ctx.onTabSwitched) {
       this.ctx.onTabSwitched(this.activeTab);
+    } else if (this.activeTab === "collections" && this.ctx.loadAndRenderCollections) {
+      this.ctx.loadAndRenderCollections();
     } else if (this.activeTab === "grn" && this.ctx.loadAndRenderGrn) {
       this.ctx.loadAndRenderGrn();
     } else if (this.activeTab === "expenses" && this.ctx.loadAndRenderExpenses) {

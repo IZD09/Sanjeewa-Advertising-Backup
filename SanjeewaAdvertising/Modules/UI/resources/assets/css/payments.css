@@ -916,6 +916,13 @@ html[data-theme="dark"] .pay-table tr.row-status-cancelled > td {
     border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
+.method-pill.online,
+.method-pill.qr {
+    background: rgba(14, 165, 233, 0.08);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
 /* Action Buttons inside Table */
 .pay-table-actions {
     display: flex;
@@ -1881,6 +1888,27 @@ html[data-theme="dark"] .pay-table tr.row-status-cancelled > td {
     border: 1px solid rgba(37, 99, 235, 0.25);
     display: inline-flex;
     align-items: center;
+}
+
+.installment-badge {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+html[data-theme="dark"] .installment-badge {
+    background: rgba(99, 102, 241, 0.22);
+    color: #a5b4fc;
+    border-color: rgba(99, 102, 241, 0.4);
 }
 
 .inv-jobs-table-wrap {

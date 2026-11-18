@@ -528,13 +528,17 @@
 
               <div class="po-modal-body" style="background: var(--surface-2); padding: 18px;">
                 <div id="grnPrintArea" class="grn-voucher-sheet">
+                  @php
+                    $grnVoucherSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
+                    $grnBrandParts = explode(' ', trim($grnVoucherSettings['shop_name'] ?? 'Sanjeewa Advertising'), 2);
+                  @endphp
                   <!-- Header -->
                   <div class="grn-voucher-header">
                     <div class="grn-voucher-brand">
-                      <strong>Sanjeewa</strong>
-                      <span>ADVERTISING & PRINTING</span>
+                      <strong>{{ $grnBrandParts[0] ?? 'Sanjeewa' }}</strong>
+                      <span>{{ strtoupper($grnBrandParts[1] ?? 'ADVERTISING & PRINTING') }}</span>
                       <div style="font-size: 11px; color: #666; margin-top: 3px;">
-                        No. 42 Main Street, Colombo 03, Sri Lanka &bull; Tel: +94 11 234 5678
+                        {{ $grnVoucherSettings['shop_address'] ?? 'No. 42 Main Street, Colombo 03, Sri Lanka' }} &bull; Tel: {{ $grnVoucherSettings['shop_phone'] ?? '+94 11 234 5678' }}
                       </div>
                     </div>
                     <div style="text-align: right;">
@@ -822,13 +826,17 @@
 
               <div class="po-modal-body" style="background: var(--surface-2); padding: 18px;">
                 <div id="poPrintArea" class="grn-voucher-sheet">
+                  @php
+                    $grnVoucherSettings = \Modules\UI\Http\Controllers\SettingsController::getAppSettings();
+                    $grnBrandParts = explode(' ', trim($grnVoucherSettings['shop_name'] ?? 'Sanjeewa Advertising'), 2);
+                  @endphp
                   <!-- Header -->
                   <div class="grn-voucher-header">
                     <div class="grn-voucher-brand">
-                      <strong>Sanjeewa</strong>
-                      <span>ADVERTISING & PRINTING</span>
+                      <strong>{{ $grnBrandParts[0] ?? 'Sanjeewa' }}</strong>
+                      <span>{{ strtoupper($grnBrandParts[1] ?? 'ADVERTISING & PRINTING') }}</span>
                       <div style="font-size: 11px; color: #666; margin-top: 3px;">
-                        No. 42 Main Street, Colombo 03, Sri Lanka &bull; Tel: +94 11 234 5678
+                        {{ $grnVoucherSettings['shop_address'] ?? 'No. 42 Main Street, Colombo 03, Sri Lanka' }} &bull; Tel: {{ $grnVoucherSettings['shop_phone'] ?? '+94 11 234 5678' }}
                       </div>
                     </div>
                     <div style="text-align: right;">
