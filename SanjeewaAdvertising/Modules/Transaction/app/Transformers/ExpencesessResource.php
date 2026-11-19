@@ -54,13 +54,13 @@ class ExpencesessResource extends JsonResource
             : ($this->pay_at ? substr((string) $this->pay_at, 0, 10) : '');
 
         return [
-            'id' => 'EXP-2026-'.str_pad((string) $this->id, 3, '0', STR_PAD_LEFT),
+            'id' => 'EXP-2026-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT),
             'raw_id' => $this->id,
             'title' => $typeName,
             'category' => $category,
             'provider' => $provider,
-            'account_no' => 'ACC-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT),
-            'accountNo' => 'ACC-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT),
+            'account_no' => 'ACC-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT),
+            'accountNo' => 'ACC-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT),
             'month' => $month,
             'due_date' => $dueDate,
             'dueDate' => $dueDate,

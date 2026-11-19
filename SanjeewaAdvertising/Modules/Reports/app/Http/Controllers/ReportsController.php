@@ -11,7 +11,8 @@ class ReportsController extends Controller
 {
     public function __construct(
         public ReportsService $reportsService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the reports view (delegates to UI reports layout).

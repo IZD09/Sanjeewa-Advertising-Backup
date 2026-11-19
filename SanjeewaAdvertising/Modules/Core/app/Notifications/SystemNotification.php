@@ -21,7 +21,8 @@ class SystemNotification extends Notification
         public string $type = 'info',
         public string $icon = 'fa-solid fa-bell',
         public array $metadata = []
-    ) {}
+    ) {
+    }
 
     /**
      * Get the notification's delivery channels.

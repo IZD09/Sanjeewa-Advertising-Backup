@@ -15,7 +15,8 @@ class UserController extends BaseApiController
 {
     public function __construct(
         protected UserService $userService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of users with search and filter capabilities.

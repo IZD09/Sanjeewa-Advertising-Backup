@@ -152,7 +152,7 @@ class SupplierApiTest extends TestCase
         $this->assertContains($poB->id, $poIds);
 
         // 2. Fetching filtered to Supplier Alpha only (Supplier Directory Card path)
-        $filteredResponse = $this->getJson('/api/v1/purchase-orders/data?suppliers_id='.$supplierA->id);
+        $filteredResponse = $this->getJson('/api/v1/purchase-orders/data?suppliers_id=' . $supplierA->id);
         $filteredResponse->assertOk();
 
         $filteredOrders = $filteredResponse->json('data.purchase_orders');

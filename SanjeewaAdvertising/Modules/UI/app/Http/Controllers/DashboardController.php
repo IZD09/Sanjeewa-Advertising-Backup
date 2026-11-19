@@ -14,7 +14,8 @@ class DashboardController extends BaseApiController
 {
     public function __construct(
         protected DashboardService $dashboardService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the main interactive dashboard view with initial shared backend data.
@@ -39,7 +40,7 @@ class DashboardController extends BaseApiController
 
         return response($snapshot['json'], 200, [
             'Content-Type' => 'application/json',
-            'ETag' => '"'.$snapshot['hash'].'"',
+            'ETag' => '"' . $snapshot['hash'] . '"',
         ]);
     }
 

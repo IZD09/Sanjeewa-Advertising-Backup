@@ -90,7 +90,7 @@ class StockDataSeeder extends Seeder
                 // Ensure unique invoice string
                 $invNumber = $cfg['inv'];
                 if (DB::table('grn_has_puches_order')->where('supplyer_invoice', $invNumber)->exists()) {
-                    $invNumber .= '-'.rand(10, 99);
+                    $invNumber .= '-' . rand(10, 99);
                 }
 
                 DB::table('grn_has_puches_order')->insert([

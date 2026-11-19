@@ -87,12 +87,12 @@ class SettingsController extends BaseApiController
         };
 
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-            .'<rect width="32" height="32" rx="8" fill="'.$bg.'"/>'
-            .'<g transform="translate(4,4)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            .$paths
-            .'</g></svg>';
+            . '<rect width="32" height="32" rx="8" fill="' . $bg . '"/>'
+            . '<g transform="translate(4,4)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            . $paths
+            . '</g></svg>';
 
-        return 'data:image/svg+xml,'.rawurlencode($svg);
+        return 'data:image/svg+xml,' . rawurlencode($svg);
     }
 
     /**
@@ -223,7 +223,7 @@ class SettingsController extends BaseApiController
 
             if ($request->hasFile('logo_file')) {
                 $file = $request->file('logo_file');
-                $filename = 'shop_logo_'.time().'.'.$file->getClientOriginalExtension();
+                $filename = 'shop_logo_' . time() . '.' . $file->getClientOriginalExtension();
                 $destinationPath = public_path('uploads/branding');
 
                 if (! is_dir($destinationPath)) {
@@ -231,7 +231,7 @@ class SettingsController extends BaseApiController
                 }
 
                 $file->move($destinationPath, $filename);
-                $settings['logo_url'] = '/uploads/branding/'.$filename;
+                $settings['logo_url'] = '/uploads/branding/' . $filename;
             } elseif ($request->boolean('remove_logo')) {
                 $settings['logo_url'] = null;
             } elseif ($request->filled('logo_url')) {

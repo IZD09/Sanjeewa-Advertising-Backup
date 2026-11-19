@@ -195,7 +195,7 @@ class SupplierService
      */
     public function formatSupplierRecord(Supplier $supplier): array
     {
-        $code = 'SUP-'.str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT);
+        $code = 'SUP-' . str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT);
 
         return [
             'id' => $supplier->id,

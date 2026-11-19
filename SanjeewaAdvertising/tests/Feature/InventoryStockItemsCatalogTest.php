@@ -42,7 +42,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
     public function test_can_create_and_update_brand(): void
     {
-        $brandName = 'Oracal Premium '.uniqid();
+        $brandName = 'Oracal Premium ' . uniqid();
 
         // 1. Create brand
         $createRes = $this->postJson('/api/v1/inventory/brands', [
@@ -57,7 +57,7 @@ class InventoryStockItemsCatalogTest extends TestCase
         $this->assertNotNull($brandId);
 
         // 2. Update brand
-        $updatedName = $brandName.' Updated';
+        $updatedName = $brandName . ' Updated';
         $updateRes = $this->putJson("/api/v1/inventory/brands/{$brandId}", [
             'brand' => $updatedName,
         ]);
@@ -86,7 +86,7 @@ class InventoryStockItemsCatalogTest extends TestCase
     {
         $subcategory = Subcategory::first();
         $brand = Brand::first();
-        $sku = strtoupper('TEST-'.uniqid());
+        $sku = strtoupper('TEST-' . uniqid());
         $name = 'High Gloss Vinyl 150gsm';
 
         // 1. Create stock item
@@ -128,7 +128,7 @@ class InventoryStockItemsCatalogTest extends TestCase
     {
         $subcategory = Subcategory::first();
         $brand = Brand::first();
-        $sku = strtoupper('TEST-QTY-'.uniqid());
+        $sku = strtoupper('TEST-QTY-' . uniqid());
 
         $createRes = $this->postJson('/api/v1/inventory/stock-items', [
             'name' => 'Custom Qty Item',

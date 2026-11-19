@@ -9,7 +9,8 @@ abstract class BaseReportService
 {
     public function __construct(
         public FetchReportDataTransaction $transaction
-    ) {}
+    ) {
+    }
 
     /**
      * Resolve date range (start, end) from filter array.

@@ -32,7 +32,7 @@ class PrintJobSeeder extends Seeder
             'first_name' => 'Admin',
             'last_name' => 'User',
             'mobile' => '0770000000',
-            'username' => 'admin_user_'.uniqid(),
+            'username' => 'admin_user_' . uniqid(),
             'password' => bcrypt('password'),
             'register_at' => now(),
             'is_login' => 0,

@@ -18,7 +18,7 @@ class PurchaseOrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'po_number' => 'PO-'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT),
+            'po_number' => 'PO-' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT),
             'suppliers_id' => $this->suppliers_id,
             'add_date' => $this->add_date?->toIso8601String() ?? $this->add_date,
             'notes' => $this->notes,

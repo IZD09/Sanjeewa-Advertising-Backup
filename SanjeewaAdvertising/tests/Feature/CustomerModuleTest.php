@@ -108,7 +108,7 @@ class CustomerModuleTest extends TestCase
             ->assertJsonFragment(['mobile' => '+94779646903']);
 
         // Search "0712345678" using international format "+94712345678"
-        $this->getJson('/api/v1/customers/search?q='.urlencode('+94712345678'))
+        $this->getJson('/api/v1/customers/search?q=' . urlencode('+94712345678'))
             ->assertStatus(200)
             ->assertJsonFragment(['mobile' => '0712345678']);
     }

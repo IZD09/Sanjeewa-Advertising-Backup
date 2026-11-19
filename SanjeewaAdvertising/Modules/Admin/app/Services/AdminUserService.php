@@ -298,7 +298,7 @@ class AdminUserService
             $adminName = $act->adminActivity?->admin?->username ?? ($payload['admin_username'] ?? 'Admin');
 
             $activities[] = [
-                'id' => 'ACT-'.$act->id,
+                'id' => 'ACT-' . $act->id,
                 'raw_id' => (int) $act->id,
                 'timestamp' => $act->activity_time ? $act->activity_time->format('Y-m-d H:i:s') : null,
                 'type' => $typeName,
@@ -320,12 +320,12 @@ class AdminUserService
                 ->get();
 
             foreach ($printJobs as $job) {
-                $customerName = trim(($job->customer?->first_name ?? '').' '.($job->customer?->last_name ?? '')) ?: 'Walk-in Customer';
+                $customerName = trim(($job->customer?->first_name ?? '') . ' ' . ($job->customer?->last_name ?? '')) ?: 'Walk-in Customer';
                 $printTypeName = $job->printType?->type ?? 'Print Order';
                 $jobTime = $job->add_date ? date('Y-m-d H:i:s', strtotime((string) $job->add_date)) : null;
 
                 $activities[] = [
-                    'id' => 'PJ-'.$job->id,
+                    'id' => 'PJ-' . $job->id,
                     'raw_id' => (int) $job->id,
                     'timestamp' => $jobTime,
                     'type' => 'Print Job Created',

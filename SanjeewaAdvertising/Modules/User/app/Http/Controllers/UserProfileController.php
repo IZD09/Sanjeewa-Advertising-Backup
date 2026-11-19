@@ -19,7 +19,8 @@ class UserProfileController extends BaseApiController
 {
     public function __construct(
         protected UserService $userService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the user profile UI page.

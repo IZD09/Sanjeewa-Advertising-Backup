@@ -19,7 +19,8 @@ class AuthController extends BaseApiController
 {
     public function __construct(
         protected AuthService $authService
-    ) {}
+    ) {
+    }
 
     /**
      * Register a new user account.
@@ -61,7 +62,7 @@ class AuthController extends BaseApiController
                 'username' => $pendingUser->username,
                 'mobile' => $pendingUser->mobile,
                 'status' => $pendingUser->status?->user_status ?? 'Active',
-                'initials' => strtoupper(substr($pendingUser->first_name ?: $pendingUser->username, 0, 1).substr($pendingUser->last_name ?: '', 0, 1)),
+                'initials' => strtoupper(substr($pendingUser->first_name ?: $pendingUser->username, 0, 1) . substr($pendingUser->last_name ?: '', 0, 1)),
                 'register_at' => $pendingUser->register_at?->format('Y-m-d') ?? 'Recent',
             ];
 

@@ -20,7 +20,8 @@ class PrintJobController extends BaseApiController
 {
     public function __construct(
         protected PrintJobService $printJobService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the Print Jobs Production Floor view populated with real database datasets from PrintJob module.

@@ -12,7 +12,8 @@ class GrnItemController extends BaseApiController
 {
     public function __construct(
         protected GrnItemService $grnItemService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of GRN items.

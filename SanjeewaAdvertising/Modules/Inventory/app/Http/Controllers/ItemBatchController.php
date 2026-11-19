@@ -12,7 +12,8 @@ class ItemBatchController extends BaseApiController
 {
     public function __construct(
         protected ItemBatchService $batchService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of item batches.

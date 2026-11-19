@@ -15,7 +15,8 @@ class NotificationController extends BaseApiController
     public function __construct(
         protected NotificationService $notificationService,
         protected ActivityService $activityService
-    ) {}
+    ) {
+    }
 
     /**
      * Retrieve the list of notifications and unread count for current user or admin.

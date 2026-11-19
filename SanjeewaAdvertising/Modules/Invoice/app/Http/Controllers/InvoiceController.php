@@ -14,7 +14,8 @@ class InvoiceController extends BaseApiController
 {
     public function __construct(
         protected InvoiceService $invoiceService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of invoices with optional search and pagination.

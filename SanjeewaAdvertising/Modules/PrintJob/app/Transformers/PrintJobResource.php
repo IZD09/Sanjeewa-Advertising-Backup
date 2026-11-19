@@ -90,7 +90,7 @@ class PrintJobResource extends JsonResource
             'materials' => $this->whenLoaded('stockItems', function () {
                 return $this->stockItems->map(fn ($stock) => [
                     'stock_id' => (int) $stock->id,
-                    'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? 'Material #'.$stock->id) : 'Material #'.$stock->id,
+                    'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? 'Material #' . $stock->id) : 'Material #' . $stock->id,
                     'brand' => $stock->relationLoaded('brand') ? ($stock->brand?->brand ?? '') : '',
                     'qty' => $stock->pivot ? (int) $stock->pivot->qty : 1,
                 ])->values()->all();

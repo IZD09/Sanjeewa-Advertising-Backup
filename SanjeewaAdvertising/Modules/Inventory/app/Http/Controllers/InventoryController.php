@@ -23,7 +23,8 @@ class InventoryController extends BaseApiController
     public function __construct(
         protected InventoryCategoryService $categoryService,
         protected StockItemService $stockItemService
-    ) {}
+    ) {
+    }
 
     /**
      * Retrieve combined catalog data for the Stock Items & Brands UI tab.
@@ -222,31 +223,31 @@ class InventoryController extends BaseApiController
             $stockItem = $stock?->stockItem;
 
             $sourceLabel = match ($typeId) {
-                1 => 'GRN #'.($item->source_id ?: ($stock?->grn_id ?? 'N/A')),
-                2 => 'Job #'.($item->source_id ?: 'ORD-N/A'),
-                3 => 'Manual In #'.$item->source_id,
-                4 => 'Manual Out #'.$item->source_id,
-                5 => 'Audit Adjust #'.$item->source_id,
-                6 => 'Damage #'.$item->source_id,
-                7 => 'Return #'.$item->source_id,
-                default => 'Ref #'.$item->source_id,
+                1 => 'GRN #' . ($item->source_id ?: ($stock?->grn_id ?? 'N/A')),
+                2 => 'Job #' . ($item->source_id ?: 'ORD-N/A'),
+                3 => 'Manual In #' . $item->source_id,
+                4 => 'Manual Out #' . $item->source_id,
+                5 => 'Audit Adjust #' . $item->source_id,
+                6 => 'Damage #' . $item->source_id,
+                7 => 'Return #' . $item->source_id,
+                default => 'Ref #' . $item->source_id,
             };
 
             return [
                 'id' => $item->id,
-                'movement_code' => 'MOV-'.str_pad((string) $item->id, 5, '0', STR_PAD_LEFT),
+                'movement_code' => 'MOV-' . str_pad((string) $item->id, 5, '0', STR_PAD_LEFT),
                 'date' => $item->date ? $item->date->format('Y-m-d H:i') : null,
                 'date_formatted' => $item->date ? $item->date->format('d M Y, h:i A') : '-',
                 'stock_id' => $item->stock_id,
-                'item_code' => $stockItem?->code ?? ('SKU-'.$item->stock_id),
-                'item_name' => $stockItem?->name ?? 'Stock Item #'.$item->stock_id,
+                'item_code' => $stockItem?->code ?? ('SKU-' . $item->stock_id),
+                'item_name' => $stockItem?->name ?? 'Stock Item #' . $item->stock_id,
                 'category' => $stockItem?->subcategory?->category?->category ?? ($stockItem?->subcategory?->subcategory ?? 'General'),
                 'brand' => $stock?->brand?->brand ?? 'Generic',
                 'type_id' => $typeId,
                 'type_name' => $typeName,
                 'direction' => $dir,
                 'qty' => (int) $item->qty,
-                'qty_display' => ($isIn ? '+' : ($isOut ? '-' : '±')).number_format((float) $item->qty),
+                'qty_display' => ($isIn ? '+' : ($isOut ? '-' : '±')) . number_format((float) $item->qty),
                 'unit_price' => (float) ($stock?->price ?? 0),
                 'buy_price' => (float) ($stock?->buy ?? 0),
                 'total_value' => round((float) (($stock?->price ?? 0) * $item->qty), 2),
@@ -305,7 +306,9 @@ class InventoryController extends BaseApiController
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(Request $request)
+    {
+    }
 
     /**
      * Show the specified resource.
@@ -326,10 +329,14 @@ class InventoryController extends BaseApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id) {}
+    public function update(Request $request, $id)
+    {
+    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id) {}
+    public function destroy($id)
+    {
+    }
 }

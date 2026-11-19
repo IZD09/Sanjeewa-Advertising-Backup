@@ -150,7 +150,7 @@ class PurchaseOrderService
                     ['name' => trim((string) $data['supplier_name'])],
                     [
                         'mobile' => $data['supplier_contact'] ?? '077 000 0000',
-                        'email' => $data['supplier_email'] ?? ('supplier_'.uniqid().'@example.com'),
+                        'email' => $data['supplier_email'] ?? ('supplier_' . uniqid() . '@example.com'),
                     ]
                 );
                 $supplierId = $supplier->id;
@@ -358,9 +358,9 @@ class PurchaseOrderService
             $totalAmount += $itemTotal;
 
             $items[] = [
-                'item_id' => $item->stockItem?->code ?? ('ITM-'.$item->stock_items_id),
+                'item_id' => $item->stockItem?->code ?? ('ITM-' . $item->stock_items_id),
                 'stock_items_id' => $item->stock_items_id,
-                'item_name' => $item->stockItem?->name ?? ('Item #'.$item->stock_items_id),
+                'item_name' => $item->stockItem?->name ?? ('Item #' . $item->stock_items_id),
                 'unit' => 'Units',
                 'qty_ordered' => $qtyOrdered,
                 'qty_received' => $qtyReceived,
@@ -381,7 +381,7 @@ class PurchaseOrderService
             }
         }
 
-        $poCode = 'PO-'.str_pad((string) $po->id, 4, '0', STR_PAD_LEFT);
+        $poCode = 'PO-' . str_pad((string) $po->id, 4, '0', STR_PAD_LEFT);
         $orderDate = $po->add_date?->toDateString() ?? '';
         $expectedDate = $po->add_date?->copy()->addDays(7)->toDateString() ?? 'N/A';
 

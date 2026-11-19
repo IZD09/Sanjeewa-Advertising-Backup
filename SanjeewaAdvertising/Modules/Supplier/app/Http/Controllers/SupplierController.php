@@ -16,7 +16,8 @@ class SupplierController extends BaseApiController
 {
     public function __construct(
         protected SupplierService $supplierService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of suppliers.

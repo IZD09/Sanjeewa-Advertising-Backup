@@ -39,9 +39,9 @@ class ExecutiveKpiReportService extends BaseReportService
         if ($prevSales > 0) {
             $diffPct = round((($currSales - $prevSales) / $prevSales) * 100, 1);
             if ($diffPct > 0) {
-                $trendHtml = '<span class="rep-trend-up"><i class="fa-solid fa-arrow-trend-up"></i> +'.$diffPct.'%</span>';
+                $trendHtml = '<span class="rep-trend-up"><i class="fa-solid fa-arrow-trend-up"></i> +' . $diffPct . '%</span>';
             } elseif ($diffPct < 0) {
-                $trendHtml = '<span class="rep-trend-down" style="color: #ef4444;"><i class="fa-solid fa-arrow-trend-down"></i> '.$diffPct.'%</span>';
+                $trendHtml = '<span class="rep-trend-down" style="color: #ef4444;"><i class="fa-solid fa-arrow-trend-down"></i> ' . $diffPct . '%</span>';
             } else {
                 $trendHtml = '<span class="rep-trend-up"><i class="fa-solid fa-minus"></i> 0.0%</span>';
             }
@@ -81,7 +81,7 @@ class ExecutiveKpiReportService extends BaseReportService
             'grossBillings' => [
                 'title' => 'Gross Billings',
                 'raw_value' => $financials['totalSales'],
-                'value' => 'Rs. '.number_format($financials['totalSales'], 2),
+                'value' => 'Rs. ' . number_format($financials['totalSales'], 2),
                 'icon' => 'fa-solid fa-file-invoice-dollar',
                 'color' => 'blue',
                 'trend' => $trendHtml,
@@ -90,38 +90,38 @@ class ExecutiveKpiReportService extends BaseReportService
             'grnPurchases' => [
                 'title' => 'Stock & GRN Purchases',
                 'raw_value' => $financials['totalGrnPayments'],
-                'value' => 'Rs. '.number_format($financials['totalGrnPayments'], 2),
+                'value' => 'Rs. ' . number_format($financials['totalGrnPayments'], 2),
                 'icon' => 'fa-solid fa-boxes-packing',
                 'color' => 'orange',
                 'trend' => '',
-                'meta' => 'Material Cost: '.$materialCostPercent.'%',
+                'meta' => 'Material Cost: ' . $materialCostPercent . '%',
             ],
             'operatingExpenses' => [
                 'title' => 'Operating Expenses',
                 'raw_value' => $financials['totalExpenses'],
-                'value' => 'Rs. '.number_format($financials['totalExpenses'], 2),
+                'value' => 'Rs. ' . number_format($financials['totalExpenses'], 2),
                 'icon' => 'fa-solid fa-receipt',
                 'color' => 'red',
                 'trend' => '',
-                'meta' => $billsCount.' Active Utility & Overhead bills',
+                'meta' => $billsCount . ' Active Utility & Overhead bills',
             ],
             'netProfit' => [
                 'title' => 'Net Operating Profit',
                 'raw_value' => $financials['netProfit'],
-                'value' => 'Rs. '.number_format($financials['netProfit'], 2),
+                'value' => 'Rs. ' . number_format($financials['netProfit'], 2),
                 'icon' => 'fa-solid fa-sack-dollar',
                 'color' => 'green',
-                'trend' => '<span class="rep-trend-up"><i class="fa-solid fa-check"></i> '.$financials['marginPercent'].'% Margin</span>',
+                'trend' => '<span class="rep-trend-up"><i class="fa-solid fa-check"></i> ' . $financials['marginPercent'] . '% Margin</span>',
                 'meta' => 'Net Margin',
             ],
             'uncollected' => [
                 'title' => 'Uncollected Receivables',
                 'raw_value' => $financials['uncollected'],
-                'value' => 'Rs. '.number_format($financials['uncollected'], 2),
+                'value' => 'Rs. ' . number_format($financials['uncollected'], 2),
                 'icon' => 'fa-solid fa-hand-holding-dollar',
                 'color' => 'purple',
                 'trend' => '',
-                'meta' => 'Pending across '.$pendingCustCount.' customer(s)',
+                'meta' => 'Pending across ' . $pendingCustCount . ' customer(s)',
             ],
         ];
     }

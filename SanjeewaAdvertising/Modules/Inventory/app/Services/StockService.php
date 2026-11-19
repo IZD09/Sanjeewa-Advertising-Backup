@@ -265,8 +265,8 @@ class StockService
             'id' => $stock->id,
             'stock_id' => $stock->id,
             'stock_items_id' => $stock->stock_items_id,
-            'code' => $item?->code ?? ('SKU-'.$stock->id),
-            'name' => $item?->name ?? ('Material Item #'.$stock->stock_items_id),
+            'code' => $item?->code ?? ('SKU-' . $stock->id),
+            'name' => $item?->name ?? ('Material Item #' . $stock->stock_items_id),
             'category' => $cat?->category ?? ($subcat?->subcategory ?? 'General'),
             'category_id' => $cat?->id,
             'subcategory' => $subcat?->subcategory ?? 'General',
@@ -323,7 +323,7 @@ class StockService
                 ])->values()->all(),
                 'existing_batches' => $item->batches->map(fn ($b) => [
                     'id' => $b->id,
-                    'batch_no' => 'BAT-'.$b->id,
+                    'batch_no' => 'BAT-' . $b->id,
                 ])->values()->all(),
                 'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
                     'id' => $st->id,
@@ -401,7 +401,7 @@ class StockService
                                 ])->values()->all(),
                                 'existing_batches' => $item->batches->map(fn ($b) => [
                                     'id' => $b->id,
-                                    'batch_no' => 'BAT-'.$b->id,
+                                    'batch_no' => 'BAT-' . $b->id,
                                 ])->values()->all(),
                                 'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
                                     'id' => $st->id,
@@ -449,7 +449,7 @@ class StockService
                             ])->values()->all(),
                             'existing_batches' => $item->batches->map(fn ($b) => [
                                 'id' => $b->id,
-                                'batch_no' => 'BAT-'.$b->id,
+                                'batch_no' => 'BAT-' . $b->id,
                             ])->values()->all(),
                             'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
                                 'id' => $st->id,
@@ -466,7 +466,7 @@ class StockService
             }
 
             $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
-            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
+            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #' . $id)->join(', ');
             $pendingCount = $itemsMap->count();
             // If all items under this GRN have already been added to stock, exclude it from Select GRN Reference
             if ($pendingCount === 0) {
@@ -474,18 +474,18 @@ class StockService
             }
 
             $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
-            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
+            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #' . $id)->join(', ');
             $statusText = " ({$pendingCount} items pending)";
 
-            $labelParts = ['GRN #'.$grn->id];
+            $labelParts = ['GRN #' . $grn->id];
             if ($supplierNames) {
                 $labelParts[] = $supplierNames;
             }
             if ($poNumbers) {
-                $labelParts[] = '('.$poNumbers.')';
+                $labelParts[] = '(' . $poNumbers . ')';
             }
             if ($grn->at_time) {
-                $labelParts[] = '['.$grn->at_time->format('Y-m-d').']';
+                $labelParts[] = '[' . $grn->at_time->format('Y-m-d') . ']';
             }
             $labelParts[] = $statusText;
 

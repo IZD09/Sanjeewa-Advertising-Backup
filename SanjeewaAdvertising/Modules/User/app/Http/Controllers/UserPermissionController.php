@@ -14,7 +14,8 @@ class UserPermissionController extends BaseApiController
 {
     public function __construct(
         protected UserPermissionService $permissionService
-    ) {}
+    ) {
+    }
 
     /**
      * Display all assigned permissions for a specified user.
