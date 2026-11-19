@@ -31,6 +31,28 @@ class AdminResource extends JsonResource
             'status' => new AdminStatusResource($this->whenLoaded('status')),
             'type' => new AdminTypeResource($this->whenLoaded('type')),
             'logins' => AdminLoginResource::collection($this->whenLoaded('logins')),
+            'activities' => $this->whenLoaded('activities', function () {
+                return $this->activities->map(function ($adminAct) {
+                    $act = $adminAct->relationLoaded('activity') ? $adminAct->activity : null;
+                    if (! $act) {
+                        return null;
+                    }
+
+                    $payload = is_array($act->activity) ? $act->activity : (json_decode($act->activity, true) ?? []);
+                    $typeName = $act->relationLoaded('activityType') && $act->activityType ? $act->activityType->activity_type : ($payload['type'] ?? 'Activity');
+
+                    return [
+                        'id' => 'ACT-'.$act->id,
+                        'raw_id' => (int) $act->id,
+                        'timestamp' => $act->activity_time?->toIso8601String(),
+                        'formatted_time' => $act->activity_time?->format('Y-m-d H:i:s'),
+                        'type' => $typeName,
+                        'action' => (string) ($payload['action'] ?? strtolower(str_replace(' ', '_', $typeName))),
+                        'message' => (string) ($payload['message'] ?? $typeName),
+                        'details' => $payload,
+                    ];
+                })->filter()->values();
+            }),
         ];
     }
 }

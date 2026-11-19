@@ -102,7 +102,7 @@ export class AdminVerifyModal {
     if (this.errorMsg) this.errorMsg.style.display = "none";
 
     const defaultUser = window.__CURRENT_ADMIN_USERNAME__ || "";
-    if (this.usernameInput && !this.usernameInput.value && defaultUser) {
+    if (this.usernameInput && defaultUser) {
       this.usernameInput.value = defaultUser;
     }
 

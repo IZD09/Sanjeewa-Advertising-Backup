@@ -83,6 +83,10 @@
                                             <span class="ap-info-label"><i class="fa-solid fa-clock-rotate-left" style="color: #fa8c16;"></i> Login Logs</span>
                                             <span class="ap-info-val" id="adminMetaLoginsCount">—</span>
                                         </div>
+                                        <div class="ap-info-row">
+                                            <span class="ap-info-label"><i class="fa-solid fa-timeline" style="color: #722ed1;"></i> Activities</span>
+                                            <span class="ap-info-val" id="adminMetaActivitiesCount">—</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -97,6 +101,10 @@
                                         </button>
                                         <button type="button" class="ap-tab-btn" data-tab="tabLoginHistory">
                                             <i class="fa-solid fa-list-check"></i> Recent Logins
+                                        </button>
+                                        <button type="button" class="ap-tab-btn" data-tab="tabActivities">
+                                            <i class="fa-solid fa-clock-rotate-left"></i> Activities
+                                            <i class="fa-solid fa-lock" id="actTabLockIcon" style="font-size: 11px; margin-left: 4px; color: #faad14;"></i>
                                         </button>
                                     </div>
 
@@ -155,7 +163,7 @@
                                             </div>
 
                                             <!-- Action Button -->
-                                            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border, #e2e8f0); display: flex; justify-content: flex-end;">
+                                            <div id="profActionWrap" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border, #e2e8f0); display: flex; justify-content: flex-end;">
                                                 <button type="submit" class="ant-btn ant-btn-primary" id="btnSaveProfile">
                                                     <i class="fa-solid fa-floppy-disk"></i> Update Profile
                                                 </button>
@@ -178,6 +186,69 @@
                                                         <!-- Dynamic log entries injected here -->
                                                     </tbody>
                                                 </table>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tab 4: Activities -->
+                                        <div class="ap-tab-pane" id="tabActivities">
+                                            <!-- Activities Toolbar: Search & Filter -->
+                                            <div class="upm-activity-filters" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                                                <div style="display: flex; gap: 10px; align-items: center; flex: 1; max-width: 480px;">
+                                                    <div style="position: relative; flex: 1;">
+                                                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted, #64748b); font-size: 13px;"></i>
+                                                        <input type="text" id="adminActivitySearchInput" placeholder="Search activities, actions or messages..." style="padding-left: 34px; height: 36px; width: 100%; border-radius: 6px; border: 1px solid var(--border, #d9d9d9); background: var(--input-bg, #ffffff); color: var(--text, #1e293b); font-size: 13px;">
+                                                    </div>
+                                                    <select id="adminActivityTypeSelect" style="height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border, #d9d9d9); font-size: 13px; background: var(--surface, #ffffff); color: var(--text, #1e293b);">
+                                                        <option value="ALL">All Activity Types</option>
+                                                    </select>
+                                                </div>
+                                                <div style="display: flex; gap: 8px; align-items: center;">
+                                                    <button type="button" class="ant-btn ant-btn-default" id="btnRefreshAdminActivities" title="Refresh activities">
+                                                        <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                                                    </button>
+                                                    <button type="button" class="ant-btn ant-btn-default" id="btnLockAdminActivities" title="Lock Activities tab" style="color: #faad14;">
+                                                        <i class="fa-solid fa-lock"></i> Lock Tab
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Activity Table Legend -->
+                                            <div class="upm-activity-legend">
+                                                <span style="font-weight: 700; color: var(--text); margin-right: 4px;">Activity Types:</span>
+                                                <span class="upm-legend-item"><span class="upm-legend-dot upm-dot-login"></span> Login</span>
+                                                <span class="upm-legend-item"><span class="upm-legend-dot upm-dot-logout"></span> Logout</span>
+                                                <span class="upm-legend-item"><span class="upm-legend-dot upm-dot-permission"></span> Permissions</span>
+                                                <span class="upm-legend-item"><span class="upm-legend-dot upm-dot-security"></span> Security</span>
+                                                <span class="upm-legend-item"><span class="upm-legend-dot upm-dot-status"></span> User Management</span>
+                                            </div>
+
+                                            <!-- Activities Table -->
+                                            <div class="uc-table-responsive" style="margin-top: 10px;">
+                                                <table class="ant-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 160px;">Activity ID / Type</th>
+                                                            <th>Description & Details</th>
+                                                            <th style="width: 190px;">Timestamp</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="adminActivitiesTableBody">
+                                                        <!-- Dynamic activity entries injected here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- Pagination Footer -->
+                                            <div id="adminActivitiesPagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 12.5px; color: var(--text-muted, #64748b);">
+                                                <span id="adminActivitiesCountInfo">Showing 0 activities</span>
+                                                <div style="display: flex; gap: 6px;">
+                                                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" id="btnAdminActPrev" disabled>
+                                                        <i class="fa-solid fa-chevron-left"></i> Previous
+                                                    </button>
+                                                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" id="btnAdminActNext" disabled>
+                                                        Next <i class="fa-solid fa-chevron-right"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -221,6 +292,43 @@
                                 </button>
                                 <button type="submit" class="ap-lock-btn-submit" id="btnVerifyAccessSubmit">
                                     <i class="fa-solid fa-key"></i> Verify & Unlock
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ==================================================================
+                     ACTIVITIES TAB PERMISSION VERIFICATION MODAL
+                     ================================================================== -->
+                <div class="ap-lock-overlay" id="adminActivitiesVerifyModal">
+                    <div class="ap-lock-card">
+                        <div class="ap-lock-icon-wrap" style="background: rgba(114, 46, 209, 0.1); color: #722ed1;">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3 class="ap-lock-title">Activity Audit Permission Required</h3>
+                        <p class="ap-lock-desc">
+                            Viewing administrative activity logs is restricted. Please enter your administrator password to unlock the Activities tab.
+                        </p>
+
+                        <form class="ap-lock-form" id="formVerifyActivitiesAccess">
+                            <div class="ap-lock-field">
+                                <label for="verifyActAdminUsername">Admin Username</label>
+                                <input type="text" id="verifyActAdminUsername" placeholder="e.g. admin" required readonly autocomplete="username">
+                            </div>
+                            <div class="ap-lock-field">
+                                <label for="verifyActAdminPassword">Admin Password</label>
+                                <input type="password" id="verifyActAdminPassword" placeholder="••••••••" required autocomplete="current-password">
+                            </div>
+
+                            <div class="ap-lock-error" id="verifyActAccessError"></div>
+
+                            <div class="ap-lock-actions">
+                                <button type="button" class="ap-lock-btn-cancel" id="btnCancelActivitiesVerify">
+                                    <i class="fa-solid fa-xmark"></i> Cancel
+                                </button>
+                                <button type="submit" class="ap-lock-btn-submit" id="btnSubmitActivitiesVerify" style="background: #722ed1;">
+                                    <i class="fa-solid fa-key"></i> Verify & Open
                                 </button>
                             </div>
                         </form>

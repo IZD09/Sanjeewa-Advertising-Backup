@@ -2,6 +2,7 @@
 
 namespace Modules\Admin\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,13 +17,13 @@ use Modules\Admin\Transformers\AdminResource;
 use Modules\Admin\Transformers\AdminStatusResource;
 use Modules\Admin\Transformers\AdminTypeResource;
 use Modules\Core\Http\Controllers\BaseApiController;
+use Modules\Core\Models\Activity;
 
 class AdminController extends BaseApiController
 {
     public function __construct(
         protected AdminService $adminService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of admins with optional search and pagination.
@@ -234,7 +235,13 @@ class AdminController extends BaseApiController
         // If authenticated as admin, prioritize verifying against current admin or matching username
         /** @var Admin|null $admin */
         $admin = Admin::query()
-            ->with(['status', 'type', 'logins' => fn ($q) => $q->latest('id')->limit(10)])
+            ->with([
+                'status',
+                'type',
+                'logins' => fn ($q) => $q->latest('id')->limit(20),
+                'activities' => fn ($q) => $q->latest('activities_id')->limit(60),
+                'activities.activity.activityType',
+            ])
             ->where(function ($q) use ($username) {
                 $q->where('username', $username)
                     ->orWhere('email', $username)
@@ -277,11 +284,80 @@ class AdminController extends BaseApiController
             return $this->unauthorized('Administrator session required.');
         }
 
-        $admin->load(['status', 'type', 'logins' => fn ($q) => $q->latest('id')->limit(10)]);
+        $admin->load([
+            'status',
+            'type',
+            'logins' => fn ($q) => $q->latest('id')->limit(20),
+            'activities' => fn ($q) => $q->latest('activities_id')->limit(60),
+            'activities.activity.activityType',
+        ]);
 
         return $this->success(
             new AdminResource($admin),
             'Admin profile retrieved successfully.'
+        );
+    }
+
+    /**
+     * Retrieve activity history of the authenticated administrator.
+     */
+    public function activities(Request $request): JsonResponse
+    {
+        /** @var Admin|null $admin */
+        $admin = Auth::guard('admin')->user();
+
+        if (! $admin) {
+            $username = $request->query('username');
+            if ($username) {
+                $admin = Admin::where('username', $username)->first();
+            }
+        }
+
+        if (! $admin) {
+            return $this->unauthorized('Administrator session required.');
+        }
+
+        $query = Activity::query()
+            ->with(['activityType', 'adminActivity'])
+            ->whereHas('adminActivity', fn ($q) => $q->where('admins_id', $admin->id));
+
+        if ($search = trim((string) $request->query('search'))) {
+            $query->where(function (Builder $q) use ($search) {
+                $q->whereHas('activityType', fn ($tq) => $tq->where('activity_type', 'like', "%{$search}%"))
+                    ->orWhere('activity->message', 'like', "%{$search}%")
+                    ->orWhere('activity->action', 'like', "%{$search}%")
+                    ->orWhere('activity->username', 'like', "%{$search}%");
+            });
+        }
+
+        if ($type = trim((string) $request->query('type'))) {
+            if ($type !== 'ALL') {
+                $query->whereHas('activityType', fn ($tq) => $tq->where('activity_type', $type));
+            }
+        }
+
+        $limit = max(1, min(100, (int) $request->query('limit', 60)));
+        $activities = $query->orderByDesc('activity_time')->orderByDesc('id')->limit($limit)->get();
+
+        $data = $activities->map(function (Activity $act): array {
+            $payload = is_array($act->activity) ? $act->activity : (json_decode($act->activity, true) ?? []);
+            $typeName = $act->activityType?->activity_type ?? 'Activity';
+
+            return [
+                'id' => 'ACT-'.$act->id,
+                'raw_id' => (int) $act->id,
+                'timestamp' => $act->activity_time?->toIso8601String(),
+                'formatted_time' => $act->activity_time?->format('Y-m-d H:i:s'),
+                'type' => $typeName,
+                'action' => (string) ($payload['action'] ?? strtolower(str_replace(' ', '_', $typeName))),
+                'message' => (string) ($payload['message'] ?? $typeName),
+                'details' => $payload,
+            ];
+        });
+
+        return $this->success(
+            $data,
+            'Admin activities retrieved successfully.'
         );
     }
 
@@ -307,8 +383,8 @@ class AdminController extends BaseApiController
         $validated = $request->validate([
             'first_name' => ['sometimes', 'required', 'string', 'max:50'],
             'last_name' => ['sometimes', 'required', 'string', 'max:50'],
-            'email' => ['sometimes', 'required', 'email', 'max:100', 'unique:admins,email,' . $admin->id],
-            'mobile' => ['sometimes', 'required', 'string', 'max:15', 'unique:admins,mobile,' . $admin->id],
+            'email' => ['sometimes', 'required', 'email', 'max:100', 'unique:admins,email,'.$admin->id],
+            'mobile' => ['sometimes', 'required', 'string', 'max:15', 'unique:admins,mobile,'.$admin->id],
             'current_password' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:6', 'max:255', 'confirmed'],
         ]);

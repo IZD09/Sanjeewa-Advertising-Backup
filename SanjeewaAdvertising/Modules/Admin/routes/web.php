@@ -32,6 +32,7 @@ Route::middleware(['auth:web,admin'])->group(function () {
         // Admin Profile endpoints
         Route::post('profile/verify', [AdminController::class, 'verifyProfileAccess'])->name('admin.profile.verify');
         Route::get('profile/data', [AdminController::class, 'profile'])->name('admin.profile.data');
+        Route::get('profile/activities', [AdminController::class, 'activities'])->name('admin.profile.activities');
         Route::put('profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     });
 });

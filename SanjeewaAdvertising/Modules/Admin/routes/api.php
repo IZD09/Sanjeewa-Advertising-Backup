@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
         // Admin Profile API
         Route::post('profile/verify', [AdminController::class, 'verifyProfileAccess'])->name('admin.api.profile.verify');
         Route::get('profile', [AdminController::class, 'profile'])->name('admin.api.profile');
+        Route::get('profile/activities', [AdminController::class, 'activities'])->name('admin.api.profile.activities');
         Route::put('profile', [AdminController::class, 'updateProfile'])->name('admin.api.profile.update');
     });
 });

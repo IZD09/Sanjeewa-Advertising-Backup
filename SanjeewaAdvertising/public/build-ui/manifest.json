@@ -64,7 +64,7 @@
     "isEntry": true
   },
   "resources/assets/css/admin-profile.css": {
-    "file": "assets/admin-profile-CQMHFdjb.css",
+    "file": "assets/admin-profile-Cq6xifOz.css",
     "name": "admin-profile",
     "names": [
       "admin-profile.css"
@@ -228,7 +228,7 @@
     ]
   },
   "resources/assets/js/admin/profile/AdminProfileManager.js": {
-    "file": "assets/AdminProfileManager-BJr6gSTt.js",
+    "file": "assets/AdminProfileManager-CMHQtVbf.js",
     "name": "AdminProfileManager",
     "src": "resources/assets/js/admin/profile/AdminProfileManager.js",
     "isEntry": true,
@@ -237,7 +237,7 @@
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
-    "file": "assets/UserControlManager-BNgm-lIY.js",
+    "file": "assets/UserControlManager-CC6fOrHX.js",
     "name": "UserControlManager",
     "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
     "isEntry": true,

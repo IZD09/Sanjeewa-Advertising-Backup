@@ -2,11 +2,14 @@
 
 namespace Modules\PrintJob\Models;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Modules\Customer\Models\Customer;
 use Modules\Design\Models\PrintType;
 use Modules\Inventory\Models\Stock;
@@ -68,7 +71,6 @@ class PrintJob extends Model
             'customer_id' => 'integer',
             'print_types_id' => 'integer',
             'add_date' => 'datetime',
-            'delivery_date' => 'datetime',
             'qty' => 'integer',
             'wtdth' => 'integer',
             'hight' => 'integer',
@@ -78,13 +80,32 @@ class PrintJob extends Model
     }
 
     /**
+     * Interact with the delivery_date attribute.
+     *
+     * @return Attribute<Carbon|null, string|null>
+     */
+    protected function deliveryDate(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value ? Carbon::parse($value)->startOfDay() : null,
+            set: fn ($value) => $value instanceof CarbonInterface
+                ? $value->format('Y-m-d')
+                : ($value ? substr((string) $value, 0, 10) : null),
+        );
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
     {
         static::creating(function (PrintJob $job) {
             if (empty($job->delivery_date)) {
-                $job->delivery_date = ! empty($job->add_date) ? $job->add_date : now();
+                $job->delivery_date = ! empty($job->add_date)
+                    ? ($job->add_date instanceof CarbonInterface ? $job->add_date->toDateString() : substr((string) $job->add_date, 0, 10))
+                    : now()->toDateString();
+            } elseif ($job->delivery_date instanceof CarbonInterface) {
+                $job->delivery_date = $job->delivery_date->toDateString();
             }
         });
     }

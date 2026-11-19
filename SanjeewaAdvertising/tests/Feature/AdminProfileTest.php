@@ -104,4 +104,60 @@ class AdminProfileTest extends TestCase
             'email' => 'updated_admin@sanjeewaadvertising.com',
         ]);
     }
+
+    public function test_admin_profile_page_renders_activities_tab(): void
+    {
+        $response = $this->actingAs($this->admin, 'admin')->get('/admin/profile');
+        $response->assertStatus(200);
+        $response->assertSee('data-tab="tabActivities"', false);
+        $response->assertSee('id="tabActivities"', false);
+        $response->assertSee('id="adminActivitiesTableBody"', false);
+        $response->assertSee('id="adminMetaActivitiesCount"', false);
+        $response->assertSee('id="adminActivitiesVerifyModal"', false);
+        $response->assertSee('id="formVerifyActivitiesAccess"', false);
+        $response->assertSee('id="profActionWrap"', false);
+    }
+
+    public function test_authenticated_admin_can_fetch_activities_via_endpoint(): void
+    {
+        $response = $this->actingAs($this->admin, 'admin')->getJson('/admin/profile/activities');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Admin activities retrieved successfully.',
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'raw_id',
+                        'timestamp',
+                        'formatted_time',
+                        'type',
+                        'action',
+                        'message',
+                        'details',
+                    ],
+                ],
+            ]);
+    }
+
+    public function test_verify_profile_access_includes_activities(): void
+    {
+        $response = $this->actingAs($this->admin, 'admin')->postJson('/admin/profile/verify', [
+            'username' => 'admin',
+            'password' => 'admin',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.verified', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'admin' => [
+                        'activities',
+                    ],
+                ],
+            ]);
+    }
 }

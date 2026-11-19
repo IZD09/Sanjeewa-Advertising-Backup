@@ -121,9 +121,11 @@
                                 <button type="button" class="uc-tab-btn" data-tab="paneAdmins">
                                     <i class="fa-solid fa-shield-halved"></i> Administrators 
                                     <span class="uc-tab-badge" id="badgeAdminCount">3</span>
+                                    <i class="fa-solid fa-lock" id="adminTabLockIcon" style="font-size: 11px; margin-left: 4px; color: #faad14;" title="Permission required"></i>
                                 </button>
                                 <button type="button" class="uc-tab-btn" data-tab="panePermissions">
                                     <i class="fa-solid fa-key"></i> Set User Permissions
+                                    <i class="fa-solid fa-lock" id="permTabLockIcon" style="font-size: 11px; margin-left: 4px; color: #faad14;" title="Permission required"></i>
                                 </button>
                             </div>
 
@@ -185,6 +187,9 @@
                                             <option value="Accountant">Accountant</option>
                                             <option value="Operator">Operator</option>
                                         </select>
+                                        <button type="button" class="ant-btn ant-btn-default" id="btnLockAdminTab" title="Lock Administrators Tab">
+                                            <i class="fa-solid fa-lock"></i> Lock
+                                        </button>
                                     </div>
                                 </div>
 
@@ -250,6 +255,9 @@
                                         </button>
                                         <button type="button" class="ant-btn ant-btn-primary" id="btnSavePermissions">
                                             <i class="fa-solid fa-floppy-disk"></i> Save Permissions
+                                        </button>
+                                        <button type="button" class="ant-btn ant-btn-default ant-btn-sm" id="btnLockPermTab" title="Lock Permissions Tab">
+                                            <i class="fa-solid fa-lock"></i> Lock
                                         </button>
                                     </div>
                                 </div>
@@ -704,21 +712,21 @@
                     <span class="toast-msg">Operation completed successfully.</span>
                 </div>
 
-                <!-- Admin Security Permission Modal for Administrators Tab & Add Admin -->
+                <!-- Admin Security Permission Modal for Administrators Tab, Permissions Tab & Add Admin -->
                 <div class="ap-lock-overlay" id="adminSecurityLockModal">
                     <div class="ap-lock-card">
-                        <div class="ap-lock-icon-wrap">
-                            <i class="fa-solid fa-lock"></i>
+                        <div class="ap-lock-icon-wrap" style="background: rgba(114, 46, 209, 0.1); color: #722ed1;">
+                            <i class="fa-solid fa-shield-halved"></i>
                         </div>
-                        <h3 class="ap-lock-title">Security Permission Required</h3>
+                        <h3 class="ap-lock-title">Security Verification Required</h3>
                         <p class="ap-lock-desc" id="secVerifyDesc">
-                            This action requires administrator credentials. Please enter your administrator username and password to proceed.
+                            This action requires administrator credentials. Please enter your administrator password to proceed.
                         </p>
 
                         <form class="ap-lock-form" id="formVerifySecurityAccess">
                             <div class="ap-lock-field">
                                 <label for="secVerifyUsername">Admin Username</label>
-                                <input type="text" id="secVerifyUsername" placeholder="e.g. admin" required autocomplete="username">
+                                <input type="text" id="secVerifyUsername" placeholder="e.g. admin" required readonly autocomplete="username">
                             </div>
                             <div class="ap-lock-field">
                                 <label for="secVerifyPassword">Admin Password</label>
@@ -731,7 +739,7 @@
                                 <button type="button" class="ap-lock-btn-cancel" id="btnSecVerifyCancel">
                                     <i class="fa-solid fa-xmark"></i> Cancel
                                 </button>
-                                <button type="submit" class="ap-lock-btn-submit" id="btnSecVerifySubmit">
+                                <button type="submit" class="ap-lock-btn-submit" id="btnSecVerifySubmit" style="background: #722ed1;">
                                     <i class="fa-solid fa-key"></i> Verify & Proceed
                                 </button>
                             </div>

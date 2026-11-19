@@ -3,6 +3,7 @@
 namespace Modules\PrintJob\Services;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -167,11 +168,15 @@ class PrintJobService
                 ? mb_substr(trim($rawDiscription), 0, 255)
                 : null;
 
-            $deliveryDate = ! empty($data['delivery_date'])
+            $rawDeliveryDate = ! empty($data['delivery_date'])
                 ? $data['delivery_date']
                 : (! empty($data['deadline'])
                     ? $data['deadline']
                     : (! empty($data['add_date']) ? $data['add_date'] : now()));
+
+            $deliveryDate = $rawDeliveryDate instanceof CarbonInterface
+                ? $rawDeliveryDate->format('Y-m-d')
+                : (is_string($rawDeliveryDate) ? substr(trim($rawDeliveryDate), 0, 10) : now()->format('Y-m-d'));
 
             $printJob = PrintJob::create([
                 'users_id' => $userId,
@@ -342,9 +347,15 @@ class PrintJobService
             $attributes['delivery_method_id'] = (int) $data['delivery_method_id'];
         }
         if (isset($data['delivery_date'])) {
-            $attributes['delivery_date'] = $data['delivery_date'];
+            $raw = $data['delivery_date'];
+            $attributes['delivery_date'] = $raw instanceof CarbonInterface
+                ? $raw->format('Y-m-d')
+                : (is_string($raw) ? substr(trim($raw), 0, 10) : $raw);
         } elseif (isset($data['deadline'])) {
-            $attributes['delivery_date'] = $data['deadline'];
+            $raw = $data['deadline'];
+            $attributes['delivery_date'] = $raw instanceof CarbonInterface
+                ? $raw->format('Y-m-d')
+                : (is_string($raw) ? substr(trim($raw), 0, 10) : $raw);
         }
         if (array_key_exists('discription', $data) || array_key_exists('notes', $data)) {
             $rawDiscription = $data['discription'] ?? $data['notes'] ?? null;
@@ -556,7 +567,7 @@ class PrintJobService
             ->map(function ($s) {
                 return [
                     'id' => (int) $s->id,
-                    'name' => $s->stockItem?->name ?? 'Stock #' . $s->id,
+                    'name' => $s->stockItem?->name ?? 'Stock #'.$s->id,
                     'code' => $s->stockItem?->code ?? '',
                     'brand' => $s->brand?->brand ?? 'Generic',
                     'category' => $s->stockItem?->subcategory?->category?->category ?? '',
@@ -676,7 +687,7 @@ class PrintJobService
             $materials = $job->stockItems->map(function ($stock) {
                 return [
                     'stock_id' => (int) $stock->id,
-                    'name' => $stock->stockItem?->name ?? 'Material #' . $stock->id,
+                    'name' => $stock->stockItem?->name ?? 'Material #'.$stock->id,
                     'brand' => $stock->brand?->brand ?? '',
                     'qty' => (int) ($stock->pivot?->qty ?? 1),
                 ];
@@ -684,8 +695,8 @@ class PrintJobService
 
             $jobItem = [
                 'id' => (int) $job->id,
-                'job_number' => 'JOB-' . str_pad((string) $job->id, 4, '0', STR_PAD_LEFT),
-                'order_number' => 'ORD-2026-' . (1000 + $job->id),
+                'job_number' => 'JOB-'.str_pad((string) $job->id, 4, '0', STR_PAD_LEFT),
+                'order_number' => 'ORD-2026-'.(1000 + $job->id),
                 'customer_id' => (int) $job->customer_id,
                 'customer_name' => $job->customer?->name ?? 'Walk-in Customer',
                 'customer_mobile' => $job->customer?->mobile ?? '—',
@@ -699,7 +710,7 @@ class PrintJobService
                 'unit_simble' => $job->unit?->simble ?? 'ft',
                 'unit_name' => $job->unit?->name ?? 'Feet',
                 'dimensions' => ($job->wtdth > 0 && $job->hight > 0)
-                    ? "{$job->wtdth} × {$job->hight} " . ($job->unit?->simble ?? 'ft')
+                    ? "{$job->wtdth} × {$job->hight} ".($job->unit?->simble ?? 'ft')
                     : '—',
                 'delivery_method_id' => (int) ($job->delivery_method_id ?? 1),
                 'delivery_method_name' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
@@ -885,17 +896,17 @@ class PrintJobService
             }
 
             $addDate = $job->add_date ?? now();
-            $employeeName = $job->user ? ($job->user->first_name . ' ' . $job->user->last_name) : 'Admin User';
+            $employeeName = $job->user ? ($job->user->first_name.' '.$job->user->last_name) : 'Admin User';
 
             $orders[] = [
-                'id' => 'ORD-2026-' . (1000 + $job->id),
+                'id' => 'ORD-2026-'.(1000 + $job->id),
                 'printJobId' => (int) $job->id,
                 'orderDate' => $addDate->toDateString(),
                 'orderDateTime' => $addDate->format('Y-m-d H:i:s'),
                 'orderTime' => $addDate->format('h:i A'),
                 'orderTime24' => $addDate->format('H:i'),
-                'customerId' => 'CUST-' . str_pad((string) $job->customer_id, 3, '0', STR_PAD_LEFT),
-                'customerName' => $job->customer?->name ?? 'Customer #' . $job->customer_id,
+                'customerId' => 'CUST-'.str_pad((string) $job->customer_id, 3, '0', STR_PAD_LEFT),
+                'customerName' => $job->customer?->name ?? 'Customer #'.$job->customer_id,
                 'customerMobile' => $job->customer?->mobile ?? '',
                 'productKey' => strtolower(str_replace([' ', '/', '&'], ['_', '_', ''], $job->printType?->print_type ?? 'flex')),
                 'productName' => $job->printType?->print_type ?? 'Flex Banner',
@@ -909,9 +920,15 @@ class PrintJobService
                 'designStatus' => 'Customer Provides Design',
                 'deliveryMethod' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
                 'deliveryMethodId' => (int) ($job->delivery_method_id ?? 1),
-                'requiredDate' => $job->delivery_date ? $job->delivery_date->toDateString() : $addDate->toDateString(),
-                'delivery_date' => $job->delivery_date ? $job->delivery_date->toDateString() : null,
-                'deadline' => $job->delivery_date ? $job->delivery_date->toDateString() : null,
+                'requiredDate' => $job->delivery_date instanceof CarbonInterface
+                    ? $job->delivery_date->format('Y-m-d')
+                    : ($job->delivery_date ? substr((string) $job->delivery_date, 0, 10) : $addDate->toDateString()),
+                'delivery_date' => $job->delivery_date instanceof CarbonInterface
+                    ? $job->delivery_date->format('Y-m-d')
+                    : ($job->delivery_date ? substr((string) $job->delivery_date, 0, 10) : null),
+                'deadline' => $job->delivery_date instanceof CarbonInterface
+                    ? $job->delivery_date->format('Y-m-d')
+                    : ($job->delivery_date ? substr((string) $job->delivery_date, 0, 10) : null),
                 'totalAmount' => round($totalAmount, 2),
                 'paidAmount' => round($paidAmount, 2),
                 'balanceAmount' => round($balanceAmount, 2),
@@ -919,7 +936,7 @@ class PrintJobService
                 'orderStatus' => $statusName,
                 'assignedEmployee' => $employeeName,
                 'discription' => $job->discription,
-                'notes' => $job->discription ?: ('Print job order #' . $job->id),
+                'notes' => $job->discription ?: ('Print job order #'.$job->id),
             ];
         }
 
@@ -942,16 +959,16 @@ class PrintJobService
         $result = [];
         foreach ($payments as $idx => $p) {
             $result[] = [
-                'paymentId' => 'PAY-2026-' . str_pad((string) $p->id, 4, '0', STR_PAD_LEFT),
-                'orderId' => 'ORD-2026-' . (1000 + (int) $p->print_jobs_id),
+                'paymentId' => 'PAY-2026-'.str_pad((string) $p->id, 4, '0', STR_PAD_LEFT),
+                'orderId' => 'ORD-2026-'.(1000 + (int) $p->print_jobs_id),
                 'installmentNo' => $idx + 1,
                 'date' => $p->pay_date ? $p->pay_date->toDateString() : now()->toDateString(),
                 'amount' => (float) $p->payment,
                 'method' => $p->paymentType?->payment_type ?? 'Cash',
-                'ref' => 'RCPT-' . $p->id,
+                'ref' => 'RCPT-'.$p->id,
                 'receivedBy' => 'Admin User',
                 'status' => $p->status?->payment_status ?? 'Successful',
-                'note' => 'Payment transaction #' . $p->id,
+                'note' => 'Payment transaction #'.$p->id,
             ];
         }
 
