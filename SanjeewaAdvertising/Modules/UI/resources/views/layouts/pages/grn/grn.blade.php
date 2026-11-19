@@ -435,13 +435,52 @@
 
                 <!-- SECTION 2: RECEIVED MATERIAL ITEMS LIST -->
                 <div style="border-top: 1px solid var(--border); padding-top: 14px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text);">
-                      <i class="fa-solid fa-boxes-stacked" style="color: #1677ff;"></i> 2. Received Material Items List <span class="tab-count-badge" id="grnModalItemCount" style="margin-left: 6px;">0</span>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="font-size: 13.5px; font-weight: 700; color: var(--text);">
+                        <i class="fa-solid fa-boxes-stacked" style="color: #1677ff;"></i> 2. Received Material Items List <span class="tab-count-badge" id="grnModalItemCount" style="margin-left: 6px;">0</span>
+                      </div>
+                      <span id="grnRemovedBadge" style="display: none; font-size: 11px; font-weight: 600; color: #d46b08; background: #fffbe6; border: 1px solid #ffe58f; padding: 1px 8px; border-radius: 10px;">
+                        <i class="fa-solid fa-rotate-left"></i> <span id="grnRemovedBadgeCount">0</span> removed
+                      </span>
                     </div>
-                    <span style="font-size: 11.5px; color: var(--text-muted);" id="grnModalItemHint">
-                      Items auto-loaded from linked Purchase Orders. Adjust receiving quantities or unit costs.
-                    </span>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" id="grnHeaderReaddAllBtn" class="ant-btn ant-btn-default ant-btn-sm" style="display: none; height: 26px; font-size: 11px; color: #52c41a; border-color: rgba(82, 196, 26, 0.4); background: rgba(82, 196, 26, 0.06); font-weight: 600;">
+                        <i class="fa-solid fa-rotate-left"></i> Re-add All (<span id="grnHeaderReaddCount">0</span>)
+                      </button>
+                      <span style="font-size: 11.5px; color: var(--text-muted);" id="grnModalItemHint">
+                        Items auto-loaded from linked Purchase Orders. Adjust receiving quantities or unit costs.
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Removed / Excluded Items Panel (Visible when items have been removed from this table) -->
+                  <div id="grnRemovedItemsSection" style="display: none; margin-bottom: 12px; background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 10px 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                      <div style="font-size: 12px; font-weight: 700; color: #d46b08; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Removed Items from Linked POs (<span id="grnRemovedItemsListCount">0</span>)</span>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 11px; color: #873800;">Click <strong>+ Re-add</strong> on an item or:</span>
+                        <button type="button" id="grnReaddAllRemovedBtn" class="ant-btn ant-btn-default ant-btn-sm" style="height: 24px; font-size: 11px; padding: 0 8px; color: #52c41a; border-color: rgba(82, 196, 26, 0.4); background: #fff; font-weight: 600;">
+                          <i class="fa-solid fa-rotate-left"></i> Re-add All Items
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Dropdown & Quick Add row -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                      <select id="grnModalReaddSelect" class="grn-inline-input" style="height: 30px; font-size: 12px; border-radius: 6px; flex: 1; max-width: 420px;">
+                        <option value="">-- Select Removed Item to Re-add --</option>
+                      </select>
+                      <button type="button" id="grnModalReaddSelectBtn" class="ant-btn ant-btn-primary ant-btn-sm" style="height: 30px; font-size: 11.5px; padding: 0 12px; font-weight: 600;">
+                        <i class="fa-solid fa-plus"></i> Re-add Selected
+                      </button>
+                    </div>
+                    <div id="grnRemovedItemsChipsContainer" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                      <!-- Populated dynamically via CreateGrnModal.js -->
+                    </div>
                   </div>
 
                   <div class="inv-table-responsive">

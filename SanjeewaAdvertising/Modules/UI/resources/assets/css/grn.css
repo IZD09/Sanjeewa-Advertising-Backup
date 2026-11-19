@@ -393,6 +393,30 @@ html[data-theme="dark"] .ant-table tr.row-status-cancelled > td {
     background: rgba(250, 173, 20, 0.08);
 }
 
+.ant-btn-action.grn-remove-po-btn,
+.ant-btn-action.grn-modal-remove-item-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    line-height: 1 !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+}
+
+.ant-btn-action.grn-remove-po-btn i,
+.ant-btn-action.grn-modal-remove-item-btn i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    width: auto !important;
+    height: auto !important;
+}
+
 /* Table Empty State */
 .inv-empty-state {
     text-align: center;

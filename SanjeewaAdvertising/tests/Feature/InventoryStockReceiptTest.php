@@ -422,4 +422,68 @@ class InventoryStockReceiptTest extends TestCase
             'qty' => 120,
         ]);
     }
+
+    public function test_can_receive_bulk_stock_items_for_grn(): void
+    {
+        $category = Category::create(['category' => 'Raw Materials']);
+        $subcat = Subcategory::create(['subcategory' => 'Vinyl', 'categories_id' => $category->id]);
+        $brand = Brand::create(['brand' => 'Avery']);
+        $item1 = StockItem::create(['name' => 'Gloss Vinyl', 'code' => 'VIN-001', 'subcategories_id' => $subcat->id]);
+        $item2 = StockItem::create(['name' => 'Matte Vinyl', 'code' => 'VIN-002', 'subcategories_id' => $subcat->id]);
+        $grn = Grn::create(['at_time' => now()]);
+
+        $payload = [
+            'grn_id' => $grn->id,
+            'add_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'stock_items_id' => $item1->id,
+                    'brands_id' => $brand->id,
+                    'qty' => 50,
+                    'buy' => 120.00,
+                    'price' => 180.00,
+                    'create_new_batch' => true,
+                ],
+                [
+                    'stock_items_id' => $item2->id,
+                    'brands_id' => $brand->id,
+                    'qty' => 30,
+                    'buy' => 140.00,
+                    'price' => 210.00,
+                    'create_new_batch' => true,
+                ],
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/inventory/stocks', $payload);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('stock', [
+            'stock_items_id' => $item1->id,
+            'brands_id' => $brand->id,
+            'qty' => 50,
+            'grn_id' => $grn->id,
+        ]);
+
+        $this->assertDatabaseHas('stock', [
+            'stock_items_id' => $item2->id,
+            'brands_id' => $brand->id,
+            'qty' => 30,
+            'grn_id' => $grn->id,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'source_id' => $grn->id,
+            'stock_movements_types_id' => 1,
+            'qty' => 50,
+        ]);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'source_id' => $grn->id,
+            'stock_movements_types_id' => 1,
+            'qty' => 30,
+        ]);
+    }
 }

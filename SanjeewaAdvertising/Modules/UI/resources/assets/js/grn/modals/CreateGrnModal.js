@@ -42,6 +42,7 @@ export class CreateGrnModal extends BaseModalHandler {
     // Multi-PO State
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
+    this.removedGrnItems = [];
     this.allPurchaseOrders = [];
     this.suppliers = [];
     this.selectedSupplier = null;
@@ -114,6 +115,35 @@ export class CreateGrnModal extends BaseModalHandler {
       addAllBtn.addEventListener("click", (e) => {
         e.preventDefault();
         this.addAllApprovedPOs();
+      });
+    }
+
+    // Re-add All Removed Items button (in header & in removed section)
+    const headerReaddAllBtn = document.getElementById("grnHeaderReaddAllBtn");
+    if (headerReaddAllBtn && !headerReaddAllBtn._grnReaddAllBound) {
+      headerReaddAllBtn._grnReaddAllBound = true;
+      headerReaddAllBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.readdAllItems();
+      });
+    }
+
+    const readdAllBtn = document.getElementById("grnReaddAllRemovedBtn");
+    if (readdAllBtn && !readdAllBtn._grnReaddAllBound2) {
+      readdAllBtn._grnReaddAllBound2 = true;
+      readdAllBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.readdAllItems();
+      });
+    }
+
+    // Re-add selected item from dropdown button
+    const readdSelectBtn = document.getElementById("grnModalReaddSelectBtn");
+    if (readdSelectBtn && !readdSelectBtn._grnReaddSelectBound) {
+      readdSelectBtn._grnReaddSelectBound = true;
+      readdSelectBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.handleReaddFromDropdown();
       });
     }
 
@@ -254,6 +284,7 @@ export class CreateGrnModal extends BaseModalHandler {
     // Reset state
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
+    this.removedGrnItems = [];
     this.selectedSupplier = null;
     this.activeSupplierFilter = targetSupplier ? String(targetSupplier).trim() : null;
 
@@ -270,6 +301,7 @@ export class CreateGrnModal extends BaseModalHandler {
     this.resetSupplierUI();
     this.renderSelectedPOs();
     this.renderGrnItems();
+    this.renderRemovedGrnItems();
     this.calculateFinancials();
 
     // Load suppliers & active purchase orders fresh from database concurrently
@@ -498,9 +530,11 @@ export class CreateGrnModal extends BaseModalHandler {
     this.selectedSupplier = null;
     this.selectedPurchaseOrders = [];
     this.grnItems = [];
+    this.removedGrnItems = [];
     this.resetSupplierUI();
     this.renderSelectedPOs();
     this.renderGrnItems();
+    this.renderRemovedGrnItems();
     this.calculateFinancials();
   }
 
@@ -805,8 +839,12 @@ export class CreateGrnModal extends BaseModalHandler {
       });
     }
 
+    // Clean up any old removed items of this PO if it was re-linked
+    this.removedGrnItems = this.removedGrnItems.filter((itm) => itm.po_number !== po.po_number);
+
     this.renderSelectedPOs();
     this.renderGrnItems();
+    this.renderRemovedGrnItems();
     this.calculateFinancials();
 
     const itemsCount = po.items ? po.items.length : 0;
@@ -825,9 +863,11 @@ export class CreateGrnModal extends BaseModalHandler {
     if (this.selectedPurchaseOrders.length < initialPoCount) {
       // Remove all items belonging to this PO
       this.grnItems = this.grnItems.filter((itm) => itm.po_number !== poNumber);
+      this.removedGrnItems = this.removedGrnItems.filter((itm) => itm.po_number !== poNumber);
 
       this.renderSelectedPOs();
       this.renderGrnItems();
+      this.renderRemovedGrnItems();
       this.calculateFinancials();
       this.populateApprovedPoSelector();
 
@@ -917,13 +957,13 @@ export class CreateGrnModal extends BaseModalHandler {
                  placeholder="E.g. INV-${po.po_number.replace(/\D+/g, "")}"
                  style="height: 30px; font-size: 12px; padding: 0 8px; width: 100%;">
         </td>
-        <td class="text-center">
+        <td class="text-center" style="text-align: center; vertical-align: middle;">
           <button type="button"
                   class="ant-btn-action text-danger grn-remove-po-btn"
                   data-po-number="${po.po_number}"
                   title="Remove this Purchase Order and its items from GRN"
-                  style="border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 28px; width: 28px; padding: 0;">
-            <i class="fa-solid fa-trash-can"></i>
+                  style="display: inline-flex; align-items: center; justify-content: center; border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 28px; width: 28px; padding: 0; gap: 0; line-height: 1; border-radius: 4px; box-sizing: border-box; cursor: pointer; margin: 0 auto;">
+            <i class="fa-solid fa-trash-can" style="font-size: 12px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; margin: 0;"></i>
           </button>
         </td>
       `;
@@ -965,25 +1005,33 @@ export class CreateGrnModal extends BaseModalHandler {
     tbody.innerHTML = "";
 
     if (this.grnItems.length === 0) {
+      const hasRemoved = this.removedGrnItems && this.removedGrnItems.length > 0;
+      const emptyTitle = hasRemoved ? "All Materials Removed from Receiving List" : "No Materials Loaded Yet";
+      const emptySubtitle = hasRemoved
+        ? `You have removed all ${this.removedGrnItems.length} items from linked Purchase Orders. Use the 'Removed Items' panel above to re-add items, or link another Purchase Order.`
+        : "Link one or more Purchase Orders above to automatically populate material line items and pending quantities.";
+
       tbody.innerHTML = `
         <tr id="grnModalEmptyRow">
           <td colspan="9" style="text-align: center; padding: 32px 16px; background: rgba(0, 0, 0, 0.015); border-radius: 6px;">
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-              <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(22, 119, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #1677ff; font-size: 18px;">
-                <i class="fa-solid fa-boxes-stacked"></i>
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: ${hasRemoved ? 'rgba(250, 173, 20, 0.12)' : 'rgba(22, 119, 255, 0.08)'}; display: flex; align-items: center; justify-content: center; color: ${hasRemoved ? '#d46b08' : '#1677ff'}; font-size: 18px;">
+                <i class="${hasRemoved ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-boxes-stacked'}"></i>
               </div>
               <div style="font-size: 13px; font-weight: 700; color: var(--text);">
-                No Materials Loaded Yet
+                ${emptyTitle}
               </div>
-              <div style="font-size: 11.5px; color: var(--text-muted); max-width: 400px; line-height: 1.4;">
-                Link one or more Purchase Orders above to automatically populate material line items and pending quantities.
+              <div style="font-size: 11.5px; color: var(--text-muted); max-width: 420px; line-height: 1.4;">
+                ${emptySubtitle}
               </div>
             </div>
           </td>
         </tr>
       `;
       if (hint) {
-        hint.textContent = "Select active Purchase Orders above to automatically populate received materials.";
+        hint.textContent = hasRemoved
+          ? `${this.removedGrnItems.length} item(s) currently removed. You can re-add them above.`
+          : "Select active Purchase Orders above to automatically populate received materials.";
       }
       return;
     }
@@ -1049,13 +1097,13 @@ export class CreateGrnModal extends BaseModalHandler {
             ${this.ctx.formatCurrency ? this.ctx.formatCurrency(item.total) : `Rs. ${item.total.toFixed(2)}`}
           </span>
         </td>
-        <td class="text-center">
+        <td class="text-center" style="text-align: center; vertical-align: middle;">
           <button type="button"
                   class="ant-btn-action text-danger grn-modal-remove-item-btn"
                   data-item-index="${index}"
                   title="Remove this item from GRN"
-                  style="border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 26px; width: 26px; padding: 0;">
-            <i class="fa-solid fa-trash-can" style="font-size: 11px;"></i>
+                  style="display: inline-flex; align-items: center; justify-content: center; border-color: rgba(255, 77, 79, 0.35); color: #ff4d4f; background: rgba(255, 77, 79, 0.12); height: 26px; width: 26px; padding: 0; gap: 0; line-height: 1; border-radius: 4px; box-sizing: border-box; cursor: pointer; margin: 0 auto;">
+            <i class="fa-solid fa-trash-can" style="font-size: 11px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; margin: 0;"></i>
           </button>
         </td>
       `;
@@ -1134,15 +1182,149 @@ export class CreateGrnModal extends BaseModalHandler {
 
   /**
    * Remove an individual item line from the GRN.
+   * Keeps track of removed items so they can be re-added anytime.
    *
    * @param {number} index
    */
   removeItem(index) {
     if (this.grnItems[index]) {
-      this.grnItems.splice(index, 1);
+      const removed = this.grnItems.splice(index, 1)[0];
+      this.removedGrnItems.push(removed);
       this.renderGrnItems();
+      this.renderRemovedGrnItems();
       this.calculateFinancials();
+      this.showToast(`Removed "${removed.item_name}" from receiving list.`, "info");
     }
+  }
+
+  /**
+   * Re-add a single removed item back into the receiving table.
+   *
+   * @param {number} removedIndex
+   */
+  readdItem(removedIndex) {
+    if (this.removedGrnItems[removedIndex]) {
+      const restored = this.removedGrnItems.splice(removedIndex, 1)[0];
+      this.grnItems.push(restored);
+      this.renderGrnItems();
+      this.renderRemovedGrnItems();
+      this.calculateFinancials();
+      this.showToast(`Re-added "${restored.item_name}" to receiving list.`, "success");
+    }
+  }
+
+  /**
+   * Re-add all previously removed items back into the receiving table.
+   */
+  readdAllItems() {
+    if (!this.removedGrnItems || this.removedGrnItems.length === 0) return;
+    const count = this.removedGrnItems.length;
+    this.grnItems.push(...this.removedGrnItems);
+    this.removedGrnItems = [];
+    this.renderGrnItems();
+    this.renderRemovedGrnItems();
+    this.calculateFinancials();
+    this.showToast(`Re-added all ${count} removed items to receiving list.`, "success");
+  }
+
+  /**
+   * Handle re-adding an item from the dropdown selector.
+   */
+  handleReaddFromDropdown() {
+    const select = document.getElementById("grnModalReaddSelect");
+    const val = select?.value;
+    if (val === "" || val === null || val === undefined) {
+      this.showToast("Please choose an item from the dropdown to re-add.", "warning");
+      return;
+    }
+    const idx = parseInt(val, 10);
+    this.readdItem(idx);
+  }
+
+  /**
+   * Render Section 2.1: Removed / Excluded Items container, chips, and dropdown options.
+   */
+  renderRemovedGrnItems() {
+    const section = document.getElementById("grnRemovedItemsSection");
+    const container = document.getElementById("grnRemovedItemsChipsContainer");
+    const select = document.getElementById("grnModalReaddSelect");
+    const badge = document.getElementById("grnRemovedBadge");
+    const badgeCount = document.getElementById("grnRemovedBadgeCount");
+    const headerReaddAllBtn = document.getElementById("grnHeaderReaddAllBtn");
+    const headerReaddCount = document.getElementById("grnHeaderReaddCount");
+    const listCount = document.getElementById("grnRemovedItemsListCount");
+
+    if (!section || !container) return;
+
+    const count = this.removedGrnItems.length;
+
+    if (count === 0) {
+      section.style.display = "none";
+      container.innerHTML = "";
+      if (select) {
+        select.innerHTML = '<option value="">-- Select Removed Item to Re-add --</option>';
+      }
+      if (badge) badge.style.display = "none";
+      if (headerReaddAllBtn) headerReaddAllBtn.style.display = "none";
+      return;
+    }
+
+    section.style.display = "block";
+    if (badge) badge.style.display = "inline-flex";
+    if (badgeCount) badgeCount.textContent = count;
+    if (headerReaddAllBtn) headerReaddAllBtn.style.display = "inline-flex";
+    if (headerReaddCount) headerReaddCount.textContent = count;
+    if (listCount) listCount.textContent = count;
+
+    // Populate dropdown
+    if (select) {
+      select.innerHTML =
+        '<option value="">-- Select Removed Item to Re-add --</option>' +
+        this.removedGrnItems
+          .map(
+            (itm, idx) =>
+              `<option value="${idx}">[${this.escapeHtml(itm.po_number)}] ${this.escapeHtml(itm.item_name)} (${itm.receiving_qty} ${this.escapeHtml(itm.unit)})</option>`
+          )
+          .join("");
+    }
+
+    // Populate chips
+    container.innerHTML = "";
+    this.removedGrnItems.forEach((item, index) => {
+      const chip = document.createElement("div");
+      chip.style.cssText =
+        "display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1.5px dashed #ffd591; padding: 5px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);";
+
+      const costFmt = this.ctx.formatCurrency
+        ? this.ctx.formatCurrency(item.unit_cost)
+        : `Rs. ${Number(item.unit_cost || 0).toFixed(2)}`;
+
+      chip.innerHTML = `
+        <span style="font-weight: 700; color: #1677ff; font-family: ui-monospace; font-size: 11px; background: rgba(22,119,255,0.08); padding: 1px 6px; border-radius: 4px;">
+          ${this.escapeHtml(item.po_number)}
+        </span>
+        <div style="display: flex; flex-direction: column; min-width: 0;">
+          <span style="font-weight: 600; font-size: 12px; color: var(--text);">${this.escapeHtml(item.item_name)}</span>
+          <span style="font-size: 10.5px; color: var(--text-muted);">
+            Ordered: ${item.qty_ordered} &bull; Rec: <strong>${item.receiving_qty} ${this.escapeHtml(item.unit)}</strong> @ ${costFmt}
+          </span>
+        </div>
+        <button type="button" class="ant-btn ant-btn-primary ant-btn-sm grn-readd-single-item-btn" data-removed-index="${index}" style="height: 24px; font-size: 11px; padding: 0 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;" title="Re-add this item to Received Materials">
+          <i class="fa-solid fa-plus"></i> Re-add
+        </button>
+      `;
+
+      container.appendChild(chip);
+    });
+
+    // Wire individual re-add buttons
+    container.querySelectorAll(".grn-readd-single-item-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const idx = parseInt(btn.getAttribute("data-removed-index"), 10);
+        this.readdItem(idx);
+      });
+    });
   }
 
   /**

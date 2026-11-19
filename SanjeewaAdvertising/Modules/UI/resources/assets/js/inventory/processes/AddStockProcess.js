@@ -36,6 +36,7 @@ export class AddStockProcess {
     // 1. Financial & Quantity Calculator Subclass
     this.calculator = new StockFinancialCalculator({
       getCurrentStockQty: () => this.modeManager.selectedStock?.qty || 0,
+      getStagedItems: () => this.itemSelector?.stagedItems || [],
     });
 
     // 2. Mode & Batch Options Subclass
@@ -56,6 +57,7 @@ export class AddStockProcess {
       getItems: () => this.stockItems,
       getCategories: () => this.categories,
       getBrands: () => this.brands,
+      showToast: (msg, type) => this.showToast(msg, type),
       onItemSelected: (item) => {
         this.modeManager.populateExistingBatches(item.existing_batches || []);
         this.modeManager.populateExistingStocks(item.existing_stocks || []);
@@ -320,19 +322,100 @@ export class AddStockProcess {
 
   /**
    * Collect payload and execute shipment submission.
+   * Supports bulk queued items from the staged table or single item fallback.
    */
   async execute() {
     if (this.isSubmitting) return;
 
+    const stagedItems = this.itemSelector.stagedItems || [];
+    const grnId = Number(document.getElementById("addStockGrnSelect")?.value) || null;
+    const addDate = document.getElementById("addStockDate")?.value || null;
+
+    // A. Bulk submission path when items are queued in the table
+    if (stagedItems.length > 0) {
+      const payload = {
+        grn_id: grnId,
+        add_date: addDate,
+        items: stagedItems.map((item) => ({
+          stock_items_id: Number(item.id),
+          brands_id: Number(item.brand_id),
+          qty: parseInt(item.qty, 10),
+          buy: parseFloat(item.unit_cost) || 0,
+          price: parseFloat(item.selling_price) || 0,
+          batch_id: item.batch_id || null,
+          create_new_batch: item.create_new_batch !== false,
+        })),
+      };
+
+      const validation = this.validator.validate(payload, false);
+      if (!validation.isValid) {
+        this.showToast(validation.error, "error");
+        return;
+      }
+
+      const saveBtn = document.getElementById("saveNewStockBtn");
+      const originalBtnHtml = saveBtn?.innerHTML || "";
+      this.isSubmitting = true;
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+      }
+
+      try {
+        const response = await this.http.post("/api/v1/inventory/stocks", payload);
+
+        if (response && response.success) {
+          const msg = `Successfully added ${stagedItems.length} items to stock for GRN #${grnId}.`;
+
+          this.itemSelector.clearStaged();
+
+          // Update in-memory GRNs and remove GRN if all stocked
+          if (grnId) {
+            const targetGrn = this.grns.find((g) => Number(g.id) === Number(grnId));
+            if (targetGrn && Array.isArray(targetGrn.items)) {
+              const stockedIds = new Set(payload.items.map((it) => Number(it.stock_items_id)));
+              targetGrn.items = targetGrn.items.filter((it) => !stockedIds.has(Number(it.id)));
+              targetGrn.pending_count = targetGrn.items.length;
+              if (targetGrn.items.length === 0) {
+                this.removeGrnFromDropdown(grnId);
+              }
+            }
+          }
+
+          this.showToast(msg, "success");
+          this.closeModal();
+
+          // Reload master datasets in background
+          this.loadMasterData();
+
+          if (typeof this.onSuccess === "function") {
+            await this.onSuccess(response.data);
+          }
+        } else {
+          this.showToast(response?.message || "Failed to save stock shipment.", "error");
+        }
+      } catch (err) {
+        console.error("Error executing bulk Add Stock Process:", err);
+        this.showToast(err.response?.data?.message || "Server error while saving stock shipment.", "error");
+      } finally {
+        this.isSubmitting = false;
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalBtnHtml;
+        }
+      }
+      return;
+    }
+
+    // B. Single item submission path (backward compatible fallback)
     const isUpdate = this.modeManager.mode === "UPDATE" || !!this.modeManager.selectedStock;
     const stockId = this.modeManager.selectedStock?.id || Number(document.getElementById("addStockExistingSelect")?.value) || null;
     const itemId = this.itemSelector.selectedItem?.id || Number(document.getElementById("addStockSelectedItemId")?.value) || Number(document.getElementById("addStockItemSelect")?.value) || null;
     const brandId = Number(document.getElementById("addStockBrandSelect")?.value) || null;
-    const grnId = Number(document.getElementById("addStockGrnSelect")?.value) || null;
     const qty = parseInt(document.getElementById("addStockQty")?.value, 10);
     const buy = parseFloat(document.getElementById("addStockUnitCost")?.value);
     const price = parseFloat(document.getElementById("addStockSellingPrice")?.value);
-    const addDate = document.getElementById("addStockDate")?.value || null;
 
     const batchOption = document.querySelector('input[name="addStockBatchOption"]:checked')?.value || "NEW";
     const batchId = batchOption === "EXISTING" ? Number(document.getElementById("addStockBatchSelect")?.value) || null : null;

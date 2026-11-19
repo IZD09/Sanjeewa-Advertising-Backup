@@ -37,11 +37,20 @@ class StockController extends BaseApiController
     }
 
     /**
-     * Store a newly created stock shipment (New Stock).
+     * Store a newly created stock shipment (New Stock) - supports single or bulk items.
      */
     public function store(StoreStockRequest $request): JsonResponse
     {
-        $stock = $this->stockService->createStock($request->validated());
+        $validated = $request->validated();
+
+        if (isset($validated['items']) && is_array($validated['items'])) {
+            $createdStocks = $this->stockService->createStocksBulk($validated);
+            $transformed = array_map(fn ($stock) => $this->stockService->transformStockRecord($stock), $createdStocks);
+
+            return $this->created($transformed, count($createdStocks).' stock records created and inventory updated successfully.');
+        }
+
+        $stock = $this->stockService->createStock($validated);
         $transformed = $this->stockService->transformStockRecord($stock);
 
         return $this->created($transformed, 'New stock record created and inventory updated successfully.');
