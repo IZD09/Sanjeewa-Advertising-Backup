@@ -722,10 +722,10 @@ if (typeof window !== "undefined") {
   window.GRNManager = GRNManager;
 
   const bootGrn = () => {
-    if (document.getElementById("module-grn")) {
-      if (!window.grnManager) {
-        window.grnManager = new GRNManager();
-      }
+    const container = document.getElementById("module-grn");
+    if (container && container.dataset.grnBooted !== "1") {
+      container.dataset.grnBooted = "1";
+      window.grnManager = new GRNManager();
     }
   };
 
@@ -736,7 +736,4 @@ if (typeof window !== "undefined") {
   }
 
   document.addEventListener("turbo:load", bootGrn);
-  document.addEventListener("turbo:before-cache", () => {
-    window.grnManager = null;
-  });
 }

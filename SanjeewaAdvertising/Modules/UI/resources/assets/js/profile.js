@@ -107,13 +107,18 @@ export class ProfileManager {
 export const UserProfileManager = ProfileManager;
 
 const bootProfile = () => {
-  if (document.getElementById("module-user-profile")) {
+  const container = document.getElementById("module-user-profile");
+  if (container && container.dataset.profileBooted !== "1") {
+    container.dataset.profileBooted = "1";
     window.profileManager = new ProfileManager();
   }
 };
 
-bootProfile();
-document.addEventListener("DOMContentLoaded", bootProfile);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootProfile, { once: true });
+} else {
+  bootProfile();
+}
 document.addEventListener("turbo:load", bootProfile);
 
 export default ProfileManager;

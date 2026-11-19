@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Admin\Models\Admin;
 use Modules\User\Models\SystemModule;
 use Modules\User\Models\User;
+use Modules\User\Models\UserLogin;
 use Modules\User\Models\UserStatus;
 use Tests\TestCase;
 
@@ -288,5 +289,119 @@ class AdminUserManagementTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function test_admin_can_view_user_profile_with_login_logout_and_activity_details(): void
+    {
+        $admin = Admin::where('username', 'admin')->first();
+        $this->assertNotNull($admin);
+
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'Kasun',
+            'last_name' => 'Bandara',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'kasun_prof_'.uniqid(),
+            'password' => Hash::make('OldPass123'),
+            'register_at' => now(),
+            'is_login' => 1,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        UserLogin::create([
+            'user_id' => $user->id,
+            'login' => now()->subMinutes(45),
+            'logout' => now()->subMinutes(5),
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->getJson("/admin/users/{$user->id}/profile");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'first_name' => 'Kasun',
+                    'last_name' => 'Bandara',
+                ],
+            ])
+            ->assertJsonStructure([
+                'success',
+                'data' => [
+                    'id',
+                    'username',
+                    'full_name',
+                    'mobile',
+                    'status',
+                    'logins',
+                    'activities',
+                    'modules',
+                ],
+            ]);
+
+        $this->assertNotEmpty($response->json('data.logins'));
+    }
+
+    public function test_admin_can_change_user_password_after_admin_verification(): void
+    {
+        $admin = Admin::where('username', 'admin')->first();
+        $this->assertNotNull($admin);
+        $admin->update(['password' => Hash::make('AdminVerifyPass123')]);
+
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'Chathura',
+            'last_name' => 'Perera',
+            'mobile' => '071'.rand(1000000, 9999999),
+            'username' => 'chathura_pw_'.uniqid(),
+            'password' => Hash::make('OldPassword123'),
+            'register_at' => now(),
+            'is_login' => 0,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->putJson("/admin/users/{$user->id}/password", [
+            'password' => 'NewUserPass789',
+            'password_confirmation' => 'NewUserPass789',
+            'admin_username' => $admin->username,
+            'admin_password' => 'AdminVerifyPass123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $this->assertTrue(Hash::check('NewUserPass789', $user->fresh()->password));
+    }
+
+    public function test_admin_cannot_change_user_password_with_invalid_admin_credentials(): void
+    {
+        $admin = Admin::where('username', 'admin')->first();
+        $this->assertNotNull($admin);
+        $admin->update(['password' => Hash::make('AdminVerifyPass123')]);
+
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'Nimal',
+            'last_name' => 'Jay',
+            'mobile' => '072'.rand(1000000, 9999999),
+            'username' => 'nimal_pw_'.uniqid(),
+            'password' => Hash::make('OriginalPass123'),
+            'register_at' => now(),
+            'is_login' => 0,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')->putJson("/admin/users/{$user->id}/password", [
+            'password' => 'HackedPass999',
+            'password_confirmation' => 'HackedPass999',
+            'admin_username' => $admin->username,
+            'admin_password' => 'WrongAdminPassword!',
+        ]);
+
+        $response->assertStatus(401);
+        $this->assertTrue(Hash::check('OriginalPass123', $user->fresh()->password));
     }
 }

@@ -13,6 +13,7 @@ use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintType;
 use Modules\Inventory\Models\Category;
 use Modules\Inventory\Models\Stock;
+use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\Subcategory;
 use Modules\PrintJob\Models\DeliveryMethod;
 use Modules\PrintJob\Models\PrintJob;
@@ -369,17 +370,67 @@ class PrintJobService
      */
     public function updateStatus(PrintJob $printJob, int $statusId): PrintJob
     {
-        PrintJobStatusHistory::updateOrCreate(
-            [
-                'print_jobs_id' => $printJob->id,
-                'print_job_statuses_id' => $statusId,
-            ],
-            [
-                'update_at' => now(),
-            ]
-        );
+        return DB::transaction(function () use ($printJob, $statusId) {
+            PrintJobStatusHistory::updateOrCreate(
+                [
+                    'print_jobs_id' => $printJob->id,
+                    'print_job_statuses_id' => $statusId,
+                ],
+                [
+                    'update_at' => now(),
+                ]
+            );
 
-        return $this->getPrintJobById($printJob->id) ?? $printJob;
+            // Deduct allocated materials from stock and record movements when moving to Finishing or beyond
+            if ($statusId >= 5 && $statusId !== 9) {
+                $this->deductStockMaterialsForJob($printJob);
+            }
+
+            return $this->getPrintJobById($printJob->id) ?? $printJob;
+        });
+    }
+
+    /**
+     * Deduct allocated materials from warehouse stock and record in stock_movements.
+     * Prevents duplicate deductions using source_id check in stock_movements.
+     */
+    protected function deductStockMaterialsForJob(PrintJob $printJob): void
+    {
+        // Check if stock has already been deducted for this print job
+        $alreadyDeducted = StockMovement::query()
+            ->where('stock_movements_types_id', 2) // Job Usage / Issue
+            ->where('source_id', $printJob->id)
+            ->exists();
+
+        if ($alreadyDeducted) {
+            return;
+        }
+
+        // Reload stock items with pivot data
+        $printJob->loadMissing('stockItems');
+
+        foreach ($printJob->stockItems as $stockItem) {
+            $qtyUsed = (int) ($stockItem->pivot?->qty ?? 0);
+            if ($qtyUsed <= 0) {
+                continue;
+            }
+
+            // Lock stock row and decrement quantity
+            $stock = Stock::query()->lockForUpdate()->find($stockItem->id);
+            if ($stock) {
+                $newQty = max(0, ((int) $stock->qty) - $qtyUsed);
+                $stock->update(['qty' => $newQty]);
+
+                // Record stock movement (Job Usage / Issue, Type ID: 2)
+                StockMovement::create([
+                    'stock_id' => $stock->id,
+                    'stock_movements_types_id' => 2,
+                    'qty' => $qtyUsed,
+                    'date' => now(),
+                    'source_id' => $printJob->id,
+                ]);
+            }
+        }
     }
 
     /**

@@ -43,6 +43,21 @@ export class LoginManager {
     this.usernameField = null;
     this.passwordField = null;
 
+    // Permission Card elements
+    this.loginFormSection = null;
+    this.loginPermissionCard = null;
+    this.btnRequestAccess = null;
+    this.btnBackToLogin = null;
+    this.permUserId = null;
+    this.permUserName = null;
+    this.permUserAvatar = null;
+    this.permUserTag = null;
+    this.permUserStatus = null;
+    this.permStatus = null;
+    this.permSpin = null;
+    this.btnRequestIcon = null;
+    this.btnRequestLabel = null;
+
     this.init();
   }
 
@@ -64,6 +79,21 @@ export class LoginManager {
     this.rememberCheckbox = $(this.options.rememberId || "rem");
     this.usernameField = $(this.options.usernameFieldId || "fe");
     this.passwordField = $(this.options.passwordFieldId || "fp");
+
+    // Permission restricted card elements
+    this.loginFormSection = $("loginFormSection");
+    this.loginPermissionCard = $("loginPermissionCard");
+    this.btnRequestAccess = $("btnRequestAccess");
+    this.btnBackToLogin = $("btnBackToLogin");
+    this.permUserId = $("permUserId");
+    this.permUserName = $("permUserName");
+    this.permUserAvatar = $("permUserAvatar");
+    this.permUserTag = $("permUserTag");
+    this.permUserStatus = $("permUserStatus");
+    this.permStatus = $("permStatus");
+    this.permSpin = $("permSpin");
+    this.btnRequestIcon = $("btnRequestIcon");
+    this.btnRequestLabel = $("btnRequestLabel");
 
     this.updateCopyrightYear();
     this.bindEvents();
@@ -114,6 +144,15 @@ export class LoginManager {
     // Form submission listener
     if (this.form) {
       this.form.addEventListener("submit", (e) => this.handleSubmit(e));
+    }
+
+    // Permission request listeners
+    if (this.btnRequestAccess) {
+      this.btnRequestAccess.addEventListener("click", () => this.handleRequestAccess());
+    }
+
+    if (this.btnBackToLogin) {
+      this.btnBackToLogin.addEventListener("click", () => this.hidePermissionCard());
     }
   }
 
@@ -314,6 +353,12 @@ export class LoginManager {
         remember,
       });
 
+      if (data?.requires_permissions) {
+        const targetUrl = data.redirect_url || "/access-restricted";
+        window.location.href = targetUrl;
+        return;
+      }
+
       if (data?.success !== false) {
         this.setStatus(data?.message || "Sign in successful. Redirecting…", "success");
         if (this.submitLabel) {
@@ -337,6 +382,14 @@ export class LoginManager {
       this.setStatus(errorMsg, "error");
     } catch (err) {
       console.warn("[LoginManager] Authentication error:", err);
+
+      // Check if access is restricted due to 0 module permissions -> Navigate immediately to dedicated restricted page
+      if (err.data?.requires_permissions) {
+        const targetUrl = err.data.redirect_url || "/access-restricted";
+        window.location.href = targetUrl;
+        return;
+      }
+
       const errorMsg =
         (err.data && err.data.message) ||
         (err.data && err.data.errors ? Object.values(err.data.errors).flat().join(" ") : null) ||
@@ -346,6 +399,97 @@ export class LoginManager {
       this.setStatus(errorMsg, "error");
     } finally {
       this.setLoading(false);
+    }
+  }
+
+  /**
+   * Display the Permission Restricted card when the authenticated user has 0 module permissions.
+   * @param {Object} [user={}]
+   */
+  showPermissionCard(user = {}) {
+    if (this.loginFormSection) this.loginFormSection.style.display = "none";
+    if (this.loginPermissionCard) this.loginPermissionCard.style.display = "block";
+
+    if (this.permUserId) this.permUserId.value = user.id || "";
+    if (this.permUserName) this.permUserName.textContent = user.name || user.username || "Staff Member";
+    if (this.permUserAvatar) this.permUserAvatar.textContent = user.initials || "U";
+    if (this.permUserTag) this.permUserTag.textContent = `@${user.username || "user"}`;
+    if (this.permUserStatus) this.permUserStatus.textContent = user.status || "Active";
+
+    // Reset button states
+    if (this.btnRequestAccess) {
+      this.btnRequestAccess.disabled = false;
+      this.btnRequestAccess.classList.remove("sent-success");
+    }
+    if (this.btnRequestLabel) this.btnRequestLabel.textContent = "Request Permissions from Admin";
+    if (this.btnRequestIcon) {
+      this.btnRequestIcon.style.display = "inline-block";
+      this.btnRequestIcon.className = "fa-solid fa-paper-plane";
+    }
+    if (this.permSpin) this.permSpin.style.display = "none";
+    if (this.permStatus) {
+      this.permStatus.className = "status";
+      this.permStatus.textContent = "";
+    }
+  }
+
+  /**
+   * Hide Permission Restricted card and return to standard login inputs.
+   */
+  hidePermissionCard() {
+    if (this.loginPermissionCard) this.loginPermissionCard.style.display = "none";
+    if (this.loginFormSection) this.loginFormSection.style.display = "block";
+    if (this.passwordInput) {
+      this.passwordInput.value = "";
+      this.passwordInput.focus();
+    }
+    this.clearStatus();
+  }
+
+  /**
+   * Submit one-click permission request to all Administrators.
+   */
+  async handleRequestAccess() {
+    const userId = this.permUserId?.value;
+    if (!userId) return;
+
+    if (this.btnRequestAccess) this.btnRequestAccess.disabled = true;
+    if (this.permSpin) this.permSpin.style.display = "inline-block";
+    if (this.btnRequestIcon) this.btnRequestIcon.style.display = "none";
+    if (this.btnRequestLabel) this.btnRequestLabel.textContent = "Sending Request…";
+
+    try {
+      const http = new RequestHandler();
+      const response = await http.post("/api/v1/permissions/request", {
+        user_id: parseInt(userId, 10),
+      });
+
+      if (this.btnRequestAccess) {
+        this.btnRequestAccess.classList.add("sent-success");
+        this.btnRequestAccess.disabled = true;
+      }
+      if (this.permSpin) this.permSpin.style.display = "none";
+      if (this.btnRequestIcon) {
+        this.btnRequestIcon.style.display = "inline-block";
+        this.btnRequestIcon.className = "fa-solid fa-circle-check";
+      }
+      if (this.btnRequestLabel) this.btnRequestLabel.textContent = "Request Sent to Administrators!";
+
+      if (this.permStatus) {
+        this.permStatus.className = "status show is-success";
+        this.permStatus.textContent = response?.message || "Notification delivered to all Administrators. You will be able to log in once permissions are granted.";
+      }
+    } catch (err) {
+      console.error("[LoginManager] Permission request error:", err);
+      if (this.btnRequestAccess) this.btnRequestAccess.disabled = false;
+      if (this.permSpin) this.permSpin.style.display = "none";
+      if (this.btnRequestIcon) this.btnRequestIcon.style.display = "inline-block";
+      if (this.btnRequestLabel) this.btnRequestLabel.textContent = "Retry Requesting Permissions";
+
+      if (this.permStatus) {
+        this.permStatus.className = "status show is-error";
+        this.permStatus.textContent = err.data?.message || err.message || "Failed to submit permission request. Please contact your administrator directly.";
+      }
     }
   }
 }

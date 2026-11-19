@@ -179,18 +179,51 @@ export class UserControlDataLoader {
     return payloadPermissions;
   }
 
-  async syncUsersFromBackend() {
+  hasUsersChanged(newUsers) {
+    if (!Array.isArray(this.users) || this.users.length !== newUsers.length) {
+      return true;
+    }
+    for (let i = 0; i < newUsers.length; i++) {
+      const a = this.users[i];
+      const b = newUsers[i];
+      if (
+        Number(a.id) !== Number(b.id) ||
+        Number(a.user_statuses_id) !== Number(b.user_statuses_id) ||
+        String(a.status) !== String(b.status) ||
+        Boolean(a.is_login) !== Boolean(b.is_login) ||
+        a.first_name !== b.first_name ||
+        a.last_name !== b.last_name ||
+        a.username !== b.username ||
+        a.mobile !== b.mobile
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async syncUsersFromBackend(options = {}) {
+    const { force = false, silent = false } = options;
     try {
-      const response = await this.http.get("/api/v1/users/all");
+      const response = await this.http.get("/api/v1/users/all", {}, {
+        headers: silent ? { "X-Background-Poll": "1" } : {}
+      });
       if (response && response.success && Array.isArray(response.data)) {
-        this.users = response.data.map(u => this.normalizeUser(u));
-        this.onUsersUpdated(this.users);
-        return this.users;
+        const normalized = response.data.map(u => this.normalizeUser(u));
+        const changed = force || this.hasUsersChanged(normalized);
+
+        if (changed) {
+          this.users = normalized;
+          this.onUsersUpdated(this.users, { silent, changed: true });
+        }
+        return { users: this.users, changed };
       }
     } catch (err) {
-      console.error("[UserControlDataLoader] Failed to load users from backend:", err);
+      if (!silent) {
+        console.error("[UserControlDataLoader] Failed to load users from backend:", err);
+      }
     }
-    return this.users;
+    return { users: this.users, changed: false };
   }
 
   async syncAdminsFromBackend() {

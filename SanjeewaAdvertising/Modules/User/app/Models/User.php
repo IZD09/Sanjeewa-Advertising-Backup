@@ -211,6 +211,46 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user has at least one assigned module permission.
+     */
+    public function hasAnyModulePermission(): bool
+    {
+        if ($this->username === 'admin') {
+            return true;
+        }
+
+        return $this->userPermissions()
+            ->where(function ($q) {
+                $q->where('view', 1)
+                    ->orWhere('create', 1)
+                    ->orWhere('edit', 1)
+                    ->orWhere('delete', 1)
+                    ->orWhere('export', 1);
+            })
+            ->exists();
+    }
+
+    /**
+     * Get the count of active assigned modules.
+     */
+    public function getAssignedModulesCount(): int
+    {
+        if ($this->username === 'admin') {
+            return 12;
+        }
+
+        return $this->userPermissions()
+            ->where(function ($q) {
+                $q->where('view', 1)
+                    ->orWhere('create', 1)
+                    ->orWhere('edit', 1)
+                    ->orWhere('delete', 1)
+                    ->orWhere('export', 1);
+            })
+            ->count();
+    }
+
+    /**
      * Determine the user's default landing URL based on their assigned module permissions.
      */
     public function getDefaultLandingRoute(): string

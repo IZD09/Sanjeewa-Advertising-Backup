@@ -11,6 +11,7 @@
 "use strict";
 
 import * as Turbo from "@hotwired/turbo";
+import { SessionInactivityTracker } from "./core/SessionInactivityTracker.js";
 
 class AppRouter {
   constructor() {
@@ -276,23 +277,25 @@ class AppRouter {
     }
 
     if (routeKey === "reports") {
-      if (!window.reportsApp && window.ReportsManager && document.getElementById("module-reports")) {
+      const repEl = document.getElementById("module-reports");
+      if (repEl && repEl.dataset.reportsBooted !== "1" && window.ReportsManager) {
+        repEl.dataset.reportsBooted = "1";
         window.reportsApp = new window.ReportsManager();
       }
     }
 
     if (routeKey === "print-jobs") {
-      if (window.printJobsManager) {
-        window.printJobsManager.init();
-      } else if (window.PrintJobsManager && document.getElementById("module-print-jobs")) {
+      const pjEl = document.getElementById("module-print-jobs");
+      if (pjEl && pjEl.dataset.printJobsBooted !== "1" && window.PrintJobsManager) {
+        pjEl.dataset.printJobsBooted = "1";
         window.printJobsManager = new window.PrintJobsManager();
       }
     }
 
     if (routeKey === "customers") {
-      if (window.customersApp) {
-        window.customersApp.init();
-      } else if (window.CustomersManager && document.getElementById("module-customers")) {
+      const custEl = document.getElementById("module-customers");
+      if (custEl && !custEl.dataset.customersBooted && window.CustomersManager) {
+        custEl.dataset.customersBooted = "1";
         window.customersApp = new window.CustomersManager();
       }
     }
@@ -309,6 +312,13 @@ if (typeof window !== "undefined") {
       window.appRouter = new AppRouter();
     } else {
       window.appRouter.onTurboLoad();
+    }
+
+    if (!window.sessionInactivityTracker) {
+      window.sessionInactivityTracker = new SessionInactivityTracker({
+        timeoutSeconds: 600,
+        warningSeconds: 540
+      });
     }
   };
 

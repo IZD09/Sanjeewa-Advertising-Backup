@@ -475,7 +475,9 @@ export class ReportsManager {
 }
 
 const bootReports = () => {
-  if (document.getElementById("module-reports")) {
+  const container = document.getElementById("module-reports");
+  if (container && container.dataset.reportsBooted !== "1") {
+    container.dataset.reportsBooted = "1";
     if (window.reportsApp && typeof window.reportsApp.destroy === "function") {
       try {
         window.reportsApp.destroy();
@@ -487,7 +489,7 @@ const bootReports = () => {
 };
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootReports);
+  document.addEventListener("DOMContentLoaded", bootReports, { once: true });
 } else {
   bootReports();
 }

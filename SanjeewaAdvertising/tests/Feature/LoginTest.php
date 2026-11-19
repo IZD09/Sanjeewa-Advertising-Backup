@@ -11,7 +11,7 @@ class LoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
-        $response->assertSee('Sanjeewa Advertising', false);
+        $response->assertSee('Sign in', false);
         $response->assertSee('id="email"', false);
         $response->assertSee('id="pw"', false);
         $response->assertSee('id="form"', false);

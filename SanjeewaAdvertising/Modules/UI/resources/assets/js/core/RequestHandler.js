@@ -151,6 +151,21 @@ export class RequestHandler {
       }
 
       if (!response.ok) {
+        // If session expired due to inactivity, auto-redirect to the appropriate login page
+        if (response.status === 401 && typeof window !== "undefined") {
+          const currentPath = window.location.pathname.toLowerCase();
+          const isAuthPage = currentPath === "/login" || currentPath.endsWith("/login") || currentPath.includes("/login");
+          const isAuthEndpoint = url.includes("/login") || url.includes("/auth/login");
+
+          if (!isAuthPage && !isAuthEndpoint) {
+            const redirectTarget =
+              (data && typeof data === "object" && data.redirect_url) ||
+              (currentPath.startsWith("/admin") ? "/admin/login" : "/login");
+
+            window.location.href = redirectTarget;
+          }
+        }
+
         const errorMsg =
           (data && typeof data === "object" && data.message) ||
           (data && typeof data === "object" && data.errors ? Object.values(data.errors).flat().join(" ") : null) ||

@@ -215,11 +215,11 @@
                 </div>
 
                 <!-- Non-Reloading Pagination Bar (BasePaginationHandler, max 20 rows per page) -->
-                <div class="po-pagination-bar" id="invPaginationBar" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                  <div id="invPaginationInfo" class="po-pagination-info" style="font-size: 12.5px; color: var(--text-muted); font-weight: 500;">
+                <div class="po-pagination po-pagination-bar" id="invPaginationBar">
+                  <div id="invPaginationInfo" class="po-pagination-info">
                     Showing 0 materials
                   </div>
-                  <div id="invPaginationControls" class="po-pagination-controls" style="display: flex; gap: 6px; align-items: center;">
+                  <div id="invPaginationControls" class="pagination-controls po-pagination-controls">
                     <!-- Rendered by BasePaginationHandler -->
                   </div>
                 </div>
@@ -347,11 +347,11 @@
                 </div>
 
                 <!-- Non-Reloading Pagination Bar (BasePaginationHandler standard) -->
-                <div class="po-pagination-bar" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                  <div id="movementsPaginationInfo" class="po-pagination-info" style="font-size: 12.5px; color: var(--text-muted); font-weight: 500;">
+                <div class="po-pagination po-pagination-bar">
+                  <div id="movementsPaginationInfo" class="po-pagination-info">
                     Showing 0 to 0 of 0 movements
                   </div>
-                  <div id="movementsPaginationControls" class="po-pagination-controls" style="display: flex; gap: 6px; align-items: center;">
+                  <div id="movementsPaginationControls" class="pagination-controls po-pagination-controls">
                     <!-- Rendered by BasePaginationHandler -->
                   </div>
                 </div>
@@ -510,15 +510,15 @@
                   </div>
 
                   <!-- Subcategories Table -->
-                  <div class="inv-table-responsive" style="margin-top: 10px;">
-                    <table class="ant-table" id="subcategoriesTable">
+                  <div class="po-table-responsive inv-table-responsive" style="margin-top: 10px;">
+                    <table class="po-table" id="subcategoriesTable">
                       <thead>
                         <tr>
-                          <th style="width: 60px;">#</th>
+                          <th style="width: 50px;">#</th>
                           <th>Subcategory Name</th>
                           <th style="width: 220px;">Parent Category</th>
                           <th class="text-center" style="width: 130px;">Stock Items</th>
-                          <th class="text-center" style="width: 120px;">Actions</th>
+                          <th class="text-center" style="width: 130px;">Actions</th>
                         </tr>
                       </thead>
                       <tbody id="subcategoriesTableBody">
@@ -528,11 +528,11 @@
                   </div>
 
                   <!-- Non-Reloading Pagination Bar (BasePaginationHandler standard, max 20 rows per page) -->
-                  <div class="po-pagination-bar" id="subcategoriesPaginationBar" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <div id="subcategoriesPaginationInfo" class="po-pagination-info" style="font-size: 12.5px; color: var(--text-muted); font-weight: 500;">
+                  <div class="po-pagination po-pagination-bar" id="subcategoriesPaginationBar">
+                    <div id="subcategoriesPaginationInfo" class="po-pagination-info">
                       Showing 0 subcategories
                     </div>
-                    <div id="subcategoriesPaginationControls" class="po-pagination-controls" style="display: flex; gap: 6px; align-items: center;">
+                    <div id="subcategoriesPaginationControls" class="pagination-controls po-pagination-controls">
                       <!-- Rendered by BasePaginationHandler -->
                     </div>
                   </div>
@@ -762,11 +762,11 @@
                   </div>
 
                   <!-- Non-Reloading Pagination Bar (BasePaginationHandler, max 20 rows per page) -->
-                  <div class="po-pagination-bar" id="catalogItemsPaginationBar" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <div id="catalogItemsPaginationInfo" class="po-pagination-info" style="font-size: 12.5px; color: var(--text-muted); font-weight: 500;">
+                  <div class="po-pagination po-pagination-bar" id="catalogItemsPaginationBar">
+                    <div id="catalogItemsPaginationInfo" class="po-pagination-info">
                       Showing 0 items
                     </div>
-                    <div id="catalogItemsPaginationControls" class="po-pagination-controls" style="display: flex; gap: 6px; align-items: center;">
+                    <div id="catalogItemsPaginationControls" class="pagination-controls po-pagination-controls">
                       <!-- Rendered by BasePaginationHandler -->
                     </div>
                   </div>

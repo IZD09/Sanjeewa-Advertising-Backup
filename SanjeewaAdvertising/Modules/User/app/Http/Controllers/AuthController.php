@@ -52,11 +52,44 @@ class AuthController extends BaseApiController
             return back()->withInput()->withErrors(['username' => 'Invalid username or password.']);
         }
 
+        if (! empty($authData['requires_permissions'])) {
+            /** @var User $pendingUser */
+            $pendingUser = $authData['user'];
+            $userData = [
+                'id' => $pendingUser->id,
+                'name' => trim("{$pendingUser->first_name} {$pendingUser->last_name}") ?: $pendingUser->username,
+                'username' => $pendingUser->username,
+                'mobile' => $pendingUser->mobile,
+                'status' => $pendingUser->status?->user_status ?? 'Active',
+                'initials' => strtoupper(substr($pendingUser->first_name ?: $pendingUser->username, 0, 1).substr($pendingUser->last_name ?: '', 0, 1)),
+                'register_at' => $pendingUser->register_at?->format('Y-m-d') ?? 'Recent',
+            ];
+
+            if ($request->hasSession()) {
+                $request->session()->put('pending_user', $userData);
+            }
+
+            $restrictedUrl = route('access.restricted');
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'requires_permissions' => true,
+                    'redirect_url' => $restrictedUrl,
+                    'message' => 'Your account is verified, but no module permissions have been assigned yet. Please contact the administrator.',
+                    'user' => $userData,
+                ], 403);
+            }
+
+            return redirect($restrictedUrl);
+        }
+
         if (Auth::guard('web')->hasUser() || $request->hasSession()) {
             Auth::guard('web')->login($authData['user'], $request->boolean('remember'));
             if ($request->hasSession()) {
                 $portal = ($authData['user']->username ?? '') === 'admin' ? 'admin' : 'user';
                 $request->session()->put('active_portal', $portal);
+                $request->session()->put('last_activity_time', now()->timestamp);
             }
         }
 

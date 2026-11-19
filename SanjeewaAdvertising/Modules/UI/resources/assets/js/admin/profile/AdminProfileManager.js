@@ -342,14 +342,18 @@ export class AdminProfileManager {
   }
 }
 
-// Auto-boot when loaded on admin profile page
+// Auto-boot when loaded on admin profile page (prevents duplicate initialization)
 const bootAdminProfile = () => {
   const container = document.getElementById("module-admin-profile");
-  if (container) {
+  if (container && container.dataset.apInitialized !== "true") {
+    container.dataset.apInitialized = "true";
     window.adminProfileManager = new AdminProfileManager();
   }
 };
 
-bootAdminProfile();
-document.addEventListener("DOMContentLoaded", bootAdminProfile);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootAdminProfile, { once: true });
+} else {
+  bootAdminProfile();
+}
 document.addEventListener("turbo:load", bootAdminProfile);

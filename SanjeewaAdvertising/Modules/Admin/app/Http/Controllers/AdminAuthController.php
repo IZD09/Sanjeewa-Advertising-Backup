@@ -60,6 +60,7 @@ class AdminAuthController extends BaseApiController
             Auth::guard('admin')->login($admin, $remember);
             if ($request->hasSession()) {
                 $request->session()->put('active_portal', 'admin');
+                $request->session()->put('last_activity_time', now()->timestamp);
             }
         }
 

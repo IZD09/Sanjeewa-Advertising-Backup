@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             DeliveryMethodSeeder::class,
             StockMovementSeeder::class,
+            StockDataSeeder::class,
             PrintJobSeeder::class,
         ]);
     }

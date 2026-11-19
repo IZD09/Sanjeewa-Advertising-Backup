@@ -317,13 +317,18 @@ if (typeof window !== "undefined") {
   window.InventoryManager = InventoryManager;
 
   const bootInventory = () => {
-    if (document.getElementById("module-inventory")) {
+    const container = document.getElementById("module-inventory");
+    if (container && container.dataset.inventoryBooted !== "1") {
+      container.dataset.inventoryBooted = "1";
       window.inventoryManager = new InventoryManager();
       window.inventoryApp = window.inventoryManager;
     }
   };
 
-  bootInventory();
-  document.addEventListener("DOMContentLoaded", bootInventory);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootInventory, { once: true });
+  } else {
+    bootInventory();
+  }
   document.addEventListener("turbo:load", bootInventory);
 }

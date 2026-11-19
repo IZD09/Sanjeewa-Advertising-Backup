@@ -70,6 +70,18 @@ Route::get('/admin/login', function () {
     return view('ui::layouts.admin.pages.login.login');
 })->name('admin.login');
 
+Route::get('/access-restricted', function () {
+    $pendingUser = session('pending_user');
+
+    if (! $pendingUser) {
+        return redirect()->route('login');
+    }
+
+    return view('ui::layouts.pages.access-restricted.access-restricted', [
+        'pendingUser' => $pendingUser,
+    ]);
+})->name('access.restricted');
+
 // =========================================================================
 // AUTHENTICATED & PERMISSION-PROTECTED APPLICATION ROUTES
 // =========================================================================

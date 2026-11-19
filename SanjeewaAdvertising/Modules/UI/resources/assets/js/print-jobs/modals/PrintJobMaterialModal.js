@@ -1,5 +1,5 @@
 /**
- * PrintJobMaterialModal - Handles Raw Stock & Materials Allocation
+ * PrintJobMaterialModal - Handles Raw Stock & Materials Allocation (E-Commerce Shopping Cart Experience)
  */
 export class PrintJobMaterialModal {
     constructor(dataLoader, options = {}) {
@@ -9,6 +9,9 @@ export class PrintJobMaterialModal {
         this.showToast = options.showToast || ((msg, type) => alert(msg));
         this.modal = document.getElementById('modalAllocateMaterial');
         this.currentJob = null;
+        this.cart = [];
+        this.isCartDirty = false;
+        this.isSavingCart = false;
         this.availableStocks = [];
         this.categories = [];
         this.subcategories = [];
@@ -22,11 +25,45 @@ export class PrintJobMaterialModal {
     }
 
     initEvents() {
+        // Add to Cart button
         const btnAdd = document.getElementById('btnSubmitAssignMaterial');
         if (btnAdd) {
-            btnAdd.onclick = () => this.submitAssign();
+            btnAdd.onclick = () => this.addToCart();
         }
 
+        // Selector Qty Minus / Plus stepper buttons
+        const btnMinus = document.getElementById('btnSelectorQtyMinus');
+        const btnPlus = document.getElementById('btnSelectorQtyPlus');
+        const inputQty = document.getElementById('inputMaterialQty');
+
+        if (btnMinus && inputQty) {
+            btnMinus.onclick = () => {
+                const current = parseInt(inputQty.value, 10) || 1;
+                inputQty.value = String(Math.max(1, current - 1));
+            };
+        }
+
+        if (btnPlus && inputQty) {
+            btnPlus.onclick = () => {
+                const current = parseInt(inputQty.value, 10) || 1;
+                const max = parseInt(inputQty.max, 10) || 999999;
+                inputQty.value = String(Math.min(max, current + 1));
+            };
+        }
+
+        // Clear Cart button
+        const btnClearCart = document.getElementById('btnClearMaterialCart');
+        if (btnClearCart) {
+            btnClearCart.onclick = () => this.clearCart();
+        }
+
+        // Save Cart button
+        const btnSaveCart = document.getElementById('btnSaveMaterialCart');
+        if (btnSaveCart) {
+            btnSaveCart.onclick = () => this.saveCart({ closeOnSuccess: true });
+        }
+
+        // Save Cart & Start Printing button
         const btnStart = document.getElementById('btnModalStartPrinting');
         if (btnStart) {
             btnStart.onclick = () => this.submitStartPrinting();
@@ -83,7 +120,6 @@ export class PrintJobMaterialModal {
         this.categories = categories || [];
         this.subcategories = subcategories || [];
 
-        // Fallback: extract unique categories & subcategories from stocks if empty
         if (this.categories.length === 0 && this.availableStocks.length > 0) {
             const catMap = new Map();
             this.availableStocks.forEach(s => {
@@ -108,7 +144,6 @@ export class PrintJobMaterialModal {
             this.subcategories = Array.from(subMap.values());
         }
 
-        // Only rebuild selects if modal is not currently open
         if (!this.modal || !this.modal.classList.contains('active')) {
             this.populateCategoryDropdown();
             this.updateSubcategoryDropdown();
@@ -196,9 +231,11 @@ export class PrintJobMaterialModal {
                 const codePart = s.code ? `[${this.escapeHtml(s.code)}] ` : '';
                 const brandPart = s.brand ? ` (${this.escapeHtml(s.brand)})` : '';
                 const catPart = s.category ? ` • ${this.escapeHtml(s.category)}` : '';
+                const inCartItem = this.cart.find(c => Number(c.stock_id) === Number(s.id));
+                const cartTag = inCartItem ? ` [Selected: ${inCartItem.qty}]` : '';
                 return `
                     <option value="${s.id}" data-code="${this.escapeHtml(s.code || '')}" data-brand="${this.escapeHtml(s.brand || '')}" data-category="${this.escapeHtml(s.category || '')}" data-subcategory="${this.escapeHtml(s.subcategory || '')}" data-qty="${s.qty}">
-                        ${codePart}${this.escapeHtml(s.name)}${brandPart}${catPart} — Avail: ${s.qty}
+                        ${codePart}${this.escapeHtml(s.name)}${brandPart}${catPart} — Avail: ${s.qty}${cartTag}
                     </option>
                 `;
             }).join('');
@@ -219,12 +256,14 @@ export class PrintJobMaterialModal {
         }
 
         const stockId = parseInt(opt.value, 10);
-        const stock = this.availableStocks.find(s => s.id === stockId);
+        const stock = this.availableStocks.find(s => Number(s.id) === stockId);
+        const cartItem = this.cart.find(c => Number(c.stock_id) === stockId);
 
         const codeEl = document.getElementById('previewStockCode');
         const brandEl = document.getElementById('previewStockBrand');
         const catEl = document.getElementById('previewStockCategory');
         const qtyEl = document.getElementById('previewStockQty');
+        const inCartBadge = document.getElementById('previewInCartBadge');
 
         if (codeEl) codeEl.textContent = stock?.code || opt.getAttribute('data-code') || '—';
         if (brandEl) brandEl.textContent = stock?.brand || opt.getAttribute('data-brand') || 'Generic';
@@ -237,6 +276,15 @@ export class PrintJobMaterialModal {
 
         const availQty = stock ? stock.qty : (parseInt(opt.getAttribute('data-qty'), 10) || 0);
         if (qtyEl) qtyEl.textContent = `${availQty} in stock`;
+
+        if (inCartBadge) {
+            if (cartItem) {
+                inCartBadge.textContent = `Already Selected: ${cartItem.qty}`;
+                inCartBadge.style.display = 'inline-block';
+            } else {
+                inCartBadge.style.display = 'none';
+            }
+        }
 
         if (inputQty && availQty > 0) {
             inputQty.max = availQty;
@@ -253,7 +301,23 @@ export class PrintJobMaterialModal {
         this.currentJob = job;
         if (!this.modal || !job) return;
 
-        this.currentJob.materials = Array.isArray(job.materials) ? job.materials : [];
+        // Hydrate selected materials list from current job's existing allocated materials
+        const initialMaterials = Array.isArray(job.materials) ? job.materials : [];
+        this.cart = initialMaterials.map(m => {
+            const stockId = Number(m.stock_id || m.id);
+            const refStock = this.availableStocks.find(s => Number(s.id) === stockId);
+            return {
+                stock_id: stockId,
+                name: m.name || m.item_name || refStock?.name || `Stock #${stockId}`,
+                code: m.code || refStock?.code || '',
+                brand: m.brand || refStock?.brand || 'Generic',
+                category: m.category || refStock?.category || '',
+                subcategory: m.subcategory || refStock?.subcategory || '',
+                avail_qty: refStock ? Number(refStock.qty) : 9999,
+                qty: Math.max(1, parseInt(m.qty, 10) || 1)
+            };
+        });
+        this.isCartDirty = false;
         this.forStartPrinting = Boolean(options.forStartPrinting);
 
         const header = document.getElementById('allocJobHeader');
@@ -274,6 +338,7 @@ export class PrintJobMaterialModal {
         const titleEl = document.getElementById('modalAllocTitle');
         const noticeEl = document.getElementById('allocNoticeBanner');
         const btnStart = document.getElementById('btnModalStartPrinting');
+        const btnSaveCart = document.getElementById('btnSaveMaterialCart');
 
         if (this.forStartPrinting) {
             if (titleEl) {
@@ -281,12 +346,14 @@ export class PrintJobMaterialModal {
             }
             if (noticeEl) noticeEl.style.display = 'block';
             if (btnStart) btnStart.style.display = 'inline-flex';
+            if (btnSaveCart) btnSaveCart.style.display = 'none';
         } else {
             if (titleEl) {
                 titleEl.innerHTML = '<i class="fa-solid fa-boxes-stacked" style="color: #0284c7;"></i> Select Printing Materials';
             }
             if (noticeEl) noticeEl.style.display = 'none';
             if (btnStart) btnStart.style.display = 'none';
+            if (btnSaveCart) btnSaveCart.style.display = 'inline-flex';
         }
 
         // Reset selectors & filter inputs
@@ -309,7 +376,7 @@ export class PrintJobMaterialModal {
         this.populateCategoryDropdown();
         this.updateSubcategoryDropdown();
         this.filterAndRenderStockOptions();
-        this.renderAllocatedList();
+        this.renderCart();
 
         this.modal.classList.add('active');
     }
@@ -317,47 +384,193 @@ export class PrintJobMaterialModal {
     close() {
         if (this.modal) this.modal.classList.remove('active');
         this.currentJob = null;
+        this.cart = [];
+        this.isCartDirty = false;
         this.forStartPrinting = false;
     }
 
-    updateStartPrintingButton() {
-        const btn = document.getElementById('btnModalStartPrinting');
-        if (!btn || !this.forStartPrinting) return;
+    /**
+     * Add selected material item into the selected materials list.
+     * If already in list, increments its quantity automatically.
+     */
+    addToCart() {
+        if (!this.currentJob) return;
 
-        const count = (this.currentJob?.materials || []).length;
-        if (count === 0) {
-            btn.disabled = true;
-            btn.style.opacity = '0.45';
-            btn.style.cursor = 'not-allowed';
-            btn.innerHTML = '<i class="fa-solid fa-print"></i> <span>Start Printing (Select Materials First)</span>';
-            btn.title = 'Please select and assign at least one material to start printing';
+        const selectStock = document.getElementById('selectAllocateStock');
+        const inputQty = document.getElementById('inputMaterialQty');
+        if (!selectStock || !inputQty) return;
+
+        const stockId = parseInt(selectStock.value, 10);
+        const addQty = parseInt(inputQty.value, 10);
+
+        if (!stockId) {
+            this.showToast('Please select a material / stock item to add.', 'warning');
+            return;
+        }
+        if (!addQty || addQty <= 0) {
+            this.showToast('Please enter a valid quantity of at least 1.', 'warning');
+            return;
+        }
+
+        const refStock = this.availableStocks.find(s => Number(s.id) === stockId);
+        const maxAvail = refStock ? Number(refStock.qty) : 9999;
+
+        const existing = this.cart.find(item => Number(item.stock_id) === stockId);
+        if (existing) {
+            const nextQty = existing.qty + addQty;
+            if (maxAvail > 0 && nextQty > maxAvail) {
+                existing.qty = maxAvail;
+                this.showToast(`Adjusted "${existing.name}" to maximum available warehouse stock (${maxAvail}).`, 'warning');
+            } else {
+                existing.qty = nextQty;
+                this.showToast(`Updated "${existing.name}" quantity (Total: ${existing.qty}).`, 'info');
+            }
         } else {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-            btn.innerHTML = `<i class="fa-solid fa-print"></i> <span>Start Printing (${count} Material${count > 1 ? 's' : ''})</span> <i class="fa-solid fa-arrow-right"></i>`;
-            btn.title = 'Start printing on machine with selected materials';
+            const finalQty = maxAvail > 0 ? Math.min(addQty, maxAvail) : addQty;
+            const itemName = refStock ? refStock.name : `Stock #${stockId}`;
+            this.cart.push({
+                stock_id: stockId,
+                name: itemName,
+                code: refStock?.code || '',
+                brand: refStock?.brand || 'Generic',
+                category: refStock?.category || '',
+                subcategory: refStock?.subcategory || '',
+                avail_qty: maxAvail,
+                qty: finalQty
+            });
+            this.showToast(`Added "${itemName}" (Qty: ${finalQty}) to selected materials!`, 'success');
+        }
+
+        this.isCartDirty = true;
+
+        // Reset item selection and qty back to 1 for quick next add
+        selectStock.value = '';
+        inputQty.value = '1';
+
+        this.filterAndRenderStockOptions();
+        this.renderCart();
+    }
+
+    /**
+     * Adjust quantity of a selected material item by delta (-1 or +1) or direct value.
+     */
+    updateCartItemQty(stockId, newQty) {
+        const item = this.cart.find(c => Number(c.stock_id) === Number(stockId));
+        if (!item) return;
+
+        let parsed = parseInt(newQty, 10);
+        if (isNaN(parsed) || parsed < 1) {
+            parsed = 1;
+        }
+        if (item.avail_qty > 0 && parsed > item.avail_qty) {
+            parsed = item.avail_qty;
+            this.showToast(`Maximum available warehouse stock for "${item.name}" is ${item.avail_qty}.`, 'warning');
+        }
+
+        if (item.qty !== parsed) {
+            item.qty = parsed;
+            this.isCartDirty = true;
+            this.renderCart();
+            this.filterAndRenderStockOptions();
         }
     }
 
-    renderAllocatedList() {
+    /**
+     * Remove an item from the selected materials list.
+     */
+    removeFromCart(stockId) {
+        const idx = this.cart.findIndex(c => Number(c.stock_id) === Number(stockId));
+        if (idx === -1) return;
+
+        const removed = this.cart[idx];
+        this.cart.splice(idx, 1);
+        this.isCartDirty = true;
+
+        this.showToast(`Removed "${removed.name}" from list.`, 'info');
+        this.renderCart();
+        this.filterAndRenderStockOptions();
+    }
+
+    /**
+     * Clear all items from the selected materials list.
+     */
+    clearCart() {
+        if (this.cart.length === 0) return;
+        this.cart = [];
+        this.isCartDirty = true;
+        this.showToast('Cleared all selected materials.', 'info');
+        this.renderCart();
+        this.filterAndRenderStockOptions();
+    }
+
+    updateFooterActionButtons() {
+        const count = this.cart.length;
+        const totalUnits = this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+
+        const headerCount = document.getElementById('allocHeaderCartCount');
+        if (headerCount) {
+            headerCount.textContent = `${count} (${totalUnits})`;
+        }
+
+        const btnClear = document.getElementById('btnClearMaterialCart');
+        if (btnClear) {
+            btnClear.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        const summaryBar = document.getElementById('allocCartSummaryBar');
+        const summaryItems = document.getElementById('cartSummaryItemCount');
+        const summaryQty = document.getElementById('cartSummaryTotalQty');
+        const unsavedEl = document.getElementById('cartUnsavedIndicator');
+
+        if (summaryBar) {
+            summaryBar.style.display = count > 0 || this.isCartDirty ? 'flex' : 'none';
+        }
+        if (summaryItems) summaryItems.textContent = String(count);
+        if (summaryQty) summaryQty.textContent = String(totalUnits);
+        if (unsavedEl) {
+            unsavedEl.style.display = this.isCartDirty ? 'block' : 'none';
+        }
+
+        const btnSaveCart = document.getElementById('btnSaveMaterialCart');
+        if (btnSaveCart && !this.forStartPrinting) {
+            btnSaveCart.innerHTML = `<i class="fa-solid fa-check-double"></i> <span>Confirm & Save Materials (${count})</span>`;
+        }
+
+        const btnStart = document.getElementById('btnModalStartPrinting');
+        if (btnStart && this.forStartPrinting) {
+            if (count === 0) {
+                btnStart.disabled = true;
+                btnStart.style.opacity = '0.45';
+                btnStart.style.cursor = 'not-allowed';
+                btnStart.innerHTML = '<i class="fa-solid fa-print"></i> <span>Select Materials First</span>';
+            } else {
+                btnStart.disabled = false;
+                btnStart.style.opacity = '1';
+                btnStart.style.cursor = 'pointer';
+                btnStart.innerHTML = `<i class="fa-solid fa-print"></i> <span>Save & Start Printing (${count} Material${count > 1 ? 's' : ''})</span> <i class="fa-solid fa-arrow-right"></i>`;
+            }
+        }
+    }
+
+    renderCart() {
         const container = document.getElementById('allocatedMaterialsList');
         const badge = document.getElementById('allocCountBadge');
         if (!container || !this.currentJob) return;
 
-        const materials = this.currentJob.materials || [];
-        this.updateStartPrintingButton();
+        this.updateFooterActionButtons();
+
+        const totalUnits = this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
 
         if (badge) {
-            badge.textContent = `${materials.length} material${materials.length !== 1 ? 's' : ''} added`;
-            badge.style.color = materials.length > 0 ? '#0284c7' : 'var(--text-muted)';
+            badge.textContent = `${this.cart.length} material${this.cart.length !== 1 ? 's' : ''} (${totalUnits} units)`;
+            badge.style.color = this.cart.length > 0 ? '#0284c7' : 'var(--text-muted)';
         }
 
-        if (materials.length === 0) {
+        if (this.cart.length === 0) {
             container.innerHTML = `
-                <div style="font-size: 12px; color: #d97706; background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); padding: 14px; text-align: center; border-radius: 6px;">
-                    <i class="fa-solid fa-triangle-exclamation" style="margin-right: 5px;"></i>
-                    No materials added yet. Choose Category, Subcategory & Material from above and click <strong>"+ Add"</strong>. You can add multiple materials.
+                <div style="font-size: 12.5px; color: var(--text-muted); background: var(--surface-2); border: 1px dashed var(--border); padding: 22px 16px; text-align: center; border-radius: 8px;">
+                    <i class="fa-solid fa-boxes-stacked" style="font-size: 24px; color: #0284c7; opacity: 0.45; margin-bottom: 8px; display: block;"></i>
+                    No materials selected yet. Choose a material above and click <strong>"Add Material"</strong>.
                 </div>
             `;
             return;
@@ -367,279 +580,210 @@ export class PrintJobMaterialModal {
             <table class="pj-assigned-table">
                 <thead>
                     <tr>
-                        <th style="width: 32px; text-align: center;">#</th>
+                        <th style="width: 36px; text-align: center;">#</th>
                         <th>Material Item</th>
-                        <th>Brand</th>
-                        <th style="text-align: right; width: 140px;">Allocated Qty</th>
-                        <th style="text-align: right; width: 60px;">Action</th>
+                        <th>Brand & Stock</th>
+                        <th style="text-align: center; width: 155px;">Required Qty</th>
+                        <th style="text-align: right; width: 65px;">Remove</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${materials.map((m, idx) => `
-                        <tr>
-                            <td style="color: var(--text-muted); font-size: 11px; text-align: center;">${idx + 1}</td>
-                            <td>
-                                <strong style="color: var(--text);">
-                                    <i class="fa-solid fa-boxes-stacked" style="color: #0284c7; margin-right: 4px; font-size: 11px;"></i>
-                                    ${this.escapeHtml(m.name || m.item_name || 'Material')}
-                                </strong>
-                            </td>
-                            <td>
-                                <span style="background: var(--surface-2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; font-size: 11px; color: var(--text);">
-                                    ${this.escapeHtml(m.brand || 'Generic')}
-                                </span>
-                            </td>
-                            <td style="text-align: right;">
-                                <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px;">
-                                    <input type="number" 
-                                           class="pj-input pj-alloc-qty-input" 
-                                           data-stock-id="${m.stock_id}" 
-                                           data-orig-qty="${m.qty}"
-                                           value="${m.qty}" 
-                                           min="1" 
-                                           style="width: 65px; height: 28px; text-align: center; font-weight: 700; font-family: monospace; font-size: 12px; padding: 2px 4px;" />
-                                    <button type="button" 
-                                            class="pj-btn-icon-sm btn-update-mat-qty" 
-                                            data-stock-id="${m.stock_id}" 
-                                            title="Update Quantity" 
-                                            style="color: #0284c7; width: 28px; height: 28px; border-radius: 4px; border: 1px solid rgba(2, 132, 199, 0.3); background: rgba(2, 132, 199, 0.08); display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        <i class="fa-solid fa-check"></i>
+                    ${this.cart.map((m, idx) => {
+                        const codeTag = m.code
+                            ? `<span style="font-family: monospace; font-size: 11px; color: #0284c7; background: rgba(2, 132, 199, 0.1); padding: 1px 6px; border-radius: 4px; margin-left: 6px;">${this.escapeHtml(m.code)}</span>`
+                            : '';
+                        const catSub = [m.category, m.subcategory].filter(Boolean).join(' / ');
+                        return `
+                            <tr data-cart-stock-id="${m.stock_id}">
+                                <td style="color: var(--text-muted); font-size: 11.5px; font-weight: 600; text-align: center;">${idx + 1}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                        <strong style="color: var(--text); font-size: 13px;">
+                                            <i class="fa-solid fa-box" style="color: #0284c7; margin-right: 5px; font-size: 11.5px;"></i>
+                                            ${this.escapeHtml(m.name)}
+                                        </strong>
+                                        ${codeTag}
+                                    </div>
+                                    ${catSub ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${this.escapeHtml(catSub)}</div>` : ''}
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span style="background: var(--surface-2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; font-size: 11px; color: var(--text); font-weight: 600;">
+                                            ${this.escapeHtml(m.brand || 'Generic')}
+                                        </span>
+                                        ${m.avail_qty && m.avail_qty < 9999 ? `<span style="font-size: 11px; color: #16a34a; font-weight: 600;">Avail: ${m.avail_qty}</span>` : ''}
+                                    </div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div style="display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: hidden; height: 30px;">
+                                        <button type="button"
+                                                class="btn-cart-qty-minus"
+                                                data-stock-id="${m.stock_id}"
+                                                title="Decrease Quantity"
+                                                style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                            <i class="fa-solid fa-minus" style="font-size: 9px;"></i>
+                                        </button>
+                                        <input type="number"
+                                               class="pj-input pj-alloc-qty-input"
+                                               data-stock-id="${m.stock_id}"
+                                               value="${m.qty}"
+                                               min="1"
+                                               max="${m.avail_qty || 9999}"
+                                               style="width: 56px; height: 100%; border: none; border-radius: 0; text-align: center; font-weight: 700; font-family: monospace; font-size: 12.5px; padding: 0 4px;" />
+                                        <button type="button"
+                                                class="btn-cart-qty-plus"
+                                                data-stock-id="${m.stock_id}"
+                                                title="Increase Quantity"
+                                                style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                            <i class="fa-solid fa-plus" style="font-size: 9px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td style="text-align: right;">
+                                    <button type="button"
+                                            class="pj-btn-icon-sm btn-remove-stock"
+                                            data-stock-id="${m.stock_id}"
+                                            title="Remove from Cart"
+                                            style="color: #ff4d4f; width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(255, 77, 79, 0.3); background: rgba(255, 77, 79, 0.08); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <i class="fa-solid fa-trash-can"></i>
                                     </button>
-                                </div>
-                            </td>
-                            <td style="text-align: right;">
-                                <button type="button" 
-                                        class="pj-btn-icon-sm btn-remove-stock" 
-                                        data-stock-id="${m.stock_id}" 
-                                        title="Remove Material" 
-                                        style="color: #ff4d4f; width: 28px; height: 28px; border-radius: 4px; border: 1px solid rgba(255, 77, 79, 0.3); background: rgba(255, 77, 79, 0.08); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('')}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
                 </tbody>
             </table>
         `;
 
-        // Bind Remove events
-        container.querySelectorAll('.btn-remove-stock').forEach(btn => {
-            btn.onclick = async () => {
+        // Bind Minus stepper buttons
+        container.querySelectorAll('.btn-cart-qty-minus').forEach(btn => {
+            btn.onclick = () => {
                 const stockId = parseInt(btn.getAttribute('data-stock-id'), 10);
-                await this.removeStock(stockId);
+                const item = this.cart.find(c => Number(c.stock_id) === stockId);
+                if (item && item.qty > 1) {
+                    this.updateCartItemQty(stockId, item.qty - 1);
+                }
             };
         });
 
-        // Bind Update Qty events
-        container.querySelectorAll('.btn-update-mat-qty').forEach(btn => {
-            btn.onclick = async () => {
+        // Bind Plus stepper buttons
+        container.querySelectorAll('.btn-cart-qty-plus').forEach(btn => {
+            btn.onclick = () => {
                 const stockId = parseInt(btn.getAttribute('data-stock-id'), 10);
-                const row = btn.closest('tr');
-                const input = row ? row.querySelector('.pj-alloc-qty-input') : null;
-                if (!input) return;
-
-                const newQty = parseInt(input.value, 10);
-                await this.updateQuantity(stockId, newQty, btn, input);
+                const item = this.cart.find(c => Number(c.stock_id) === stockId);
+                if (item) {
+                    this.updateCartItemQty(stockId, item.qty + 1);
+                }
             };
         });
 
-        // Enter key & change highlight on Qty input
+        // Bind direct quantity input changes
         container.querySelectorAll('.pj-alloc-qty-input').forEach(input => {
+            input.onchange = () => {
+                const stockId = parseInt(input.getAttribute('data-stock-id'), 10);
+                this.updateCartItemQty(stockId, input.value);
+            };
             input.onkeydown = (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const row = input.closest('tr');
-                    const btn = row ? row.querySelector('.btn-update-mat-qty') : null;
-                    if (btn) btn.click();
+                    const stockId = parseInt(input.getAttribute('data-stock-id'), 10);
+                    this.updateCartItemQty(stockId, input.value);
                 }
             };
+        });
 
-            input.oninput = () => {
-                const orig = parseInt(input.getAttribute('data-orig-qty'), 10);
-                const current = parseInt(input.value, 10);
-                const row = input.closest('tr');
-                const btn = row ? row.querySelector('.btn-update-mat-qty') : null;
-                if (btn) {
-                    if (current !== orig && current > 0) {
-                        btn.style.background = '#0284c7';
-                        btn.style.color = '#ffffff';
-                        btn.style.borderColor = '#0284c7';
-                    } else {
-                        btn.style.background = 'rgba(2, 132, 199, 0.08)';
-                        btn.style.color = '#0284c7';
-                        btn.style.borderColor = 'rgba(2, 132, 199, 0.3)';
-                    }
-                }
+        // Bind Remove from cart buttons
+        container.querySelectorAll('.btn-remove-stock').forEach(btn => {
+            btn.onclick = () => {
+                const stockId = parseInt(btn.getAttribute('data-stock-id'), 10);
+                this.removeFromCart(stockId);
             };
         });
     }
 
-    async submitAssign() {
-        if (!this.currentJob) return;
+    /**
+     * Persist the entire materials cart to the backend via syncStockItems.
+     */
+    async saveCart(options = {}) {
+        if (!this.currentJob || this.isSavingCart) return false;
 
-        const selectStock = document.getElementById('selectAllocateStock');
-        const inputQty = document.getElementById('inputMaterialQty');
-        const stockId = parseInt(selectStock.value, 10);
-        const qty = parseInt(inputQty.value, 10);
+        this.isSavingCart = true;
+        const btnSave = document.getElementById('btnSaveMaterialCart');
+        const originalText = btnSave ? btnSave.innerHTML : '';
 
-        if (!stockId) {
-            this.showToast('Please select a material / stock item from the list.', 'warning');
-            return;
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Materials...';
         }
-        if (!qty || qty <= 0) {
-            this.showToast('Please enter a valid quantity of at least 1.', 'warning');
-            return;
-        }
-
-        const btn = document.getElementById('btnSubmitAssignMaterial');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
 
         try {
-            const updatedData = await this.dataLoader.assignStockItem(this.currentJob.id, stockId, qty);
+            const payload = this.cart.map(item => ({
+                stock_id: Number(item.stock_id),
+                qty: Math.max(1, parseInt(item.qty, 10) || 1)
+            }));
 
-            // Update in-memory job materials directly from response or locally
+            const updatedData = await this.dataLoader.syncStockItems(this.currentJob.id, payload);
+
             if (updatedData && Array.isArray(updatedData.materials)) {
                 this.currentJob.materials = updatedData.materials;
                 this.currentJob.materials_count = updatedData.materials.length;
             } else {
-                const selectedOpt = this.availableStocks.find(s => s.id === stockId);
-                this.currentJob.materials = Array.isArray(this.currentJob.materials) ? this.currentJob.materials : [];
-                const existingMat = this.currentJob.materials.find(m => m.stock_id === stockId);
-                if (existingMat) {
-                    existingMat.qty = qty;
-                } else {
-                    this.currentJob.materials.push({
-                        stock_id: stockId,
-                        name: selectedOpt ? selectedOpt.name : `Stock #${stockId}`,
-                        brand: selectedOpt ? selectedOpt.brand : '',
-                        qty: qty
-                    });
-                }
-                this.currentJob.materials_count = this.currentJob.materials.length;
+                this.currentJob.materials = this.cart.map(c => ({ ...c }));
+                this.currentJob.materials_count = this.cart.length;
             }
 
-            const itemObj = this.availableStocks.find(s => s.id === stockId);
-            const itemName = itemObj ? itemObj.name : 'Material';
-            this.showToast(`"${itemName}" (Qty: ${qty}) added successfully!`, 'success');
-
-            // Reset only material dropdown and quantity input, leaving categories for easy next pick
-            selectStock.value = '';
-            inputQty.value = '1';
-            this.updateStockPreview();
-
-            // Re-render table below
-            this.renderAllocatedList();
-
-            // Notify parent without full page disruptions
+            this.isCartDirty = false;
+            this.renderCart();
             this.onJobUpdated();
+
+            this.showToast(`Selected materials saved (${this.cart.length} item${this.cart.length !== 1 ? 's' : ''})!`, 'success');
+
+            if (options.closeOnSuccess) {
+                this.close();
+            }
+
+            return true;
         } catch (err) {
-            this.showToast(err.message || 'Failed to assign stock material.', 'error');
+            this.showToast(err.message || 'Failed to save selected materials.', 'error');
+            return false;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    }
-
-    async updateQuantity(stockId, newQty, btn = null, input = null) {
-        if (!this.currentJob) return;
-
-        if (isNaN(newQty) || newQty <= 0) {
-            this.showToast('Please enter a valid quantity of at least 1.', 'warning');
-            if (input) input.focus();
-            return;
-        }
-
-        const origQty = input ? parseInt(input.getAttribute('data-orig-qty'), 10) : null;
-        if (origQty !== null && newQty === origQty) {
-            this.showToast('Quantity is unchanged.', 'info');
-            return;
-        }
-
-        let originalBtnHtml = '';
-        if (btn) {
-            originalBtnHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size: 11px;"></i>';
-        }
-
-        try {
-            const updatedData = await this.dataLoader.assignStockItem(this.currentJob.id, stockId, newQty);
-            this.showToast(`Material quantity updated to ${newQty}!`, 'success');
-
-            if (updatedData && Array.isArray(updatedData.materials)) {
-                this.currentJob.materials = updatedData.materials;
-                this.currentJob.materials_count = updatedData.materials.length;
-            } else {
-                const mat = (this.currentJob.materials || []).find(m => m.stock_id === stockId);
-                if (mat) mat.qty = newQty;
+            this.isSavingCart = false;
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+                this.updateFooterActionButtons();
             }
-
-            if (input) {
-                input.setAttribute('data-orig-qty', String(newQty));
-            }
-            if (btn) {
-                btn.style.background = 'rgba(2, 132, 199, 0.08)';
-                btn.style.color = '#0284c7';
-                btn.style.borderColor = 'rgba(2, 132, 199, 0.3)';
-            }
-
-            this.onJobUpdated();
-        } catch (err) {
-            this.showToast(err.message || 'Failed to update material quantity.', 'error');
-            if (input && origQty !== null) {
-                input.value = origQty;
-            }
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnHtml;
-            }
-        }
-    }
-
-    async removeStock(stockId) {
-        if (!this.currentJob) return;
-        try {
-            const updatedData = await this.dataLoader.removeStockItem(this.currentJob.id, stockId);
-            this.showToast('Material allocation removed.', 'success');
-
-            if (updatedData && Array.isArray(updatedData.materials)) {
-                this.currentJob.materials = updatedData.materials;
-                this.currentJob.materials_count = updatedData.materials.length;
-            } else {
-                this.currentJob.materials = (this.currentJob.materials || []).filter(m => m.stock_id !== stockId);
-                this.currentJob.materials_count = this.currentJob.materials.length;
-            }
-
-            this.renderAllocatedList();
-            this.onJobUpdated();
-        } catch (err) {
-            this.showToast(err.message || 'Failed to remove material.', 'error');
         }
     }
 
     async submitStartPrinting() {
-        if (!this.currentJob) return;
+        if (!this.currentJob || this.isSavingCart) return;
 
-        const materials = this.currentJob.materials || [];
-        if (materials.length === 0) {
-            this.showToast('Please select and assign at least one material before starting printing.', 'warning');
+        if (this.cart.length === 0) {
+            this.showToast('Please select at least one material before starting printing.', 'warning');
             return;
         }
 
         const btn = document.getElementById('btnModalStartPrinting');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting Printing...';
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving & Starting Printing...';
+        }
 
         try {
+            const payload = this.cart.map(item => ({
+                stock_id: Number(item.stock_id),
+                qty: Math.max(1, parseInt(item.qty, 10) || 1)
+            }));
+
+            await this.dataLoader.syncStockItems(this.currentJob.id, payload);
+
             const printingStatus = (this.statuses || []).find(s => String(s.name || '').toLowerCase().trim() === 'printing');
             const statusId = printingStatus ? printingStatus.id : 4;
 
             await this.dataLoader.updateStatus(this.currentJob.id, statusId);
-            this.showToast(`Job ${this.currentJob.job_number} moved to Printing on Machine!`, 'success');
+            this.showToast(`Materials saved & Job ${this.currentJob.job_number} moved to Printing!`, 'success');
             this.close();
 
             if (typeof this.onStartPrintingSuccess === 'function') {
@@ -648,9 +792,11 @@ export class PrintJobMaterialModal {
                 this.onJobUpdated();
             }
         } catch (err) {
-            this.showToast(err.message || 'Failed to start printing.', 'error');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            this.showToast(err.message || 'Failed to save materials and start printing.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
     }
 

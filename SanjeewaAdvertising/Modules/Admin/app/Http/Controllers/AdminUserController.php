@@ -5,8 +5,10 @@ namespace Modules\Admin\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Modules\Admin\Http\Requests\StoreAdminUserRequest;
 use Modules\Admin\Http\Requests\UpdateAdminUserStatusRequest;
+use Modules\Admin\Models\Admin;
 use Modules\Admin\Services\AdminUserService;
 use Modules\Core\Http\Controllers\BaseApiController;
 use Modules\User\Transformers\UserResource;
@@ -120,6 +122,72 @@ class AdminUserController extends BaseApiController
         return $this->success(
             $user ? new UserResource($user) : null,
             'User permissions synchronized successfully.'
+        );
+    }
+
+    /**
+     * Retrieve full user profile details, login/logout sessions, permissions, and activity audit logs for Admin inspection.
+     */
+    public function profile(int $id): JsonResponse
+    {
+        $profileData = $this->adminUserService->getUserProfileData($id);
+
+        if (! $profileData) {
+            return $this->notFound('User not found.');
+        }
+
+        return $this->success(
+            $profileData,
+            'User profile details retrieved successfully.'
+        );
+    }
+
+    /**
+     * Change a staff user's password after verifying the administrator's credentials.
+     */
+    public function updatePassword(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:6', 'max:255', 'confirmed'],
+            'admin_username' => ['required', 'string'],
+            'admin_password' => ['required', 'string'],
+        ]);
+
+        $adminUsername = trim((string) $validated['admin_username']);
+        $adminPassword = (string) $validated['admin_password'];
+
+        /** @var Admin|null $admin */
+        $admin = Admin::query()
+            ->where(function ($q) use ($adminUsername) {
+                $q->where('username', $adminUsername)
+                    ->orWhere('email', $adminUsername)
+                    ->orWhere('mobile', $adminUsername);
+            })
+            ->first();
+
+        if (! $admin || ! Hash::check($adminPassword, $admin->password)) {
+            return $this->unauthorized('Invalid administrator username or password. Verification failed.');
+        }
+
+        if ((int) ($admin->admin_statuses_id ?? 1) !== 1) {
+            return $this->forbidden('Administrator account is inactive or locked.');
+        }
+
+        $targetUser = $this->adminUserService->getUserById($id);
+        if (! $targetUser) {
+            return $this->notFound('User not found.');
+        }
+
+        $updatedUser = $this->adminUserService->changeUserPassword(
+            $id,
+            (string) $validated['password'],
+            $admin->id,
+            $admin->username
+        );
+
+        return $this->success(
+            new UserResource($updatedUser),
+            "Password for user '@{$updatedUser->username}' updated successfully."
         );
     }
 }

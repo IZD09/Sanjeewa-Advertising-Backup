@@ -8,11 +8,15 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Modules\Core\Models\Activity;
 use Modules\Core\Models\ActivityType;
 use Modules\Core\Services\ActivityService;
 use Modules\Core\Support\MobileNumberHelper;
+use Modules\PrintJob\Models\PrintJob;
+use Modules\User\Models\SystemModule;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
+use Modules\User\Models\UserLogin;
 
 class AdminUserService
 {
@@ -195,6 +199,255 @@ class AdminUserService
             'modules_count' => count($permissions),
             'message' => "Administrator updated permissions for user '{$user->username}' (ID: #{$user->id}).",
         ], $adminId);
+    }
+
+    /**
+     * Retrieve comprehensive user profile details including login/logout sessions,
+     * assigned module permissions, and activity audit logs for administrator inspection.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getUserProfileData(int $userId): ?array
+    {
+        $user = User::query()
+            ->with([
+                'status',
+                'systemModules',
+                'userPermissions.systemModule',
+            ])
+            ->find($userId);
+
+        if (! $user) {
+            return null;
+        }
+
+        // 1. Assigned Module Permissions
+        $allModules = SystemModule::orderBy('id')->get();
+        if ($allModules->isEmpty()) {
+            $modules = $user->systemModules->map(function ($mod): array {
+                return [
+                    'id' => (int) $mod->id,
+                    'name' => (string) $mod->system_module,
+                    'view' => (bool) ($mod->pivot->view ?? 0),
+                    'create' => (bool) ($mod->pivot->create ?? 0),
+                    'edit' => (bool) ($mod->pivot->edit ?? 0),
+                    'delete' => (bool) ($mod->pivot->delete ?? 0),
+                    'export' => (bool) ($mod->pivot->export ?? 0),
+                ];
+            })->values()->all();
+        } else {
+            $userPerms = $user->userPermissions->keyBy('system_modules_id');
+            $modules = $allModules->map(function (SystemModule $mod) use ($userPerms): array {
+                $pivot = $userPerms->get($mod->id);
+
+                return [
+                    'id' => (int) $mod->id,
+                    'name' => (string) $mod->system_module,
+                    'view' => (bool) ($pivot->view ?? 0),
+                    'create' => (bool) ($pivot->create ?? 0),
+                    'edit' => (bool) ($pivot->edit ?? 0),
+                    'delete' => (bool) ($pivot->delete ?? 0),
+                    'export' => (bool) ($pivot->export ?? 0),
+                ];
+            })->values()->all();
+        }
+
+        // 2. Login & Logout Session History
+        $totalLoginsCount = UserLogin::query()->where('user_id', $user->id)->count();
+        $loginRecords = UserLogin::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get();
+
+        $logins = $loginRecords->map(function (UserLogin $login): array {
+            $loginStr = $login->login ? $login->login->format('Y-m-d H:i:s') : null;
+            $logoutStr = $login->logout ? $login->logout->format('Y-m-d H:i:s') : null;
+            $isActive = empty($login->logout);
+
+            return [
+                'id' => (int) $login->id,
+                'login' => $loginStr,
+                'logout' => $logoutStr,
+                'is_active' => $isActive,
+                'duration' => $this->formatSessionDuration($login->login, $login->logout),
+            ];
+        })->values()->all();
+
+        // 3. User Activity Details (Both user-performed activities and admin actions on this user)
+        $activityRecords = Activity::query()
+            ->with(['activityType', 'userActivity', 'adminActivity.admin'])
+            ->where(function (Builder $q) use ($user) {
+                $q->whereHas('userActivity', function (Builder $uq) use ($user) {
+                    $uq->where('users_id', $user->id);
+                })
+                    ->orWhere('activity->user_id', $user->id)
+                    ->orWhere('activity->user_id', (string) $user->id);
+            })
+            ->orderByDesc('activity_time')
+            ->orderByDesc('id')
+            ->limit(60)
+            ->get();
+
+        $activities = [];
+
+        foreach ($activityRecords as $act) {
+            $payload = is_array($act->activity) ? $act->activity : [];
+            $typeName = $act->activityType?->activity_type ?? 'Activity';
+            $isByAdmin = (int) $act->user_or_admin === 2;
+            $adminName = $act->adminActivity?->admin?->username ?? ($payload['admin_username'] ?? 'Admin');
+
+            $activities[] = [
+                'id' => 'ACT-'.$act->id,
+                'raw_id' => (int) $act->id,
+                'timestamp' => $act->activity_time ? $act->activity_time->format('Y-m-d H:i:s') : null,
+                'type' => $typeName,
+                'action' => (string) ($payload['action'] ?? strtolower(str_replace(' ', '_', $typeName))),
+                'message' => (string) ($payload['message'] ?? $typeName),
+                'actor_type' => $isByAdmin ? 'Admin' : 'User',
+                'actor_name' => $isByAdmin ? "@{$adminName}" : "@{$user->username}",
+                'details' => $payload,
+            ];
+        }
+
+        // Also include recent Print Jobs created by this user as operational activity records
+        try {
+            $printJobs = PrintJob::query()
+                ->with(['customer', 'printType'])
+                ->where('users_id', $user->id)
+                ->orderByDesc('id')
+                ->limit(25)
+                ->get();
+
+            foreach ($printJobs as $job) {
+                $customerName = trim(($job->customer?->first_name ?? '').' '.($job->customer?->last_name ?? '')) ?: 'Walk-in Customer';
+                $printTypeName = $job->printType?->type ?? 'Print Order';
+                $jobTime = $job->add_date ? date('Y-m-d H:i:s', strtotime((string) $job->add_date)) : null;
+
+                $activities[] = [
+                    'id' => 'PJ-'.$job->id,
+                    'raw_id' => (int) $job->id,
+                    'timestamp' => $jobTime,
+                    'type' => 'Print Job Created',
+                    'action' => 'create_print_job',
+                    'message' => "Created Print Job #PJ-{$job->id} ({$printTypeName}, Qty: {$job->qty}) for customer {$customerName}.",
+                    'actor_type' => 'User',
+                    'actor_name' => "@{$user->username}",
+                    'details' => [
+                        'job_id' => $job->id,
+                        'customer' => $customerName,
+                        'print_type' => $printTypeName,
+                        'qty' => $job->qty,
+                    ],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Ignore if PrintJob relation is unavailable
+        }
+
+        // Sort combined activities by timestamp descending
+        usort($activities, function (array $a, array $b): int {
+            $timeA = ! empty($a['timestamp']) ? strtotime((string) $a['timestamp']) : 0;
+            $timeB = ! empty($b['timestamp']) ? strtotime((string) $b['timestamp']) : 0;
+
+            return $timeB <=> $timeA;
+        });
+
+        return [
+            'id' => (int) $user->id,
+            'first_name' => (string) $user->first_name,
+            'last_name' => (string) $user->last_name,
+            'full_name' => trim("{$user->first_name} {$user->last_name}"),
+            'username' => (string) $user->username,
+            'mobile' => (string) $user->mobile,
+            'register_at' => $user->register_at ? $user->register_at->format('Y-m-d H:i:s') : null,
+            'user_statuses_id' => (int) $user->user_statuses_id,
+            'status' => $user->status?->user_status ?? 'Active',
+            'is_login' => (bool) $user->is_login,
+            'logins_count' => $totalLoginsCount,
+            'activities_count' => count($activities),
+            'modules' => $modules,
+            'logins' => $logins,
+            'activities' => array_slice($activities, 0, 60),
+        ];
+    }
+
+    /**
+     * Format duration between login and logout timestamps.
+     */
+    protected function formatSessionDuration(mixed $login, mixed $logout): string
+    {
+        if (! $login) {
+            return '—';
+        }
+
+        try {
+            $start = $login instanceof \DateTimeInterface ? $login->getTimestamp() : strtotime((string) $login);
+            $end = $logout
+                ? ($logout instanceof \DateTimeInterface ? $logout->getTimestamp() : strtotime((string) $logout))
+                : time();
+
+            if (! $start || ! $end || $end < $start) {
+                return '—';
+            }
+
+            $diff = $end - $start;
+            $hours = floor($diff / 3600);
+            $minutes = floor(($diff % 3600) / 60);
+            $seconds = $diff % 60;
+
+            if ($hours > 24) {
+                $days = floor($hours / 24);
+                $remHours = $hours % 24;
+
+                return $logout ? "{$days}d {$remHours}h" : "Active ({$days}d {$remHours}h)";
+            }
+
+            if ($hours > 0) {
+                return $logout ? "{$hours}h {$minutes}m" : "Active ({$hours}h {$minutes}m)";
+            }
+
+            if ($minutes > 0) {
+                return $logout ? "{$minutes}m {$seconds}s" : "Active ({$minutes}m)";
+            }
+
+            return $logout ? "{$seconds}s" : 'Active (Just now)';
+        } catch (\Throwable $e) {
+            return '—';
+        }
+    }
+
+    /**
+     * Change a staff user's password as a verified administrator and log the action.
+     */
+    public function changeUserPassword(
+        int $userId,
+        string $newPassword,
+        ?int $adminId = null,
+        ?string $adminUsername = null
+    ): User {
+        $user = User::findOrFail($userId);
+
+        $hashed = Hash::info($newPassword)['algo'] === null
+            ? Hash::make($newPassword)
+            : $newPassword;
+
+        $user->update([
+            'password' => $hashed,
+        ]);
+
+        $byText = $adminUsername ? "Administrator '@{$adminUsername}'" : 'Administrator';
+
+        $this->logAdminActivity('Change User Password', [
+            'action' => 'admin_change_user_password',
+            'user_id' => $user->id,
+            'username' => $user->username,
+            'admin_id' => $adminId,
+            'admin_username' => $adminUsername,
+            'message' => "{$byText} changed login password for staff user '{$user->username}' (ID: #{$user->id}).",
+        ], $adminId);
+
+        return $user->fresh('status');
     }
 
     /**

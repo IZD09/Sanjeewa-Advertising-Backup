@@ -34,6 +34,18 @@ return [
 
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Session Inactivity Timeout (Minutes)
+    |--------------------------------------------------------------------------
+    |
+    | Number of minutes of idle inactivity before user/admin session is
+    | automatically deactivated, logged out, and redirected to login.
+    |
+    */
+
+    'inactivity_timeout' => (int) env('SESSION_INACTIVITY_TIMEOUT', 10),
+
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
     /*

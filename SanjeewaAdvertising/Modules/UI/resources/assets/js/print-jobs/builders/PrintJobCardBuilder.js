@@ -40,20 +40,33 @@ export class PrintJobCardBuilder {
         const themeClass = this.getStageThemeClass(stageKey || job.stage_key);
         
         const activeStage = stageKey || job.stage_key;
+        const isPrintingStage = (activeStage === 'printing' || parseInt(job.status_id, 10) === 4);
         const matCount = (job.materials || []).length || (job.materials_count || 0);
 
         let materialHtml = '';
         if (matCount > 0) {
-            materialHtml = `
-                <div class="pj-card-materials has-material btn-action-allocate" data-job-id="${job.id}" style="cursor: pointer;" title="Allocated Materials (${matCount} items) - Click to view/add more">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                    <span class="pj-material-name">${this.escapeHtml(job.materials?.[0]?.name || 'Material')} ${matCount > 1 ? `(+${matCount - 1} more)` : ''}</span>
-                    <span style="margin-left: auto; font-size: 10px; background: rgba(2, 132, 199, 0.15); color: #0284c7; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
-                        <i class="fa-solid fa-plus"></i> Add
-                    </span>
-                </div>
-            `;
-        } else if (activeStage === 'printing') {
+            if (isPrintingStage) {
+                materialHtml = `
+                    <div class="pj-card-materials has-material btn-action-allocate" data-job-id="${job.id}" style="cursor: pointer;" title="Allocated Materials (${matCount} items) - Click to view/add more">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span class="pj-material-name">${this.escapeHtml(job.materials?.[0]?.name || 'Material')} ${matCount > 1 ? `(+${matCount - 1} more)` : ''}</span>
+                        <span style="margin-left: auto; font-size: 10px; background: rgba(2, 132, 199, 0.15); color: #0284c7; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </span>
+                    </div>
+                `;
+            } else {
+                materialHtml = `
+                    <div class="pj-card-materials has-material" title="Allocated Materials (${matCount} items)">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span class="pj-material-name">${this.escapeHtml(job.materials?.[0]?.name || 'Material')} ${matCount > 1 ? `(+${matCount - 1} more)` : ''}</span>
+                        <span style="margin-left: auto; font-size: 10px; color: var(--text-muted); font-weight: 600;">
+                            ${matCount} item${matCount > 1 ? 's' : ''}
+                        </span>
+                    </div>
+                `;
+            }
+        } else if (isPrintingStage) {
             materialHtml = `
                 <div class="pj-card-materials no-material btn-action-allocate" data-job-id="${job.id}" style="cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px dashed #ef4444; color: #dc2626;" title="Click to select materials for this print">
                     <i class="fa-solid fa-boxes-stacked" style="color: #dc2626;"></i>
@@ -105,10 +118,12 @@ export class PrintJobCardBuilder {
                         <button type="button" class="pj-btn-icon-sm btn-action-details" data-job-id="${job.id}" title="View Details & History">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button type="button" class="pj-btn-pill-allocate btn-action-allocate" data-job-id="${job.id}" title="Select / Add Materials" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.3); color: #0284c7; cursor: pointer;">
-                            <i class="fa-solid fa-boxes-stacked"></i>
-                            <span>${matCount > 0 ? `${matCount} Mats` : 'Materials'}</span>
-                        </button>
+                        ${isPrintingStage ? `
+                            <button type="button" class="pj-btn-pill-allocate btn-action-allocate" data-job-id="${job.id}" title="Select / Add Materials" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.3); color: #0284c7; cursor: pointer;">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                                <span>${matCount > 0 ? `${matCount} Mats` : 'Materials'}</span>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
 

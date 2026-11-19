@@ -289,9 +289,18 @@ export class PrintJobsManager {
 
     handleAllocateStock(jobId) {
         const job = this.allJobs.find(j => j.id === jobId);
-        if (job) {
-            this.modalHandler.openAllocateMaterial(job);
+        if (!job) return;
+
+        const stage = job.stage_key || '';
+        const statusId = parseInt(job.status_id, 10);
+        const isPrintingStage = (stage === 'printing' || statusId === 4);
+
+        if (!isPrintingStage) {
+            this.showToast('Materials can only be added or modified during Printing on Machine stage.', 'info');
+            return;
         }
+
+        this.modalHandler.openAllocateMaterial(job);
     }
 
     async handleQuickStatusChange(jobId, targetStatusName) {
@@ -369,9 +378,11 @@ export class PrintJobsManager {
     }
 }
 
-// Global initialization
+// Global initialization (prevents duplicate initialization)
 const bootPrintJobs = () => {
-    if (document.getElementById('module-print-jobs')) {
+    const container = document.getElementById('module-print-jobs');
+    if (container && container.dataset.printJobsBooted !== '1') {
+        container.dataset.printJobsBooted = '1';
         window.printJobsManager = new PrintJobsManager();
     }
 };
@@ -380,6 +391,9 @@ if (typeof window !== 'undefined') {
     window.PrintJobsManager = PrintJobsManager;
 }
 
-bootPrintJobs();
-document.addEventListener('DOMContentLoaded', bootPrintJobs);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootPrintJobs, { once: true });
+} else {
+    bootPrintJobs();
+}
 document.addEventListener('turbo:load', bootPrintJobs);

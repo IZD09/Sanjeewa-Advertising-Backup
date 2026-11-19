@@ -399,10 +399,9 @@ if (typeof window !== "undefined") {
   window.PaymentsManager = PaymentsManager;
 
   const bootPayments = () => {
-    if (document.getElementById("module-payments")) {
-      if (window.paymentsManager && window.paymentsManager.__initialized) {
-        return;
-      }
+    const container = document.getElementById("module-payments");
+    if (container && container.dataset.paymentsBooted !== "1") {
+      container.dataset.paymentsBooted = "1";
       window.paymentsManager = new PaymentsManager();
       window.paymentsManager.__initialized = true;
       window.paymentsApp = window.paymentsManager;
@@ -415,10 +414,5 @@ if (typeof window !== "undefined") {
     bootPayments();
   }
 
-  document.addEventListener("turbo:load", () => {
-    if (window.paymentsManager) {
-      window.paymentsManager.__initialized = false;
-    }
-    bootPayments();
-  });
+  document.addEventListener("turbo:load", bootPayments);
 }

@@ -4,6 +4,8 @@ namespace Modules\User\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
+use Modules\Core\Models\ActivityType;
+use Modules\Core\Services\ActivityService;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
 use Modules\User\Models\UserStatus;
@@ -60,6 +62,14 @@ class AuthService
             return null;
         }
 
+        // If user has no module permissions assigned, do not open a session
+        if (! $user->hasAnyModulePermission()) {
+            return [
+                'user' => $user,
+                'requires_permissions' => true,
+            ];
+        }
+
         // Record user login session in user_login table
         $userLogin = UserLogin::create([
             'user_id' => $user->id,
@@ -69,6 +79,25 @@ class AuthService
 
         // Update is_login flag
         $user->update(['is_login' => 1]);
+
+        try {
+            $loginType = ActivityType::firstOrCreate(['activity_type' => 'Login']);
+            app(ActivityService::class)->logActivity([
+                'activity_time' => now(),
+                'user_or_admin' => 1,
+                'activity_types_id' => $loginType->id,
+                'users_id' => $user->id,
+                'activity' => [
+                    'action' => 'user_login',
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'login_id' => $userLogin->id,
+                    'message' => "Staff user '{$user->username}' logged in successfully.",
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return [
             'user' => $user,
@@ -86,7 +115,8 @@ class AuthService
             return false;
         }
 
-        $userId = $user->getAuthIdentifier();
+        $userId = (int) $user->getAuthIdentifier();
+        $username = $user instanceof User ? $user->username : (User::find($userId)?->username ?? "user_{$userId}");
 
         if ($user instanceof User) {
             $user->update(['is_login' => 0]);
@@ -101,6 +131,24 @@ class AuthService
             ->latest('id')
             ->first()
             ?->update(['logout' => now()]);
+
+        try {
+            $logoutType = ActivityType::firstOrCreate(['activity_type' => 'Logout']);
+            app(ActivityService::class)->logActivity([
+                'activity_time' => now(),
+                'user_or_admin' => 1,
+                'activity_types_id' => $logoutType->id,
+                'users_id' => $userId,
+                'activity' => [
+                    'action' => 'user_logout',
+                    'user_id' => $userId,
+                    'username' => $username,
+                    'message' => "Staff user '{$username}' logged out.",
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return true;
     }

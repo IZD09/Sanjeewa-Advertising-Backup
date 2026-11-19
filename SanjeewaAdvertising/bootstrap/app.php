@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
+use Modules\Core\Http\Middleware\CheckSessionInactivity;
 use Modules\User\Http\Middleware\CheckModulePermission;
 use Modules\User\Models\User;
 
@@ -43,10 +44,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'module.permission' => CheckModulePermission::class,
         ]);
 
+        $middleware->web(append: [
+            CheckSessionInactivity::class,
+        ]);
+
         $middleware->api(prepend: [
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
             StartSession::class,
+        ], append: [
+            CheckSessionInactivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

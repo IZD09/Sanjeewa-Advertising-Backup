@@ -16,6 +16,8 @@ Route::middleware(['auth:web,admin'])->group(function () {
         Route::get('users/all', [AdminUserController::class, 'all'])->name('admin.users.all');
         Route::get('users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::post('users', [AdminUserController::class, 'store'])->name('admin.users.store');
+        Route::get('users/{id}/profile', [AdminUserController::class, 'profile'])->name('admin.users.profile');
+        Route::put('users/{id}/password', [AdminUserController::class, 'updatePassword'])->name('admin.users.password.update');
         Route::patch('users/{id}/status', [AdminUserController::class, 'updateStatus'])->name('admin.users.status');
         Route::put('users/{id}/permissions/sync', [AdminUserController::class, 'syncPermissions'])->name('admin.users.permissions.sync');
 

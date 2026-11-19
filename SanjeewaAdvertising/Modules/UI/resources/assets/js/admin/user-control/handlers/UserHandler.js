@@ -12,6 +12,7 @@ export class UserHandler {
   constructor(options = {}) {
     this.dataLoader = options.dataLoader;
     this.onSelectUserForPerms = options.onSelectUserForPerms || (() => {});
+    this.onViewUserProfile = options.onViewUserProfile || (() => {});
     this.onDataChanged = options.onDataChanged || (() => {});
 
     this.tableBody = document.getElementById("usersTableBody");
@@ -31,6 +32,14 @@ export class UserHandler {
 
     if (this.tableBody) {
       this.tableBody.addEventListener("click", (e) => {
+        // View user profile modal
+        const profileBtn = e.target.closest(".btn-view-user-profile");
+        if (profileBtn) {
+          const userId = profileBtn.getAttribute("data-id");
+          this.onViewUserProfile(userId);
+          return;
+        }
+
         // Toggle user status
         const toggleBtn = e.target.closest(".btn-toggle-user-status");
         if (toggleBtn) {

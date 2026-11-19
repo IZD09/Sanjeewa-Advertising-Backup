@@ -16,7 +16,11 @@ export class SubcategoryEntity {
     this.id = data.id ?? "";
     this.rowNumber = data.rowNumber ?? data.index ?? null;
     this.subcategory = data.subcategory || data.name || "—";
-    this.categoriesId = data.categories_id ?? data.categoryId ?? null;
+    this.categoriesId =
+      data.categories_id ??
+      data.categoryId ??
+      (data.category && data.category.id) ??
+      null;
     this.categoryName =
       data.categoryName ||
       (data.category && data.category.category) ||
@@ -29,7 +33,27 @@ export class SubcategoryEntity {
   }
 
   /**
-   * Render table row element (<tr>) for the subcategories table.
+   * Deterministically calculate category color index (1 - 9) for row styling.
+   * @returns {number}
+   */
+  getCategoryColorIndex() {
+    const catId = parseInt(this.categoriesId, 10);
+    if (!isNaN(catId) && catId > 0) {
+      return ((catId - 1) % 9) + 1;
+    }
+
+    // Deterministic hash based on category name if category ID is not available
+    let hash = 0;
+    const name = String(this.categoryName || "General");
+    for (let i = 0; i < name.length; i++) {
+      hash = (hash << 5) - hash + name.charCodeAt(i);
+      hash |= 0;
+    }
+    return (Math.abs(hash) % 9) + 1;
+  }
+
+  /**
+   * Render table row element (<tr>) for the subcategories table with category-based styling.
    * @returns {HTMLTableRowElement}
    */
   render() {
@@ -38,6 +62,9 @@ export class SubcategoryEntity {
     tr.dataset.subcategoryId = String(this.id);
     tr.dataset.categoryId = String(this.categoriesId || "");
 
+    const colorIndex = this.getCategoryColorIndex();
+    tr.className = `po-row row-cat-${colorIndex}`;
+
     const displayIndex = this.rowNumber !== null ? this.rowNumber : (this.id ? `#${this.id}` : "-");
 
     tr.innerHTML = `
@@ -45,23 +72,24 @@ export class SubcategoryEntity {
         ${displayIndex}
       </td>
       <td>
-        <div style="font-weight: 600; font-size: 13px; color: var(--text);">
-          ${this.subcategory}
+        <div style="font-weight: 600; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px;">
+          <span class="subcat-dot subcat-dot-${colorIndex}"></span>
+          <span>${this.subcategory}</span>
         </div>
       </td>
       <td>
-        <span class="inv-cat-pill" style="font-size: 11.5px; padding: 3px 8px;">
-          <i class="fa-solid fa-folder" style="color: #1677ff;"></i> ${this.categoryName}
+        <span class="inv-cat-pill inv-cat-pill-${colorIndex}" style="font-size: 11.5px; padding: 3px 10px; border-radius: 12px;">
+          <i class="fa-solid fa-folder"></i> ${this.categoryName}
         </span>
       </td>
       <td class="text-center">
-        <span class="ant-tag ant-tag-blue" style="font-weight: 600;">
+        <span class="ant-tag ant-tag-blue" style="font-weight: 600; border-radius: 12px; padding: 2px 10px;">
           ${this.stockItemsCount} SKUs
         </span>
       </td>
       <td class="text-center">
-        <button type="button" class="ant-btn ant-btn-default ant-btn-sm btn-filter-stock" title="View Stock for this category" style="font-size: 11px;">
-          <i class="fa-solid fa-boxes-stacked"></i> View Stock
+        <button type="button" class="ant-btn ant-btn-default ant-btn-sm btn-filter-stock" title="View Stock for this category" style="font-size: 11px; border-radius: 6px; font-weight: 500;">
+          <i class="fa-solid fa-boxes-stacked" style="margin-right: 4px;"></i> View Stock
         </button>
       </td>
     `;

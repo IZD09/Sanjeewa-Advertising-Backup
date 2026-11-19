@@ -166,7 +166,7 @@ export class AdminVerifyModal {
         this.onVerified(verifiedAdmin);
 
         if (typeof actionCb === "function") {
-          actionCb(verifiedAdmin);
+          actionCb(verifiedAdmin, { username, password });
         }
       } else {
         this.showError(response?.message || "Invalid administrator credentials.");

@@ -489,6 +489,192 @@
     border-right: 5px solid #dc2626 !important;
 }
 
+/* ==========================================================================
+   Category-Based Dynamic Row Color Coding for Subcategories Table
+   ========================================================================== */
+
+/* Category 1: Banner Media - Vibrant Royal Blue */
+.po-table tr.row-cat-1 > td {
+    background-color: rgba(37, 99, 235, 0.07) !important;
+    border-top-color: rgba(37, 99, 235, 0.20) !important;
+    border-bottom-color: rgba(37, 99, 235, 0.20) !important;
+    border-right-color: rgba(37, 99, 235, 0.18) !important;
+}
+.po-table tr.row-cat-1:hover > td {
+    background-color: rgba(37, 99, 235, 0.12) !important;
+}
+.po-table tr.row-cat-1 > td:first-child {
+    border-left: 5px solid #2563eb !important;
+}
+.po-table tr.row-cat-1 > td:last-child {
+    border-right: 5px solid #2563eb !important;
+}
+
+/* Category 2: Stickers & Vinyls - Purple / Violet */
+.po-table tr.row-cat-2 > td {
+    background-color: rgba(147, 51, 234, 0.07) !important;
+    border-top-color: rgba(147, 51, 234, 0.20) !important;
+    border-bottom-color: rgba(147, 51, 234, 0.20) !important;
+    border-right-color: rgba(147, 51, 234, 0.18) !important;
+}
+.po-table tr.row-cat-2:hover > td {
+    background-color: rgba(147, 51, 234, 0.12) !important;
+}
+.po-table tr.row-cat-2 > td:first-child {
+    border-left: 5px solid #9333ea !important;
+}
+.po-table tr.row-cat-2 > td:last-child {
+    border-right: 5px solid #9333ea !important;
+}
+
+/* Category 3: Inks & Solvents - Amber / Orange */
+.po-table tr.row-cat-3 > td {
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-top-color: rgba(245, 158, 11, 0.22) !important;
+    border-bottom-color: rgba(245, 158, 11, 0.22) !important;
+    border-right-color: rgba(245, 158, 11, 0.20) !important;
+}
+.po-table tr.row-cat-3:hover > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+.po-table tr.row-cat-3 > td:first-child {
+    border-left: 5px solid #f59e0b !important;
+}
+.po-table tr.row-cat-3 > td:last-child {
+    border-right: 5px solid #f59e0b !important;
+}
+
+/* Category 4: Rigid Boards & Sheets - Emerald Green */
+.po-table tr.row-cat-4 > td {
+    background-color: rgba(16, 185, 129, 0.07) !important;
+    border-top-color: rgba(16, 185, 129, 0.20) !important;
+    border-bottom-color: rgba(16, 185, 129, 0.20) !important;
+    border-right-color: rgba(16, 185, 129, 0.18) !important;
+}
+.po-table tr.row-cat-4:hover > td {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+}
+.po-table tr.row-cat-4 > td:first-child {
+    border-left: 5px solid #10b981 !important;
+}
+.po-table tr.row-cat-4 > td:last-child {
+    border-right: 5px solid #10b981 !important;
+}
+
+/* Category 5: Display Hardware - Rose / Crimson */
+.po-table tr.row-cat-5 > td {
+    background-color: rgba(225, 29, 72, 0.07) !important;
+    border-top-color: rgba(225, 29, 72, 0.20) !important;
+    border-bottom-color: rgba(225, 29, 72, 0.20) !important;
+    border-right-color: rgba(225, 29, 72, 0.18) !important;
+}
+.po-table tr.row-cat-5:hover > td {
+    background-color: rgba(225, 29, 72, 0.12) !important;
+}
+.po-table tr.row-cat-5 > td:first-child {
+    border-left: 5px solid #e11d48 !important;
+}
+.po-table tr.row-cat-5 > td:last-child {
+    border-right: 5px solid #e11d48 !important;
+}
+
+/* Category 6: Lamination Films - Teal / Cyan */
+.po-table tr.row-cat-6 > td {
+    background-color: rgba(13, 148, 136, 0.07) !important;
+    border-top-color: rgba(13, 148, 136, 0.20) !important;
+    border-bottom-color: rgba(13, 148, 136, 0.20) !important;
+    border-right-color: rgba(13, 148, 136, 0.18) !important;
+}
+.po-table tr.row-cat-6:hover > td {
+    background-color: rgba(13, 148, 136, 0.12) !important;
+}
+.po-table tr.row-cat-6 > td:first-child {
+    border-left: 5px solid #0d9488 !important;
+}
+.po-table tr.row-cat-6 > td:last-child {
+    border-right: 5px solid #0d9488 !important;
+}
+
+/* Category 7: Packaging & Finishing - Indigo */
+.po-table tr.row-cat-7 > td {
+    background-color: rgba(99, 102, 241, 0.07) !important;
+    border-top-color: rgba(99, 102, 241, 0.20) !important;
+    border-bottom-color: rgba(99, 102, 241, 0.20) !important;
+    border-right-color: rgba(99, 102, 241, 0.18) !important;
+}
+.po-table tr.row-cat-7:hover > td {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+.po-table tr.row-cat-7 > td:first-child {
+    border-left: 5px solid #6366f1 !important;
+}
+.po-table tr.row-cat-7 > td:last-child {
+    border-right: 5px solid #6366f1 !important;
+}
+
+/* Category 8: Paper - Warm Golden Brown */
+.po-table tr.row-cat-8 > td {
+    background-color: rgba(217, 119, 6, 0.07) !important;
+    border-top-color: rgba(217, 119, 6, 0.20) !important;
+    border-bottom-color: rgba(217, 119, 6, 0.20) !important;
+    border-right-color: rgba(217, 119, 6, 0.18) !important;
+}
+.po-table tr.row-cat-8:hover > td {
+    background-color: rgba(217, 119, 6, 0.12) !important;
+}
+.po-table tr.row-cat-8 > td:first-child {
+    border-left: 5px solid #d97706 !important;
+}
+.po-table tr.row-cat-8 > td:last-child {
+    border-right: 5px solid #d97706 !important;
+}
+
+/* Category 9: Ink - Sky Blue */
+.po-table tr.row-cat-9 > td {
+    background-color: rgba(2, 132, 199, 0.07) !important;
+    border-top-color: rgba(2, 132, 199, 0.20) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.20) !important;
+    border-right-color: rgba(2, 132, 199, 0.18) !important;
+}
+.po-table tr.row-cat-9:hover > td {
+    background-color: rgba(2, 132, 199, 0.12) !important;
+}
+.po-table tr.row-cat-9 > td:first-child {
+    border-left: 5px solid #0284c7 !important;
+}
+.po-table tr.row-cat-9 > td:last-child {
+    border-right: 5px solid #0284c7 !important;
+}
+
+/* Category Dot Indicator */
+.subcat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.subcat-dot-1 { background-color: #2563eb; }
+.subcat-dot-2 { background-color: #9333ea; }
+.subcat-dot-3 { background-color: #f59e0b; }
+.subcat-dot-4 { background-color: #10b981; }
+.subcat-dot-5 { background-color: #e11d48; }
+.subcat-dot-6 { background-color: #0d9488; }
+.subcat-dot-7 { background-color: #6366f1; }
+.subcat-dot-8 { background-color: #d97706; }
+.subcat-dot-9 { background-color: #0284c7; }
+
+/* Category Pills per Category */
+.inv-cat-pill-1 i { color: #2563eb !important; }
+.inv-cat-pill-2 i { color: #9333ea !important; }
+.inv-cat-pill-3 i { color: #f59e0b !important; }
+.inv-cat-pill-4 i { color: #10b981 !important; }
+.inv-cat-pill-5 i { color: #e11d48 !important; }
+.inv-cat-pill-6 i { color: #0d9488 !important; }
+.inv-cat-pill-7 i { color: #6366f1 !important; }
+.inv-cat-pill-8 i { color: #d97706 !important; }
+.inv-cat-pill-9 i { color: #0284c7 !important; }
+
 /* Ant Design Table Styles (Legacy for other tabs) */
 .inv-table-responsive {
     width: 100%;
@@ -1057,16 +1243,51 @@ html[data-theme="dark"] .ant-tag-red {
     color: #d46b08;
 }
 
-/* Pagination buttons styling */
-.po-pagination-btn {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
+/* ==========================================================================
+   Place Order Style Pagination Bar & Controls
+   ========================================================================== */
+.po-pagination,
+.po-pagination-bar {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
     background: var(--surface);
-    color: var(--text);
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+    border-radius: 0 0 8px 8px;
+}
+
+.po-pagination-info {
     font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.pagination-controls,
+.po-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Pagination buttons styling (compatible with BasePaginationHandler .page-btn & .po-pagination-btn) */
+.page-btn,
+.po-pagination-btn,
+.po-pagination-controls .page-btn,
+.pagination-controls .page-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 12px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -1075,22 +1296,40 @@ html[data-theme="dark"] .ant-tag-red {
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.po-pagination-btn:hover:not(:disabled) {
+.page-btn:hover:not(:disabled),
+.po-pagination-btn:hover:not(:disabled),
+.po-pagination-controls .page-btn:hover:not(:disabled),
+.pagination-controls .page-btn:hover:not(:disabled) {
     border-color: #1677ff;
     color: #1677ff;
+    background: var(--surface);
 }
 
-.po-pagination-btn.active {
-    background: #1677ff;
-    border-color: #1677ff;
-    color: #ffffff;
+.page-btn.active,
+.po-pagination-btn.active,
+.po-pagination-controls .page-btn.active,
+.pagination-controls .page-btn.active {
+    background: #1677ff !important;
+    border-color: #1677ff !important;
+    color: #ffffff !important;
     box-shadow: 0 2px 4px rgba(22, 119, 255, 0.25);
 }
 
-.po-pagination-btn:disabled {
+.page-btn:disabled,
+.po-pagination-btn:disabled,
+.po-pagination-controls .page-btn:disabled,
+.pagination-controls .page-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     background: var(--surface-2);
+}
+
+.page-ellipsis {
+    padding: 0 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* ==========================================================================
@@ -1401,6 +1640,79 @@ html[data-theme="dark"] .po-table tr.row-status-outofstock > td {
     border-right-color: rgba(220, 38, 38, 0.35) !important;
 }
 
+/* Category Dark Mode Row Highlighting */
+html[data-theme="dark"] .po-table tr.row-cat-1 > td {
+    background-color: rgba(37, 99, 235, 0.14) !important;
+    border-right-color: rgba(37, 99, 235, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-1:hover > td {
+    background-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-2 > td {
+    background-color: rgba(147, 51, 234, 0.14) !important;
+    border-right-color: rgba(147, 51, 234, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-2:hover > td {
+    background-color: rgba(147, 51, 234, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-3 > td {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-right-color: rgba(245, 158, 11, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-3:hover > td {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-4 > td {
+    background-color: rgba(16, 185, 129, 0.14) !important;
+    border-right-color: rgba(16, 185, 129, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-4:hover > td {
+    background-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-5 > td {
+    background-color: rgba(225, 29, 72, 0.14) !important;
+    border-right-color: rgba(225, 29, 72, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-5:hover > td {
+    background-color: rgba(225, 29, 72, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-6 > td {
+    background-color: rgba(13, 148, 136, 0.14) !important;
+    border-right-color: rgba(13, 148, 136, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-6:hover > td {
+    background-color: rgba(13, 148, 136, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-7 > td {
+    background-color: rgba(99, 102, 241, 0.14) !important;
+    border-right-color: rgba(99, 102, 241, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-7:hover > td {
+    background-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-8 > td {
+    background-color: rgba(217, 119, 6, 0.14) !important;
+    border-right-color: rgba(217, 119, 6, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-8:hover > td {
+    background-color: rgba(217, 119, 6, 0.22) !important;
+}
+
+html[data-theme="dark"] .po-table tr.row-cat-9 > td {
+    background-color: rgba(2, 132, 199, 0.14) !important;
+    border-right-color: rgba(2, 132, 199, 0.35) !important;
+}
+html[data-theme="dark"] .po-table tr.row-cat-9:hover > td {
+    background-color: rgba(2, 132, 199, 0.22) !important;
+}
+
 html[data-theme="dark"] .cat-list-item.active {
     background: rgba(56, 189, 248, 0.14);
     border-color: #38bdf8;
@@ -1409,6 +1721,33 @@ html[data-theme="dark"] .cat-list-item.active {
 
 html[data-theme="dark"] .cat-list-item.active .cat-list-name {
     color: #7dd3fc;
+}
+
+html[data-theme="dark"] .page-btn,
+html[data-theme="dark"] .po-pagination-btn {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .page-btn:hover:not(:disabled),
+html[data-theme="dark"] .po-pagination-btn:hover:not(:disabled) {
+    border-color: #1677ff;
+    color: #1677ff;
+    background: rgba(22, 119, 255, 0.12);
+}
+
+html[data-theme="dark"] .page-btn.active,
+html[data-theme="dark"] .po-pagination-btn.active {
+    background: #1677ff !important;
+    border-color: #1677ff !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .page-btn:disabled,
+html[data-theme="dark"] .po-pagination-btn:disabled {
+    background: var(--surface);
+    opacity: 0.35;
 }
 
 

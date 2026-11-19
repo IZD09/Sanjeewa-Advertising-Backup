@@ -19,11 +19,19 @@ export class UserRowBuilder {
       ? String(user.register_at).replace("T", " ").split(" ")[0]
       : "N/A";
 
+    const isOnline = Boolean(user.is_login);
+    const onlineDot = isOnline
+      ? '<span class="uc-online-dot" title="Currently Logged In"></span>'
+      : "";
+
     return `
       <tr data-user-id="${user.id}">
         <td>
-          <div class="uc-user-cell">
-            <div class="uc-user-avatar">${initials.toUpperCase() || "U"}</div>
+          <div class="uc-user-cell btn-view-user-profile" data-id="${user.id}" style="cursor: pointer;" title="Click to view user profile, login history & activities">
+            <div class="uc-user-avatar" style="position: relative;">
+              ${initials.toUpperCase() || "U"}
+              ${onlineDot}
+            </div>
             <div class="uc-user-meta">
               <strong>${user.first_name} ${user.last_name}</strong>
               <span>@${user.username}</span>
@@ -39,6 +47,9 @@ export class UserRowBuilder {
         </td>
         <td>
           <div class="uc-table-actions">
+            <button type="button" class="ant-btn ant-btn-sm btn-view-user-profile" data-id="${user.id}" title="View User Profile, Logins & Activities">
+              <i class="fa-solid fa-id-card" style="color: #722ed1;"></i> Profile
+            </button>
             <button type="button" class="ant-btn ant-btn-sm btn-set-perm" data-id="${user.id}" title="Set Permissions">
               <i class="fa-solid fa-key" style="color: #1677ff;"></i> Perms
             </button>

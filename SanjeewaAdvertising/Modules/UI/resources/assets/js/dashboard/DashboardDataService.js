@@ -142,7 +142,7 @@ export class DashboardDataService {
     this.stopPolling();
     this.pollInterval = setInterval(async () => {
       if (!document.hidden && this.apiUrl) {
-        await this.fetchData(this.apiUrl);
+        await this.fetchData(this.apiUrl, { headers: { "X-Background-Poll": "1" } });
       }
     }, interval);
   }
@@ -207,10 +207,10 @@ export class DashboardDataService {
    * Fetch data from HTTP backend endpoint.
    * @param {string} url
    */
-  async fetchData(url) {
+  async fetchData(url, options = {}) {
     try {
       const http = new RequestHandler();
-      const json = await http.get(url);
+      const json = await http.get(url, {}, { headers: options.headers || {} });
       if (json) {
         this.emitData(json);
       }

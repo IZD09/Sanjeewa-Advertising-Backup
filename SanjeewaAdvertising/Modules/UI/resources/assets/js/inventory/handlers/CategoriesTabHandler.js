@@ -176,7 +176,7 @@ export class CategoriesTabHandler extends BaseTableLoader {
     if (subcatTbody && subcatTbody.children.length === 0) {
       subcatTbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+          <td colspan="5" style="text-align: center; padding: 32px 16px; color: var(--text-muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
             <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
             Loading subcategories from database...
           </td>
@@ -427,7 +427,7 @@ export class CategoriesTabHandler extends BaseTableLoader {
     if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+          <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--text-muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
             <i class="fa-solid fa-tags" style="font-size: 28px; opacity: 0.35; margin-bottom: 8px; display: block;"></i>
             No subcategories found matching criteria.
           </td>

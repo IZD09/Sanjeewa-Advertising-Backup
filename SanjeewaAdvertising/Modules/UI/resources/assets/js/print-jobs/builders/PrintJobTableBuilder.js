@@ -71,9 +71,11 @@ export class PrintJobTableBuilder {
                                 <button type="button" class="row-action-item btn-action-details" data-job-id="${job.id}">
                                     <i class="fa-solid fa-eye"></i><span>Details &amp; Timeline</span>
                                 </button>
-                                <button type="button" class="row-action-item btn-action-allocate" data-job-id="${job.id}">
-                                    <i class="fa-solid fa-boxes-stacked"></i><span>Allocate Stock</span>
-                                </button>
+                                ${(job.stage_key === 'printing' || parseInt(job.status_id, 10) === 4) ? `
+                                    <button type="button" class="row-action-item btn-action-allocate" data-job-id="${job.id}">
+                                        <i class="fa-solid fa-boxes-stacked"></i><span>Allocate Stock</span>
+                                    </button>
+                                ` : ''}
                                 <button type="button" class="row-action-item btn-action-status" data-job-id="${job.id}">
                                     <i class="fa-solid fa-arrow-right"></i><span>Update Status</span>
                                 </button>

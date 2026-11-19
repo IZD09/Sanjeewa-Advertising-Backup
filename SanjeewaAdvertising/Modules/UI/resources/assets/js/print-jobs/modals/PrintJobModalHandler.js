@@ -62,6 +62,17 @@ export class PrintJobModalHandler {
     }
 
     openAllocateMaterial(job, options = {}) {
+        if (!job) return;
+
+        const stage = job.stage_key || '';
+        const statusId = parseInt(job.status_id, 10);
+        const isPrintingStage = (stage === 'printing' || statusId === 4);
+
+        if (!isPrintingStage) {
+            this.showToast('Materials can only be added or modified during Printing on Machine stage.', 'info');
+            return;
+        }
+
         this.materialModal.open(job, options);
     }
 

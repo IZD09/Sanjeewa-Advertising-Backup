@@ -34,6 +34,31 @@
       <i class="fa-solid fa-moon"></i>
     </button>
 
+    {{-- In-App Notifications Dropdown --}}
+    <div class="notification-dropdown-wrapper" id="notificationDropdownWrapper">
+      <button class="icon-button notification-bell-btn" id="topbarNotificationToggle" type="button" aria-expanded="false" aria-haspopup="true" title="Notifications" aria-label="Notifications">
+        <i class="fa-solid fa-bell"></i>
+        <span class="notification-badge" id="topbarNotificationBadge" style="display: none;">0</span>
+      </button>
+      <div class="notification-dropdown-menu" id="topbarNotificationMenu" aria-hidden="true">
+        <div class="notification-dropdown-header">
+          <div class="notif-header-title">
+            <strong>Notifications</strong>
+            <span class="notif-count-badge" id="topbarNotificationCountBadge">0 unread</span>
+          </div>
+          <button type="button" class="notif-mark-all-btn" id="btnTopBarMarkAllRead" title="Mark all notifications as read">
+            Mark all read
+          </button>
+        </div>
+        <div class="notification-dropdown-body" id="topbarNotificationList">
+          <div class="notif-empty-state">
+            <i class="fa-regular fa-bell-slash"></i>
+            <p>No new notifications</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     {{-- User Profile Dropdown --}}
     <div class="profile-dropdown-wrapper" id="profileDropdownWrapper">
       <button class="profile-button" id="profileDropdownToggle" type="button" aria-expanded="false" aria-haspopup="true" title="User Profile">

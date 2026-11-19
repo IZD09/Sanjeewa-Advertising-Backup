@@ -9,7 +9,7 @@
 import { RequestHandler } from "../../../core/RequestHandler.js";
 import { UserControlDataLoader } from "../UserControlDataLoader.js";
 import { UserHandler, AdminHandler, PermissionHandler } from "../handlers/index.js";
-import { AddUserModal, AddAdminModal, AdminVerifyModal } from "../modals/index.js";
+import { AddUserModal, AddAdminModal, AdminVerifyModal, ViewUserProfileModal } from "../modals/index.js";
 import { AddUserProcess } from "./AddUserProcess.js";
 import { FilterProcess } from "./FilterProcess.js";
 import { MetricsProcess } from "./MetricsProcess.js";
@@ -36,6 +36,10 @@ export class UserControlManager {
       dataLoader: this.dataLoader
     });
 
+    this.liveUpdateTimer = null;
+    this.isUpdatingUsers = false;
+    this.liveUpdateInterval = 5000;
+
     this.permissionHandler = new PermissionHandler({
       dataLoader: this.dataLoader,
       onSavePermissions: (userId, permMap) => this.saveUserPermissions(userId, permMap),
@@ -53,8 +57,26 @@ export class UserControlManager {
 
     this.hasVerifiedPermissions = false;
 
+    this.viewUserProfileModal = new ViewUserProfileModal({
+      adminVerifyModal: this.adminVerifyModal,
+      onShowToast: (msg, type) => this.showToast(msg, type),
+      onManagePermissions: (userId) => {
+        this.adminVerifyModal.requestPermission({
+          description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your username and password.`,
+          onSuccess: () => {
+            this.hasVerifiedPermissions = true;
+            this.filterProcess.switchTab("panePermissions", true);
+            this.permissionHandler.loadUserPermissions(userId);
+          }
+        });
+      }
+    });
+
     this.userHandler = new UserHandler({
       dataLoader: this.dataLoader,
+      onViewUserProfile: (userId) => {
+        this.viewUserProfileModal.open(userId);
+      },
       onSelectUserForPerms: (userId) => {
         this.adminVerifyModal.requestPermission({
           description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your username and password.`,
@@ -170,6 +192,96 @@ export class UserControlManager {
     this.adminHandler.render();
     this.permissionHandler.populateUserSelect();
     this.metricsProcess.update();
+    this.bindLiveUpdate();
+    this.startLiveAutoUpdate(5000);
+  }
+
+  bindLiveUpdate() {
+    const btnRefresh = document.getElementById("btnRefreshUsers");
+    if (btnRefresh) {
+      btnRefresh.addEventListener("click", async () => {
+        const icon = btnRefresh.querySelector("i");
+        if (icon) icon.classList.add("fa-spin");
+        btnRefresh.disabled = true;
+
+        try {
+          await this.dataLoader.syncUsersFromBackend({ force: true });
+          this.flashLiveBadge();
+          this.showToast("Staff Users list refreshed!", "success");
+        } catch (err) {
+          this.showToast("Failed to refresh users.", "error");
+        } finally {
+          setTimeout(() => {
+            if (icon) icon.classList.remove("fa-spin");
+            btnRefresh.disabled = false;
+          }, 400);
+        }
+      });
+    }
+
+    // React to visibility changes: immediately poll when user returns to tab
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        this.pollUsersLive();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      this.stopLiveAutoUpdate();
+    });
+
+    document.addEventListener("turbo:before-cache", () => {
+      this.stopLiveAutoUpdate();
+    });
+  }
+
+  startLiveAutoUpdate(interval = 5000) {
+    this.stopLiveAutoUpdate();
+    this.liveUpdateInterval = interval;
+
+    this.liveUpdateTimer = setInterval(() => {
+      this.pollUsersLive();
+    }, this.liveUpdateInterval);
+  }
+
+  stopLiveAutoUpdate() {
+    if (this.liveUpdateTimer) {
+      clearInterval(this.liveUpdateTimer);
+      this.liveUpdateTimer = null;
+    }
+  }
+
+  async pollUsersLive() {
+    if (document.hidden) return;
+    if (this.isUpdatingUsers) return;
+
+    // Do not disrupt while user is actively typing in search
+    if (document.activeElement === this.userHandler?.searchInput && this.userHandler?.searchInput?.value) {
+      return;
+    }
+
+    // If an add user/admin modal is actively open and being filled out, skip
+    if (this.addUserModal?.modalEl?.classList.contains("active") || this.addAdminModal?.modalEl?.classList.contains("active")) {
+      return;
+    }
+
+    this.isUpdatingUsers = true;
+    try {
+      const result = await this.dataLoader.syncUsersFromBackend({ silent: true });
+      if (result?.changed) {
+        this.flashLiveBadge();
+      }
+    } finally {
+      this.isUpdatingUsers = false;
+    }
+  }
+
+  flashLiveBadge() {
+    const badge = document.getElementById("ucUsersLiveBadge");
+    if (badge) {
+      badge.classList.add("flashing");
+      setTimeout(() => badge.classList.remove("flashing"), 800);
+    }
   }
 
   /**
@@ -249,15 +361,19 @@ export class UserControlManager {
   }
 }
 
-// Auto-boot when loaded on user-control view with safe readyState handling
+// Auto-boot when loaded on user-control view with safe readyState handling (prevents duplicate initialization)
 const bootUserControl = () => {
   const container = document.getElementById("module-user-control");
-  if (container) {
+  if (container && container.dataset.ucInitialized !== "true") {
+    container.dataset.ucInitialized = "true";
     window.userControlManager = new UserControlManager();
   }
 };
 
-bootUserControl();
-document.addEventListener("DOMContentLoaded", bootUserControl);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootUserControl, { once: true });
+} else {
+  bootUserControl();
+}
 document.addEventListener("turbo:load", bootUserControl);
 
