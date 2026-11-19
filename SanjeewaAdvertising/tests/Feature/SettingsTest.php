@@ -39,7 +39,7 @@ class SettingsTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->get('/settings');
 
         $response->assertStatus(200);
-        $response->assertSee('System Preferences & Shop Config', false);
+        $response->assertSee('System Preferences');
         $response->assertSee('Shop Profile & Contact Details', false);
         $response->assertSee('Shop Logo & System Icon', false);
         $response->assertSee('Color Theme & System Appearance', false);

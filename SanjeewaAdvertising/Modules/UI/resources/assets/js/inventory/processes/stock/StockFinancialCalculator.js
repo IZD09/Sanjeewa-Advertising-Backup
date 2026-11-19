@@ -3,15 +3,18 @@
  *
  * Handles live calculation of purchase expenditure, warehouse valuation,
  * and stock quantity increment formulas for the Add Stock Modal.
+ * Supports calculations for single-item configuration as well as queued staged items.
  */
 
 export class StockFinancialCalculator {
   /**
    * @param {Object} [options={}]
    * @param {Function} [options.getCurrentStockQty] - Returns current quantity of selected existing stock
+   * @param {Function} [options.getStagedItems] - Returns array of staged queued items
    */
   constructor(options = {}) {
     this.getCurrentStockQty = options.getCurrentStockQty || (() => 0);
+    this.getStagedItems = options.getStagedItems || (() => []);
   }
 
   /**
@@ -41,12 +44,29 @@ export class StockFinancialCalculator {
    * Perform live calculations and update DOM display elements.
    */
   calculate() {
-    const qty = parseFloat(document.getElementById("addStockQty")?.value) || 0;
-    const buy = parseFloat(document.getElementById("addStockUnitCost")?.value) || 0;
-    const sell = parseFloat(document.getElementById("addStockSellingPrice")?.value) || 0;
+    const staged = typeof this.getStagedItems === "function" ? this.getStagedItems() : [];
 
-    const totalCost = qty * buy;
-    const totalValuation = qty * sell;
+    let totalCost = 0;
+    let totalValuation = 0;
+    let totalUnits = 0;
+
+    if (staged && staged.length > 0) {
+      staged.forEach((item) => {
+        const q = parseFloat(item.qty) || 0;
+        const b = parseFloat(item.unit_cost) || 0;
+        const s = parseFloat(item.selling_price) || 0;
+        totalCost += q * b;
+        totalValuation += q * s;
+        totalUnits += q;
+      });
+    } else {
+      const qty = parseFloat(document.getElementById("addStockQty")?.value) || 0;
+      const buy = parseFloat(document.getElementById("addStockUnitCost")?.value) || 0;
+      const sell = parseFloat(document.getElementById("addStockSellingPrice")?.value) || 0;
+      totalCost = qty * buy;
+      totalValuation = qty * sell;
+      totalUnits = qty;
+    }
 
     const costEl = document.getElementById("addStockTotalCost");
     const valEl = document.getElementById("addStockTotalValue");
@@ -59,8 +79,8 @@ export class StockFinancialCalculator {
     const currentQty = this.getCurrentStockQty();
     if (currentQty > 0 || (indicator && indicator.dataset.active === "true")) {
       if (indicator && calcEl) {
-        const newTotal = currentQty + qty;
-        calcEl.textContent = `${currentQty.toLocaleString()} + ${qty.toLocaleString()} = ${newTotal.toLocaleString()} Units`;
+        const newTotal = currentQty + totalUnits;
+        calcEl.textContent = `${currentQty.toLocaleString()} + ${totalUnits.toLocaleString()} = ${newTotal.toLocaleString()} Units`;
         indicator.style.display = "block";
       }
     } else if (indicator) {

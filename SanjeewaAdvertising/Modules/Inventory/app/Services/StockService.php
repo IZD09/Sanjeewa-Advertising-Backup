@@ -581,6 +581,33 @@ class StockService
     }
 
     /**
+     * Create multiple new Stock records in a single transaction.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, Stock>
+     */
+    public function createStocksBulk(array $data): array
+    {
+        return DB::transaction(function () use ($data) {
+            $createdStocks = [];
+            $grnId = (int) $data['grn_id'];
+            $addDate = ! empty($data['add_date'])
+                ? Carbon::parse($data['add_date'])
+                : now();
+
+            foreach ($data['items'] as $itemData) {
+                $itemData['grn_id'] = $grnId;
+                if (empty($itemData['add_date'])) {
+                    $itemData['add_date'] = $addDate;
+                }
+                $createdStocks[] = $this->createStock($itemData);
+            }
+
+            return $createdStocks;
+        });
+    }
+
+    /**
      * Update an existing Stock entry (receive additional quantities or update attributes) and log movement.
      *
      * @param  array<string, mixed>  $data

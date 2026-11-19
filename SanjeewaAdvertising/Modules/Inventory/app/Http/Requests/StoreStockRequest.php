@@ -22,6 +22,21 @@ class StoreStockRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->has('items') && is_array($this->input('items'))) {
+            return [
+                'grn_id' => ['required', 'integer', 'exists:grn,id'],
+                'add_date' => ['nullable', 'date'],
+                'items' => ['required', 'array', 'min:1'],
+                'items.*.stock_items_id' => ['required', 'integer', 'exists:stock_items,id'],
+                'items.*.brands_id' => ['required', 'integer', 'exists:brands,id'],
+                'items.*.qty' => ['required', 'integer', 'min:1'],
+                'items.*.buy' => ['required', 'numeric', 'min:0'],
+                'items.*.price' => ['required', 'numeric', 'min:0'],
+                'items.*.batch_id' => ['nullable', 'integer', 'exists:item_batches,id'],
+                'items.*.create_new_batch' => ['nullable', 'boolean'],
+            ];
+        }
+
         return [
             'stock_items_id' => ['required', 'integer', 'exists:stock_items,id'],
             'brands_id' => ['required', 'integer', 'exists:brands,id'],
@@ -50,6 +65,12 @@ class StoreStockRequest extends FormRequest
             'price' => 'selling price',
             'grn_id' => 'GRN reference',
             'batch_id' => 'batch number',
+            'items' => 'stock items list',
+            'items.*.stock_items_id' => 'material item',
+            'items.*.brands_id' => 'brand',
+            'items.*.qty' => 'quantity',
+            'items.*.buy' => 'purchase cost',
+            'items.*.price' => 'selling price',
         ];
     }
 }
