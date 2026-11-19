@@ -145,7 +145,7 @@ export class ViewOrderModal extends BaseModalHandler {
             unitPrice: unitPrice,
             notes: data.discription || order?.notes || "",
             orderStatus: data.current_status?.status?.print_job_states || data.current_status?.print_job_states || order?.orderStatus || order?.status || "Pending",
-            requiredDate: data.due_date ? String(data.due_date).split("T")[0] : (order?.requiredDate || "Not Specified"),
+            requiredDate: (data.delivery_date || data.deadline || data.due_date) ? String(data.delivery_date || data.deadline || data.due_date).split("T")[0] : (order?.requiredDate || "Not Specified"),
             designStatus: data.status_history?.[0]?.notes || order?.designStatus || "Ready to Print"
           };
           this.currentContextOrder = enriched;

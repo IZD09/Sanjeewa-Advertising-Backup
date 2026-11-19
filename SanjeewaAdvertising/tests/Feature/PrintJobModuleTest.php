@@ -97,6 +97,35 @@ class PrintJobModuleTest extends TestCase
         ]);
     }
 
+    public function test_can_create_print_job_with_delivery_date_and_deadline(): void
+    {
+        $targetDate = now()->addDays(3)->format('Y-m-d');
+
+        $payload = [
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'qty' => 2,
+            'delivery_date' => $targetDate,
+            'deadline' => $targetDate,
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Print job created successfully.',
+            ])
+            ->assertJsonPath('data.deadline', $targetDate);
+
+        $this->assertDatabaseHas('print_jobs', [
+            'customer_id' => $this->customer->id,
+            'qty' => 2,
+            'delivery_date' => $targetDate . ' 00:00:00',
+        ]);
+    }
+
     public function test_can_list_print_jobs_with_pagination(): void
     {
         PrintJob::create([

@@ -42,6 +42,7 @@ class StorePrintJobRequest extends FormRequest
             'payment_types_id' => ['nullable', 'integer', 'exists:payment_types,id'],
             'payment_statuses_id' => ['nullable', 'integer', 'exists:payment_statuses,id'],
             'total_amount' => ['nullable', 'numeric', 'min:0'],
+            'delivery_date' => ['nullable', 'date'],
             'deadline' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'print_cost_ids' => ['nullable', 'array'],

@@ -52,6 +52,7 @@ class PrintJob extends Model
         'hight',
         'unit_id',
         'delivery_method_id',
+        'delivery_date',
         'discription',
     ];
 
@@ -67,12 +68,25 @@ class PrintJob extends Model
             'customer_id' => 'integer',
             'print_types_id' => 'integer',
             'add_date' => 'datetime',
+            'delivery_date' => 'datetime',
             'qty' => 'integer',
             'wtdth' => 'integer',
             'hight' => 'integer',
             'unit_id' => 'integer',
             'delivery_method_id' => 'integer',
         ];
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (PrintJob $job) {
+            if (empty($job->delivery_date)) {
+                $job->delivery_date = ! empty($job->add_date) ? $job->add_date : now();
+            }
+        });
     }
 
     /**

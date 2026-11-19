@@ -167,11 +167,18 @@ class PrintJobService
                 ? mb_substr(trim($rawDiscription), 0, 255)
                 : null;
 
+            $deliveryDate = ! empty($data['delivery_date'])
+                ? $data['delivery_date']
+                : (! empty($data['deadline'])
+                    ? $data['deadline']
+                    : (! empty($data['add_date']) ? $data['add_date'] : now()));
+
             $printJob = PrintJob::create([
                 'users_id' => $userId,
                 'customer_id' => (int) $data['customer_id'],
                 'print_types_id' => (int) $data['print_types_id'],
                 'add_date' => ! empty($data['add_date']) ? $data['add_date'] : now(),
+                'delivery_date' => $deliveryDate,
                 'qty' => (int) $data['qty'],
                 'wtdth' => (int) round((float) ($data['wtdth'] ?? 0)),
                 'hight' => (int) round((float) ($data['hight'] ?? 0)),
@@ -333,6 +340,11 @@ class PrintJobService
         }
         if (isset($data['delivery_method_id'])) {
             $attributes['delivery_method_id'] = (int) $data['delivery_method_id'];
+        }
+        if (isset($data['delivery_date'])) {
+            $attributes['delivery_date'] = $data['delivery_date'];
+        } elseif (isset($data['deadline'])) {
+            $attributes['delivery_date'] = $data['deadline'];
         }
         if (array_key_exists('discription', $data) || array_key_exists('notes', $data)) {
             $rawDiscription = $data['discription'] ?? $data['notes'] ?? null;
@@ -897,7 +909,9 @@ class PrintJobService
                 'designStatus' => 'Customer Provides Design',
                 'deliveryMethod' => $job->deliveryMethod?->methord ?? 'Customer Pickup',
                 'deliveryMethodId' => (int) ($job->delivery_method_id ?? 1),
-                'requiredDate' => $addDate->copy()->addDays(2)->toDateString(),
+                'requiredDate' => $job->delivery_date ? $job->delivery_date->toDateString() : $addDate->toDateString(),
+                'delivery_date' => $job->delivery_date ? $job->delivery_date->toDateString() : null,
+                'deadline' => $job->delivery_date ? $job->delivery_date->toDateString() : null,
                 'totalAmount' => round($totalAmount, 2),
                 'paidAmount' => round($paidAmount, 2),
                 'balanceAmount' => round($balanceAmount, 2),

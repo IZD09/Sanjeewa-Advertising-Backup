@@ -187,8 +187,8 @@ export class PrintingOrderBuilder extends BaseTableRowBuilder {
     if (data.unitPrice !== undefined || data.unit_price !== undefined) this.setUnitPrice(data.unitPrice ?? data.unit_price);
     if (data.designStatus !== undefined || data.design_status !== undefined) this.setDesignStatus(data.designStatus ?? data.design_status);
     if (data.deliveryMethod !== undefined || data.delivery_method !== undefined) this.setDeliveryMethod(data.deliveryMethod ?? data.delivery_method);
-    if (data.requiredDate !== undefined || data.required_date !== undefined || data.deadline !== undefined) {
-      this.setRequiredDate(data.requiredDate ?? data.required_date ?? data.deadline);
+    if (data.requiredDate !== undefined || data.required_date !== undefined || data.deadline !== undefined || data.delivery_date !== undefined) {
+      this.setRequiredDate(data.requiredDate ?? data.required_date ?? data.deadline ?? data.delivery_date);
     }
     if (data.totalAmount !== undefined || data.total_amount !== undefined) this.setTotalAmount(data.totalAmount ?? data.total_amount);
     if (data.paidAmount !== undefined || data.paid_amount !== undefined) this.setPaidAmount(data.paidAmount ?? data.paid_amount);

@@ -607,6 +607,7 @@ export class PlaceOrderProcess {
         paid_amount: data.calc.paidAmount,
         payment_types_id: data.calc.paidAmount > 0 ? paymentTypeId : null,
         payment_statuses_id: data.paymentStatusId || data.calc.paymentStatusId || 1,
+        delivery_date: data.requiredDate,
         deadline: data.requiredDate,
         discription: data.notes,
         notes: data.notes,

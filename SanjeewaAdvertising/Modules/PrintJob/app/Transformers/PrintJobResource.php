@@ -2,6 +2,7 @@
 
 namespace Modules\PrintJob\Transformers;
 
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\PrintJob\Models\PrintJob;
@@ -32,6 +33,10 @@ class PrintJobResource extends JsonResource
             'customer_id' => $this->customer_id,
             'print_types_id' => $this->print_types_id,
             'add_date' => $this->add_date?->toIso8601String() ?? $this->add_date,
+            'delivery_date' => $this->delivery_date?->toIso8601String() ?? $this->delivery_date,
+            'deadline' => $this->delivery_date ? ($this->delivery_date instanceof CarbonInterface ? $this->delivery_date->format('Y-m-d') : substr((string) $this->delivery_date, 0, 10)) : null,
+            'delivery_date' => $this->delivery_date?->toIso8601String() ?? $this->delivery_date,
+            'deadline' => $this->delivery_date ? ($this->delivery_date instanceof \Carbon\CarbonInterface ? $this->delivery_date->format('Y-m-d') : substr((string) $this->delivery_date, 0, 10)) : null,
             'qty' => (int) $this->qty,
             'wtdth' => (int) $this->wtdth,
             'hight' => (int) $this->hight,
