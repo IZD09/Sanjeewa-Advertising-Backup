@@ -137,8 +137,10 @@
                         <input id="pw" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required aria-describedby="pw-err">
                         <button type="button" class="eye" id="eye" aria-label="Show password" aria-pressed="false">
                             <svg id="eye-i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M2 12s3.500-7 10-7 10 7 10 7-3.500 7-10 7S2 12 2 12z"/>
-                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M3 3l18 18"/>
+                                <path d="M10.600 6.100A9.700 9.700 0 0112 5c6.500 0 10 7 10 7a17 17 0 01-3.200 4"/>
+                                <path d="M6.600 6.600A17 17 0 002 12s3.500 7 10 7c1.600 0 3-.4 4.300-1"/>
+                                <path d="M9.900 9.900a3 3 0 004.200 4.200"/>
                             </svg>
                         </button>
                     </div>
