@@ -40,7 +40,7 @@ class DashboardController extends BaseApiController
 
         return response($snapshot['json'], 200, [
             'Content-Type' => 'application/json',
-            'ETag' => '"' . $snapshot['hash'] . '"',
+            'ETag' => '"'.$snapshot['hash'].'"',
         ]);
     }
 

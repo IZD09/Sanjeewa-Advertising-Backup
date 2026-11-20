@@ -19,7 +19,7 @@ class DesignModuleTest extends TestCase
     {
         // 1. Create
         $response = $this->postJson('/api/v1/print-types', [
-            'print_type' => 'Laser Engraving ' . uniqid(),
+            'print_type' => 'Laser Engraving '.uniqid(),
         ]);
         $response->assertStatus(201)
             ->assertJson(['success' => true]);
@@ -35,7 +35,7 @@ class DesignModuleTest extends TestCase
 
         // 4. Update
         $this->putJson("/api/v1/print-types/{$typeId}", [
-            'print_type' => 'Laser Cut Updated ' . uniqid(),
+            'print_type' => 'Laser Cut Updated '.uniqid(),
         ])->assertStatus(200);
 
         // 5. Delete
@@ -45,9 +45,9 @@ class DesignModuleTest extends TestCase
 
     public function test_can_manage_print_costs(): void
     {
-        $printType = PrintType::firstOrCreate(['print_type' => 'Sublimation ' . uniqid()]);
+        $printType = PrintType::firstOrCreate(['print_type' => 'Sublimation '.uniqid()]);
         $costType = PrintCostType::firstOrCreate([
-            'cost_type' => 'Paper Cost ' . uniqid(),
+            'cost_type' => 'Paper Cost '.uniqid(),
             'print_types_id' => $printType->id,
         ]);
 
@@ -79,9 +79,9 @@ class DesignModuleTest extends TestCase
 
     public function test_can_retrieve_print_type_costs_and_cost_types(): void
     {
-        $printType = PrintType::firstOrCreate(['print_type' => 'UV Printing ' . uniqid()]);
+        $printType = PrintType::firstOrCreate(['print_type' => 'UV Printing '.uniqid()]);
         $costType = PrintCostType::firstOrCreate([
-            'cost_type' => 'Ink Cost ' . uniqid(),
+            'cost_type' => 'Ink Cost '.uniqid(),
             'print_types_id' => $printType->id,
         ]);
 

@@ -86,7 +86,7 @@ class PaymentsCashFlowReportService extends BaseReportService
             $subStart = $startDate->copy()->addSeconds($i * $intervalSec);
             $subEnd = ($i === 3) ? $endDate->copy() : $startDate->copy()->addSeconds(($i + 1) * $intervalSec);
 
-            $flowLabels[] = 'Period ' . ($i + 1) . ' (' . $subStart->format('d M') . ')';
+            $flowLabels[] = 'Period '.($i + 1).' ('.$subStart->format('d M').')';
 
             $in = (float) DB::table('payments')
                 ->whereBetween('pay_date', [$subStart->toDateTimeString(), $subEnd->toDateTimeString()])
@@ -249,7 +249,7 @@ class PaymentsCashFlowReportService extends BaseReportService
                     'id' => $g->id,
                     'transactionId' => sprintf('#TX-GRN-%04d', $g->id),
                     'channel' => 'GRN Supplier Outflow',
-                    'reference' => 'GRN Batch #GRN-' . ($g->grn_id ?: $g->id),
+                    'reference' => 'GRN Batch #GRN-'.($g->grn_id ?: $g->id),
                     'method' => $g->method ?: 'Bank Transfer',
                     'date' => $g->date ? Carbon::parse($g->date)->format('Y-m-d H:i') : '—',
                     'status' => $g->status ?: 'Completed',
@@ -289,7 +289,7 @@ class PaymentsCashFlowReportService extends BaseReportService
                     'id' => $p->id,
                     'transactionId' => sprintf('#TX-INV-%04d', $p->id),
                     'channel' => 'Customer Inflow',
-                    'reference' => 'Print Job #PJ-' . sprintf('%04d', $p->print_jobs_id ?: $p->id),
+                    'reference' => 'Print Job #PJ-'.sprintf('%04d', $p->print_jobs_id ?: $p->id),
                     'method' => $p->method ?: 'Cash',
                     'date' => $p->date ? Carbon::parse($p->date)->format('Y-m-d H:i') : '—',
                     'status' => $p->status ?: 'Completed',

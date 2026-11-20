@@ -17,7 +17,7 @@ class BaseApiControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->controller = new TestApiController();
+        $this->controller = new TestApiController;
     }
 
     public function test_success_returns_expected_json_structure(): void

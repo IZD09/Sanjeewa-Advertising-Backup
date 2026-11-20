@@ -191,8 +191,8 @@ class InvoiceResource extends JsonResource
         return [
             'id' => $this->id,
             'customer_id' => $this->customer_id,
-            'invoice_no' => $this->invoice_no ?? 'INV-2026-' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT),
-            'customer_name' => $this->customer_name ?? $this->customer?->name ?? 'Customer #' . $this->customer_id,
+            'invoice_no' => $this->invoice_no ?? 'INV-2026-'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT),
+            'customer_name' => $this->customer_name ?? $this->customer?->name ?? 'Customer #'.$this->customer_id,
             'customer_mobile' => $this->customer_mobile ?? $this->customer?->mobile ?? '',
             'product_name' => $productName,
             'total_amount' => $totalAmount,

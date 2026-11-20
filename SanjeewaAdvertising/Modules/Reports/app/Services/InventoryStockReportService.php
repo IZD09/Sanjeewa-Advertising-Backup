@@ -30,7 +30,7 @@ class InventoryStockReportService extends BaseReportService
             ->limit(5)
             ->get();
 
-        $valLabels = $topValuationItems->map(fn ($s) => Str::limit($s->name ?: 'Item #' . $s->id, 20))->toArray();
+        $valLabels = $topValuationItems->map(fn ($s) => Str::limit($s->name ?: 'Item #'.$s->id, 20))->toArray();
         $valValues = $topValuationItems->map(fn ($s) => (float) $s->valuation)->toArray();
 
         // 2. Stock Health Distribution (Sufficient, Low Stock Warning, Critical / Out of Stock)
@@ -55,7 +55,7 @@ class InventoryStockReportService extends BaseReportService
             ->limit(5)
             ->get();
 
-        $priceLabels = $priceComparisonItems->map(fn ($s) => Str::limit($s->name ?: 'Item #' . $s->id, 16))->toArray();
+        $priceLabels = $priceComparisonItems->map(fn ($s) => Str::limit($s->name ?: 'Item #'.$s->id, 16))->toArray();
         $buyPrices = $priceComparisonItems->map(fn ($s) => (float) $s->buy)->toArray();
         $sellPrices = $priceComparisonItems->map(fn ($s) => (float) $s->price)->toArray();
 
@@ -124,7 +124,7 @@ class InventoryStockReportService extends BaseReportService
                 return [
                     'id' => $s->id,
                     'item_code' => $s->code ?: sprintf('ITM-%04d', $s->id),
-                    'item_name' => $s->item_name ?: 'Stock Item #' . $s->id,
+                    'item_name' => $s->item_name ?: 'Stock Item #'.$s->id,
                     'quantity' => $qty,
                     'buy_price' => $buy,
                     'sell_price' => $sell,

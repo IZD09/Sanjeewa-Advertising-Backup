@@ -261,79 +261,9 @@
                     </div>
                 </div>
 
-                <!-- ==================================================================
-                     PERMISSION VERIFICATION MODAL (MANDATORY GATEWAY)
-                     ================================================================== -->
-                <div class="ap-lock-overlay" id="adminProfileLockModal">
-                    <div class="ap-lock-card">
-                        <div class="ap-lock-icon-wrap">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <h3 class="ap-lock-title">Security Permission Required</h3>
-                        <p class="ap-lock-desc">
-                            This panel contains sensitive administrator credentials and account configurations. Please verify your administrator username and password to proceed.
-                        </p>
-
-                        <form class="ap-lock-form" id="formVerifyAdminAccess">
-                            <div class="ap-lock-field">
-                                <label for="verifyAdminUsername">Admin Username</label>
-                                <input type="text" id="verifyAdminUsername" placeholder="e.g. admin" required autocomplete="username">
-                            </div>
-                            <div class="ap-lock-field">
-                                <label for="verifyAdminPassword">Admin Password</label>
-                                <input type="password" id="verifyAdminPassword" placeholder="••••••••" required autocomplete="current-password">
-                            </div>
-
-                            <div class="ap-lock-error" id="verifyAccessError"></div>
-
-                            <div class="ap-lock-actions">
-                                <button type="button" class="ap-lock-btn-cancel" id="btnCancelVerify">
-                                    <i class="fa-solid fa-arrow-left"></i> Cancel
-                                </button>
-                                <button type="submit" class="ap-lock-btn-submit" id="btnVerifyAccessSubmit">
-                                    <i class="fa-solid fa-key"></i> Verify & Unlock
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- ==================================================================
-                     ACTIVITIES TAB PERMISSION VERIFICATION MODAL
-                     ================================================================== -->
-                <div class="ap-lock-overlay" id="adminActivitiesVerifyModal">
-                    <div class="ap-lock-card">
-                        <div class="ap-lock-icon-wrap" style="background: rgba(114, 46, 209, 0.1); color: #722ed1;">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </div>
-                        <h3 class="ap-lock-title">Activity Audit Permission Required</h3>
-                        <p class="ap-lock-desc">
-                            Viewing administrative activity logs is restricted. Please enter your administrator password to unlock the Activities tab.
-                        </p>
-
-                        <form class="ap-lock-form" id="formVerifyActivitiesAccess">
-                            <div class="ap-lock-field">
-                                <label for="verifyActAdminUsername">Admin Username</label>
-                                <input type="text" id="verifyActAdminUsername" placeholder="e.g. admin" required readonly autocomplete="username">
-                            </div>
-                            <div class="ap-lock-field">
-                                <label for="verifyActAdminPassword">Admin Password</label>
-                                <input type="password" id="verifyActAdminPassword" placeholder="••••••••" required autocomplete="current-password">
-                            </div>
-
-                            <div class="ap-lock-error" id="verifyActAccessError"></div>
-
-                            <div class="ap-lock-actions">
-                                <button type="button" class="ap-lock-btn-cancel" id="btnCancelActivitiesVerify">
-                                    <i class="fa-solid fa-xmark"></i> Cancel
-                                </button>
-                                <button type="submit" class="ap-lock-btn-submit" id="btnSubmitActivitiesVerify" style="background: #722ed1;">
-                                    <i class="fa-solid fa-key"></i> Verify & Open
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                {{-- Profile Page Modals --}}
+                @include('ui::layouts.admin.modals.profile.profile-lock-modal')
+                @include('ui::layouts.admin.modals.profile.activities-verify-modal')
 
                 <!-- Toast Alert Component -->
                 <div class="uc-toast" id="apToast">

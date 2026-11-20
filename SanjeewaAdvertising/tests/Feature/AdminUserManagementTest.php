@@ -52,8 +52,8 @@ class AdminUserManagementTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->postJson('/admin/users', [
             'first_name' => 'Dilshan',
             'last_name' => 'Silva',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'username' => 'dilshan_' . $unique,
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'dilshan_'.$unique,
             'password' => 'SecretPass123',
             'user_statuses_id' => 1,
         ]);
@@ -65,7 +65,7 @@ class AdminUserManagementTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('users', [
-            'username' => 'dilshan_' . $unique,
+            'username' => 'dilshan_'.$unique,
             'first_name' => 'Dilshan',
         ]);
 
@@ -87,8 +87,8 @@ class AdminUserManagementTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->postJson('/api/v1/admin/users', [
             'first_name' => 'Nuwan',
             'last_name' => 'Pradeep',
-            'mobile' => '078' . rand(1000000, 9999999),
-            'username' => 'nuwan_' . $unique,
+            'mobile' => '078'.rand(1000000, 9999999),
+            'username' => 'nuwan_'.$unique,
             'password' => 'Nuwan123',
             'user_statuses_id' => 1,
         ]);
@@ -100,7 +100,7 @@ class AdminUserManagementTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('users', [
-            'username' => 'nuwan_' . $unique,
+            'username' => 'nuwan_'.$unique,
         ]);
     }
 
@@ -115,8 +115,8 @@ class AdminUserManagementTest extends TestCase
         $user = User::create([
             'first_name' => 'Test',
             'last_name' => 'User',
-            'mobile' => '071' . rand(1000000, 9999999),
-            'username' => 'test_user_' . uniqid(),
+            'mobile' => '071'.rand(1000000, 9999999),
+            'username' => 'test_user_'.uniqid(),
             'password' => Hash::make('password123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -149,8 +149,8 @@ class AdminUserManagementTest extends TestCase
         $user = User::create([
             'first_name' => 'Perm',
             'last_name' => 'User',
-            'mobile' => '072' . rand(1000000, 9999999),
-            'username' => 'perm_user_' . uniqid(),
+            'mobile' => '072'.rand(1000000, 9999999),
+            'username' => 'perm_user_'.uniqid(),
             'password' => Hash::make('password123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -205,8 +205,8 @@ class AdminUserManagementTest extends TestCase
         $staffUser = User::create([
             'first_name' => 'Staff',
             'last_name' => 'Member',
-            'mobile' => '076' . rand(1000000, 9999999),
-            'username' => 'staff_' . uniqid(),
+            'mobile' => '076'.rand(1000000, 9999999),
+            'username' => 'staff_'.uniqid(),
             'password' => Hash::make('password123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -217,7 +217,7 @@ class AdminUserManagementTest extends TestCase
             'first_name' => 'Forbidden',
             'last_name' => 'User',
             'mobile' => '0769998877',
-            'username' => 'forbidden_' . uniqid(),
+            'username' => 'forbidden_'.uniqid(),
             'password' => 'Secret123',
             'user_statuses_id' => 1,
         ]);
@@ -234,9 +234,9 @@ class AdminUserManagementTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->postJson('/admin/admins', [
             'first_name' => 'Sanjeewa',
             'last_name' => 'Pushpakumara',
-            'username' => 'admin_' . $unique,
+            'username' => 'admin_'.$unique,
             'email' => "admin_{$unique}@sanjeewaadvertising.com",
-            'mobile' => '077' . rand(1000000, 9999999),
+            'mobile' => '077'.rand(1000000, 9999999),
             'password' => 'AdminPass123',
             'admin_types_id' => 2,
             'admin_statuses_id' => 1,
@@ -249,7 +249,7 @@ class AdminUserManagementTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('admins', [
-            'username' => 'admin_' . $unique,
+            'username' => 'admin_'.$unique,
             'first_name' => 'Sanjeewa',
         ]);
 
@@ -268,8 +268,8 @@ class AdminUserManagementTest extends TestCase
         $staffUser = User::create([
             'first_name' => 'Staff',
             'last_name' => 'Member',
-            'mobile' => '075' . rand(1000000, 9999999),
-            'username' => 'staff_adm_' . uniqid(),
+            'mobile' => '075'.rand(1000000, 9999999),
+            'username' => 'staff_adm_'.uniqid(),
             'password' => Hash::make('password123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -280,7 +280,7 @@ class AdminUserManagementTest extends TestCase
         $response = $this->actingAs($staffUser, 'web')->postJson('/admin/admins', [
             'first_name' => 'Forbidden',
             'last_name' => 'Admin',
-            'username' => 'forbid_adm_' . $unique,
+            'username' => 'forbid_adm_'.$unique,
             'email' => "forbid_{$unique}@example.com",
             'mobile' => '0759998877',
             'password' => 'Secret123',
@@ -300,8 +300,8 @@ class AdminUserManagementTest extends TestCase
         $user = User::create([
             'first_name' => 'Kasun',
             'last_name' => 'Bandara',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'username' => 'kasun_prof_' . uniqid(),
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'kasun_prof_'.uniqid(),
             'password' => Hash::make('OldPass123'),
             'register_at' => now(),
             'is_login' => 1,
@@ -353,8 +353,8 @@ class AdminUserManagementTest extends TestCase
         $user = User::create([
             'first_name' => 'Chathura',
             'last_name' => 'Perera',
-            'mobile' => '071' . rand(1000000, 9999999),
-            'username' => 'chathura_pw_' . uniqid(),
+            'mobile' => '071'.rand(1000000, 9999999),
+            'username' => 'chathura_pw_'.uniqid(),
             'password' => Hash::make('OldPassword123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -386,8 +386,8 @@ class AdminUserManagementTest extends TestCase
         $user = User::create([
             'first_name' => 'Nimal',
             'last_name' => 'Jay',
-            'mobile' => '072' . rand(1000000, 9999999),
-            'username' => 'nimal_pw_' . uniqid(),
+            'mobile' => '072'.rand(1000000, 9999999),
+            'username' => 'nimal_pw_'.uniqid(),
             'password' => Hash::make('OriginalPass123'),
             'register_at' => now(),
             'is_login' => 0,

@@ -75,7 +75,7 @@ class InventoryCategoriesTest extends TestCase
     public function test_can_create_category(): void
     {
         $payload = [
-            'category' => 'Speciality Media ' . uniqid(),
+            'category' => 'Speciality Media '.uniqid(),
         ];
 
         $response = $this->postJson('/api/v1/inventory/categories', $payload);
@@ -99,7 +99,7 @@ class InventoryCategoriesTest extends TestCase
     {
         $category = Category::first();
 
-        $response = $this->getJson('/api/v1/inventory/subcategories?category_id=' . $category->id);
+        $response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -121,7 +121,7 @@ class InventoryCategoriesTest extends TestCase
     {
         $category = Category::first();
         $payload = [
-            'subcategory' => 'Matte Canvas ' . uniqid(),
+            'subcategory' => 'Matte Canvas '.uniqid(),
             'categories_id' => $category->id,
         ];
 
@@ -147,7 +147,7 @@ class InventoryCategoriesTest extends TestCase
     public function test_can_paginate_subcategories_when_category_has_more_than_20_subcategories(): void
     {
         $category = Category::create([
-            'category' => 'Bulk Pagination Category ' . uniqid(),
+            'category' => 'Bulk Pagination Category '.uniqid(),
         ]);
 
         for ($i = 1; $i <= 25; $i++) {
@@ -157,7 +157,7 @@ class InventoryCategoriesTest extends TestCase
             ]);
         }
 
-        $page1Response = $this->getJson('/api/v1/inventory/subcategories?category_id=' . $category->id . '&page=1&per_page=20');
+        $page1Response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id.'&page=1&per_page=20');
         $page1Response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(20, 'data')
@@ -166,7 +166,7 @@ class InventoryCategoriesTest extends TestCase
             ->assertJsonPath('pagination.total', 25)
             ->assertJsonPath('pagination.last_page', 2);
 
-        $page2Response = $this->getJson('/api/v1/inventory/subcategories?category_id=' . $category->id . '&page=2&per_page=20');
+        $page2Response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id.'&page=2&per_page=20');
         $page2Response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(5, 'data')

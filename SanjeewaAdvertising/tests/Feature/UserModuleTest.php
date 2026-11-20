@@ -40,8 +40,8 @@ class UserModuleTest extends TestCase
         $payload = [
             'first_name' => 'Sunil',
             'last_name' => 'Perera',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'username' => 'sunil_' . $unique,
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'sunil_'.$unique,
             'password' => 'Secret123!',
             'password_confirmation' => 'Secret123!',
             'user_statuses_id' => $this->status->id,
@@ -54,14 +54,14 @@ class UserModuleTest extends TestCase
                 'success' => true,
                 'message' => 'User registered successfully.',
             ])
-            ->assertJsonPath('data.username', 'sunil_' . $unique);
+            ->assertJsonPath('data.username', 'sunil_'.$unique);
 
         $this->assertDatabaseHas('users', [
-            'username' => 'sunil_' . $unique,
+            'username' => 'sunil_'.$unique,
             'first_name' => 'Sunil',
         ]);
 
-        $user = User::where('username', 'sunil_' . $unique)->first();
+        $user = User::where('username', 'sunil_'.$unique)->first();
         $this->assertNotNull($user);
         $this->assertTrue(Hash::check('Secret123!', $user->password));
         $this->assertNotSame('Secret123!', $user->password);
@@ -71,12 +71,12 @@ class UserModuleTest extends TestCase
     public function test_auth_login_with_valid_credentials(): void
     {
         $unique = uniqid();
-        $mobile = '071' . rand(1000000, 9999999);
+        $mobile = '071'.rand(1000000, 9999999);
         $user = User::create([
             'first_name' => 'Kamal',
             'last_name' => 'Silva',
             'mobile' => $mobile,
-            'username' => 'kamal_' . $unique,
+            'username' => 'kamal_'.$unique,
             'password' => Hash::make('MyPassword123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -84,7 +84,7 @@ class UserModuleTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'username' => 'kamal_' . $unique,
+            'username' => 'kamal_'.$unique,
             'password' => 'MyPassword123',
         ]);
 
@@ -124,8 +124,8 @@ class UserModuleTest extends TestCase
         $user = User::create([
             'first_name' => 'Nimal',
             'last_name' => 'Bandara',
-            'mobile' => '072' . rand(1000000, 9999999),
-            'username' => 'nimal_' . $unique,
+            'mobile' => '072'.rand(1000000, 9999999),
+            'username' => 'nimal_'.$unique,
             'password' => Hash::make('Pass123'),
             'register_at' => now(),
             'is_login' => 1,
@@ -161,8 +161,8 @@ class UserModuleTest extends TestCase
         $user = User::create([
             'first_name' => 'Web',
             'last_name' => 'User',
-            'mobile' => '077' . rand(1000000, 9999999),
-            'username' => 'webuser_' . $unique,
+            'mobile' => '077'.rand(1000000, 9999999),
+            'username' => 'webuser_'.$unique,
             'password' => Hash::make('Secret123'),
             'register_at' => now(),
             'is_login' => 1,
@@ -191,8 +191,8 @@ class UserModuleTest extends TestCase
         $storeResponse = $this->actingAs($admin, 'admin')->postJson('/api/v1/users', [
             'first_name' => 'Kasun',
             'last_name' => 'Fernando',
-            'mobile' => '075' . rand(1000000, 9999999),
-            'username' => 'kasun_' . $unique,
+            'mobile' => '075'.rand(1000000, 9999999),
+            'username' => 'kasun_'.$unique,
             'password' => 'Password123',
             'user_statuses_id' => $this->status->id,
         ]);
@@ -203,7 +203,7 @@ class UserModuleTest extends TestCase
         // 2. Show user
         $showResponse = $this->getJson("/api/v1/users/{$userId}");
         $showResponse->assertStatus(200)
-            ->assertJsonPath('data.username', 'kasun_' . $unique);
+            ->assertJsonPath('data.username', 'kasun_'.$unique);
 
         // 3. Update user
         $updateResponse = $this->putJson("/api/v1/users/{$userId}", [
@@ -237,8 +237,8 @@ class UserModuleTest extends TestCase
         $user = User::create([
             'first_name' => 'Ruwan',
             'last_name' => 'Perera',
-            'mobile' => '078' . rand(1000000, 9999999),
-            'username' => 'ruwan_' . $unique,
+            'mobile' => '078'.rand(1000000, 9999999),
+            'username' => 'ruwan_'.$unique,
             'password' => Hash::make('Pass123'),
             'register_at' => now(),
             'is_login' => 0,
@@ -268,8 +268,8 @@ class UserModuleTest extends TestCase
         User::create([
             'first_name' => 'Alpha',
             'last_name' => 'User',
-            'mobile' => '070' . rand(1000000, 9999999),
-            'username' => 'alpha_' . $unique,
+            'mobile' => '070'.rand(1000000, 9999999),
+            'username' => 'alpha_'.$unique,
             'password' => 'PlainSecret123',
             'register_at' => now(),
             'is_login' => 0,
@@ -279,8 +279,8 @@ class UserModuleTest extends TestCase
         User::create([
             'first_name' => 'Beta',
             'last_name' => 'User',
-            'mobile' => '079' . rand(1000000, 9999999),
-            'username' => 'beta_' . $unique,
+            'mobile' => '079'.rand(1000000, 9999999),
+            'username' => 'beta_'.$unique,
             'password' => 'PlainSecret123',
             'register_at' => now(),
             'is_login' => 0,
@@ -307,8 +307,8 @@ class UserModuleTest extends TestCase
         $targetUser = User::create([
             'first_name' => 'Chamara',
             'last_name' => 'Jayasinghe',
-            'mobile' => '076' . rand(1000000, 9999999),
-            'username' => 'chamara_' . $unique,
+            'mobile' => '076'.rand(1000000, 9999999),
+            'username' => 'chamara_'.$unique,
             'password' => 'Password123!',
             'register_at' => now(),
             'is_login' => 0,
@@ -338,7 +338,7 @@ class UserModuleTest extends TestCase
         $this->assertContains($targetUser->id, array_column($idSearch->json('data'), 'id'));
 
         // Search by prefixed user ID (#id)
-        $hashIdSearch = $this->getJson('/api/v1/users/search?q=' . urlencode("#{$targetUser->id}") . '&all=true');
+        $hashIdSearch = $this->getJson('/api/v1/users/search?q='.urlencode("#{$targetUser->id}").'&all=true');
         $hashIdSearch->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertContains($targetUser->id, array_column($hashIdSearch->json('data'), 'id'));

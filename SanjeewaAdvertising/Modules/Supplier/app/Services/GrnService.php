@@ -299,7 +299,7 @@ class GrnService
         $primarySupplier = null;
 
         foreach ($purchaseOrders as $order) {
-            $code = 'PO-' . str_pad((string) $order->id, 4, '0', STR_PAD_LEFT);
+            $code = 'PO-'.str_pad((string) $order->id, 4, '0', STR_PAD_LEFT);
             $poCodes[] = $code;
             if ($order->supplier && ! $primarySupplier) {
                 $primarySupplier = $order->supplier;
@@ -330,18 +330,18 @@ class GrnService
             $subTotal += $itemTotal;
 
             $items[] = [
-                'item_id' => $stock->stockItem?->code ?? ('ITM-' . $stock->stock_items_id),
+                'item_id' => $stock->stockItem?->code ?? ('ITM-'.$stock->stock_items_id),
                 'stock_items_id' => $stock->stock_items_id,
-                'item_name' => $stock->stockItem?->name ?? ('Item #' . $stock->stock_items_id),
+                'item_name' => $stock->stockItem?->name ?? ('Item #'.$stock->stock_items_id),
                 'unit' => 'Units',
                 'qty_received' => $qty,
                 'unit_cost' => $unitCost,
                 'item_total' => $itemTotal,
-                'batch_id' => 'BAT-' . str_pad((string) $stock->id, 3, '0', STR_PAD_LEFT),
+                'batch_id' => 'BAT-'.str_pad((string) $stock->id, 3, '0', STR_PAD_LEFT),
             ];
         }
 
-        $grnCode = 'GRN-' . str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
+        $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
         $poCode = count($poCodes) > 0 ? implode(', ', $poCodes) : 'N/A';
         $status = ! empty($grn->status)
             ? $grn->status
@@ -355,7 +355,7 @@ class GrnService
             'purchase_order_no' => $poCode,
             'purchase_orders' => $poList,
             'purchase_order_count' => count($poList),
-            'supplier_id' => $supplier ? ('SUP-' . str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT)) : null,
+            'supplier_id' => $supplier ? ('SUP-'.str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT)) : null,
             'supplier_name' => $supplier?->name ?? 'Direct Consignment',
             'supplier_contact' => $supplier?->mobile ?? ($supplierInvoice !== '' ? $supplierInvoice : 'N/A'),
             'supplier_invoice_no' => $supplierInvoice,

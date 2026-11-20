@@ -373,7 +373,7 @@ class TransactionService
             ->get();
 
         foreach ($purchaseOrders as $po) {
-            $poNum = 'PO-0' . $po->id;
+            $poNum = 'PO-0'.$po->id;
             $supplierName = $po->supplier?->name ?? 'Direct Supplier';
             $totalAmount = (float) $po->items->sum(fn ($i) => ((float) $i->unit_cost * (int) $i->qty_ordered));
             if ($totalAmount <= 0) {
@@ -408,7 +408,7 @@ class TransactionService
                 'status' => $po->status?->purchase_orders_status ?? 'Pending',
                 'notes' => $po->notes ?? '',
                 'grn_id' => $po->grns->first()?->id ?? null,
-                'grnNumber' => $po->grns->first() ? ('GRN-0' . $po->grns->first()->id) : 'GRN-Pending',
+                'grnNumber' => $po->grns->first() ? ('GRN-0'.$po->grns->first()->id) : 'GRN-Pending',
                 'supplier_id' => $po->suppliers_id,
                 'supplierName' => $supplierName,
                 'supplierBankAccount' => $po->supplier?->bank_account ?? '',
@@ -418,7 +418,7 @@ class TransactionService
                 'paidAmount' => $paidAmount,
                 'balanceAmount' => $balanceAmount,
                 'supplierInvoice' => '',
-                'label' => "{$poNum} | {$supplierName} (Bal: Rs. " . number_format($balanceAmount) . ')',
+                'label' => "{$poNum} | {$supplierName} (Bal: Rs. ".number_format($balanceAmount).')',
             ];
         }
 
@@ -429,9 +429,9 @@ class TransactionService
             ->get();
 
         foreach ($grns as $grn) {
-            $grnNum = 'GRN-0' . $grn->id;
+            $grnNum = 'GRN-0'.$grn->id;
             $firstPo = $grn->purchaseOrders->first();
-            $poNum = $firstPo ? ('PO-0' . $firstPo->id) : "PO-{$grn->id}";
+            $poNum = $firstPo ? ('PO-0'.$firstPo->id) : "PO-{$grn->id}";
             $supplierName = $firstPo?->supplier?->name ?? 'Direct Consignment Supplier';
 
             $totalAmount = (float) $grn->stocks->sum(fn ($s) => ((float) $s->price * (int) $s->qty));
@@ -456,7 +456,7 @@ class TransactionService
                     'paidAmount' => $paidAmount,
                     'balanceAmount' => $balanceAmount,
                     'supplierInvoice' => $firstPo?->pivot?->supplyer_invoice ?? '',
-                    'label' => "{$poNum} | {$grnNum} - {$supplierName} (Bal: Rs. " . number_format($balanceAmount) . ')',
+                    'label' => "{$poNum} | {$grnNum} - {$supplierName} (Bal: Rs. ".number_format($balanceAmount).')',
                 ];
             }
         }

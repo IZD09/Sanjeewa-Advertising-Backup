@@ -48,7 +48,7 @@ class StockController extends BaseApiController
             $createdStocks = $this->stockService->createStocksBulk($validated);
             $transformed = array_map(fn ($stock) => $this->stockService->transformStockRecord($stock), $createdStocks);
 
-            return $this->created($transformed, count($createdStocks) . ' stock records created and inventory updated successfully.');
+            return $this->created($transformed, count($createdStocks).' stock records created and inventory updated successfully.');
         }
 
         $stock = $this->stockService->createStock($validated);

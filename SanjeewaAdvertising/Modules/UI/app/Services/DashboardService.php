@@ -642,13 +642,13 @@ class DashboardService
 
         $formatCurrency = function (float $amount): string {
             if ($amount >= 1000000) {
-                return 'Rs. ' . round($amount / 1000000, 2) . 'M';
+                return 'Rs. '.round($amount / 1000000, 2).'M';
             }
             if ($amount >= 1000) {
-                return 'Rs. ' . number_format($amount, 0);
+                return 'Rs. '.number_format($amount, 0);
             }
 
-            return 'Rs. ' . number_format($amount, 2);
+            return 'Rs. '.number_format($amount, 2);
         };
 
         return [
@@ -657,7 +657,7 @@ class DashboardService
             'totalExpenses' => $formatCurrency($totalExpenses),
             'netProfit' => $formatCurrency($netProfit),
             'profitMargin' => $profitMargin,
-            'supplierPayables' => $supplierPayablesAmount > 0 ? ('Rs. ' . number_format($supplierPayablesAmount, 0) . ' Due') : 'Rs. 0 Due',
+            'supplierPayables' => $supplierPayablesAmount > 0 ? ('Rs. '.number_format($supplierPayablesAmount, 0).' Due') : 'Rs. 0 Due',
             'comparison' => [
                 'labels' => $monthLabels,
                 'revenue' => $monthlyRevenue,

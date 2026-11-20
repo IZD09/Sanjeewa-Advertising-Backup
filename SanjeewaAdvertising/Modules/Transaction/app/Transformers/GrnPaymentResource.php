@@ -36,7 +36,7 @@ class GrnPaymentResource extends JsonResource
             : ($paid > 0.0 && $bal > 0.0 ? 'Partial' : 'Pending');
 
         $methodName = $this->paymentType?->payment_type ?? ($this->method ?? 'Bank Transfer');
-        $grnNum = 'GRN-2026-' . str_pad((string) ($this->grn_id ?? $this->id), 3, '0', STR_PAD_LEFT);
+        $grnNum = 'GRN-2026-'.str_pad((string) ($this->grn_id ?? $this->id), 3, '0', STR_PAD_LEFT);
 
         $poList = [];
         $posDetails = [];
@@ -46,7 +46,7 @@ class GrnPaymentResource extends JsonResource
 
         if ($grn && $grn->relationLoaded('purchaseOrders')) {
             foreach ($grn->purchaseOrders as $po) {
-                $formattedPoNum = 'PO-2026-' . str_pad((string) $po->id, 3, '0', STR_PAD_LEFT);
+                $formattedPoNum = 'PO-2026-'.str_pad((string) $po->id, 3, '0', STR_PAD_LEFT);
                 $poList[] = $formattedPoNum;
 
                 if ($po->supplier) {
@@ -99,7 +99,7 @@ class GrnPaymentResource extends JsonResource
             $bal = max(0.0, $netTotal - $paid);
         }
 
-        $poNum = count($poList) > 0 ? implode(', ', $poList) : ('PO-2026-' . str_pad((string) ($this->grn_id ?? '101'), 3, '0', STR_PAD_LEFT));
+        $poNum = count($poList) > 0 ? implode(', ', $poList) : ('PO-2026-'.str_pad((string) ($this->grn_id ?? '101'), 3, '0', STR_PAD_LEFT));
 
         $grnItems = [];
         if ($grn && $grn->relationLoaded('stocks')) {
@@ -119,11 +119,11 @@ class GrnPaymentResource extends JsonResource
 
         $stockCategory = 'Stock Delivery & Consignment';
         if ($grn && $grn->relationLoaded('stocks') && $grn->stocks->first()?->stockItem?->name) {
-            $stockCategory = $grn->stocks->first()->stockItem->name . ' (+' . count($grn->stocks) . ' materials)';
+            $stockCategory = $grn->stocks->first()->stockItem->name.' (+'.count($grn->stocks).' materials)';
         } elseif (! empty($posDetails[0]['items'][0]['name'])) {
             $firstItemName = $posDetails[0]['items'][0]['name'];
             $itemCount = count($posDetails[0]['items']);
-            $stockCategory = $itemCount > 1 ? "{$firstItemName} (+" . ($itemCount - 1) . ' more)' : $firstItemName;
+            $stockCategory = $itemCount > 1 ? "{$firstItemName} (+".($itemCount - 1).' more)' : $firstItemName;
         }
 
         return [
@@ -144,7 +144,7 @@ class GrnPaymentResource extends JsonResource
             'poCount' => max(1, count($poList)),
             'pos' => $posDetails,
             'grn_items' => $grnItems,
-            'supplier_id' => $supplierId ? ('SUP-' . str_pad((string) $supplierId, 3, '0', STR_PAD_LEFT)) : 'SUP-001',
+            'supplier_id' => $supplierId ? ('SUP-'.str_pad((string) $supplierId, 3, '0', STR_PAD_LEFT)) : 'SUP-001',
             'supplier_name' => $supplierName,
             'supplierName' => $supplierName,
             'supplier_bank_account' => $supplierBankAccount,

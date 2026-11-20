@@ -28,19 +28,19 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
         parent::setUp();
         $this->artisan('migrate');
 
-        $category = Category::firstOrCreate(['category' => 'Testing Category ' . uniqid()]);
+        $category = Category::firstOrCreate(['category' => 'Testing Category '.uniqid()]);
         $subcategory = Subcategory::firstOrCreate([
-            'subcategory' => 'Testing Subcategory ' . uniqid(),
+            'subcategory' => 'Testing Subcategory '.uniqid(),
             'categories_id' => $category->id,
         ]);
 
         $this->stockItem = StockItem::create([
-            'name' => 'Testing Item ' . uniqid(),
-            'code' => 'SKU-' . strtoupper(uniqid()),
+            'name' => 'Testing Item '.uniqid(),
+            'code' => 'SKU-'.strtoupper(uniqid()),
             'subcategories_id' => $subcategory->id,
         ]);
 
-        $this->brand = Brand::firstOrCreate(['brand' => 'Test Brand ' . uniqid()]);
+        $this->brand = Brand::firstOrCreate(['brand' => 'Test Brand '.uniqid()]);
 
         $this->grn = Grn::create([
             'at_time' => now(),

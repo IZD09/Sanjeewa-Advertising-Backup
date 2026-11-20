@@ -32,17 +32,17 @@ class MobileNumberHelper
         if (str_starts_with($compact, '+94')) {
             $localCore = ltrim(substr($compact, 3), '0');
             if ($localCore !== '') {
-                $variants[] = '0' . $localCore;
-                $variants[] = '94' . $localCore;
+                $variants[] = '0'.$localCore;
+                $variants[] = '94'.$localCore;
                 if (strlen($localCore) >= 7) {
                     $variants[] = $localCore;
                 }
             }
         } elseif (str_starts_with($compact, '94') && strlen($compact) >= 3) {
             $localCore = ltrim(substr($compact, 2), '0');
-            $variants[] = '+' . $compact;
+            $variants[] = '+'.$compact;
             if ($localCore !== '') {
-                $variants[] = '0' . $localCore;
+                $variants[] = '0'.$localCore;
                 if (strlen($localCore) >= 7) {
                     $variants[] = $localCore;
                 }
@@ -50,16 +50,16 @@ class MobileNumberHelper
         } elseif (str_starts_with($compact, '0') && strlen($compact) >= 2) {
             $localCore = ltrim(substr($compact, 1), '0');
             if ($localCore !== '') {
-                $variants[] = '+94' . $localCore;
-                $variants[] = '94' . $localCore;
+                $variants[] = '+94'.$localCore;
+                $variants[] = '94'.$localCore;
                 if (strlen($localCore) >= 7) {
                     $variants[] = $localCore;
                 }
             }
         } elseif (strlen($compact) === 9 && ! str_starts_with($compact, '0')) {
-            $variants[] = '0' . $compact;
-            $variants[] = '+94' . $compact;
-            $variants[] = '94' . $compact;
+            $variants[] = '0'.$compact;
+            $variants[] = '+94'.$compact;
+            $variants[] = '94'.$compact;
         }
 
         return array_values(array_unique($variants));

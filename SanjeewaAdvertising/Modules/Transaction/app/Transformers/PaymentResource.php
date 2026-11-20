@@ -23,7 +23,7 @@ class PaymentResource extends JsonResource
             ? $this->activeInvoice
             : $this->printJob?->invoices?->sortByDesc('id')->first();
         $invoiceId = $invoice?->id;
-        $invoiceNo = $invoice ? ('INV-2026-' . str_pad((string) $invoice->id, 4, '0', STR_PAD_LEFT)) : null;
+        $invoiceNo = $invoice ? ('INV-2026-'.str_pad((string) $invoice->id, 4, '0', STR_PAD_LEFT)) : null;
 
         return [
             'id' => $this->id,
