@@ -62,6 +62,7 @@ class PrintJobSeeder extends Seeder
                 'hight' => $hight,
                 'unit_id' => 1,
                 'delivery_method_id' => rand(1, 2),
+                'delivery_date' => $addDate->copy()->addDays(rand(1, 5))->toDateString(),
             ]);
 
             $statusId = $statuses[array_rand($statuses)];
