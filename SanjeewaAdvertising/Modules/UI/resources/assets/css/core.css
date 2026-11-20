@@ -180,7 +180,7 @@ a {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    padding-top: var(--header-height);
+    padding-top: 0;
 }
 
 .app-module {
@@ -189,6 +189,8 @@ a {
     min-height: 0;
     flex-direction: column;
     width: 100%;
+    padding-top: var(--header-height);
+    scroll-padding-top: var(--header-height);
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -1761,4 +1763,148 @@ html[data-theme="dark"] tr.row-status-completed > td {
 html[data-theme="dark"] tr.row-status-delivered > td {
     background-color: rgba(71, 85, 105, 0.16) !important;
     border-right-color: rgba(71, 85, 105, 0.35) !important;
+}
+
+/* ==========================================================================
+   Global Unified Table Column Headers (All Application Tables)
+   Applies a cohesive, crisp enterprise header design across Light & Dark themes
+   while preserving per-column alignments (left / center / right) & widths.
+   ========================================================================== */
+body table:is(
+    .ant-table,
+    .po-table,
+    .pj-table,
+    .pj-assigned-table,
+    .pay-table,
+    .rep-table,
+    .up-table,
+    .grn-items-table,
+    .grn-voucher-items-table,
+    .inv-table,
+    .history-table
+) thead th {
+    position: relative;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%) !important;
+    color: #334155 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.35 !important;
+    padding: 13px 16px;
+    border-top: 1px solid #e2e8f0 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    border-right: none !important;
+    border-left: none !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+/* Refined centered vertical column divider (Ant Design 5 style) */
+body table:is(
+    .ant-table,
+    .po-table,
+    .pj-table,
+    .pj-assigned-table,
+    .pay-table,
+    .rep-table,
+    .up-table,
+    .grn-items-table,
+    .grn-voucher-items-table,
+    .inv-table,
+    .history-table
+) thead th:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 14px;
+    background: rgba(148, 163, 184, 0.38);
+    pointer-events: none;
+}
+
+body table:is(
+    .ant-table,
+    .po-table,
+    .pj-table,
+    .pj-assigned-table,
+    .pay-table,
+    .rep-table,
+    .up-table,
+    .grn-items-table,
+    .grn-voucher-items-table,
+    .inv-table,
+    .history-table
+) thead th i {
+    font-size: 11px;
+    opacity: 0.82;
+    margin-right: 4px;
+}
+
+/* Sortable Column Headers (Reports & Interactive Tables) */
+body table:is(.rep-table, .ant-table, .po-table, .pay-table) thead th.rep-sortable:hover,
+body table:is(.rep-table, .ant-table, .po-table, .pay-table) thead th.sortable:hover {
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+    color: var(--blue, #2563eb) !important;
+}
+
+/* Compact Modal & Embedded Tables */
+body table:is(.grn-items-table, .grn-voucher-items-table, .inv-table, .inv-jobs-table, .grn-po-table) thead th,
+.hr-view-table-scroll table thead th {
+    padding: 10px 12px;
+    font-size: 10.5px !important;
+}
+
+.hr-view-table-scroll table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Dark Mode Unified Table Column Headers */
+html[data-theme="dark"] body table:is(
+    .ant-table,
+    .po-table,
+    .pj-table,
+    .pj-assigned-table,
+    .pay-table,
+    .rep-table,
+    .up-table,
+    .grn-items-table,
+    .grn-voucher-items-table,
+    .inv-table,
+    .history-table
+) thead th {
+    background: linear-gradient(180deg, #1b2842 0%, #141f35 100%) !important;
+    color: #cbd5e1 !important;
+    border-top: 1px solid #243656 !important;
+    border-bottom: 2px solid rgba(96, 165, 250, 0.28) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme="dark"] body table:is(
+    .ant-table,
+    .po-table,
+    .pj-table,
+    .pj-assigned-table,
+    .pay-table,
+    .rep-table,
+    .up-table,
+    .grn-items-table,
+    .grn-voucher-items-table,
+    .inv-table,
+    .history-table
+) thead th:not(:last-child)::after {
+    background: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] body table:is(.rep-table, .ant-table, .po-table, .pay-table) thead th.rep-sortable:hover,
+html[data-theme="dark"] body table:is(.rep-table, .ant-table, .po-table, .pay-table) thead th.sortable:hover {
+    background: linear-gradient(180deg, #1e3256 0%, #172847 100%) !important;
+    color: #93c5fd !important;
 }

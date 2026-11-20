@@ -219,6 +219,11 @@ class Navigation {
         }
         break;
 
+      case "hr-management":
+        if (window.location.pathname === "/admin/hr-management" || window.location.pathname === "/hr-management") return;
+        this.goTo("/admin/hr-management");
+        break;
+
       case "user-control":
         if (window.location.pathname === "/admin/user-control" || window.location.pathname === "/user-control") return;
         this.goTo("/admin/user-control");

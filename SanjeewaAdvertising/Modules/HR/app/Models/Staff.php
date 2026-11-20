@@ -90,4 +90,12 @@ class Staff extends Model
     {
         return $this->hasMany(DalySalary::class, 'staff_id', 'id');
     }
+
+    /**
+     * Get the attendance records for this staff member.
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Atendance::class, 'staff_id', 'id');
+    }
 }

@@ -78,21 +78,31 @@ class SeederTest extends TestCase
             'export' => 1,
         ]);
 
-        // 10. HR tables: staff_statuses, staff, salary, daly_salary
+        // 10. HR tables: staff_statuses, staff, salary, daly_salary, work_day_statuses, work_days, atendance_statuses, atendance
         $this->assertGreaterThan(0, DB::table('staff_statuses')->count());
         $this->assertDatabaseHas('staff_statuses', ['staff_status' => 'Active']);
         $this->assertGreaterThan(0, DB::table('staff')->count());
         $this->assertGreaterThan(0, DB::table('salary')->count());
         $this->assertGreaterThan(0, DB::table('daly_salary')->count());
+        $this->assertGreaterThan(0, DB::table('work_day_statuses')->count());
+        $this->assertDatabaseHas('work_day_statuses', ['work_day_status' => 'Working Day']);
+        $this->assertGreaterThan(0, DB::table('work_days')->count());
+        $this->assertGreaterThan(0, DB::table('atendance_statuses')->count());
+        $this->assertDatabaseHas('atendance_statuses', ['atendance_statuses' => 'Present']);
+        $this->assertGreaterThan(0, DB::table('atendance')->count());
 
         $staffCount = DB::table('staff')->count();
         $salaryCount = DB::table('salary')->count();
         $dalySalaryCount = DB::table('daly_salary')->count();
+        $workDaysCount = DB::table('work_days')->count();
+        $atendanceCount = DB::table('atendance')->count();
 
         // Test idempotency: run seeder again, count should not double and no error
         $this->seed(DatabaseSeeder::class);
         $this->assertSame($staffCount, DB::table('staff')->count());
         $this->assertSame($salaryCount, DB::table('salary')->count());
         $this->assertSame($dalySalaryCount, DB::table('daly_salary')->count());
+        $this->assertSame($workDaysCount, DB::table('work_days')->count());
+        $this->assertSame($atendanceCount, DB::table('atendance')->count());
     }
 }

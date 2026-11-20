@@ -744,6 +744,7 @@
     }
 
     #module-dashboard {
+        padding-top: 0 !important;
         overflow: visible;
     }
 

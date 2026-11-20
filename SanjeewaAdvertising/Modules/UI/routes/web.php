@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Models\Admin;
+use Modules\HR\Http\Controllers\HRController;
 use Modules\UI\Http\Controllers\DashboardController;
 use Modules\UI\Http\Controllers\SettingsController;
 use Modules\UI\Http\Controllers\UIController;
@@ -136,6 +137,12 @@ Route::middleware(['auth:web,admin'])->group(function () {
         ->name('ui.payments');
 
     // Administration & User Control (Restricted to Administrators & Granted Privilege)
+    Route::get('/admin/hr-management', [HRController::class, 'index'])
+        ->middleware('module.permission:User Control')
+        ->name('admin.hr-management');
+
+    Route::get('/hr-management', fn () => redirect()->route('admin.hr-management'));
+
     Route::view('/admin/user-control', 'ui::layouts.admin.pages.user-control.user-control')
         ->middleware('module.permission:User Control')
         ->name('admin.user-control');

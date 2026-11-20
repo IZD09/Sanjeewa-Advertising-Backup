@@ -16,6 +16,10 @@ class HRDatabaseSeeder extends Seeder
             StaffSeeder::class,
             SalarySeeder::class,
             DalySalarySeeder::class,
+            WorkDayStatusSeeder::class,
+            WorkDaySeeder::class,
+            AtendanceStatusSeeder::class,
+            AtendanceSeeder::class,
         ]);
     }
 }

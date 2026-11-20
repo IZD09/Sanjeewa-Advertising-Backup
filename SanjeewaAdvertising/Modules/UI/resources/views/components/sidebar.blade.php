@@ -42,7 +42,7 @@
         if (session()->isStarted()) {
             session(['active_portal' => 'user']);
         }
-    } elseif (request()->is('dashboard*') || request()->is('reports*') || request()->is('payments*') || request()->is('inventory*') || request()->is('grn*') || request()->is('user-control*') || request()->is('admin/user-control*') || request()->is('/')) {
+    } elseif (request()->is('dashboard*') || request()->is('reports*') || request()->is('payments*') || request()->is('inventory*') || request()->is('grn*') || request()->is('user-control*') || request()->is('admin/user-control*') || request()->is('hr-management*') || request()->is('admin/hr-management*') || request()->is('/')) {
         $isAdmin = true;
         if (session()->isStarted()) {
             session(['active_portal' => 'admin']);
@@ -102,6 +102,7 @@
             'type' => 'group',
             'section' => 'MANAGEMENT',
             'items' => [
+                ['component' => 'hr-management'],
                 ['component' => 'user-control'],
                 ['component' => 'admin-profile'],
                 ['component' => 'settings'],

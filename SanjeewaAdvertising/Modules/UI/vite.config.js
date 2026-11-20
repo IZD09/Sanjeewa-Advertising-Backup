@@ -27,6 +27,7 @@ export default defineConfig({
                 'resources/assets/css/login.css',
                 'resources/assets/css/admin-login.css',
                 'resources/assets/css/admin-user-control.css',
+                'resources/assets/css/admin-hr-management.css',
                 'resources/assets/css/admin-profile.css',
                 'resources/assets/css/user-profile.css',
                 'resources/assets/css/reports.css',
@@ -49,7 +50,8 @@ export default defineConfig({
                 'resources/assets/js/admin/admin-login.js',
                 'resources/assets/js/admin/dashboard.js',
                 'resources/assets/js/admin/user-control/processes/UserControlManager.js',
-                'resources/assets/js/admin/profile/AdminProfileManager.js',
+                'resources/assets/js/admin/hr-management/processes/AdminHRManager.js',
+                'resources/assets/js/admin/profile/processes/AdminProfileManager.js',
                 'resources/assets/js/profile.js',
                 'resources/assets/js/profile/UserProfileManager.js'
             ],

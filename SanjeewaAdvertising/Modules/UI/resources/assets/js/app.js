@@ -61,6 +61,11 @@ class AppRouter {
         breadcrumb: "Workspace / Management / <span>Settings</span>",
         moduleId: "module-settings"
       },
+      "hr-management": {
+        title: "HR & Payroll Management",
+        breadcrumb: "Admin Workspace / Management / <span>HR & Payroll</span>",
+        moduleId: "module-hr-management"
+      },
       "user-control": {
         title: "User & Access Control",
         breadcrumb: "Admin Workspace / Management / <span>User Control</span>",

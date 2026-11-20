@@ -284,6 +284,6 @@
     {{ module_vite('build-ui', 'resources/assets/js/core.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/sidebar.js') }}
     {{ module_vite('build-ui', 'resources/assets/js/components/topbar.js') }}
-    {{ module_vite('build-ui', 'resources/assets/js/admin/profile/AdminProfileManager.js') }}
+    {{ module_vite('build-ui', 'resources/assets/js/admin/profile/processes/AdminProfileManager.js') }}
 @endpush
 

@@ -54,6 +54,15 @@
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
+  "resources/assets/css/admin-hr-management.css": {
+    "file": "assets/admin-hr-management-Cl8w6zVr.css",
+    "name": "admin-hr-management",
+    "names": [
+      "admin-hr-management.css"
+    ],
+    "src": "resources/assets/css/admin-hr-management.css",
+    "isEntry": true
+  },
   "resources/assets/css/admin-login.css": {
     "file": "assets/admin-login-CTUvoob_.css",
     "name": "admin-login",
@@ -91,7 +100,7 @@
     "isEntry": true
   },
   "resources/assets/css/core.css": {
-    "file": "assets/core-DVrd6n9i.css",
+    "file": "assets/core-qnI-rFP3.css",
     "name": "core",
     "names": [
       "core.css"
@@ -100,7 +109,7 @@
     "isEntry": true
   },
   "resources/assets/css/dashboard.css": {
-    "file": "assets/dashboard-BpLPsqNG.css",
+    "file": "assets/dashboard-hPk6gIfe.css",
     "name": "dashboard",
     "names": [
       "dashboard.css"
@@ -217,6 +226,17 @@
       "_RequestHandler-CzHZMMVQ.js"
     ]
   },
+  "resources/assets/js/admin/hr-management/processes/AdminHRManager.js": {
+    "file": "assets/AdminHRManager-DhP4VBee.js",
+    "name": "AdminHRManager",
+    "src": "resources/assets/js/admin/hr-management/processes/AdminHRManager.js",
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-CzHZMMVQ.js",
+      "_BasePaginationHandler-CxkMXfSO.js",
+      "_BaseTableRowBuilder-CrSEebSa.js"
+    ]
+  },
   "resources/assets/js/admin/login.js": {
     "file": "assets/login-COvDUeHC.js",
     "name": "login",
@@ -227,13 +247,14 @@
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
-  "resources/assets/js/admin/profile/AdminProfileManager.js": {
-    "file": "assets/AdminProfileManager-CMHQtVbf.js",
+  "resources/assets/js/admin/profile/processes/AdminProfileManager.js": {
+    "file": "assets/AdminProfileManager-ebv6P4Zv.js",
     "name": "AdminProfileManager",
-    "src": "resources/assets/js/admin/profile/AdminProfileManager.js",
+    "src": "resources/assets/js/admin/profile/processes/AdminProfileManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js"
+      "_RequestHandler-CzHZMMVQ.js",
+      "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
@@ -247,7 +268,7 @@
     ]
   },
   "resources/assets/js/app.js": {
-    "file": "assets/app-C46K6S6b.js",
+    "file": "assets/app-QaT-3d6Y.js",
     "name": "app",
     "src": "resources/assets/js/app.js",
     "isEntry": true,
@@ -256,7 +277,7 @@
     ]
   },
   "resources/assets/js/components/sidebar.js": {
-    "file": "assets/sidebar-BRFP5zX8.js",
+    "file": "assets/sidebar-CkURTGO_.js",
     "name": "sidebar",
     "src": "resources/assets/js/components/sidebar.js",
     "isEntry": true
