@@ -32,7 +32,7 @@ class PrintJobSeeder extends Seeder
             'first_name' => 'Admin',
             'last_name' => 'User',
             'mobile' => '0770000000',
-            'username' => 'admin_user_' . uniqid(),
+            'username' => 'admin_user_'.uniqid(),
             'password' => bcrypt('password'),
             'register_at' => now(),
             'is_login' => 0,
@@ -61,6 +61,7 @@ class PrintJobSeeder extends Seeder
                 'hight' => $hight,
                 'unit_id' => 1,
                 'delivery_method_id' => rand(1, 2),
+                'delivery_date' => $addDate->copy()->addDays(rand(1, 5))->toDateString(),
             ]);
 
             $statusId = $statuses[array_rand($statuses)];
