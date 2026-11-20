@@ -63,6 +63,7 @@ export class AdminLoginManager {
     this.yearElement = $(this.options.yearId || "adminCopyrightYear");
 
     this.updateCopyrightYear();
+    this.updatePasswordEyeIcon();
     this.bindEvents();
   }
 
@@ -108,6 +109,7 @@ export class AdminLoginManager {
       });
 
       this.passwordInput.addEventListener("input", () => {
+        this.updatePasswordEyeIcon();
         if (this.passwordField?.classList.contains("bad")) {
           this.validatePassword();
         }
@@ -121,6 +123,25 @@ export class AdminLoginManager {
   }
 
   /**
+   * Update the eye icon to reflect password visibility.
+   */
+  updatePasswordEyeIcon() {
+    if (!this.passwordInput || !this.eyeButton) return;
+
+    const isVisible = this.passwordInput.type === "text";
+    this.eyeButton.setAttribute("aria-pressed", isVisible ? "true" : "false");
+    this.eyeButton.setAttribute(
+      "aria-label",
+      isVisible ? "Hide password" : "Show password"
+    );
+
+    const icon = this.eyeButton.querySelector("i");
+    if (icon) {
+      icon.className = isVisible ? "fa-solid fa-eye" : "fa-solid fa-eye-slash";
+    }
+  }
+
+  /**
    * Toggle password input visibility between text and password.
    */
   togglePasswordVisibility() {
@@ -128,16 +149,8 @@ export class AdminLoginManager {
 
     const isPassword = this.passwordInput.type === "password";
     this.passwordInput.type = isPassword ? "text" : "password";
-    this.eyeButton.setAttribute("aria-pressed", isPassword ? "true" : "false");
 
-    const icon = this.eyeButton.querySelector("i");
-    if (icon) {
-      if (isPassword) {
-        icon.className = "fa-solid fa-eye-slash";
-      } else {
-        icon.className = "fa-solid fa-eye";
-      }
-    }
+    this.updatePasswordEyeIcon();
   }
 
   /**

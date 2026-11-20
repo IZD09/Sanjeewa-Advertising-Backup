@@ -147,8 +147,8 @@
                             required 
                             aria-describedby="adminPasswordError"
                         >
-                        <button type="button" class="eye" id="adminPasswordToggle" aria-label="Toggle password visibility" aria-pressed="false">
-                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        <button type="button" class="eye" id="adminPasswordToggle" aria-label="Show password" aria-pressed="false">
+                            <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
                         </button>
                     </div>
                     <div class="err" id="adminPasswordError" role="alert">Enter your administrator password.</div>

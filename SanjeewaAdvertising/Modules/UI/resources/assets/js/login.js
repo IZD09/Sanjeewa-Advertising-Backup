@@ -96,6 +96,7 @@ export class LoginManager {
     this.btnRequestLabel = $("btnRequestLabel");
 
     this.updateCopyrightYear();
+    this.updatePasswordEyeIcon();
     this.bindEvents();
   }
 
@@ -135,6 +136,7 @@ export class LoginManager {
     // Password validation listeners
     if (this.passwordInput) {
       this.passwordInput.addEventListener("input", () => {
+        this.updatePasswordEyeIcon();
         if (this.passwordField?.classList.contains("bad")) {
           this.validatePassword();
         }
@@ -157,6 +159,27 @@ export class LoginManager {
   }
 
   /**
+   * Update the eye icon SVG and aria attributes to reflect current password visibility.
+   */
+  updatePasswordEyeIcon() {
+    if (!this.passwordInput || !this.eyeIcon) return;
+
+    const isVisible = this.passwordInput.type === "text";
+
+    if (this.eyeButton) {
+      this.eyeButton.setAttribute("aria-pressed", String(isVisible));
+      this.eyeButton.setAttribute(
+        "aria-label",
+        isVisible ? "Hide password" : "Show password"
+      );
+    }
+
+    this.eyeIcon.innerHTML = isVisible
+      ? '<path d="M2 12s3.500-7 10-7 10 7 10 7-3.500 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M3 3l18 18"/><path d="M10.600 6.100A9.700 9.700 0 0112 5c6.500 0 10 7 10 7a17 17 0 01-3.200 4M6.600 6.600A17 17 0 002 12s3.500 7 10 7c1.600 0 3-.4 4.300-1"/><path d="M9.900 9.900a3 3 0 004.200 4.200"/>';
+  }
+
+  /**
    * Toggle password input visibility and swap eye icon.
    */
   togglePasswordVisibility() {
@@ -165,19 +188,7 @@ export class LoginManager {
     const isCurrentlyPassword = this.passwordInput.type === "password";
     this.passwordInput.type = isCurrentlyPassword ? "text" : "password";
 
-    if (this.eyeButton) {
-      this.eyeButton.setAttribute("aria-pressed", String(isCurrentlyPassword));
-      this.eyeButton.setAttribute(
-        "aria-label",
-        isCurrentlyPassword ? "Hide password" : "Show password"
-      );
-    }
-
-    if (this.eyeIcon) {
-      this.eyeIcon.innerHTML = isCurrentlyPassword
-        ? '<path d="M3 3l18 18"/><path d="M10.600 6.100A9.700 9.700 0 0112 5c6.500 0 10 7 10 7a17 17 0 01-3.200 4M6.600 6.600A17 17 0 002 12s3.500 7 10 7c1.600 0 3-.4 4.300-1"/><path d="M9.900 9.900a3 3 0 004.200 4.200"/>'
-        : '<path d="M2 12s3.500-7 10-7 10 7 10 7-3.500 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';
-    }
+    this.updatePasswordEyeIcon();
   }
 
   /**
