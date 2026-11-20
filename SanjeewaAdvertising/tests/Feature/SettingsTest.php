@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\AdminStatusSeeder;
-use Database\Seeders\AdminTypeSeeder;
-use Database\Seeders\DefaultAdminSeeder;
-use Database\Seeders\SystemModuleSeeder;
-use Database\Seeders\UserStatusSeeder;
+use Modules\Admin\Database\Seeders\AdminStatusSeeder;
+use Modules\Admin\Database\Seeders\AdminTypeSeeder;
+use Modules\Admin\Database\Seeders\DefaultAdminSeeder;
 use Modules\Admin\Models\Admin;
+use Modules\User\Database\Seeders\SystemModuleSeeder;
+use Modules\User\Database\Seeders\UserStatusSeeder;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase

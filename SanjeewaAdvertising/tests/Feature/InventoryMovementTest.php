@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\StockMovementSeeder;
+use Modules\Inventory\Database\Seeders\StockMovementSeeder;
 use Tests\TestCase;
 
 class InventoryMovementTest extends TestCase

@@ -4,6 +4,17 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Modules\Admin\Database\Seeders\AdminDatabaseSeeder;
+use Modules\Core\Database\Seeders\CoreDatabaseSeeder;
+use Modules\Customer\Database\Seeders\CustomerDatabaseSeeder;
+use Modules\Design\Database\Seeders\DesignDatabaseSeeder;
+use Modules\HR\Database\Seeders\HRDatabaseSeeder;
+use Modules\Inventory\Database\Seeders\InventoryDatabaseSeeder;
+use Modules\Invoice\Database\Seeders\InvoiceDatabaseSeeder;
+use Modules\PrintJob\Database\Seeders\PrintJobDatabaseSeeder;
+use Modules\Supplier\Database\Seeders\SupplierDatabaseSeeder;
+use Modules\Transaction\Database\Seeders\TransactionDatabaseSeeder;
+use Modules\User\Database\Seeders\UserDatabaseSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,30 +26,17 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserStatusSeeder::class,
-            PrintTypeSeeder::class,
-            PrintCostTypeSeeder::class,
-            PrintJobStatusSeeder::class,
-            CategorySeeder::class,
-            SubcategorySeeder::class,
-            BrandSeeder::class,
-            StockMovementTypeSeeder::class,
-            ExpenseTypeSeeder::class,
-            ExpenseStatusSeeder::class,
-            PaymentTypeSeeder::class,
-            AdminStatusSeeder::class,
-            AdminTypeSeeder::class,
-            PurchaseOrderStatusSeeder::class,
-            ActivityTypeSeeder::class,
-            SystemModuleSeeder::class,
-            DefaultAdminSeeder::class,
-            CustomerSeeder::class,
-            SupplierSeeder::class,
-            UnitSeeder::class,
-            DeliveryMethodSeeder::class,
-            StockMovementSeeder::class,
-            StockDataSeeder::class,
-            PrintJobSeeder::class,
+            UserDatabaseSeeder::class,
+            AdminDatabaseSeeder::class,
+            CoreDatabaseSeeder::class,
+            DesignDatabaseSeeder::class,
+            CustomerDatabaseSeeder::class,
+            SupplierDatabaseSeeder::class,
+            InventoryDatabaseSeeder::class,
+            TransactionDatabaseSeeder::class,
+            PrintJobDatabaseSeeder::class,
+            InvoiceDatabaseSeeder::class,
+            HRDatabaseSeeder::class,
         ]);
     }
 }

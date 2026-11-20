@@ -11,6 +11,8 @@ class InvoiceDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $this->call([
+            InvoiceSeeder::class,
+        ]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\StockMovementSeeder;
+use Modules\Inventory\Database\Seeders\StockMovementSeeder;
 use Modules\Inventory\Models\Brand;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\Subcategory;

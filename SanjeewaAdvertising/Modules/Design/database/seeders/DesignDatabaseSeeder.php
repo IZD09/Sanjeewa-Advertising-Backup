@@ -2,8 +2,6 @@
 
 namespace Modules\Design\Database\Seeders;
 
-use Database\Seeders\PrintCostTypeSeeder;
-use Database\Seeders\PrintTypeSeeder;
 use Illuminate\Database\Seeder;
 
 class DesignDatabaseSeeder extends Seeder

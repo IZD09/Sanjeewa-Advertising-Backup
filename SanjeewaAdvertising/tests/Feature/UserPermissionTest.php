@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\AdminStatusSeeder;
-use Database\Seeders\AdminTypeSeeder;
-use Database\Seeders\DefaultAdminSeeder;
-use Database\Seeders\UserStatusSeeder;
+use Modules\Admin\Database\Seeders\AdminStatusSeeder;
+use Modules\Admin\Database\Seeders\AdminTypeSeeder;
+use Modules\Admin\Database\Seeders\DefaultAdminSeeder;
 use Modules\Admin\Models\Admin;
+use Modules\User\Database\Seeders\UserStatusSeeder;
 use Modules\User\Models\SystemModule;
 use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;

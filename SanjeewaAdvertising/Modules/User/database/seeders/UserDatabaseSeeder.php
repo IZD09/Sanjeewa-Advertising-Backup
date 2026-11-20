@@ -2,7 +2,6 @@
 
 namespace Modules\User\Database\Seeders;
 
-use Database\Seeders\UserStatusSeeder;
 use Illuminate\Database\Seeder;
 
 class UserDatabaseSeeder extends Seeder

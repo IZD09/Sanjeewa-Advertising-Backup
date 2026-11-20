@@ -2,7 +2,6 @@
 
 namespace Modules\PrintJob\Database\Seeders;
 
-use Database\Seeders\PrintJobStatusSeeder;
 use Illuminate\Database\Seeder;
 
 class PrintJobDatabaseSeeder extends Seeder
@@ -16,6 +15,7 @@ class PrintJobDatabaseSeeder extends Seeder
             UnitSeeder::class,
             DeliveryMethodSeeder::class,
             PrintJobStatusSeeder::class,
+            PrintJobSeeder::class,
         ]);
     }
 }

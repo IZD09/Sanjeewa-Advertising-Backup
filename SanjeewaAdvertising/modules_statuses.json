@@ -10,5 +10,6 @@
     "Transaction": true,
     "UI": true,
     "Invoice": true,
-    "Reports": true
+    "Reports": true,
+    "HR": true
 }
