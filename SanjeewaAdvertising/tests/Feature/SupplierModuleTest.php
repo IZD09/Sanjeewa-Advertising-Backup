@@ -3,11 +3,16 @@
 namespace Tests\Feature;
 
 use Modules\Inventory\Models\Category;
+use Modules\Inventory\Models\Stock;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\Subcategory;
 use Modules\Supplier\Models\Grn;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\Supplier;
+use Modules\User\Models\SystemModule;
+use Modules\User\Models\SystemModuleUser;
+use Modules\User\Models\User;
+use Modules\User\Models\UserStatus;
 use Tests\TestCase;
 
 class SupplierModuleTest extends TestCase
@@ -52,9 +57,9 @@ class SupplierModuleTest extends TestCase
         // 5. Purchase orders sub-resource
         $this->getJson("/api/v1/suppliers/{$supplierId}/purchase-orders")->assertStatus(200);
 
-        // 6. Delete
+        // 6. Delete (disables supplier)
         $this->deleteJson("/api/v1/suppliers/{$supplierId}")->assertStatus(200);
-        $this->assertDatabaseMissing('suppliers', ['id' => $supplierId]);
+        $this->assertDatabaseHas('suppliers', ['id' => $supplierId, 'status' => 'Disabled']);
     }
 
     public function test_can_manage_purchase_orders(): void
@@ -115,6 +120,41 @@ class SupplierModuleTest extends TestCase
 
         $response->assertStatus(201);
         $grnId = $response->json('data.id');
+        $this->assertDatabaseHas('grn', [
+            'id' => $grnId,
+            'grn_statuses_id' => 5,
+        ]);
+
+        // Cannot complete a GRN before it is Approved
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Completed',
+        ])->assertStatus(422);
+
+        // Approve GRN via grn_statuses_id
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Approved',
+        ])->assertStatus(200)
+            ->assertJsonPath('data.status', 'Approved')
+            ->assertJsonPath('data.grn_statuses_id', 2);
+
+        $this->assertDatabaseHas('grn', [
+            'id' => $grnId,
+            'grn_statuses_id' => 2,
+        ]);
+
+        // Now can complete the Approved GRN
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Completed',
+        ])->assertStatus(200)
+            ->assertJsonPath('data.status', 'Completed')
+            ->assertJsonPath('data.grn_statuses_id', 3);
+
+        // Can cancel GRN
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Cancelled',
+        ])->assertStatus(200)
+            ->assertJsonPath('data.status', 'Cancelled')
+            ->assertJsonPath('data.grn_statuses_id', 4);
 
         // List & All
         $this->getJson('/api/v1/grns')->assertStatus(200);
@@ -126,6 +166,108 @@ class SupplierModuleTest extends TestCase
         // Delete
         $this->deleteJson("/api/v1/grns/{$grnId}")->assertStatus(200);
         $this->assertDatabaseMissing('grn', ['id' => $grnId]);
+    }
+
+    public function test_completing_grn_moves_to_pending_stock_without_updating_stock_and_notifies_inventory_users(): void
+    {
+        UserStatus::firstOrCreate(['id' => 1], ['user_status' => 'Active']);
+        $inventoryModule = SystemModule::firstOrCreate(['system_module' => 'Inventory']);
+
+        $inventoryUser = User::create([
+            'first_name' => 'Stock',
+            'last_name' => 'Manager',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'register_at' => now(),
+            'username' => 'stockmgr_'.uniqid(),
+            'password' => 'password123',
+            'is_login' => 0,
+            'user_statuses_id' => 1,
+        ]);
+
+        SystemModuleUser::create([
+            'users_id' => $inventoryUser->id,
+            'system_modules_id' => $inventoryModule->id,
+            'view' => 1,
+            'create' => 1,
+            'edit' => 1,
+            'delete' => 0,
+            'export' => 0,
+        ]);
+
+        $otherUser = User::create([
+            'first_name' => 'Sales',
+            'last_name' => 'Staff',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'register_at' => now(),
+            'username' => 'sales_'.uniqid(),
+            'password' => 'password123',
+            'is_login' => 0,
+            'user_statuses_id' => 1,
+        ]);
+
+        $category = Category::create(['category' => 'Print Media '.uniqid()]);
+        $subcategory = Subcategory::create([
+            'categories_id' => $category->id,
+            'subcategory' => 'Vinyl '.uniqid(),
+        ]);
+        $stockItem = StockItem::create([
+            'subcategories_id' => $subcategory->id,
+            'code' => 'STK-'.uniqid(),
+            'name' => 'Test Vinyl Roll',
+            'low_stock_qty' => 5,
+            'reorder_qty' => 10,
+        ]);
+
+        $supplier = Supplier::create([
+            'name' => 'Stock Check Supplier',
+            'mobile' => '077'.rand(1000000, 9999999),
+            'email' => 'stksup_'.uniqid().'@example.com',
+            'register_at' => now(),
+        ]);
+
+        $po = PurchaseOrder::create([
+            'suppliers_id' => $supplier->id,
+            'add_date' => now(),
+        ]);
+
+        $createRes = $this->postJson('/api/v1/grns', [
+            'at_time' => now()->toDateTimeString(),
+            'purchase_orders_id' => $po->id,
+            'supplyer_invoice' => 'INV-STK-001',
+            'stocks' => [
+                [
+                    'stock_items_id' => $stockItem->id,
+                    'qty' => 15,
+                    'buy' => 1200,
+                    'price' => 1500,
+                ],
+            ],
+        ]);
+
+        $createRes->assertStatus(201);
+        $grnId = $createRes->json('data.id');
+
+        $this->assertSame(0, Stock::where('grn_id', $grnId)->count());
+
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Pending Stock',
+        ])->assertStatus(422);
+
+        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Approved',
+        ])->assertStatus(200);
+
+        $completeRes = $this->patchJson("/api/v1/grns/{$grnId}/status", [
+            'status' => 'Pending Stock',
+        ]);
+
+        $completeRes->assertStatus(200)
+            ->assertJsonPath('data.status', 'Pending Stock')
+            ->assertJsonPath('data.grn_statuses_id', 6);
+
+        $this->assertSame(0, Stock::where('grn_id', $grnId)->count());
+        $this->assertSame(1, $inventoryUser->notifications()->count());
+        $this->assertSame(0, $otherUser->notifications()->count());
     }
 
     public function test_grn_and_po_data_endpoints_load_from_database_with_20_rows_pagination(): void

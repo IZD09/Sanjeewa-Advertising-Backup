@@ -43,9 +43,16 @@ class SeederTest extends TestCase
         $this->assertDatabaseHas('expencesess_types', ['expencesess_type' => 'Electricity Utility']);
         $this->assertDatabaseHas('expencesess_statuses', ['expencesess_status' => 'Paid']);
 
-        // 5. payment_types
+        // 5. payment_types & grn_statuses
         $this->assertGreaterThan(0, DB::table('payment_types')->count());
         $this->assertDatabaseHas('payment_types', ['payment_type' => 'Cash']);
+        $this->assertGreaterThan(0, DB::table('grn_statuses')->count());
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Draft']);
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Approved']);
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Completed']);
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Cancelled']);
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Pending']);
+        $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Pending Stock']);
 
         // 6. admin_statuses, admin_types
         $this->assertGreaterThan(0, DB::table('admin_statuses')->count());

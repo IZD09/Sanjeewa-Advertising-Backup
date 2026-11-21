@@ -11,6 +11,7 @@ use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovementType;
 use Modules\Inventory\Models\Subcategory;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\GrnStatus;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\PurchaseOrderItem;
 use Modules\Supplier\Models\PurchaseOrderStatus;
@@ -273,14 +274,25 @@ class InventoryStockReceiptTest extends TestCase
             'qty_received' => 30,
         ]);
 
-        $grn = Grn::create(['at_time' => now()]);
+        $grn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING_STOCK,
+        ]);
         $grn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-TEST-01']);
 
-        // Step 1: Check form-data endpoint before stock added - both items should be available
+        $otherGrn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING,
+        ]);
+        $otherGrn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-TEST-02']);
+
+        // Step 1: Check form-data endpoint before stock added - only Pending Stock GRN is returned with both items
         $formData1 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
         $grnData1 = collect($formData1['data']['grns'])->firstWhere('id', $grn->id);
+        $otherGrnData1 = collect($formData1['data']['grns'])->firstWhere('id', $otherGrn->id);
 
         $this->assertNotNull($grnData1);
+        $this->assertNull($otherGrnData1);
         $this->assertCount(2, $grnData1['items']);
 
         // Check calculations on item 1: 50 * 150.00 = 7500.00

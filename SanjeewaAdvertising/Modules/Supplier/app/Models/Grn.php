@@ -3,6 +3,7 @@
 namespace Modules\Supplier\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Inventory\Models\GrmItem;
@@ -34,13 +35,22 @@ class Grn extends Model
     public $timestamps = false;
 
     /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'grn_statuses_id' => GrnStatus::STATUS_PENDING,
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
         'at_time',
-        'status',
+        'grn_statuses_id',
     ];
 
     /**
@@ -52,7 +62,24 @@ class Grn extends Model
     {
         return [
             'at_time' => 'datetime',
+            'grn_statuses_id' => 'integer',
         ];
+    }
+
+    /**
+     * Get the status record associated with this GRN.
+     */
+    public function grnStatus(): BelongsTo
+    {
+        return $this->belongsTo(GrnStatus::class, 'grn_statuses_id', 'id');
+    }
+
+    /**
+     * Alias for grnStatus relationship.
+     */
+    public function status(): BelongsTo
+    {
+        return $this->grnStatus();
     }
 
     /**

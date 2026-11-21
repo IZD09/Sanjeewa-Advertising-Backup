@@ -6,10 +6,14 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Modules\Core\Services\NotificationService;
 use Modules\Core\Support\MobileNumberHelper;
 use Modules\Inventory\Models\Stock;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\GrnStatus;
 use Modules\Supplier\Models\Supplier;
+use Modules\User\Models\User;
 
 class GrnService
 {
@@ -22,7 +26,7 @@ class GrnService
     public function buildQuery(array $filters = []): Builder
     {
         $query = Grn::query()
-            ->with(['purchaseOrders.supplier', 'stocks.stockItem'])
+            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'grnStatus'])
             ->withCount('stocks');
 
         if (! empty($filters['from_date'])) {
@@ -33,9 +37,24 @@ class GrnService
             $query->whereDate('at_time', '<=', $filters['to_date']);
         }
 
-        $statusFilter = (string) ($filters['status'] ?? 'ALL');
-        if ($statusFilter !== '' && strcasecmp($statusFilter, 'ALL') !== 0) {
-            $query->where('status', $statusFilter);
+        if (! empty($filters['grn_statuses_id'])) {
+            $query->where('grn_statuses_id', (int) $filters['grn_statuses_id']);
+        } else {
+            $statusFilter = trim((string) ($filters['status'] ?? 'ALL'));
+            if ($statusFilter !== '' && strcasecmp($statusFilter, 'ALL') !== 0) {
+                if (ctype_digit($statusFilter)) {
+                    $query->where('grn_statuses_id', (int) $statusFilter);
+                } else {
+                    $statusId = GrnStatus::resolveIdByName($statusFilter, 0);
+                    if ($statusId > 0) {
+                        $query->where('grn_statuses_id', $statusId);
+                    } else {
+                        $query->whereHas('grnStatus', function (Builder $q) use ($statusFilter) {
+                            $q->where('grn_status', $statusFilter);
+                        });
+                    }
+                }
+            }
         }
 
         if (! empty($filters['suppliers_id'])) {
@@ -103,7 +122,7 @@ class GrnService
     public function getGrnById(int $id): ?Grn
     {
         return Grn::query()
-            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'payments'])
+            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'payments', 'grnStatus'])
             ->withCount('stocks')
             ->find($id);
     }
@@ -116,13 +135,17 @@ class GrnService
     public function createGrn(array $data): Grn
     {
         return DB::transaction(function () use ($data) {
-            $status = ! empty($data['stocks'])
-                ? 'Completed'
-                : (! empty($data['status']) ? (string) $data['status'] : 'Draft');
+            if (! empty($data['grn_statuses_id'])) {
+                $statusId = (int) $data['grn_statuses_id'];
+            } elseif (! empty($data['status'])) {
+                $statusId = GrnStatus::resolveIdByName((string) $data['status'], GrnStatus::STATUS_PENDING);
+            } else {
+                $statusId = GrnStatus::STATUS_PENDING;
+            }
 
             $grn = Grn::create([
                 'at_time' => ! empty($data['at_time']) ? $data['at_time'] : now(),
-                'status' => $status,
+                'grn_statuses_id' => $statusId,
             ]);
 
             $attachedPos = [];
@@ -150,67 +173,81 @@ class GrnService
                 $grn->purchaseOrders()->attach($attachedPos);
             }
 
-            if (! empty($data['stocks']) && is_array($data['stocks'])) {
-                $defaultBrandId = DB::table('brands')->value('id') ?? 1;
-
-                foreach ($data['stocks'] as $stockItem) {
-                    $stockItemId = (int) $stockItem['stock_items_id'];
-                    $brandId = ! empty($stockItem['brands_id'])
-                        ? (int) $stockItem['brands_id']
-                        : (DB::table('stock_items_has_brands')->where('stock_items_id', $stockItemId)->value('brands_id') ?? $defaultBrandId);
-
-                    $buyCost = (float) ($stockItem['buy'] ?? 0);
-                    $price = isset($stockItem['price']) && (float) $stockItem['price'] > 0
-                        ? (float) $stockItem['price']
-                        : round($buyCost * 1.25, 2);
-
-                    $qty = (int) $stockItem['qty'];
-
-                    Stock::create([
-                        'stock_items_id' => $stockItemId,
-                        'brands_id' => $brandId,
-                        'qty' => $qty,
-                        'price' => $price,
-                        'buy' => $buyCost,
-                        'add_date' => now(),
-                        'grn_id' => $grn->id,
-                    ]);
-
-                    $poTargetId = ! empty($stockItem['purchase_orders_id'])
-                        ? (int) $stockItem['purchase_orders_id']
-                        : (! empty($data['purchase_orders_id']) ? (int) $data['purchase_orders_id'] : null);
-
-                    if (! $poTargetId && ! empty($attachedPos)) {
-                        $poTargetId = DB::table('purchase_order_items')
-                            ->whereIn('purchase_orders_id', array_keys($attachedPos))
-                            ->where('stock_items_id', $stockItemId)
-                            ->whereColumn('qty_received', '<', 'qty_ordered')
-                            ->value('purchase_orders_id') ?? array_key_first($attachedPos);
-                    }
-
-                    if ($poTargetId) {
-                        DB::table('purchase_order_items')
-                            ->where('purchase_orders_id', $poTargetId)
-                            ->where('stock_items_id', $stockItemId)
-                            ->increment('qty_received', $qty);
-
-                        app(PurchaseOrderService::class)->syncPurchaseOrderStatus($poTargetId);
-                    }
-                }
-            }
-
             return $this->getGrnById($grn->id) ?? $grn;
         });
     }
 
     /**
-     * Update GRN status (Approved, Cancelled, Completed, Draft).
+     * Update GRN status (Approved, Cancelled, Completed, Draft, Pending, Pending Stock).
      */
-    public function updateGrnStatus(Grn $grn, string $status): Grn
+    public function updateGrnStatus(Grn $grn, string|int $status): Grn
     {
-        $grn->update(['status' => $status]);
+        $statusId = GrnStatus::resolveIdByName($status);
+        $previousStatusId = (int) $grn->grn_statuses_id;
 
-        return $this->getGrnById($grn->id) ?? $grn->fresh();
+        if (in_array($statusId, [GrnStatus::STATUS_COMPLETED, GrnStatus::STATUS_PENDING_STOCK], true)
+            && $previousStatusId !== GrnStatus::STATUS_APPROVED
+        ) {
+            throw ValidationException::withMessages([
+                'status' => ['Please approve this GRN before completing it.'],
+            ]);
+        }
+
+        $grn->update(['grn_statuses_id' => $statusId]);
+
+        if ($statusId === GrnStatus::STATUS_PENDING_STOCK && $previousStatusId !== GrnStatus::STATUS_PENDING_STOCK) {
+            $this->notifyStockManagers($grn);
+        }
+
+        return $this->getGrnById($grn->id) ?? $grn->fresh(['grnStatus']);
+    }
+
+    /**
+     * Notify all active users with Inventory (Stock Management) permission when a GRN is ready for stock entry.
+     */
+    protected function notifyStockManagers(Grn $grn): void
+    {
+        $users = User::query()
+            ->where('user_statuses_id', 1)
+            ->where(function ($query) {
+                $query->where('username', 'admin')
+                    ->orWhereHas('userPermissions', function ($permQuery) {
+                        $permQuery->whereHas('systemModule', function ($moduleQuery) {
+                            $moduleQuery->where('system_module', 'Inventory');
+                        })->where(function ($actionQuery) {
+                            $actionQuery->where('view', 1)
+                                ->orWhere('create', 1)
+                                ->orWhere('edit', 1)
+                                ->orWhere('delete', 1)
+                                ->orWhere('export', 1);
+                        });
+                    });
+            })
+            ->get();
+
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $grnNumber = sprintf('GRN-%04d', $grn->id);
+        $notificationService = app(NotificationService::class);
+        $actionUrl = route('ui.inventory');
+
+        foreach ($users as $user) {
+            $notificationService->notifyUser(
+                user: $user,
+                title: 'GRN Ready for Stock Entry',
+                message: "{$grnNumber} has been completed and its Purchase Order items are pending addition to stock.",
+                actionUrl: $actionUrl,
+                type: 'info',
+                icon: 'fa-solid fa-boxes-stacked',
+                metadata: [
+                    'grn_id' => $grn->id,
+                    'grn_number' => $grnNumber,
+                    'status' => 'Pending Stock',
+                ]
+            );
+        }
     }
 
     /**
@@ -255,18 +292,16 @@ class GrnService
             ->values()
             ->all();
 
-        $dbStatuses = Grn::query()
-            ->whereNotNull('status')
-            ->distinct()
-            ->pluck('status')
+        $dbStatuses = GrnStatus::query()
+            ->orderBy('id')
+            ->pluck('grn_status')
             ->filter()
             ->values()
             ->all();
 
-        $statuses = array_values(array_unique(array_merge(
-            ['Completed', 'Approved', 'Draft', 'Cancelled'],
-            $dbStatuses
-        )));
+        $statuses = ! empty($dbStatuses)
+            ? $dbStatuses
+            : ['Draft', 'Approved', 'Completed', 'Cancelled', 'Pending'];
 
         return [
             'grns' => $grns,
@@ -343,9 +378,9 @@ class GrnService
 
         $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);
         $poCode = count($poCodes) > 0 ? implode(', ', $poCodes) : 'N/A';
-        $status = ! empty($grn->status)
-            ? $grn->status
-            : (count($items) > 0 ? 'Completed' : 'Draft');
+        $statusName = $grn->grnStatus?->grn_status;
+        $status = ! empty($statusName) ? $statusName : 'Pending';
+        $statusId = $grn->grn_statuses_id ?? GrnStatus::resolveIdByName($status, GrnStatus::STATUS_PENDING);
 
         return [
             'id' => $grn->id,
@@ -365,6 +400,7 @@ class GrnService
             'net_total' => $subTotal,
             'received_by' => 'Admin User',
             'status' => $status,
+            'grn_statuses_id' => $statusId,
             'created_at' => $grn->at_time?->toDateTimeString() ?? '',
             'remarks' => $supplierInvoice !== '' ? "Supplier Invoices: {$supplierInvoice}" : '',
             'items' => $items,
@@ -379,8 +415,14 @@ class GrnService
     protected function resolveDatabaseGrnKpis(): array
     {
         $totalCount = Grn::query()->count();
-        $completedCount = Grn::query()->whereIn('status', ['Completed', 'Approved'])->count();
-        $draftCount = Grn::query()->where('status', 'Draft')->count();
+        $completedCount = Grn::query()->whereIn('grn_statuses_id', [
+            GrnStatus::STATUS_COMPLETED,
+            GrnStatus::STATUS_APPROVED,
+        ])->count();
+        $draftCount = Grn::query()->whereIn('grn_statuses_id', [
+            GrnStatus::STATUS_DRAFT,
+            GrnStatus::STATUS_PENDING,
+        ])->count();
         $totalValue = (float) Stock::query()
             ->whereNotNull('grn_id')
             ->selectRaw('COALESCE(SUM(qty * buy), 0) as total_val')

@@ -234,6 +234,23 @@ html[data-theme="dark"] .ant-btn-default:hover {
     border-right: 5px solid #2563eb !important;
 }
 
+/* Pending Stock - Cyan / Teal */
+.ant-table tr.row-status-pending-stock > td {
+    background-color: rgba(8, 145, 178, 0.08) !important;
+    border-top-color: rgba(8, 145, 178, 0.22) !important;
+    border-bottom-color: rgba(8, 145, 178, 0.22) !important;
+    border-right-color: rgba(8, 145, 178, 0.20) !important;
+}
+.ant-table tr.row-status-pending-stock:hover > td {
+    background-color: rgba(8, 145, 178, 0.14) !important;
+}
+.ant-table tr.row-status-pending-stock > td:first-child {
+    border-left: 5px solid #0891b2 !important;
+}
+.ant-table tr.row-status-pending-stock > td:last-child {
+    border-right: 5px solid #0891b2 !important;
+}
+
 /* Completed - Green */
 .ant-table tr.row-status-completed > td {
     background-color: rgba(22, 163, 74, 0.08) !important;
@@ -673,6 +690,12 @@ html[data-theme="dark"] .ant-table tr.row-status-cancelled > td {
     color: #2563eb;
 }
 
+.grn-status-badge.pending-stock {
+    background: #ecfeff;
+    border: 1px solid #67e8f9;
+    color: #0e7490;
+}
+
 .grn-status-badge.completed {
     background: #f6ffed;
     border: 1px solid #b7eb8f;
@@ -701,6 +724,12 @@ html[data-theme="dark"] .grn-status-badge.approved {
     background: rgba(59, 130, 246, 0.18);
     border-color: rgba(59, 130, 246, 0.4);
     color: #93c5fd;
+}
+
+html[data-theme="dark"] .grn-status-badge.pending-stock {
+    background: rgba(8, 145, 178, 0.18);
+    border-color: rgba(34, 211, 238, 0.4);
+    color: #67e8f9;
 }
 
 html[data-theme="dark"] .grn-status-badge.completed {

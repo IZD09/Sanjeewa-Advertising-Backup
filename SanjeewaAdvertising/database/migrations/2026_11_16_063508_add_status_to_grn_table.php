@@ -12,19 +12,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('grn', function (Blueprint $table) {
-            $table->string('status', 30)->default('Draft')->after('at_time');
-        });
+        if (Schema::hasTable('grn') && ! Schema::hasColumn('grn', 'status') && ! Schema::hasColumn('grn', 'grn_statuses_id')) {
+            Schema::table('grn', function (Blueprint $table) {
+                $table->string('status', 30)->default('Draft')->after('at_time');
+            });
 
-        $completedGrnIds = DB::table('stock')
-            ->whereNotNull('grn_id')
-            ->distinct()
-            ->pluck('grn_id');
+            $completedGrnIds = DB::table('stock')
+                ->whereNotNull('grn_id')
+                ->distinct()
+                ->pluck('grn_id');
 
-        if ($completedGrnIds->isNotEmpty()) {
-            DB::table('grn')
-                ->whereIn('id', $completedGrnIds)
-                ->update(['status' => 'Completed']);
+            if ($completedGrnIds->isNotEmpty()) {
+                DB::table('grn')
+                    ->whereIn('id', $completedGrnIds)
+                    ->update(['status' => 'Completed']);
+            }
         }
     }
 
@@ -33,8 +35,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('grn', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
+        if (Schema::hasTable('grn') && Schema::hasColumn('grn', 'status')) {
+            Schema::table('grn', function (Blueprint $table) {
+                $table->dropColumn('status');
+            });
+        }
     }
 };

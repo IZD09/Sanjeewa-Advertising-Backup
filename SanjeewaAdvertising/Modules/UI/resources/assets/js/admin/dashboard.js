@@ -97,50 +97,70 @@ export class AdminDashboard {
       });
     });
 
-    // 4. Initialize Slide Controller first so slide 0 is activated
+    // 4. Determine initial slide index from query param (e.g. ?slide=1 for Sales & Revenue)
+    let initialSlideIndex = 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const slideParam = urlParams.get('slide');
+    if (slideParam !== null && slideParam !== '' && !isNaN(slideParam)) {
+      const targetIndex = parseInt(slideParam, 10);
+      if (targetIndex >= 0 && targetIndex < this.slides.length) {
+        initialSlideIndex = targetIndex;
+      }
+    }
+
+    // 5. Initialize Data Service FIRST so initial payload populates slides before active slide renders charts once
+    this.dataService.init();
+
+    // 6. Initialize Slide Controller and activate initial slide cleanly in a single render pass
     this.controller = new SlideController({
       slideDuration: Number(this.rootElement.dataset.slideDuration) || 7000,
       uiHideDelay: Number(this.rootElement.dataset.uiHideDelay) || 3500
     });
 
     this.controller.registerSlides(this.slides);
-    this.controller.init();
+    this.controller.init(initialSlideIndex);
 
-    // Check for slide query param (e.g. ?slide=1 for Sales & Revenue)
-    const urlParams = new URLSearchParams(window.location.search);
-    const slideParam = urlParams.get('slide');
-    if (slideParam !== null && !isNaN(slideParam)) {
-      const targetIndex = parseInt(slideParam, 10);
-      if (targetIndex >= 0 && targetIndex < this.slides.length) {
-        this.showSlide(targetIndex);
-      }
-    }
-
-    // 5. Initialize Data Service (emits initial payload or loads data, updating active slide immediately)
-    this.dataService.init();
-
-    // 6. Handle CDN Chart.js asynchronous readiness check
+    // 7. Handle CDN Chart.js asynchronous readiness check (only if Chart.js wasn't ready yet)
     this.initChartReadinessCheck();
   }
 
   /**
-   * Poll briefly if Chart.js is loaded asynchronously via external CDN script.
+   * Poll briefly ONLY if Chart.js is not yet loaded via external CDN script.
+   * Avoids destroying and re-animating charts that were already rendered cleanly.
    */
   initChartReadinessCheck() {
-    let attempts = 0;
-    const chartChecker = setInterval(() => {
-      attempts++;
-      if (typeof Chart !== "undefined") {
-        clearInterval(chartChecker);
-        this.refreshVisibleCharts();
-      } else if (attempts > 30) {
-        clearInterval(chartChecker);
-      }
-    }, 150);
+    const hasRenderedActiveCharts = () => {
+      const activeSlide = this.controller?.slides?.[this.controller.currentSlideIndex];
+      return Boolean(activeSlide && Array.isArray(activeSlide.charts) && activeSlide.charts.length > 0);
+    };
 
-    window.addEventListener("load", () => {
-      setTimeout(() => this.refreshVisibleCharts(), 50);
-    }, { once: true });
+    if (typeof Chart === "undefined") {
+      let attempts = 0;
+      this._chartChecker = setInterval(() => {
+        attempts++;
+        if (typeof Chart !== "undefined") {
+          clearInterval(this._chartChecker);
+          this._chartChecker = null;
+          if (!hasRenderedActiveCharts()) {
+            this.refreshVisibleCharts();
+          }
+        } else if (attempts > 30) {
+          clearInterval(this._chartChecker);
+          this._chartChecker = null;
+        }
+      }, 150);
+    }
+
+    if (document.readyState !== "complete") {
+      window.addEventListener("load", () => {
+        if (!this.controller) return;
+        if (!hasRenderedActiveCharts() && typeof Chart !== "undefined") {
+          this.refreshVisibleCharts();
+        } else {
+          this.resizeVisibleCharts();
+        }
+      }, { once: true });
+    }
   }
 
   // --- Public APIs for backward compatibility with topbar, sidebar, and global events ---
@@ -190,6 +210,10 @@ export class AdminDashboard {
   }
 
   destroy() {
+    if (this._chartChecker) {
+      clearInterval(this._chartChecker);
+      this._chartChecker = null;
+    }
     if (this.controller) {
       this.controller.destroy();
       this.controller = null;

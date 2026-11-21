@@ -43,8 +43,9 @@ export class SlideController {
 
   /**
    * Initialize the controller, DOM elements, and event listeners.
+   * @param {number} [initialIndex=0]
    */
-  init() {
+  init(initialIndex = 0) {
     this.dots = [...document.querySelectorAll(".slide-dot")];
     this.navLinks = [...document.querySelectorAll(".nav-link[data-slide]")];
     this.counterElem = document.getElementById("slideCounter");
@@ -52,7 +53,7 @@ export class SlideController {
 
     this.bindEvents();
     this.initResizeObserver();
-    this.showSlide(0);
+    this.showSlide(initialIndex);
     this.startSlideshow();
     this.resetUIHideTimer();
   }

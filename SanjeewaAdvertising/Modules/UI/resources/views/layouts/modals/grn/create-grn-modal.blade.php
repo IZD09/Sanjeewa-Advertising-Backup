@@ -2,7 +2,7 @@
      CREATE NEW GRN MODAL (Multi-PO Support)
      ========================================================================== -->
 <div class="po-modal-overlay" id="createGrnModal">
-  <div class="po-modal po-modal-large" style="max-width: 1040px; max-height: 94vh;">
+  <div class="po-modal po-modal-large" style="max-width: 1180px; max-height: 94vh;">
     <!-- Modal Header -->
     <div class="po-modal-header">
       <div style="display: flex; align-items: center; gap: 10px;">
@@ -187,14 +187,16 @@
           <table class="grn-items-table">
             <thead>
               <tr>
-                <th style="min-width: 200px;">Material Item</th>
-                <th style="width: 110px;">Linked PO</th>
-                <th style="width: 70px;">Unit</th>
-                <th class="text-right" style="width: 85px;">Ordered</th>
-                <th class="text-right" style="width: 85px;">Prev Rec.</th>
-                <th class="text-right" style="width: 115px;">Receiving Qty <span class="req" style="color: #ff4d4f;">*</span></th>
-                <th class="text-right" style="width: 125px;">Unit Cost (Rs.) <span class="req" style="color: #ff4d4f;">*</span></th>
-                <th class="text-right" style="width: 125px;">Line Total (Rs.)</th>
+                <th style="min-width: 185px;">Material Item</th>
+                <th style="width: 100px;">Linked PO</th>
+                <th style="min-width: 135px;">Brand <span class="req" style="color: #ff4d4f;">*</span></th>
+                <th style="min-width: 175px;">Stock / Batch <span class="req" style="color: #ff4d4f;">*</span></th>
+                <th style="width: 65px;">Unit</th>
+                <th class="text-right" style="width: 75px;">Ordered</th>
+                <th class="text-right" style="width: 75px;">Prev Rec.</th>
+                <th class="text-right" style="width: 105px;">Receiving Qty <span class="req" style="color: #ff4d4f;">*</span></th>
+                <th class="text-right" style="width: 115px;">Unit Cost (Rs.) <span class="req" style="color: #ff4d4f;">*</span></th>
+                <th class="text-right" style="width: 115px;">Line Total (Rs.)</th>
                 <th class="text-center" style="width: 50px;">Action</th>
               </tr>
             </thead>

@@ -13,8 +13,7 @@ class GrnController extends BaseApiController
 {
     public function __construct(
         protected GrnService $grnService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of GRNs.
@@ -106,14 +105,17 @@ class GrnController extends BaseApiController
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:Approved,Cancelled,Completed,Draft'],
+            'status' => ['required_without:grn_statuses_id', 'nullable', 'string', 'in:Approved,Cancelled,Completed,Draft,Pending,Pending Stock'],
+            'grn_statuses_id' => ['required_without:status', 'nullable', 'integer', 'exists:grn_statuses,id'],
         ]);
 
-        $updated = $this->grnService->updateGrnStatus($grn, $validated['status']);
+        $statusInput = $validated['grn_statuses_id'] ?? $validated['status'];
+        $updated = $this->grnService->updateGrnStatus($grn, $statusInput);
+        $formatted = $this->grnService->formatGrnRecord($updated);
 
         return $this->success(
-            $this->grnService->formatGrnRecord($updated),
-            "GRN status updated to {$validated['status']} successfully."
+            $formatted,
+            "GRN status updated to {$formatted['status']} successfully."
         );
     }
 

@@ -341,7 +341,8 @@ export class POProcessHandler {
 
     const poCreateGrnActionBtn = document.getElementById("poCreateGrnActionBtn");
     if (poCreateGrnActionBtn) {
-      poCreateGrnActionBtn.style.display = po.status === "Completed" ? "none" : "inline-flex";
+      const isApproved = String(po.status || "").trim().toLowerCase() === "approved";
+      poCreateGrnActionBtn.style.display = isApproved ? "inline-flex" : "none";
     }
 
     this.ctx.openModal("viewPOModal");

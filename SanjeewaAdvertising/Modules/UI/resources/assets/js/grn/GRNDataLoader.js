@@ -17,7 +17,7 @@ export class GRNDataLoader {
 
     this.grnRecords = [];
     this.grnSuppliers = [];
-    this.grnStatuses = ["Completed", "Approved", "Draft", "Cancelled"];
+    this.grnStatuses = ["Pending", "Approved", "Pending Stock", "Completed", "Draft", "Cancelled"];
     this.purchaseOrders = [];
     this.poSuppliers = [];
     this.poStatuses = ["Pending", "Partial", "Completed", "Cancelled"];

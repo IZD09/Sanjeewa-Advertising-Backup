@@ -41,6 +41,11 @@ export class ViewPOModal extends BaseModalHandler {
     if (poCreateGrnActionBtn) {
       poCreateGrnActionBtn.addEventListener("click", () => {
         if (this.activePoContext) {
+          const isApproved = String(this.activePoContext.status || "").trim().toLowerCase() === "approved";
+          if (!isApproved) {
+            this.showToast(`Please approve Purchase Order ${this.activePoContext.po_number} before receiving a GRN.`, "warning");
+            return;
+          }
           const poNo = this.activePoContext.po_number;
           this.closeModal("viewPOModal");
           if (this.ctx.createGrnForPO) {
@@ -103,7 +108,8 @@ export class ViewPOModal extends BaseModalHandler {
 
     const poCreateGrnActionBtn = document.getElementById("poCreateGrnActionBtn");
     if (poCreateGrnActionBtn) {
-      poCreateGrnActionBtn.style.display = po.status === "Completed" ? "none" : "inline-flex";
+      const isApproved = String(po.status || "").trim().toLowerCase() === "approved";
+      poCreateGrnActionBtn.style.display = isApproved ? "inline-flex" : "none";
     }
 
     this.openModal("viewPOModal");

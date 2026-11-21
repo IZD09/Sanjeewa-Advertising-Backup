@@ -13,6 +13,7 @@ class SupplierDatabaseSeeder extends Seeder
     {
         $this->call([
             PurchaseOrderStatusSeeder::class,
+            GrnStatusSeeder::class,
             SupplierSeeder::class,
         ]);
     }
