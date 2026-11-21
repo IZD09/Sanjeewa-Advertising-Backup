@@ -32,6 +32,7 @@ export class InventoryManager {
     // 1. Modal Handler Orchestrator (delegates to inventory/modals/ classes)
     this.modalHandler = new InventoryModalHandler({
       getItems: () => this.tableHandler.detailedStocks,
+      getAggregatedItems: () => this.tableHandler.aggregatedItems,
       setItems: (items) => { this.tableHandler.detailedStocks = items; },
       getItemAvailableQty: (item) => this.tableHandler.getItemAvailableQty(item),
       formatCurrency: (amt) => this.tableHandler.formatCurrency(amt),

@@ -36,6 +36,7 @@ class StockService
             'brand',
             'grn.purchaseOrders.supplier',
             'grmItems.itemBatch',
+            'movements.movementType',
         ]);
 
         if ($search !== '') {
@@ -254,10 +255,51 @@ class StockService
             $supplierName = $stock->grn->purchaseOrders->first()->supplier?->name ?? 'PaperPro Lanka';
         }
 
-        $batches = $stock->grmItems->map(function ($grm) {
+        $batches = $stock->grmItems->map(function ($grm) use ($stock, $supplierName, $buyPrice, $qty) {
+            $batchNo = $grm->itemBatch?->batch_no ?? ($grm->item_batches_id ? 'BAT-'.str_pad((string) $grm->item_batches_id, 4, '0', STR_PAD_LEFT) : 'BAT-'.$stock->id);
+            $batchQty = (int) $grm->qty;
+
             return [
+                'id' => $batchNo,
                 'batch_id' => $grm->item_batches_id,
-                'qty' => (int) $grm->qty,
+                'batch_no' => $batchNo,
+                'receivedDate' => $stock->add_date ? $stock->add_date->format('Y-m-d') : null,
+                'unitCost' => $buyPrice,
+                'initialQty' => $batchQty > 0 ? $batchQty : $qty,
+                'availableQty' => $batchQty > 0 ? $batchQty : $qty,
+                'qty' => $batchQty > 0 ? $batchQty : $qty,
+                'supplier' => $supplierName,
+            ];
+        })->values()->all();
+
+        if (empty($batches)) {
+            $batchNo = 'BAT-'.str_pad((string) $stock->id, 4, '0', STR_PAD_LEFT);
+            $batches = [
+                [
+                    'id' => $batchNo,
+                    'batch_id' => $stock->id,
+                    'batch_no' => $batchNo,
+                    'receivedDate' => $stock->add_date ? $stock->add_date->format('Y-m-d') : null,
+                    'unitCost' => $buyPrice,
+                    'initialQty' => $qty,
+                    'availableQty' => $qty,
+                    'qty' => $qty,
+                    'supplier' => $supplierName,
+                ],
+            ];
+        }
+
+        $transactions = $stock->movements->take(8)->map(function ($mov) {
+            $type = in_array((int) $mov->stock_movements_types_id, [1, 5], true) ? 'ADD' : 'DEDUCT';
+
+            return [
+                'id' => 'TXN-'.$mov->id,
+                'date' => $mov->date ? $mov->date->format('Y-m-d H:i') : null,
+                'type' => $type,
+                'qty' => (int) $mov->qty,
+                'reason' => $mov->movementType?->stock_movements_type ?? 'Stock Movement',
+                'batchId' => 'BAT-'.$mov->stock_id,
+                'user' => 'Admin',
             ];
         })->values()->all();
 
@@ -287,6 +329,7 @@ class StockService
             'grn_id' => $stock->grn_id,
             'add_date' => $stock->add_date ? $stock->add_date->format('Y-m-d') : null,
             'batches' => $batches,
+            'transactions' => $transactions,
         ];
     }
 
