@@ -498,30 +498,42 @@ class InventoryManager {
     // Top Section Highlight Cards
     const totalQtyElem = document.getElementById("invViewTotalQty");
     const totalValElem = document.getElementById("invViewTotalVal");
-    if (totalQtyElem) totalQtyElem.textContent = `${availQty.toLocaleString()} ${item.unit}`;
+    if (totalQtyElem) totalQtyElem.textContent = `${Number(availQty || 0).toLocaleString()} ${item.unit || "Units"}`;
     if (totalValElem) totalValElem.textContent = this.formatCurrency(totalVal);
 
     // Middle Section: Batch Breakdown Table
     const batchTbody = document.getElementById("invViewBatchTbody");
     if (batchTbody) {
       batchTbody.innerHTML = "";
-      if (!item.batches || item.batches.length === 0) {
-        batchTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 14px;">No batch records available</td></tr>`;
-      } else {
-        item.batches.forEach(b => {
-          const batchVal = (parseFloat(b.availableQty) || 0) * (parseFloat(b.unitCost) || 0);
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td><strong style="color: #1677ff;">${b.id}</strong></td>
-            <td>${b.receivedDate}</td>
-            <td class="text-right">${this.formatCurrency(b.unitCost)}</td>
-            <td class="text-right">${b.initialQty.toLocaleString()}</td>
-            <td class="text-right"><strong>${b.availableQty.toLocaleString()}</strong></td>
-            <td class="text-right" style="font-weight: 700;">${this.formatCurrency(batchVal)}</td>
-          `;
-          batchTbody.appendChild(tr);
-        });
-      }
+      const batches = Array.isArray(item.batches) && item.batches.length > 0
+        ? item.batches
+        : [{
+            id: item.id ? `BAT-${item.id}` : `BAT-${item.code || "1"}`,
+            receivedDate: item.add_date || "—",
+            unitCost: item.buyPrice || item.unitPrice || 0,
+            initialQty: item.qty || availQty || 0,
+            availableQty: availQty || item.qty || 0
+          }];
+
+      batches.forEach(b => {
+        const batchId = b.id || (b.batch_no ? b.batch_no : (b.batch_id ? `BAT-${b.batch_id}` : (item.id ? `BAT-${item.id}` : "Batch")));
+        const receivedDate = b.receivedDate || b.add_date || item.add_date || "—";
+        const unitCost = Number(b.unitCost ?? b.buyPrice ?? b.buy ?? item.buyPrice ?? item.unitPrice ?? 0) || 0;
+        const initQty = Number(b.initialQty ?? b.initial_qty ?? b.qty ?? b.availableQty ?? availQty ?? 0) || 0;
+        const curAvailQty = Number(b.availableQty ?? b.available_qty ?? b.qty ?? availQty ?? 0) || 0;
+        const batchVal = curAvailQty * unitCost;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong style="color: #1677ff;">${batchId}</strong></td>
+          <td>${receivedDate}</td>
+          <td class="text-right">${this.formatCurrency(unitCost)}</td>
+          <td class="text-right">${Number(initQty || 0).toLocaleString()}</td>
+          <td class="text-right"><strong>${Number(curAvailQty || 0).toLocaleString()}</strong></td>
+          <td class="text-right" style="font-weight: 700;">${this.formatCurrency(batchVal)}</td>
+        `;
+        batchTbody.appendChild(tr);
+      });
     }
 
     // Bottom Section: Recent Transactions Timeline
