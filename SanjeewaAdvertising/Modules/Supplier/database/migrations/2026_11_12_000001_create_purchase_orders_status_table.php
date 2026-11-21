@@ -25,6 +25,7 @@ return new class extends Migration
             2 => 'Partial',
             3 => 'Completed',
             4 => 'Cancelled',
+            5 => 'Approved',
         ];
 
         foreach ($statuses as $id => $name) {

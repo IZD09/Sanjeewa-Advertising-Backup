@@ -613,7 +613,7 @@ export class GRNManager {
       loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Approving...',
       onConfirm: async () => {
         try {
-          await this.dataLoader.updatePoStatus(id, 2);
+          await this.dataLoader.updatePoStatus(id, "Approved");
           this.renderPOTable();
           this.renderSuppliersGrid();
           this.supplierHandler.populatePOStatusFilter();
@@ -642,7 +642,7 @@ export class GRNManager {
       loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...',
       onConfirm: async () => {
         try {
-          await this.dataLoader.updatePoStatus(id, 4);
+          await this.dataLoader.updatePoStatus(id, "Cancelled");
           this.renderPOTable();
           this.renderSuppliersGrid();
           this.supplierHandler.populatePOStatusFilter();
@@ -686,7 +686,7 @@ export class GRNManager {
       loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Restoring...',
       onConfirm: async () => {
         try {
-          await this.dataLoader.updatePoStatus(id, 1);
+          await this.dataLoader.updatePoStatus(id, "Pending");
           this.renderPOTable();
           this.renderSuppliersGrid();
           this.supplierHandler.populatePOStatusFilter();

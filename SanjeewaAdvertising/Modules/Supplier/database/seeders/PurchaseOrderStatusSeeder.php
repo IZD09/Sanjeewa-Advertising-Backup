@@ -14,13 +14,14 @@ class PurchaseOrderStatusSeeder extends Seeder
     {
         $statuses = [
             1 => 'Pending',
-            2 => 'Approved',
+            2 => 'Partial',
             3 => 'Completed',
             4 => 'Cancelled',
+            5 => 'Approved',
         ];
 
         foreach ($statuses as $id => $name) {
-            PurchaseOrderStatus::firstOrCreate(
+            PurchaseOrderStatus::updateOrCreate(
                 ['id' => $id],
                 ['purchase_orders_status' => $name]
             );

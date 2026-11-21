@@ -21,6 +21,8 @@ class PurchaseOrderResource extends JsonResource
             'po_number' => 'PO-'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT),
             'suppliers_id' => $this->suppliers_id,
             'add_date' => $this->add_date?->toIso8601String() ?? $this->add_date,
+            'purchase_orders_status_id' => $this->purchase_orders_status_id,
+            'status' => $this->status?->purchase_orders_status ?? 'Pending',
             'notes' => $this->notes,
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
             'items' => PurchaseOrderItemResource::collection($this->whenLoaded('items')),

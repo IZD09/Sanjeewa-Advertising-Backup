@@ -42,13 +42,38 @@ class PurchaseOrderStatus extends Model
      */
     public const STATUS_PENDING = 1;
 
-    public const STATUS_APPROVED = 2;
-
     public const STATUS_PARTIAL = 2;
 
     public const STATUS_COMPLETED = 3;
 
     public const STATUS_CANCELLED = 4;
+
+    public const STATUS_APPROVED = 5;
+
+    /**
+     * Resolve status ID by name or integer.
+     */
+    public static function getIdForStatus(string|int $status): ?int
+    {
+        if (is_numeric($status)) {
+            return (int) $status;
+        }
+
+        $normalized = strtolower(trim((string) $status));
+        $record = static::whereRaw('LOWER(purchase_orders_status) = ?', [$normalized])->first();
+        if ($record) {
+            return (int) $record->id;
+        }
+
+        return match ($normalized) {
+            'pending' => self::STATUS_PENDING,
+            'approved' => self::STATUS_APPROVED,
+            'partial' => self::STATUS_PARTIAL,
+            'completed' => self::STATUS_COMPLETED,
+            'cancelled', 'canceled' => self::STATUS_CANCELLED,
+            default => null,
+        };
+    }
 
     /**
      * Get the purchase orders associated with this status.

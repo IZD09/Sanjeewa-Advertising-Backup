@@ -265,21 +265,24 @@ export class SupplierHandler {
     const purchaseOrders = this.ctx.getPurchaseOrders ? this.ctx.getPurchaseOrders() : [];
 
     pageItems.forEach(s => {
-      // Calculate un-GRNed (pending/partial) purchase orders count
-      let ungrnedPoCount = 0;
+      // Calculate approved (ready for GRN) purchase orders count
+      let approvedPoCount = 0;
       if (Array.isArray(purchaseOrders) && purchaseOrders.length > 0) {
-        ungrnedPoCount = purchaseOrders.filter((po) => {
+        approvedPoCount = purchaseOrders.filter((po) => {
           const matchSup = (po.suppliers_id && s.id && Number(po.suppliers_id) === Number(s.id)) ||
             (po.supplier_name && s.name && po.supplier_name.toLowerCase() === s.name.toLowerCase());
-          return matchSup && po.status !== "Completed" && po.status !== "Cancelled";
+          const isApproved = String(po.status || "").trim().toLowerCase() === "approved" ||
+            Number(po.purchase_orders_status_id) === 5;
+          return matchSup && isApproved;
         }).length;
-      } else if (typeof s.pending_purchase_orders_count === "number") {
-        ungrnedPoCount = s.pending_purchase_orders_count;
+      } else if (typeof s.approved_purchase_orders_count === "number") {
+        approvedPoCount = s.approved_purchase_orders_count;
       }
 
       const builder = new SupplierCardBuilder({
         ...s,
-        ungrnedPoCount,
+        approvedPoCount,
+        ungrnedPoCount: approvedPoCount,
       });
 
       container.insertAdjacentHTML("beforeend", builder.render());

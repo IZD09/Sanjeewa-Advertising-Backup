@@ -28,6 +28,9 @@ class SupplierService
                         PurchaseOrderStatus::STATUS_PARTIAL,
                     ]);
                 },
+                'purchaseOrders as approved_purchase_orders_count' => function ($q) {
+                    $q->where('purchase_orders_status_id', PurchaseOrderStatus::STATUS_APPROVED);
+                },
             ]);
 
         $search = $filters['search'] ?? $filters['q'] ?? null;
@@ -215,6 +218,7 @@ class SupplierService
             'status' => $supplier->status ?? 'Active',
             'purchase_orders_count' => (int) ($supplier->purchase_orders_count ?? 0),
             'pending_purchase_orders_count' => (int) ($supplier->pending_purchase_orders_count ?? 0),
+            'approved_purchase_orders_count' => (int) ($supplier->approved_purchase_orders_count ?? 0),
         ];
     }
 }

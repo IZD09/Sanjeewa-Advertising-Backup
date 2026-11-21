@@ -149,13 +149,41 @@ export class GRNDataLoader {
   /**
    * Update Purchase Order status via API.
    * @param {number|string} id
-   * @param {number} statusId
+   * @param {number|string} statusIdOrName
    * @returns {Promise<Object>}
    */
-  async updatePoStatus(id, statusId) {
-    const response = await this.http.patch(`/api/v1/purchase-orders/${id}`, {
-      purchase_orders_status_id: statusId
-    });
+  async updatePoStatus(id, statusIdOrName) {
+    const payload = {};
+    if (typeof statusIdOrName === "string") {
+      payload.status = statusIdOrName;
+      const lower = statusIdOrName.trim().toLowerCase();
+      if (lower === "approved") {
+        payload.purchase_orders_status_id = 5;
+      } else if (lower === "cancelled" || lower === "canceled") {
+        payload.purchase_orders_status_id = 4;
+      } else if (lower === "completed") {
+        payload.purchase_orders_status_id = 3;
+      } else if (lower === "partial") {
+        payload.purchase_orders_status_id = 2;
+      } else if (lower === "pending") {
+        payload.purchase_orders_status_id = 1;
+      }
+    } else {
+      payload.purchase_orders_status_id = statusIdOrName;
+      if (statusIdOrName === 5) {
+        payload.status = "Approved";
+      } else if (statusIdOrName === 4) {
+        payload.status = "Cancelled";
+      } else if (statusIdOrName === 3) {
+        payload.status = "Completed";
+      } else if (statusIdOrName === 2) {
+        payload.status = "Partial";
+      } else if (statusIdOrName === 1) {
+        payload.status = "Pending";
+      }
+    }
+
+    const response = await this.http.patch(`/api/v1/purchase-orders/${id}`, payload);
     await this.fetchPurchaseOrders({}, true);
     return response;
   }

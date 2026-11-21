@@ -372,7 +372,8 @@ export class CreateGrnModal extends BaseModalHandler {
   getApprovedPOsForSupplier(supplier) {
     if (!supplier) return [];
     return (this.allPurchaseOrders || []).filter(po => {
-      const isApproved = String(po.status || "").trim().toLowerCase() === "approved";
+      const isApproved = String(po.status || "").trim().toLowerCase() === "approved" ||
+        Number(po.purchase_orders_status_id) === 5;
       if (!isApproved) return false;
 
       const matchId = supplier.id && po.suppliers_id && Number(po.suppliers_id) === Number(supplier.id);
