@@ -503,34 +503,34 @@ export class StockItemSelector {
       const tr = document.createElement("tr");
       tr.style.borderBottom = "1px solid var(--border)";
       tr.innerHTML = `
-        <td style="padding: 8px 10px; vertical-align: middle;">
-          <div style="font-weight: 700; color: #1677ff; font-size: 11.5px;">${item.code}</div>
-          <div style="font-size: 11px; color: var(--text);">${item.name}</div>
+        <td style="padding: 6px 8px; vertical-align: middle; max-width: 180px; word-break: break-word;">
+          <div style="font-weight: 700; color: #1677ff; font-size: 11.5px; word-break: break-all;">${item.code}</div>
+          <div style="font-size: 11px; color: var(--text); line-height: 1.3; word-break: break-word;">${item.name}</div>
         </td>
-        <td style="padding: 8px 10px; vertical-align: middle; font-size: 11px; color: var(--text-muted);">
-          ${item.brand_name}
+        <td style="padding: 6px 8px; vertical-align: middle; font-size: 11px; color: var(--text-muted); width: 90px; word-break: break-word;">
+          ${item.brand_name || "-"}
         </td>
-        <td style="padding: 8px 10px; text-align: center; vertical-align: middle;">
+        <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 70px;">
           <input type="number" min="1" step="1" value="${item.qty}" 
             class="inv-search-input staged-qty-input" 
             data-item-id="${item.id}"
-            style="width: 70px; height: 28px; padding: 2px 6px; text-align: center; font-size: 12px; font-weight: 600;" 
+            style="width: 56px; height: 26px; padding: 2px 4px; text-align: center; font-size: 11.5px; font-weight: 600; box-sizing: border-box;" 
             title="Adjust received quantity">
         </td>
-        <td style="padding: 8px 10px; text-align: right; vertical-align: middle; font-size: 11.5px; font-family: monospace;">
+        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11px; font-family: monospace; width: 85px; white-space: nowrap;">
           ${Number(item.unit_cost).toFixed(2)}
         </td>
-        <td style="padding: 8px 10px; text-align: right; vertical-align: middle; font-size: 11.5px; font-family: monospace; color: #52c41a;">
+        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11px; font-family: monospace; color: #52c41a; width: 85px; white-space: nowrap;">
           ${Number(item.selling_price).toFixed(2)}
         </td>
-        <td style="padding: 8px 10px; text-align: right; vertical-align: middle; font-size: 12px; font-weight: 700; color: #1677ff; font-family: monospace;" class="staged-row-subtotal">
+        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11.5px; font-weight: 700; color: #1677ff; font-family: monospace; width: 95px; white-space: nowrap;" class="staged-row-subtotal">
           Rs. ${Number(item.subtotal).toFixed(2)}
         </td>
-        <td style="padding: 8px 10px; text-align: center; vertical-align: middle;">
+        <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 45px;">
           <button type="button" class="ant-btn ant-btn-text btn-remove-staged" data-item-id="${item.id}" 
-            style="color: #ff4d4f; padding: 2px 6px; height: 28px; border: none; background: transparent; cursor: pointer;" 
+            style="color: #ff4d4f; padding: 0; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer; border-radius: 4px; margin: 0 auto;" 
             title="Remove item and return to dropdown">
-            <i class="fa-solid fa-trash-can"></i>
+            <i class="fa-solid fa-trash-can" style="font-size: 12px;"></i>
           </button>
         </td>
       `;
