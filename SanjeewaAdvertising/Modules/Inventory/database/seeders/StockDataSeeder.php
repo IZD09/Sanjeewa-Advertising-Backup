@@ -11,9 +11,11 @@ use Modules\Inventory\Models\Stock;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\Subcategory;
+use Modules\Supplier\Database\Seeders\GrnStatusSeeder;
 use Modules\Supplier\Database\Seeders\PurchaseOrderStatusSeeder;
 use Modules\Supplier\Database\Seeders\SupplierSeeder;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\GrnStatus;
 use Modules\Supplier\Models\PurchaseOrder;
 use Modules\Supplier\Models\Supplier;
 
@@ -30,6 +32,7 @@ class StockDataSeeder extends Seeder
             SubcategorySeeder::class,
             BrandSeeder::class,
             PurchaseOrderStatusSeeder::class,
+            GrnStatusSeeder::class,
             SupplierSeeder::class,
             StockMovementTypeSeeder::class,
         ]);
@@ -73,7 +76,7 @@ class StockDataSeeder extends Seeder
                 ['id' => $grnId],
                 [
                     'at_time' => $now->copy()->subDays($cfg['days_ago']),
-                    'status' => 'Completed',
+                    'grn_statuses_id' => GrnStatus::STATUS_COMPLETED,
                 ]
             );
 

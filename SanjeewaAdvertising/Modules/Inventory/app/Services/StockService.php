@@ -13,6 +13,7 @@ use Modules\Inventory\Models\Stock;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\GrnStatus;
 use Modules\Supplier\Services\PurchaseOrderService;
 
 class StockService
@@ -345,40 +346,92 @@ class StockService
             'purchaseOrders.items.stockItem.batches',
             'purchaseOrders.items.stockItem.stocks.brand',
             'stocks',
-        ])->orderByDesc('id')->limit(50)->get()->map(function (Grn $grn) {
-            $itemsMap = collect();
+        ])->where('grn_statuses_id', GrnStatus::STATUS_PENDING_STOCK)
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->map(function (Grn $grn) {
+                $itemsMap = collect();
 
-            // Item IDs that have already been added to stock via Stock Management for this GRN
-            $stockedItemIds = DB::table('grm_items')
-                ->join('stock', 'grm_items.stock_id', '=', 'stock.id')
-                ->where('grm_items.grn_id', $grn->id)
-                ->pluck('stock.stock_items_id')
-                ->unique()
-                ->all();
+                // Item IDs that have already been added to stock via Stock Management for this GRN
+                $stockedItemIds = DB::table('grm_items')
+                    ->join('stock', 'grm_items.stock_id', '=', 'stock.id')
+                    ->where('grm_items.grn_id', $grn->id)
+                    ->pluck('stock.stock_items_id')
+                    ->unique()
+                    ->all();
 
-            foreach ($grn->purchaseOrders as $po) {
-                foreach ($po->items as $poi) {
-                    $item = $poi->stockItem;
-                    // Exclude items that are already added to stock for this GRN
-                    if ($item && ! in_array($item->id, $stockedItemIds)) {
-                        $qty = (int) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered);
-                        if ($qty <= 0) {
-                            $qty = 1;
+                foreach ($grn->purchaseOrders as $po) {
+                    foreach ($po->items as $poi) {
+                        $item = $poi->stockItem;
+                        // Exclude items that are already added to stock for this GRN
+                        if ($item && ! in_array($item->id, $stockedItemIds)) {
+                            $qty = (int) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered);
+                            if ($qty <= 0) {
+                                $qty = 1;
+                            }
+
+                            $unitCost = (float) $poi->unit_cost;
+                            $existingAvgPrice = (float) ($item->stocks->where('price', '>', 0)->avg('price') ?? 0);
+                            $sellingPrice = $existingAvgPrice > 0 ? round($existingAvgPrice, 2) : round($unitCost * 1.25, 2);
+
+                            if ($itemsMap->has($item->id)) {
+                                $existing = $itemsMap->get($item->id);
+                                $existing['qty'] += $qty;
+                                $existing['qty_ordered'] += (int) $poi->qty_ordered;
+                                $existing['qty_received'] += (int) $poi->qty_received;
+                                $existing['total_cost'] = round($existing['qty'] * $existing['unit_cost'], 2);
+                                $existing['total_value'] = round($existing['qty'] * $existing['selling_price'], 2);
+                                $itemsMap->put($item->id, $existing);
+                            } else {
+                                $itemsMap->put($item->id, [
+                                    'id' => $item->id,
+                                    'name' => $item->name,
+                                    'code' => $item->code,
+                                    'subcategories_id' => $item->subcategories_id,
+                                    'category_id' => $item->subcategory?->categories_id,
+                                    'category_name' => $item->subcategory?->category?->category ?? 'General',
+                                    'subcategory_name' => $item->subcategory?->subcategory ?? 'General',
+                                    'unit_cost' => $unitCost,
+                                    'selling_price' => $sellingPrice,
+                                    'qty' => $qty,
+                                    'qty_ordered' => (int) $poi->qty_ordered,
+                                    'qty_received' => (int) $poi->qty_received,
+                                    'total_cost' => round($qty * $unitCost, 2),
+                                    'total_value' => round($qty * $sellingPrice, 2),
+                                    'po_id' => $po->id,
+                                    'compatible_brands' => $item->brands->map(fn ($b) => [
+                                        'id' => $b->id,
+                                        'brand' => $b->brand,
+                                    ])->values()->all(),
+                                    'existing_batches' => $item->batches->map(fn ($b) => [
+                                        'id' => $b->id,
+                                        'batch_no' => 'BAT-'.$b->id,
+                                    ])->values()->all(),
+                                    'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
+                                        'id' => $st->id,
+                                        'brands_id' => $st->brands_id,
+                                        'brand_name' => $st->brand?->brand ?? 'Generic',
+                                        'qty' => (int) $st->qty,
+                                        'buy' => (float) $st->buy,
+                                        'price' => (float) $st->price,
+                                        'grn_id' => $st->grn_id,
+                                    ])->values()->all(),
+                                ]);
+                            }
                         }
+                    }
+                }
 
-                        $unitCost = (float) $poi->unit_cost;
-                        $existingAvgPrice = (float) ($item->stocks->where('price', '>', 0)->avg('price') ?? 0);
-                        $sellingPrice = $existingAvgPrice > 0 ? round($existingAvgPrice, 2) : round($unitCost * 1.25, 2);
+                // Fallback: If GRN has no PO items, check $grn->stocks
+                if ($itemsMap->isEmpty() && $grn->stocks->isNotEmpty()) {
+                    foreach ($grn->stocks as $stock) {
+                        $item = $stock->stockItem;
+                        if ($item && ! in_array($item->id, $stockedItemIds) && ! $itemsMap->has($item->id)) {
+                            $qty = (int) $stock->qty > 0 ? (int) $stock->qty : 1;
+                            $unitCost = (float) $stock->buy;
+                            $sellingPrice = (float) $stock->price > 0 ? (float) $stock->price : round($unitCost * 1.25, 2);
 
-                        if ($itemsMap->has($item->id)) {
-                            $existing = $itemsMap->get($item->id);
-                            $existing['qty'] += $qty;
-                            $existing['qty_ordered'] += (int) $poi->qty_ordered;
-                            $existing['qty_received'] += (int) $poi->qty_received;
-                            $existing['total_cost'] = round($existing['qty'] * $existing['unit_cost'], 2);
-                            $existing['total_value'] = round($existing['qty'] * $existing['selling_price'], 2);
-                            $itemsMap->put($item->id, $existing);
-                        } else {
                             $itemsMap->put($item->id, [
                                 'id' => $item->id,
                                 'name' => $item->name,
@@ -390,11 +443,11 @@ class StockService
                                 'unit_cost' => $unitCost,
                                 'selling_price' => $sellingPrice,
                                 'qty' => $qty,
-                                'qty_ordered' => (int) $poi->qty_ordered,
-                                'qty_received' => (int) $poi->qty_received,
+                                'qty_ordered' => $qty,
+                                'qty_received' => $qty,
                                 'total_cost' => round($qty * $unitCost, 2),
                                 'total_value' => round($qty * $sellingPrice, 2),
-                                'po_id' => $po->id,
+                                'po_id' => null,
                                 'compatible_brands' => $item->brands->map(fn ($b) => [
                                     'id' => $b->id,
                                     'brand' => $b->brand,
@@ -416,89 +469,41 @@ class StockService
                         }
                     }
                 }
-            }
 
-            // Fallback: If GRN has no PO items, check $grn->stocks
-            if ($itemsMap->isEmpty() && $grn->stocks->isNotEmpty()) {
-                foreach ($grn->stocks as $stock) {
-                    $item = $stock->stockItem;
-                    if ($item && ! in_array($item->id, $stockedItemIds) && ! $itemsMap->has($item->id)) {
-                        $qty = (int) $stock->qty > 0 ? (int) $stock->qty : 1;
-                        $unitCost = (float) $stock->buy;
-                        $sellingPrice = (float) $stock->price > 0 ? (float) $stock->price : round($unitCost * 1.25, 2);
-
-                        $itemsMap->put($item->id, [
-                            'id' => $item->id,
-                            'name' => $item->name,
-                            'code' => $item->code,
-                            'subcategories_id' => $item->subcategories_id,
-                            'category_id' => $item->subcategory?->categories_id,
-                            'category_name' => $item->subcategory?->category?->category ?? 'General',
-                            'subcategory_name' => $item->subcategory?->subcategory ?? 'General',
-                            'unit_cost' => $unitCost,
-                            'selling_price' => $sellingPrice,
-                            'qty' => $qty,
-                            'qty_ordered' => $qty,
-                            'qty_received' => $qty,
-                            'total_cost' => round($qty * $unitCost, 2),
-                            'total_value' => round($qty * $sellingPrice, 2),
-                            'po_id' => null,
-                            'compatible_brands' => $item->brands->map(fn ($b) => [
-                                'id' => $b->id,
-                                'brand' => $b->brand,
-                            ])->values()->all(),
-                            'existing_batches' => $item->batches->map(fn ($b) => [
-                                'id' => $b->id,
-                                'batch_no' => 'BAT-'.$b->id,
-                            ])->values()->all(),
-                            'existing_stocks' => $item->stocks->map(fn (Stock $st) => [
-                                'id' => $st->id,
-                                'brands_id' => $st->brands_id,
-                                'brand_name' => $st->brand?->brand ?? 'Generic',
-                                'qty' => (int) $st->qty,
-                                'buy' => (float) $st->buy,
-                                'price' => (float) $st->price,
-                                'grn_id' => $st->grn_id,
-                            ])->values()->all(),
-                        ]);
-                    }
+                $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
+                $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
+                $pendingCount = $itemsMap->count();
+                // If all items under this GRN have already been added to stock, exclude it from Select GRN Reference
+                if ($pendingCount === 0) {
+                    return null;
                 }
-            }
 
-            $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
-            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
-            $pendingCount = $itemsMap->count();
-            // If all items under this GRN have already been added to stock, exclude it from Select GRN Reference
-            if ($pendingCount === 0) {
-                return null;
-            }
+                $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
+                $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
+                $statusText = " ({$pendingCount} items pending)";
 
-            $supplierNames = $grn->purchaseOrders->pluck('supplier.name')->filter()->unique()->values()->join(', ');
-            $poNumbers = $grn->purchaseOrders->pluck('id')->map(fn ($id) => 'PO #'.$id)->join(', ');
-            $statusText = " ({$pendingCount} items pending)";
+                $labelParts = ['GRN #'.$grn->id];
+                if ($supplierNames) {
+                    $labelParts[] = $supplierNames;
+                }
+                if ($poNumbers) {
+                    $labelParts[] = '('.$poNumbers.')';
+                }
+                if ($grn->at_time) {
+                    $labelParts[] = '['.$grn->at_time->format('Y-m-d').']';
+                }
+                $labelParts[] = $statusText;
 
-            $labelParts = ['GRN #'.$grn->id];
-            if ($supplierNames) {
-                $labelParts[] = $supplierNames;
-            }
-            if ($poNumbers) {
-                $labelParts[] = '('.$poNumbers.')';
-            }
-            if ($grn->at_time) {
-                $labelParts[] = '['.$grn->at_time->format('Y-m-d').']';
-            }
-            $labelParts[] = $statusText;
-
-            return [
-                'id' => $grn->id,
-                'label' => implode(' - ', array_filter($labelParts)),
-                'at_time' => $grn->at_time ? $grn->at_time->format('Y-m-d H:i') : null,
-                'supplier_name' => $supplierNames,
-                'po_numbers' => $poNumbers,
-                'items' => $itemsMap->values()->all(),
-                'pending_count' => $pendingCount,
-            ];
-        })->filter()->values();
+                return [
+                    'id' => $grn->id,
+                    'label' => implode(' - ', array_filter($labelParts)),
+                    'at_time' => $grn->at_time ? $grn->at_time->format('Y-m-d H:i') : null,
+                    'supplier_name' => $supplierNames,
+                    'po_numbers' => $poNumbers,
+                    'items' => $itemsMap->values()->all(),
+                    'pending_count' => $pendingCount,
+                ];
+            })->filter()->values();
 
         return [
             'categories' => $categories,

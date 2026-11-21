@@ -19,6 +19,8 @@ class StoreGrnRequest extends FormRequest
     {
         return [
             'at_time' => ['nullable', 'date'],
+            'grn_statuses_id' => ['nullable', 'integer', 'exists:grn_statuses,id'],
+            'status' => ['nullable', 'string', 'in:Approved,Cancelled,Completed,Draft,Pending'],
             'purchase_orders_id' => ['nullable', 'integer', 'exists:purchase_orders,id'],
             'purchase_order_ids' => ['nullable', 'array'],
             'purchase_order_ids.*' => ['integer', 'exists:purchase_orders,id'],
@@ -30,6 +32,8 @@ class StoreGrnRequest extends FormRequest
             'stocks.*.stock_items_id' => ['required_with:stocks', 'integer', 'exists:stock_items,id'],
             'stocks.*.purchase_orders_id' => ['nullable', 'integer', 'exists:purchase_orders,id'],
             'stocks.*.brands_id' => ['nullable', 'integer', 'exists:brands,id'],
+            'stocks.*.batch_id' => ['nullable', 'integer', 'exists:item_batches,id'],
+            'stocks.*.create_new_batch' => ['nullable', 'boolean'],
             'stocks.*.qty' => ['required_with:stocks', 'integer', 'min:1'],
             'stocks.*.price' => ['nullable', 'numeric', 'min:0'],
             'stocks.*.buy' => ['required_with:stocks', 'numeric', 'min:0'],

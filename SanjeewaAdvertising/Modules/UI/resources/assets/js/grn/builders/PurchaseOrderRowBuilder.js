@@ -36,14 +36,16 @@ export class PurchaseOrderEntity {
 
     const statusKey = String(this.status || "").toLowerCase().trim();
     if (statusKey === "completed") {
-      tr.className = "row-status-completed";
+      tr.className = "row-status-completed po-clickable-row";
     } else if (statusKey === "approved") {
-      tr.className = "row-status-approved";
+      tr.className = "row-status-approved po-clickable-row";
     } else if (statusKey === "cancelled") {
-      tr.className = "row-status-cancelled";
+      tr.className = "row-status-cancelled po-clickable-row";
     } else {
-      tr.className = "row-status-pending";
+      tr.className = "row-status-pending po-clickable-row";
     }
+    tr.style.cursor = "pointer";
+    tr.title = `Click row to view Purchase Order (${this.po_number || "PO"})`;
 
     // Items summary tags
     let itemsTags = "";
@@ -105,47 +107,61 @@ export class PurchaseOrderEntity {
       </td>
       <td class="text-center">
         <div class="po-action-group">
-          ${canApproveOrCancel ? `
-            <button type="button" class="action-btn approve-action" ${isApproved ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Already Approved"' : `title="Approve / Complete Purchase Order" onclick="window.grnManager?.approvePO('${this.po_number}')"`}>
-              <i class="fa-solid fa-check"></i>
-            </button>
-            <button type="button" class="action-btn cancel-action" title="Cancel Purchase Order" onclick="window.grnManager?.cancelPO('${this.po_number}')">
-              <i class="fa-solid fa-xmark"></i>
+          ${isCompleted ? `
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" title="Print Purchase Order" onclick="window.grnManager?.printPO('${this.po_number}')">
+              <i class="fa-solid fa-print"></i> Print PO
             </button>
           ` : `
-            <button type="button" class="action-btn" title="View Purchase Order" onclick="window.grnManager?.viewPO('${this.po_number}')">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-            <button type="button" class="action-btn print-action" title="Print Purchase Order" onclick="window.grnManager?.printPO('${this.po_number}')">
-              <i class="fa-solid fa-print"></i>
-            </button>
-          `}
-          <div class="row-action-menu-wrap">
-            <button type="button" class="action-btn more-action" title="More Actions" onclick="window.grnManager?.toggleRowMenu(this)">
-              <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-            <div class="row-action-dropdown" style="display: none;">
-              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.viewPO('${this.po_number}')">
-                <i class="fa-solid fa-eye"></i><span>View PO</span>
+            ${canApproveOrCancel ? `
+              <button type="button" class="action-btn approve-action" ${isApproved ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Already Approved"' : `title="Approve / Complete Purchase Order" onclick="window.grnManager?.approvePO('${this.po_number}')"`}>
+                <i class="fa-solid fa-check"></i>
               </button>
-              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.printPO('${this.po_number}')">
-                <i class="fa-solid fa-print"></i><span>Print PO</span>
+              <button type="button" class="action-btn cancel-action" title="Cancel Purchase Order" onclick="window.grnManager?.cancelPO('${this.po_number}')">
+                <i class="fa-solid fa-xmark"></i>
               </button>
-              ${!isCompleted && !isCancelled ? `
-                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.createGrnForPO('${this.po_number}')">
-                  <i class="fa-solid fa-truck-ramp-box"></i><span>Receive (GRN)</span>
+            ` : `
+              <button type="button" class="action-btn approve-action" disabled style="opacity: 0.45; cursor: not-allowed;" title="Cannot Approve Cancelled PO">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button type="button" class="action-btn cancel-action" disabled style="opacity: 0.45; cursor: not-allowed;" title="Already Cancelled">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            `}
+            <div class="row-action-menu-wrap">
+              <button type="button" class="action-btn more-action" title="More Actions" onclick="window.grnManager?.toggleRowMenu(this)">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+              <div class="row-action-dropdown" style="display: none;">
+                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.printPO('${this.po_number}')">
+                  <i class="fa-solid fa-print"></i><span>Print PO</span>
                 </button>
-              ` : ""}
-              ${isCancelled ? `
-                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.restorePO('${this.po_number}')">
-                  <i class="fa-solid fa-rotate-left"></i><span>Restore to Pending</span>
-                </button>
-              ` : ""}
+                ${isApproved ? `
+                  <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.createGrnForPO('${this.po_number}')">
+                    <i class="fa-solid fa-truck-ramp-box"></i><span>Receive (GRN)</span>
+                  </button>
+                ` : (!isCancelled ? `
+                  <button type="button" class="row-action-item" disabled style="opacity: 0.45; cursor: not-allowed;" title="Approve this Purchase Order first before receiving GRN">
+                    <i class="fa-solid fa-truck-ramp-box"></i><span>Receive (GRN)</span>
+                  </button>
+                ` : "")}
+                ${isCancelled ? `
+                  <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.restorePO('${this.po_number}')">
+                    <i class="fa-solid fa-rotate-left"></i><span>Restore to Pending</span>
+                  </button>
+                ` : ""}
+              </div>
             </div>
-          </div>
+          `}
         </div>
       </td>
     `;
+
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest(".po-action-group, button, a, input, select, .row-action-menu-wrap")) {
+        return;
+      }
+      window.grnManager?.viewPO(this.po_number);
+    });
 
     return tr;
   }

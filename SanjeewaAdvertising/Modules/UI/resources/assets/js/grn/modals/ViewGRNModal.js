@@ -63,13 +63,25 @@ export class ViewGRNModal extends BaseModalHandler {
     if (docSupplier) docSupplier.textContent = rec.supplier_name;
     if (docContact) docContact.textContent = rec.supplier_contact || rec.supplier_invoice_no || "N/A";
     if (docPO) docPO.textContent = rec.purchase_order_no || "N/A";
+    const statusKey = String(rec.status || "Pending").toLowerCase().trim();
+    let badgeClass = "pending";
+    if (statusKey === "completed") {
+      badgeClass = "completed";
+    } else if (statusKey === "pending stock") {
+      badgeClass = "pending-stock";
+    } else if (statusKey === "approved") {
+      badgeClass = "approved";
+    } else if (statusKey === "cancelled") {
+      badgeClass = "cancelled";
+    }
+
     if (docStatus) {
-      docStatus.className = `grn-status-badge ${rec.status === "Completed" ? "completed" : "draft"}`;
-      docStatus.textContent = rec.status;
+      docStatus.className = `grn-status-badge ${badgeClass}`;
+      docStatus.textContent = rec.status || "Pending";
     }
     if (docStatusTable) {
-      docStatusTable.className = `grn-status-badge ${rec.status === "Completed" ? "completed" : "draft"}`;
-      docStatusTable.textContent = rec.status;
+      docStatusTable.className = `grn-status-badge ${badgeClass}`;
+      docStatusTable.textContent = rec.status || "Pending";
     }
     if (docReceivedBy) docReceivedBy.textContent = rec.received_by;
     if (docRemarks) docRemarks.textContent = rec.remarks || "No additional notes provided.";

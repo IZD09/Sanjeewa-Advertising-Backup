@@ -390,7 +390,16 @@ export class GRNManager {
   initNewGrnForm(po) { this.grnFormProcess.initNewGrnForm(po); }
   onPurchaseOrderSelect(po) { this.grnFormProcess.onPurchaseOrderSelect(po); }
   clearSelectedPO() { this.grnFormProcess.clearSelectedPO(); }
-  createGrnForPO(po) { this.modalHandler.openCreateGrnModal(po); }
+  createGrnForPO(po) {
+    const poRecord = (this.dataLoader.purchaseOrders || []).find(
+      p => p.po_number === po || String(p.id) === String(po)
+    );
+    if (poRecord && String(poRecord.status || "").trim().toLowerCase() !== "approved") {
+      this.showToast(`Please approve Purchase Order ${poRecord.po_number} before receiving a GRN.`, "warning");
+      return;
+    }
+    this.modalHandler.openCreateGrnModal(po);
+  }
   openCreateGrnModal(po = null, supplier = null) { this.modalHandler.openCreateGrnModal(po, supplier); }
   getCatalogItems() { return this.grnFormProcess.getCatalogItems(); }
   addNewRow() { this.grnFormProcess.addNewRow(); }
@@ -402,7 +411,70 @@ export class GRNManager {
   renderRowTotal(i) { this.grnFormProcess.renderRowTotal(i); }
   calculateFinancials() { return this.grnFormProcess.calculateFinancials(); }
   saveGRN(isCompleted = false) { this.grnFormProcess.saveGRN(isCompleted); }
-  finalizeDraftGRN(num) { this.grnFormProcess.finalizeDraftGRN(num); }
+  async finalizeDraftGRN(grnNumber) {
+    const rec = this.dataLoader.grnRecords.find(r => r.grn_number === grnNumber || String(r.id) === String(grnNumber));
+    const id = rec?.id || parseInt(String(grnNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = rec?.grn_number || grnNumber;
+    const currentStatus = String(rec?.status || "").trim().toLowerCase();
+
+    if (currentStatus !== "approved") {
+      this.showToast(`Please approve GRN ${label} before completing it.`, "warning");
+      return;
+    }
+
+    this.openActionConfirmModal({
+      type: "approve",
+      title: "Complete GRN",
+      questionPrefix: "Are you sure you want to complete",
+      targetLabel: label,
+      subtext: "This will mark the GRN as Pending Stock and notify Stock Management users to add the items to stock.",
+      confirmHtml: '<i class="fa-solid fa-check-double"></i> Yes, Complete GRN',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Completing...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updateGrnStatus(id, "Pending Stock");
+          this.renderTable();
+          this.supplierHandler.populateGrnStatusFilter();
+          this.metricsProcess.renderKPIs();
+          this.showToast(`GRN ${label} marked as Pending Stock and Stock Management notified!`, "success");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to complete GRN", "error");
+        }
+      }
+    });
+  }
+  async restoreGRN(grnNumber) {
+    const rec = this.dataLoader.grnRecords.find(r => r.grn_number === grnNumber || String(r.id) === String(grnNumber));
+    const id = rec?.id || parseInt(String(grnNumber || "").replace(/\D/g, ""), 10);
+    if (!id) return;
+    const label = rec?.grn_number || grnNumber;
+
+    this.openActionConfirmModal({
+      type: "restore",
+      title: "Restore GRN",
+      questionPrefix: "Are you sure you want to restore",
+      targetLabel: label,
+      subtext: "This will move the GRN back to Pending status.",
+      confirmHtml: '<i class="fa-solid fa-rotate-left"></i> Yes, Restore GRN',
+      loadingHtml: '<i class="fa-solid fa-spinner fa-spin"></i> Restoring...',
+      onConfirm: async () => {
+        try {
+          await this.dataLoader.updateGrnStatus(id, "Pending");
+          this.renderTable();
+          this.supplierHandler.populateGrnStatusFilter();
+          this.metricsProcess.renderKPIs();
+          this.showToast(`GRN ${label} restored to Pending.`, "success");
+        } catch (err) {
+          this.showToast(err?.message || "Failed to restore GRN", "error");
+        }
+      }
+    });
+  }
+  printGRN(grnNumber) {
+    this.viewGRN(grnNumber);
+    setTimeout(() => this.triggerPrintGrn(), 150);
+  }
   toggleRowMenu(triggerBtn) { ActionMenuHelper.toggleRowActionMenu(triggerBtn); }
   closeRowMenus() { ActionMenuHelper.closeAllActionMenus(); }
   openActionConfirmModal({

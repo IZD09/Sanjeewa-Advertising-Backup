@@ -201,40 +201,22 @@
                             <div class="rep-tab-body">
 
                                 <!-- TAB 1: Sales & Orders Report -->
-                                <div class="rep-tab-pane active" id="tabSales">
-                                    @include('ui::layouts.pages.reports.sales-orders.charts.sales-orders-charts')
-                                    @include('ui::layouts.pages.reports.sales-orders.tables.sales-orders-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.sales-orders')
 
                                 <!-- TAB 2: Payments & Cash Flow Report -->
-                                <div class="rep-tab-pane" id="tabPayments">
-                                    @include('ui::layouts.pages.reports.payments-cashflow.charts.payments-cashflow-charts')
-                                    @include('ui::layouts.pages.reports.payments-cashflow.tables.payments-cashflow-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.payments-cashflow')
 
                                 <!-- TAB 3: Customer Receivables Report -->
-                                <div class="rep-tab-pane" id="tabReceivables">
-                                    @include('ui::layouts.pages.reports.customer-receivables.charts.customer-receivables-charts')
-                                    @include('ui::layouts.pages.reports.customer-receivables.tables.customer-receivables-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.customer-receivables')
 
                                 <!-- TAB 4: Inventory & Stock Valuation Report -->
-                                <div class="rep-tab-pane" id="tabInventory">
-                                    @include('ui::layouts.pages.reports.inventory-stock.charts.inventory-stock-charts')
-                                    @include('ui::layouts.pages.reports.inventory-stock.tables.inventory-stock-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.inventory-stock')
 
                                 <!-- TAB 5: Supplier & GRN Report -->
-                                <div class="rep-tab-pane" id="tabSuppliers">
-                                    @include('ui::layouts.pages.reports.supplier-grn.charts.supplier-grn-charts')
-                                    @include('ui::layouts.pages.reports.supplier-grn.tables.supplier-grn-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.supplier-grn')
 
                                 <!-- TAB 6: Profit & Loss Statement -->
-                                <div class="rep-tab-pane" id="tabProfitLoss">
-                                    @include('ui::layouts.pages.reports.profit-loss.charts.profit-loss-charts')
-                                    @include('ui::layouts.pages.reports.profit-loss.tables.profit-loss-table')
-                                </div>
+                                @include('ui::layouts.pages.reports.tabs.profit-loss')
 
                             </div>
                         </div>

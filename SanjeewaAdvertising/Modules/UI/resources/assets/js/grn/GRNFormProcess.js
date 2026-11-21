@@ -393,7 +393,7 @@ export class GRNFormProcess {
     }
 
     const { subTotal, discount, netTotal } = this.calculateFinancials();
-    const status = isCompleted ? "Completed" : "Draft";
+    const status = "Pending";
     const now = new Date();
     const dateStr = now.toISOString().replace("T", " ").substring(0, 16);
 

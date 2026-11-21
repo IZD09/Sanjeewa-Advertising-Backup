@@ -356,6 +356,8 @@ export class LoginManager {
     const redirectUrl =
       this.form?.dataset?.redirect || "/dashboard";
 
+    let isRedirecting = false;
+
     try {
       const http = new RequestHandler();
       const data = await http.post(loginEndpoint, {
@@ -365,22 +367,16 @@ export class LoginManager {
       });
 
       if (data?.requires_permissions) {
+        isRedirecting = true;
         const targetUrl = data.redirect_url || "/access-restricted";
         window.location.href = targetUrl;
         return;
       }
 
       if (data?.success !== false) {
-        this.setStatus(data?.message || "Sign in successful. Redirecting…", "success");
-        if (this.submitLabel) {
-          this.submitLabel.textContent = "Redirecting…";
-        }
-
+        isRedirecting = true;
         const targetUrl = data?.data?.redirect_url || data?.redirect_url || redirectUrl;
-
-        setTimeout(() => {
-          window.location.href = targetUrl;
-        }, 600);
+        window.location.href = targetUrl;
         return;
       }
 
@@ -396,6 +392,7 @@ export class LoginManager {
 
       // Check if access is restricted due to 0 module permissions -> Navigate immediately to dedicated restricted page
       if (err.data?.requires_permissions) {
+        isRedirecting = true;
         const targetUrl = err.data.redirect_url || "/access-restricted";
         window.location.href = targetUrl;
         return;
@@ -409,7 +406,9 @@ export class LoginManager {
 
       this.setStatus(errorMsg, "error");
     } finally {
-      this.setLoading(false);
+      if (!isRedirecting) {
+        this.setLoading(false);
+      }
     }
   }
 

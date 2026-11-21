@@ -45,6 +45,8 @@ export class CreateGrnModal extends BaseModalHandler {
     this.removedGrnItems = [];
     this.allPurchaseOrders = [];
     this.suppliers = [];
+    this.brands = [];
+    this.stockItemsCatalog = [];
     this.selectedSupplier = null;
     this.poListLoaded = false;
     this.activeSupplierFilter = null;
@@ -192,10 +194,10 @@ export class CreateGrnModal extends BaseModalHandler {
     const dropdown = document.getElementById("grnModalPoSearchDropdown");
     const query = (searchInput?.value || "").trim().toLowerCase();
 
-    // Available unlinked active POs
+    // Available unlinked Approved POs
     const selectedNumbers = this.selectedPurchaseOrders.map((p) => p.po_number);
     let availablePOs = this.allPurchaseOrders.filter(
-      (po) => po.status !== "Completed" && po.status !== "Cancelled" && !selectedNumbers.includes(po.po_number)
+      (po) => String(po.status || "").trim().toLowerCase() === "approved" && !selectedNumbers.includes(po.po_number)
     );
 
     if (query) {
@@ -304,18 +306,25 @@ export class CreateGrnModal extends BaseModalHandler {
     this.renderRemovedGrnItems();
     this.calculateFinancials();
 
-    // Load suppliers & active purchase orders fresh from database concurrently
+    // Load suppliers, active purchase orders & inventory catalog (brands + batches) fresh from database concurrently
     await Promise.all([
       this.loadSuppliers(),
-      this.loadActivePurchaseOrders(true)
+      this.loadActivePurchaseOrders(true),
+      this.loadInventoryCatalog()
     ]);
 
-    // If a target PO was specified (e.g. from PO table action), select its supplier and link it
+    this.syncSuppliersWithApprovedPOs();
+
+    // If a target PO was specified (e.g. from PO table action), verify it is Approved, then select its supplier and link it
     if (targetPoNumber) {
       const po = this.allPurchaseOrders.find(
         (p) => p.po_number === targetPoNumber || String(p.id) === String(targetPoNumber)
       );
       if (po) {
+        if (String(po.status || "").trim().toLowerCase() !== "approved") {
+          this.showToast(`Please approve Purchase Order ${po.po_number} before receiving a GRN.`, "warning");
+          return;
+        }
         const supp = this.findSupplierForPo(po);
         if (supp) {
           this.selectSupplier(supp, po.po_number);
@@ -346,6 +355,67 @@ export class CreateGrnModal extends BaseModalHandler {
       console.warn("[CreateGrnModal] Could not fetch suppliers:", err);
       this.suppliers = this.ctx.getSuppliers ? this.ctx.getSuppliers() : [];
     }
+  }
+
+  async loadInventoryCatalog() {
+    try {
+      const res = await this.http.get("/api/v1/inventory/stocks/form-data");
+      const data = res?.data || res;
+      this.brands = Array.isArray(data?.brands) ? data.brands : [];
+      this.stockItemsCatalog = Array.isArray(data?.stock_items) ? data.stock_items : [];
+    } catch (err) {
+      console.warn("[CreateGrnModal] Could not fetch inventory catalog:", err);
+      this.brands = this.brands || [];
+      this.stockItemsCatalog = this.stockItemsCatalog || [];
+    }
+  }
+
+  getCatalogItem(stockItemId, itemCode = null) {
+    if (!this.stockItemsCatalog || this.stockItemsCatalog.length === 0) return null;
+    return (
+      this.stockItemsCatalog.find(it => Number(it.id) === Number(stockItemId)) ||
+      (itemCode ? this.stockItemsCatalog.find(it => String(it.code) === String(itemCode)) : null) ||
+      null
+    );
+  }
+
+  getBrandsForItem(stockItemId, itemCode = null) {
+    const catItem = this.getCatalogItem(stockItemId, itemCode);
+    const compatible = Array.isArray(catItem?.compatible_brands) ? catItem.compatible_brands : [];
+    if (compatible.length > 0 && Array.isArray(this.brands) && this.brands.length > 0) {
+      const compatIds = new Set(compatible.map(b => Number(b.id)));
+      const others = this.brands.filter(b => !compatIds.has(Number(b.id)));
+      return [...compatible, ...others];
+    }
+    if (compatible.length > 0) return compatible;
+    return Array.isArray(this.brands) ? this.brands : [];
+  }
+
+  getExistingBatchesForItem(stockItemId, itemCode = null) {
+    const catItem = this.getCatalogItem(stockItemId, itemCode);
+    return Array.isArray(catItem?.existing_batches) ? catItem.existing_batches : [];
+  }
+
+  syncSuppliersWithApprovedPOs() {
+    const list = Array.isArray(this.suppliers) ? [...this.suppliers] : [];
+    (this.allPurchaseOrders || []).forEach(po => {
+      if (String(po.status || "").trim().toLowerCase() !== "approved") return;
+      const exists = list.some(s => {
+        const matchId = s.id && po.suppliers_id && Number(s.id) === Number(po.suppliers_id);
+        const matchName = s.name && po.supplier_name &&
+          String(s.name).trim().toLowerCase() === String(po.supplier_name).trim().toLowerCase();
+        return matchId || matchName;
+      });
+      if (!exists && (po.suppliers_id || po.supplier_name)) {
+        list.push({
+          id: po.suppliers_id || null,
+          code: po.suppliers_id ? `SUP-${String(po.suppliers_id).padStart(3, "0")}` : "SUP",
+          name: po.supplier_name || "Supplier",
+          mobile: po.supplier_contact || ""
+        });
+      }
+    });
+    this.suppliers = list;
   }
 
   findSupplierForPo(po) {
@@ -441,7 +511,7 @@ export class CreateGrnModal extends BaseModalHandler {
 
     const cleanQuery = String(query || "").trim().toLowerCase();
     let matches = (this.suppliers || []).filter(
-      s => (s.status || "Active").toLowerCase() !== "disabled" || this.getApprovedPOsForSupplier(s).length > 0
+      s => this.getApprovedPOsForSupplier(s).length > 0
     );
 
     if (cleanQuery) {
@@ -452,14 +522,16 @@ export class CreateGrnModal extends BaseModalHandler {
       );
     }
 
-    // Sort suppliers with Approved POs first
+    // Sort suppliers with more Approved POs first
     matches.sort((a, b) => this.getApprovedPOsForSupplier(b).length - this.getApprovedPOsForSupplier(a).length);
 
     if (matches.length === 0) {
       dropdown.innerHTML = `
         <div style="padding: 12px 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
           <i class="fa-solid fa-truck-field" style="margin-right: 6px; opacity: 0.6;"></i>
-          No suppliers found matching "<strong>${this.escapeHtml(query)}</strong>"
+          ${cleanQuery
+            ? `No suppliers with Approved POs found matching "<strong>${this.escapeHtml(query)}</strong>"`
+            : "No suppliers with Approved Purchase Orders available"}
         </div>`;
     } else {
       dropdown.innerHTML = matches.slice(0, 35).map(s => {
@@ -663,10 +735,10 @@ export class CreateGrnModal extends BaseModalHandler {
     this.allPurchaseOrders = purchaseOrders;
     this.poListLoaded = true;
 
-    // Filter active POs (Pending / Partial)
-    const activeCount = this.allPurchaseOrders.filter((p) => p.status !== "Completed" && p.status !== "Cancelled").length;
+    // Filter Approved POs ready for GRN
+    const activeCount = this.allPurchaseOrders.filter((p) => String(p.status || "").trim().toLowerCase() === "approved").length;
     if (hintEl && !this.activeSupplierFilter) {
-      hintEl.textContent = `${activeCount} un-GRNed Purchase Order(s) available across all suppliers. Search or click to link POs.`;
+      hintEl.textContent = `${activeCount} Approved Purchase Order(s) available across all suppliers. Search or click to link POs.`;
     }
 
     return this.allPurchaseOrders;
@@ -683,10 +755,10 @@ export class CreateGrnModal extends BaseModalHandler {
 
     const term = (query || "").toLowerCase().trim();
 
-    // Active POs not yet completed and not already selected in this GRN
+    // Approved POs not yet completed and not already selected in this GRN
     const selectedNumbers = this.selectedPurchaseOrders.map((p) => p.po_number);
     let availablePOs = this.allPurchaseOrders.filter(
-      (po) => po.status !== "Completed" && po.status !== "Cancelled" && !selectedNumbers.includes(po.po_number)
+      (po) => String(po.status || "").trim().toLowerCase() === "approved" && !selectedNumbers.includes(po.po_number)
     );
 
     // 1. If activeSupplierFilter is present (Supplier Directory Card path), restrict strictly to this supplier
@@ -791,6 +863,11 @@ export class CreateGrnModal extends BaseModalHandler {
   addPurchaseOrder(po) {
     if (!po) return;
 
+    if (String(po.status || "").trim().toLowerCase() !== "approved") {
+      this.showToast(`Please approve Purchase Order ${po.po_number} before receiving a GRN.`, "warning");
+      return;
+    }
+
     // Check if already selected
     if (this.selectedPurchaseOrders.some((p) => p.po_number === po.po_number)) {
       this.showToast(`Purchase Order ${po.po_number} is already linked.`, "warning");
@@ -821,12 +898,17 @@ export class CreateGrnModal extends BaseModalHandler {
         const remainingQty = Math.max(1, qtyOrdered - qtyReceived);
         const unitCost = parseFloat(item.unit_cost) || 0;
 
+        const stockItemId = item.stock_items_id || item.item_id;
+        const itemCode = item.item_id || item.code || `ITM-${item.stock_items_id}`;
+        const itemBrands = this.getBrandsForItem(stockItemId, itemCode);
+        const defaultBrandId = item.brands_id || itemBrands[0]?.id || this.brands[0]?.id || 1;
+
         this.grnItems.push({
           po_id: po.id,
           po_number: po.po_number,
-          stock_items_id: item.stock_items_id || item.item_id,
-          item_id: item.stock_items_id || item.item_id,
-          item_code: item.item_id || item.code || `ITM-${item.stock_items_id}`,
+          stock_items_id: stockItemId,
+          item_id: stockItemId,
+          item_code: itemCode,
           item_name: item.item_name || item.name || `Material #${item.stock_items_id}`,
           unit: item.unit || "Units",
           qty_ordered: qtyOrdered,
@@ -834,7 +916,9 @@ export class CreateGrnModal extends BaseModalHandler {
           receiving_qty: remainingQty,
           unit_cost: unitCost,
           total: remainingQty * unitCost,
-          brands_id: item.brands_id || 10
+          brands_id: defaultBrandId,
+          batch_mode: "NEW",
+          batch_id: null
         });
       });
     }
@@ -1013,7 +1097,7 @@ export class CreateGrnModal extends BaseModalHandler {
 
       tbody.innerHTML = `
         <tr id="grnModalEmptyRow">
-          <td colspan="9" style="text-align: center; padding: 32px 16px; background: rgba(0, 0, 0, 0.015); border-radius: 6px;">
+          <td colspan="11" style="text-align: center; padding: 32px 16px; background: rgba(0, 0, 0, 0.015); border-radius: 6px;">
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
               <div style="width: 40px; height: 40px; border-radius: 50%; background: ${hasRemoved ? 'rgba(250, 173, 20, 0.12)' : 'rgba(22, 119, 255, 0.08)'}; display: flex; align-items: center; justify-content: center; color: ${hasRemoved ? '#d46b08' : '#1677ff'}; font-size: 18px;">
                 <i class="${hasRemoved ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-boxes-stacked'}"></i>
@@ -1044,6 +1128,35 @@ export class CreateGrnModal extends BaseModalHandler {
       const tr = document.createElement("tr");
 
       const isFullyDelivered = item.qty_ordered > 0 && item.qty_received_prev >= item.qty_ordered;
+      const availableBrands = this.getBrandsForItem(item.stock_items_id, item.item_code);
+      const existingBatches = this.getExistingBatchesForItem(item.stock_items_id, item.item_code);
+
+      if (!item.brands_id && availableBrands.length > 0) {
+        item.brands_id = availableBrands[0].id;
+      }
+
+      const brandOptionsHtml = availableBrands.length > 0
+        ? availableBrands.map(b =>
+            `<option value="${b.id}" ${Number(b.id) === Number(item.brands_id) ? "selected" : ""}>${this.escapeHtml(b.brand)}</option>`
+          ).join("")
+        : `<option value="${item.brands_id || 1}">Default Brand</option>`;
+
+      const isExistingBatchMode = item.batch_mode === "EXISTING" && existingBatches.length > 0;
+      if (isExistingBatchMode && !item.batch_id && existingBatches.length > 0) {
+        item.batch_id = existingBatches[0].id;
+      }
+
+      const batchSelectHtml = isExistingBatchMode
+        ? `<select class="grn-inline-input grn-modal-batch-id-select"
+                   data-item-index="${index}"
+                   aria-label="Select existing batch for ${this.escapeHtml(item.item_name)}"
+                   style="height: 28px; font-size: 11.5px; padding: 0 6px; width: 100%; margin-top: 4px; border-color: #1677ff;">
+             <option value="">-- Select Batch --</option>
+             ${existingBatches.map(b =>
+               `<option value="${b.id}" ${Number(b.id) === Number(item.batch_id) ? "selected" : ""}>${this.escapeHtml(b.batch_no || `BAT-${b.id}`)}</option>`
+             ).join("")}
+           </select>`
+        : "";
 
       tr.innerHTML = `
         <td>
@@ -1054,6 +1167,28 @@ export class CreateGrnModal extends BaseModalHandler {
           <span class="grn-status-badge info" style="font-size: 11px; font-family: ui-monospace; font-weight: 600; padding: 2px 6px;">
             ${item.po_number}
           </span>
+        </td>
+        <td>
+          <select class="grn-inline-input grn-modal-brand-select"
+                  data-item-index="${index}"
+                  aria-label="Brand for ${this.escapeHtml(item.item_name)}"
+                  style="height: 30px; font-size: 12px; padding: 0 6px; width: 100%; min-width: 120px;">
+            ${brandOptionsHtml}
+          </select>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column;">
+            <select class="grn-inline-input grn-modal-batch-mode-select"
+                    data-item-index="${index}"
+                    aria-label="Stock or Batch type for ${this.escapeHtml(item.item_name)}"
+                    style="height: 30px; font-size: 12px; padding: 0 6px; width: 100%; min-width: 155px;">
+              <option value="NEW" ${!isExistingBatchMode ? "selected" : ""}>New Stock (New Batch)</option>
+              <option value="EXISTING" ${isExistingBatchMode ? "selected" : ""} ${existingBatches.length === 0 ? "disabled" : ""}>
+                Existing Batch${existingBatches.length === 0 ? " (No Batches)" : ` (${existingBatches.length})`}
+              </option>
+            </select>
+            ${batchSelectHtml}
+          </div>
         </td>
         <td>
           <span class="grn-unit-badge" style="background: var(--surface-2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 11px;">
@@ -1109,6 +1244,42 @@ export class CreateGrnModal extends BaseModalHandler {
       `;
 
       tbody.appendChild(tr);
+    });
+
+    // Wire brand, batch mode, and existing batch selectors
+    tbody.querySelectorAll(".grn-modal-brand-select").forEach((select) => {
+      select.addEventListener("change", (e) => {
+        const idx = parseInt(e.target.dataset.itemIndex, 10);
+        if (this.grnItems[idx]) {
+          this.grnItems[idx].brands_id = parseInt(e.target.value, 10) || null;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".grn-modal-batch-mode-select").forEach((select) => {
+      select.addEventListener("change", (e) => {
+        const idx = parseInt(e.target.dataset.itemIndex, 10);
+        if (this.grnItems[idx]) {
+          const mode = e.target.value === "EXISTING" ? "EXISTING" : "NEW";
+          this.grnItems[idx].batch_mode = mode;
+          if (mode === "EXISTING") {
+            const batches = this.getExistingBatchesForItem(this.grnItems[idx].stock_items_id, this.grnItems[idx].item_code);
+            this.grnItems[idx].batch_id = batches[0]?.id || null;
+          } else {
+            this.grnItems[idx].batch_id = null;
+          }
+          this.renderGrnItems();
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".grn-modal-batch-id-select").forEach((select) => {
+      select.addEventListener("change", (e) => {
+        const idx = parseInt(e.target.dataset.itemIndex, 10);
+        if (this.grnItems[idx]) {
+          this.grnItems[idx].batch_id = parseInt(e.target.value, 10) || null;
+        }
+      });
     });
 
     // Wire quantity and cost inputs
@@ -1376,6 +1547,14 @@ export class CreateGrnModal extends BaseModalHandler {
         this.showToast(`Please enter a valid receiving quantity for "${item.item_name}"`, "error");
         return;
       }
+      if (!item.brands_id) {
+        this.showToast(`Please select a brand for "${item.item_name}"`, "error");
+        return;
+      }
+      if (item.batch_mode === "EXISTING" && !item.batch_id) {
+        this.showToast(`Please select an existing batch for "${item.item_name}"`, "error");
+        return;
+      }
     }
 
     const saveBtn = document.getElementById("saveNewGrnModalBtn");
@@ -1396,13 +1575,16 @@ export class CreateGrnModal extends BaseModalHandler {
       const primaryPo = this.selectedPurchaseOrders[0];
 
       const payload = {
+        status: "Pending",
         purchase_orders: purchaseOrdersPayload,
         purchase_orders_id: primaryPo.id,
         supplyer_invoice: primaryPo.supplier_invoice,
         stocks: this.grnItems.map((item) => ({
           stock_items_id: parseInt(item.stock_items_id, 10),
           purchase_orders_id: item.po_id,
-          brands_id: parseInt(item.brands_id, 10) || 10,
+          brands_id: parseInt(item.brands_id, 10) || 1,
+          create_new_batch: item.batch_mode !== "EXISTING",
+          batch_id: item.batch_mode === "EXISTING" && item.batch_id ? parseInt(item.batch_id, 10) : null,
           qty: Math.round(item.receiving_qty),
           buy: parseFloat(item.unit_cost) || 0,
           price: parseFloat((item.unit_cost * 1.25).toFixed(2))
@@ -1414,7 +1596,7 @@ export class CreateGrnModal extends BaseModalHandler {
       const grnCode = createdGrn?.grn_number || createdGrn?.grn_id || `GRN-${Date.now().toString().slice(-4)}`;
 
       this.showToast(
-        `Goods Received Note ${grnCode} created successfully! ${this.selectedPurchaseOrders.length} POs linked and stock updated.`,
+        `Goods Received Note ${grnCode} created with Pending status! ${this.selectedPurchaseOrders.length} PO(s) linked.`,
         "success"
       );
 

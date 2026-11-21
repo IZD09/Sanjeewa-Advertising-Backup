@@ -36,25 +36,35 @@ export class GrnEntity {
 
     const statusKey = String(this.status || "").toLowerCase().trim();
     if (statusKey === "approved") {
-      tr.className = "row-status-approved";
+      tr.className = "row-status-approved grn-clickable-row";
+    } else if (statusKey === "pending stock") {
+      tr.className = "row-status-pending-stock grn-clickable-row";
     } else if (statusKey === "completed") {
-      tr.className = "row-status-completed";
+      tr.className = "row-status-completed grn-clickable-row";
     } else if (statusKey === "cancelled") {
-      tr.className = "row-status-cancelled";
+      tr.className = "row-status-cancelled grn-clickable-row";
     } else {
-      tr.className = "row-status-pending";
+      tr.className = "row-status-pending grn-clickable-row";
     }
+    tr.style.cursor = "pointer";
+    tr.title = `Click row to view Goods Received Note (${this.grn_number || "GRN"})`;
 
     const isApproved = statusKey === "approved";
+    const isPendingStock = statusKey === "pending stock";
     const isCompleted = statusKey === "completed";
     const isCancelled = statusKey === "cancelled";
-    const isDraft = !isApproved && !isCompleted && !isCancelled;
+    const isPending = !isApproved && !isPendingStock && !isCompleted && !isCancelled;
+    const canApprove = isPending;
+    const canCancel = isPending || isApproved;
 
-    let badgeClass = "draft";
+    let badgeClass = "pending";
     let badgeIcon = "fa-clock";
     if (isApproved) {
       badgeClass = "approved";
       badgeIcon = "fa-thumbs-up";
+    } else if (isPendingStock) {
+      badgeClass = "pending-stock";
+      badgeIcon = "fa-boxes-stacked";
     } else if (isCompleted) {
       badgeClass = "completed";
       badgeIcon = "fa-circle-check";
@@ -91,35 +101,46 @@ export class GrnEntity {
       <td>
         <span class="grn-status-badge ${badgeClass}">
           <i class="fa-solid ${badgeIcon}"></i>
-          ${this.status || "Draft"}
+          ${this.status || "Pending"}
         </span>
       </td>
       <td class="text-center">
         <div class="po-action-group">
-          <button type="button" class="action-btn approve-action" title="${!isApproved && !isCancelled ? "Approve GRN" : (isApproved ? "Already Approved" : "Cannot Approve Cancelled GRN")}" onclick="window.grnManager?.approveGRN('${this.grn_number}')" ${!isApproved && !isCancelled ? "" : "disabled"}>
-            <i class="fa-solid fa-check"></i>
-          </button>
-          <button type="button" class="action-btn cancel-action" title="${!isCancelled ? "Cancel GRN" : "Already Cancelled"}" onclick="window.grnManager?.cancelGRN('${this.grn_number}')" ${!isCancelled ? "" : "disabled"}>
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-          <div class="row-action-menu-wrap">
-            <button type="button" class="action-btn more-action" title="More Actions" onclick="window.grnManager?.toggleRowMenu(this)">
-              <i class="fa-solid fa-ellipsis-vertical"></i>
+          ${(isCompleted || isPendingStock) ? `
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" title="Print GRN Voucher" onclick="window.grnManager?.printGRN('${this.grn_number}')">
+              <i class="fa-solid fa-print"></i> Print GRN
             </button>
-            <div class="row-action-dropdown" style="display: none;">
-              <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.viewGRN('${this.grn_number}')">
-                <i class="fa-solid fa-eye"></i><span>View GRN</span>
+          ` : `
+            <button type="button" class="action-btn approve-action" title="${canApprove ? "Approve GRN" : (isApproved ? "Already Approved" : "Cannot Approve Cancelled GRN")}" onclick="window.grnManager?.approveGRN('${this.grn_number}')" ${canApprove ? "" : 'disabled style="opacity: 0.45; cursor: not-allowed;"'}>
+              <i class="fa-solid fa-check"></i>
+            </button>
+            <button type="button" class="action-btn cancel-action" title="${canCancel ? "Cancel GRN" : "Already Cancelled"}" onclick="window.grnManager?.cancelGRN('${this.grn_number}')" ${canCancel ? "" : 'disabled style="opacity: 0.45; cursor: not-allowed;"'}>
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            ${isApproved ? `
+              <button type="button" class="ant-btn ant-btn-default ant-btn-sm" title="Complete GRN" onclick="window.grnManager?.finalizeDraftGRN('${this.grn_number}')">
+                <i class="fa-solid fa-check-double" style="color: #10b981;"></i> Complete GRN
               </button>
-              ${isDraft ? `
-                <button type="button" class="row-action-item" onclick="window.grnManager?.closeRowMenus(); window.grnManager?.finalizeDraftGRN('${this.grn_number}')">
-                  <i class="fa-solid fa-check-double"></i><span>Complete GRN</span>
-                </button>
-              ` : ""}
-            </div>
-          </div>
+            ` : (isPending ? `
+              <button type="button" class="ant-btn ant-btn-default ant-btn-sm" disabled style="opacity: 0.45; cursor: not-allowed;" title="Approve this GRN first before completing">
+                <i class="fa-solid fa-check-double"></i> Complete GRN
+              </button>
+            ` : `
+              <button type="button" class="ant-btn ant-btn-default ant-btn-sm" title="Restore to Pending" onclick="window.grnManager?.restoreGRN('${this.grn_number}')">
+                <i class="fa-solid fa-rotate-left" style="color: #1677ff;"></i> Restore
+              </button>
+            `)}
+          `}
         </div>
       </td>
     `;
+
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest(".po-action-group, button, a, input, select, .row-action-menu-wrap")) {
+        return;
+      }
+      window.grnManager?.viewGRN(this.grn_number);
+    });
 
     return tr;
   }
@@ -155,7 +176,7 @@ export class GrnRowBuilder extends BaseTableRowBuilder {
       discount: 0.0,
       net_total: 0.0,
       received_by: "Admin User",
-      status: "Completed",
+      status: "Pending",
       remarks: "",
       items: []
     };
