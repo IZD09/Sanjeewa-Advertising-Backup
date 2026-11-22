@@ -255,7 +255,7 @@
     ]
   },
   "resources/assets/js/admin/profile/processes/AdminProfileManager.js": {
-    "file": "assets/AdminProfileManager-ebv6P4Zv.js",
+    "file": "assets/AdminProfileManager-DZi2Hsu-.js",
     "name": "AdminProfileManager",
     "src": "resources/assets/js/admin/profile/processes/AdminProfileManager.js",
     "isEntry": true,
@@ -265,7 +265,7 @@
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
-    "file": "assets/UserControlManager-CC6fOrHX.js",
+    "file": "assets/UserControlManager-BWlhMvEC.js",
     "name": "UserControlManager",
     "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
     "isEntry": true,
