@@ -61,7 +61,8 @@ export class SupplierCardBuilder {
     this.category = data.category || "General Media";
     this.paymentTerms = data.payment_terms || "COD";
     this.status = data.status || "Active";
-    this.ungrnedPoCount = Number(data.ungrnedPoCount ?? data.pending_purchase_orders_count ?? 0);
+    this.approvedPoCount = Number(data.approvedPoCount ?? data.approved_purchase_orders_count ?? data.ungrnedPoCount ?? 0);
+    this.ungrnedPoCount = this.approvedPoCount;
   }
 
   getInitials() {
@@ -147,9 +148,9 @@ export class SupplierCardBuilder {
         </div>
         <div class="cust-stats-row">
           <div class="cust-stat-item">
-            <span>Pending POs</span>
-            <strong style="${this.ungrnedPoCount > 0 ? 'color: #d97706;' : ''}">
-              <i class="fa-solid fa-clipboard-list" style="font-size: 11px; margin-right: 4px; ${this.ungrnedPoCount > 0 ? 'color: #f59e0b;' : 'opacity: 0.6;'}"></i>${this.ungrnedPoCount} ${this.ungrnedPoCount === 1 ? 'PO' : 'POs'}
+            <span>Approved POs</span>
+            <strong style="${this.approvedPoCount > 0 ? 'color: #1677ff;' : ''}">
+              <i class="fa-solid fa-clipboard-check" style="font-size: 11px; margin-right: 4px; ${this.approvedPoCount > 0 ? 'color: #1677ff;' : 'opacity: 0.6;'}"></i>${this.approvedPoCount} ${this.approvedPoCount === 1 ? 'PO' : 'POs'}
             </strong>
           </div>
           <div class="cust-stat-item">
@@ -169,7 +170,7 @@ export class SupplierCardBuilder {
             <button type="button" class="ant-btn ant-btn-primary supp-btn-action supp-btn-primary" 
               ${isDisabled ? 'disabled style="opacity: 0.45; cursor: not-allowed;" title="Supplier is disabled"' : `title="Create GRN for this Supplier" onclick="window.grnManager.createGrnForSupplier('${jsName}')"`}>
               <i class="fa-solid fa-file-invoice"></i> + GRN
-              ${this.ungrnedPoCount > 0 ? `<span class="supp-ungrned-pill">${this.ungrnedPoCount}</span>` : ""}
+              ${this.approvedPoCount > 0 ? `<span class="supp-ungrned-pill">${this.approvedPoCount}</span>` : ""}
             </button>
           </div>
 

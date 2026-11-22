@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             PrintJobDatabaseSeeder::class,
             InvoiceDatabaseSeeder::class,
             HRDatabaseSeeder::class,
+            PaymentsModuleDataSeeder::class,
         ]);
     }
 }

@@ -24,6 +24,7 @@ class SupplierResource extends JsonResource
             'bank_account' => $this->bank_account,
             'status' => $this->status ?? 'Active',
             'purchase_orders_count' => $this->whenCounted('purchaseOrders'),
+            'approved_purchase_orders_count' => (int) ($this->approved_purchase_orders_count ?? 0),
             'purchase_orders' => PurchaseOrderResource::collection($this->whenLoaded('purchaseOrders')),
         ];
     }

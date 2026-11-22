@@ -21,6 +21,7 @@ class UpdatePurchaseOrderRequest extends FormRequest
             'suppliers_id' => ['sometimes', 'required', 'integer', 'exists:suppliers,id'],
             'add_date' => ['sometimes', 'required', 'date'],
             'purchase_orders_status_id' => ['sometimes', 'required', 'integer', 'exists:purchase_orders_status,id'],
+            'status' => ['sometimes', 'nullable', 'string'],
             'notes' => ['nullable', 'string', 'max:255'],
         ];
     }

@@ -240,7 +240,12 @@ class PurchaseOrderService
         if (isset($data['add_date'])) {
             $attributes['add_date'] = $data['add_date'];
         }
-        if (isset($data['purchase_orders_status_id'])) {
+        if (! empty($data['status'])) {
+            $resolvedId = PurchaseOrderStatus::getIdForStatus($data['status']);
+            if ($resolvedId) {
+                $attributes['purchase_orders_status_id'] = $resolvedId;
+            }
+        } elseif (isset($data['purchase_orders_status_id'])) {
             $attributes['purchase_orders_status_id'] = (int) $data['purchase_orders_status_id'];
         }
         if (array_key_exists('notes', $data)) {
