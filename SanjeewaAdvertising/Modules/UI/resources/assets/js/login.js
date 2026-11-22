@@ -373,6 +373,11 @@ export class LoginManager {
         return;
       }
 
+      if (data?.is_admin) {
+        this.setStatus(data.message || "Administrators must log in via the Admin Portal at /admin/login.", "error");
+        return;
+      }
+
       if (data?.success !== false) {
         isRedirecting = true;
         const targetUrl = data?.data?.redirect_url || data?.redirect_url || redirectUrl;
@@ -395,6 +400,11 @@ export class LoginManager {
         isRedirecting = true;
         const targetUrl = err.data.redirect_url || "/access-restricted";
         window.location.href = targetUrl;
+        return;
+      }
+
+      if (err.data?.is_admin) {
+        this.setStatus(err.data.message || "Administrators must log in via the Admin Portal at /admin/login.", "error");
         return;
       }
 

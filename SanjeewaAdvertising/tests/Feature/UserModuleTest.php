@@ -9,6 +9,8 @@ use Modules\Admin\Database\Seeders\DefaultAdminSeeder;
 use Modules\Admin\Models\Admin;
 use Modules\User\Database\Seeders\SystemModuleSeeder;
 use Modules\User\Database\Seeders\UserStatusSeeder;
+use Modules\User\Models\SystemModule;
+use Modules\User\Models\SystemModuleUser;
 use Modules\User\Models\User;
 use Modules\User\Models\UserLogin;
 use Modules\User\Models\UserStatus;
@@ -82,6 +84,15 @@ class UserModuleTest extends TestCase
             'is_login' => 0,
             'user_statuses_id' => $this->status->id,
         ]);
+
+        $module = SystemModule::first();
+        if ($module) {
+            SystemModuleUser::create([
+                'users_id' => $user->id,
+                'system_modules_id' => $module->id,
+                'view' => 1,
+            ]);
+        }
 
         $response = $this->postJson('/api/v1/auth/login', [
             'username' => 'kamal_'.$unique,

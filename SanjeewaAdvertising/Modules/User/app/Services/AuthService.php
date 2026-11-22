@@ -4,6 +4,7 @@ namespace Modules\User\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
+use Modules\Admin\Models\Admin;
 use Modules\Core\Models\ActivityType;
 use Modules\Core\Services\ActivityService;
 use Modules\User\Models\User;
@@ -48,10 +49,25 @@ class AuthService
     /**
      * Authenticate user credentials and create a login tracking record.
      *
-     * @return array{user: User, login_id: int, login_at: mixed}|null
+     * @return array{user?: User, login_id?: int, login_at?: mixed, is_admin?: bool, requires_permissions?: bool, message?: string}|null
      */
     public function authenticate(string $identifier, string $password): ?array
     {
+        // 1. Disallow administrator credentials from authenticating through staff service
+        $isAdminAccount = false;
+        if (strtolower($identifier) === 'admin') {
+            $isAdminAccount = true;
+        } elseif (Admin::query()->where('username', $identifier)->orWhere('email', $identifier)->exists()) {
+            $isAdminAccount = true;
+        }
+
+        if ($isAdminAccount) {
+            return [
+                'is_admin' => true,
+                'message' => 'Administrators must log in via the Admin Portal at /admin/login.',
+            ];
+        }
+
         $user = User::query()
             ->with('status')
             ->where('username', $identifier)
@@ -60,6 +76,14 @@ class AuthService
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return null;
+        }
+
+        // 2. Administrators are strictly forbidden from logging in via the staff portal
+        if ($user->username === 'admin') {
+            return [
+                'is_admin' => true,
+                'message' => 'Administrators must log in via the Admin Portal at /admin/login.',
+            ];
         }
 
         // If user has no module permissions assigned, do not open a session

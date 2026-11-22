@@ -225,5 +225,32 @@ class PaymentsModuleDataSeeder extends Seeder
                 ['purchase_orders_id' => 3, 'stock_items_id' => 9, 'unit_cost' => 2800.00, 'qty_ordered' => 40, 'qty_received' => 0],
             ]);
         }
+
+        // 6. Ensure replenishment purchase order for low-stock items exists
+        if (! DB::table('purchase_orders')->where('id', 108)->exists()) {
+            DB::table('purchase_orders')->insert([
+                'id' => 108,
+                'add_date' => '2026-11-22 10:00:00',
+                'suppliers_id' => 7,
+                'purchase_orders_status_id' => 2, // Approved
+                'notes' => 'Urgent replenishment order for critical warehouse low stock items',
+            ]);
+        }
+
+        $lowStockReorders = [
+            ['purchase_orders_id' => 108, 'stock_items_id' => 45, 'unit_cost' => 18500.00, 'qty_ordered' => 5, 'qty_received' => 0],
+            ['purchase_orders_id' => 108, 'stock_items_id' => 43, 'unit_cost' => 4200.00, 'qty_ordered' => 15, 'qty_received' => 0],
+            ['purchase_orders_id' => 108, 'stock_items_id' => 52, 'unit_cost' => 8500.00, 'qty_ordered' => 6, 'qty_received' => 0],
+            ['purchase_orders_id' => 108, 'stock_items_id' => 29, 'unit_cost' => 6500.00, 'qty_ordered' => 30, 'qty_received' => 0],
+            ['purchase_orders_id' => 108, 'stock_items_id' => 35, 'unit_cost' => 7200.00, 'qty_ordered' => 15, 'qty_received' => 0],
+            ['purchase_orders_id' => 108, 'stock_items_id' => 48, 'unit_cost' => 3800.00, 'qty_ordered' => 12, 'qty_received' => 0],
+        ];
+
+        foreach ($lowStockReorders as $orderItem) {
+            if (DB::table('stock_items')->where('id', $orderItem['stock_items_id'])->exists() &&
+                ! DB::table('purchase_order_items')->where('purchase_orders_id', 108)->where('stock_items_id', $orderItem['stock_items_id'])->exists()) {
+                DB::table('purchase_order_items')->insert($orderItem);
+            }
+        }
     }
 }

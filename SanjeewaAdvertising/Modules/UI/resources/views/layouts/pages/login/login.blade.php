@@ -162,7 +162,7 @@
                 </button>
 
                 {{-- Status / Error Message Container --}}
-                <p class="status" id="status" role="status" aria-live="polite"></p>
+                <p class="status {{ $errors->any() ? 'show is-error' : '' }}" id="status" role="status" aria-live="polite">{{ $errors->first() }}</p>
 
                 <div class="portal-switch">
                     <a href="{{ route('admin.login') }}" class="portal-switch-btn" data-turbo="false" title="Switch to Administrator Login">

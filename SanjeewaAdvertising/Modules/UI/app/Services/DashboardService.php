@@ -509,21 +509,41 @@ class DashboardService
         $health = [];
         $levelsLabels = [];
         $levelsValues = [];
+        $levelsOrdered = [];
+        $levelsUnits = [];
         $palette = ['#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#2563eb', '#10b981'];
 
         if (Schema::hasTable('stock_items') && Schema::hasTable('stock')) {
-            // Aggregate remaining stock by stock item
-            $items = DB::table('stock_items as si')
-                ->leftJoin('stock as s', 's.stock_items_id', '=', 'si.id')
-                ->select(
-                    'si.id',
-                    'si.name',
-                    'si.code',
-                    'si.low_stock_qty',
-                    'si.reorder_qty',
-                    DB::raw('COALESCE(SUM(s.qty), 0) as total_qty')
-                )
-                ->groupBy('si.id', 'si.name', 'si.code', 'si.low_stock_qty', 'si.reorder_qty')
+            $hasUnits = Schema::hasTable('stock_units') && Schema::hasColumn('stock_items', 'stock_units_id');
+            $hasPo = Schema::hasTable('purchase_order_items');
+
+            $query = DB::table('stock_items as si')
+                ->leftJoin('stock as s', 's.stock_items_id', '=', 'si.id');
+
+            $selects = [
+                'si.id',
+                'si.name',
+                'si.code',
+                'si.low_stock_qty',
+                'si.reorder_qty',
+                DB::raw('COALESCE(SUM(s.qty), 0) as total_qty'),
+            ];
+            $groupBys = ['si.id', 'si.name', 'si.code', 'si.low_stock_qty', 'si.reorder_qty'];
+
+            if ($hasUnits) {
+                $query->leftJoin('stock_units as su', 'su.id', '=', 'si.stock_units_id');
+                $selects[] = 'su.unit as unit_name';
+                $selects[] = 'su.symble as unit_symbol';
+                $groupBys[] = 'su.unit';
+                $groupBys[] = 'su.symble';
+            }
+
+            if ($hasPo) {
+                $selects[] = DB::raw('(SELECT COALESCE(SUM(poi.qty_ordered), 0) FROM purchase_order_items poi LEFT JOIN purchase_orders po ON po.id = poi.purchase_orders_id WHERE poi.stock_items_id = si.id AND (po.purchase_orders_status_id IS NULL OR po.purchase_orders_status_id != 4)) as total_ordered');
+            }
+
+            $items = $query->select($selects)
+                ->groupBy($groupBys)
                 ->orderBy('total_qty', 'asc')
                 ->limit(6)
                 ->get();
@@ -533,39 +553,47 @@ class DashboardService
                 $qty = (int) $item->total_qty;
                 $lowQty = (int) ($item->low_stock_qty ?: 10);
                 $reorderQty = (int) ($item->reorder_qty ?: 20);
+                $orderedQty = isset($item->total_ordered) ? (int) $item->total_ordered : 0;
+                $unit = ($item->unit_name ?? null) ?: (($item->unit_symbol ?? null) ?: 'Units');
 
-                $percentage = min(100, max(5, (int) round(($qty / max(1, $reorderQty)) * 100)));
-
-                if ($qty <= $lowQty) {
-                    $color = '#ef4444'; // Red (Critical)
-                    $statusText = $qty === 0 ? 'Out of Stock' : "Low Stock: {$qty} Units";
-                } elseif ($qty <= $reorderQty) {
-                    $color = '#f59e0b'; // Amber (Reorder Alert)
-                    $statusText = "Stock: {$qty} Units";
-                } else {
+                // Visual progress percentage against reorder target
+                if ($orderedQty > 0) {
+                    $percentage = min(100, max(10, (int) round(($orderedQty / max(1, $reorderQty)) * 100)));
+                    $statusText = "Ordered: {$orderedQty} {$unit}";
                     $color = $palette[$i % count($palette)];
-                    $statusText = "Stock: {$qty} Units";
+                } else {
+                    $percentage = 0;
+                    $statusText = "Ordered: 0 {$unit}";
+                    $color = '#ef4444'; // Red alert for un-ordered critical stock
                 }
 
                 $health[] = [
                     'name' => $item->name,
                     'value' => $statusText,
+                    'ordered_qty' => $orderedQty,
+                    'remaining_qty' => $qty,
+                    'reorder_qty' => $reorderQty,
+                    'unit' => $unit,
                     'percentage' => $percentage,
                     'color' => $color,
                 ];
 
                 $levelsLabels[] = $item->name;
                 $levelsValues[] = $qty;
+                $levelsOrdered[] = $orderedQty;
+                $levelsUnits[] = $unit;
                 $i++;
             }
         }
 
         if (empty($health)) {
             $health = [
-                ['name' => 'No Stock Items', 'value' => '0 Units', 'percentage' => 0, 'color' => '#94a3b8'],
+                ['name' => 'No Stock Items', 'value' => 'Ordered: 0 Units', 'percentage' => 0, 'color' => '#94a3b8'],
             ];
             $levelsLabels = ['No Items'];
             $levelsValues = [0];
+            $levelsOrdered = [0];
+            $levelsUnits = ['Units'];
         }
 
         return [
@@ -574,6 +602,8 @@ class DashboardService
             'levels' => [
                 'labels' => $levelsLabels,
                 'values' => $levelsValues,
+                'ordered' => $levelsOrdered,
+                'units' => $levelsUnits,
                 'colors' => array_slice($palette, 0, count($levelsLabels)),
             ],
         ];

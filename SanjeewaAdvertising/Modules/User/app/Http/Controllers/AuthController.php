@@ -50,7 +50,23 @@ class AuthController extends BaseApiController
                 return $this->unauthorized('Invalid username or password.');
             }
 
-            return back()->withInput()->withErrors(['username' => 'Invalid username or password.']);
+            return back()->withInput($request->only('username', 'remember'))->withErrors(['username' => 'Invalid username or password.']);
+        }
+
+        if (! empty($authData['is_admin'])) {
+            $adminLoginUrl = route('admin.login');
+            $errorMessage = $authData['message'] ?? 'Administrators must log in via the Admin Portal at /admin/login.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'is_admin' => true,
+                    'redirect_url' => $adminLoginUrl,
+                    'message' => $errorMessage,
+                ], 403);
+            }
+
+            return back()->withInput($request->only('username', 'remember'))->withErrors(['username' => $errorMessage]);
         }
 
         if (! empty($authData['requires_permissions'])) {
@@ -88,8 +104,7 @@ class AuthController extends BaseApiController
         if (Auth::guard('web')->hasUser() || $request->hasSession()) {
             Auth::guard('web')->login($authData['user'], $request->boolean('remember'));
             if ($request->hasSession()) {
-                $portal = ($authData['user']->username ?? '') === 'admin' ? 'admin' : 'user';
-                $request->session()->put('active_portal', $portal);
+                $request->session()->put('active_portal', 'user');
                 $request->session()->put('last_activity_time', now()->timestamp);
             }
         }

@@ -48,7 +48,7 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
     const rows = this.findElements('.stock-health > div');
     if (rows.length !== healthItems.length) {
       container.innerHTML = healthItems.map(item => `
-        <div>
+        <div title="Remaining Stock: ${item.remaining_qty ?? ''} ${item.unit ?? ''} | ${item.value || ''} | Reorder Target: ${item.reorder_qty ?? ''} ${item.unit ?? ''}">
           <div class="stock-label">
             <span>${item.name || ''}</span>
             <strong style="color: ${item.color || '#2563eb'};">${item.value || ''}</strong>
@@ -64,6 +64,10 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
     healthItems.forEach((item, index) => {
       const row = rows[index];
       if (!row) return;
+
+      if (item.remaining_qty !== undefined && item.reorder_qty !== undefined) {
+        row.title = `Remaining Stock: ${item.remaining_qty} ${item.unit || ''} | ${item.value || ''} | Reorder Target: ${item.reorder_qty} ${item.unit || ''}`;
+      }
 
       const nameSpan = row.querySelector('.stock-label span:first-child');
       if (nameSpan && item.name) {
@@ -97,6 +101,8 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
   renderStockLevelsChart(levelsData) {
     const labels = levelsData?.labels || [];
     const values = levelsData?.values || [];
+    const ordered = levelsData?.ordered || [];
+    const units = levelsData?.units || [];
     const defaultColors = [
       "#ef4444",
       "#f59e0b",
@@ -125,7 +131,22 @@ export class StockCategoriesSlide extends DashboardBaseSlide {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const idx = context.dataIndex;
+                const val = context.raw ?? 0;
+                const unit = units[idx] || "Units";
+                const ord = ordered[idx] !== undefined ? ordered[idx] : null;
+                const lines = [`Remaining Stock: ${val} ${unit}`];
+                if (ord !== null) {
+                  lines.push(`Supplies Ordered: ${ord} ${unit}`);
+                }
+                return lines;
+              }
+            }
+          }
         },
         scales: {
           x: {

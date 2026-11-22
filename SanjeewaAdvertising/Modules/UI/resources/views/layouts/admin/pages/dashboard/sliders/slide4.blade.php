@@ -34,7 +34,7 @@
       </div>
       <div class="stock-health">
         @foreach($stockHealth as $item)
-          <div>
+          <div title="Remaining Stock: {{ $item['remaining_qty'] ?? '' }} {{ $item['unit'] ?? '' }} | {{ $item['value'] ?? '' }} | Reorder Target: {{ $item['reorder_qty'] ?? '' }} {{ $item['unit'] ?? '' }}">
             <div class="stock-label">
               <span>{{ $item['name'] ?? '' }}</span>
               <strong style="color: {{ $item['color'] ?? '#2563eb' }};">{{ $item['value'] ?? '' }}</strong>

@@ -67,20 +67,90 @@ class AuthenticationAndPermissionTest extends TestCase
         $this->assertSame('admin', Auth::guard('admin')->user()->username);
     }
 
-    public function test_default_admin_can_login_via_staff_login_endpoint(): void
+    public function test_admin_cannot_login_via_staff_login_endpoint(): void
     {
         $response = $this->postJson('/login', [
             'username' => 'admin',
             'password' => 'admin',
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(403)
             ->assertJson([
-                'success' => true,
+                'success' => false,
+                'is_admin' => true,
+                'redirect_url' => route('admin.login'),
             ]);
 
-        $this->assertTrue(Auth::guard('web')->check());
-        $this->assertSame('admin', Auth::guard('web')->user()->username);
+        $this->assertFalse(Auth::guard('web')->check());
+    }
+
+    public function test_admin_cannot_login_via_api_staff_auth_login_endpoint(): void
+    {
+        $response = $this->postJson('/api/v1/auth/login', [
+            'username' => 'admin',
+            'password' => 'admin',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'is_admin' => true,
+                'redirect_url' => route('admin.login'),
+            ]);
+
+        $this->assertFalse(Auth::guard('web')->check());
+    }
+
+    public function test_admin_with_admin_email_cannot_login_via_staff_login(): void
+    {
+        $response = $this->postJson('/login', [
+            'username' => 'admin@sanjeewaadvertising.com',
+            'password' => 'admin',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'is_admin' => true,
+                'redirect_url' => route('admin.login'),
+            ]);
+
+        $this->assertFalse(Auth::guard('web')->check());
+    }
+
+    public function test_admin_standard_form_login_redirects_back_with_error(): void
+    {
+        $response = $this->from('/login')->post('/login', [
+            'username' => 'admin',
+            'password' => 'admin',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors(['username']);
+        $this->assertFalse(Auth::guard('web')->check());
+    }
+
+    public function test_staff_user_cannot_login_via_admin_login(): void
+    {
+        $activeStatus = UserStatus::where('user_status', 'Active')->first();
+        $user = User::create([
+            'first_name' => 'Staff',
+            'last_name' => 'Member',
+            'mobile' => '0778889911',
+            'username' => 'staffmember_'.uniqid(),
+            'password' => Hash::make('staffpass123'),
+            'register_at' => now(),
+            'is_login' => 0,
+            'user_statuses_id' => $activeStatus->id,
+        ]);
+
+        $response = $this->postJson('/admin/login', [
+            'username' => $user->username,
+            'password' => 'staffpass123',
+        ]);
+
+        $response->assertStatus(401);
+        $this->assertFalse(Auth::guard('admin')->check());
     }
 
     public function test_authenticated_admin_can_access_dashboard_and_user_control(): void
