@@ -28,11 +28,11 @@
                     </div>
                     <div class="uc-form-group">
                         <label for="userPassword">Password <span class="req">*</span></label>
-                        <input type="password" id="userPassword" placeholder="••••••••" required minlength="6" maxlength="255">
+                        <input type="password" id="userPassword" placeholder="Password" required minlength="6" maxlength="255">
                     </div>
                     <div class="uc-form-group">
                         <label for="userPasswordConfirm">Confirm Password <span class="req">*</span></label>
-                        <input type="password" id="userPasswordConfirm" placeholder="••••••••" required minlength="6" maxlength="255">
+                        <input type="password" id="userPasswordConfirm" placeholder="Password" required minlength="6" maxlength="255">
                     </div>
                     <div class="uc-form-group full">
                         <label for="userStatusSelect">User Status <span class="req">*</span></label>

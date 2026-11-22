@@ -11,14 +11,18 @@
             This panel contains sensitive administrator credentials and account configurations. Please verify your administrator username and password to proceed.
         </p>
 
-        <form class="ap-lock-form" id="formVerifyAdminAccess">
+        <form class="ap-lock-form" id="formVerifyAdminAccess" autocomplete="off">
+            <!-- Decoy inputs to trap browser autofill -->
+            <input type="text" name="fake_admin_username_trap" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="password" name="fake_admin_password_trap" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+
             <div class="ap-lock-field">
                 <label for="verifyAdminUsername">Admin Username</label>
-                <input type="text" id="verifyAdminUsername" placeholder="e.g. admin" required autocomplete="username">
+                <input type="text" id="verifyAdminUsername" placeholder="e.g. admin" required autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             <div class="ap-lock-field">
                 <label for="verifyAdminPassword">Admin Password</label>
-                <input type="password" id="verifyAdminPassword" placeholder="••••••••" required autocomplete="current-password">
+                <input type="password" id="verifyAdminPassword" placeholder="Password" required autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly');">
             </div>
 
             <div class="ap-lock-error" id="verifyAccessError"></div>

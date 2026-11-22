@@ -82,7 +82,7 @@ export class UserControlManager {
       onShowToast: (msg, type) => this.showToast(msg, type),
       onManagePermissions: (userId) => {
         this.adminVerifyModal.requestPermission({
-          description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your administrator password.`,
+          description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your administrator username and password.`,
           onSuccess: () => {
             this.grantPermissionsAccess();
             this.filterProcess.switchTab("panePermissions", true);
@@ -99,7 +99,7 @@ export class UserControlManager {
       },
       onSelectUserForPerms: (userId) => {
         this.adminVerifyModal.requestPermission({
-          description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your administrator password.`,
+          description: `Configuring permissions for User #${userId} requires administrator security verification. Please enter your administrator username and password.`,
           onSuccess: () => {
             this.grantPermissionsAccess();
             this.filterProcess.switchTab("panePermissions", true);
@@ -175,7 +175,7 @@ export class UserControlManager {
 
           if (!this.hasVerifiedAdminsAccess) {
             this.adminVerifyModal.requestPermission({
-              description: "Viewing system administrators requires administrator security verification. Please enter your administrator password.",
+              description: "Viewing system administrators requires administrator security verification. Please enter your administrator username and password.",
               onSuccess: () => {
                 this.grantAdminsAccess();
                 proceed();
@@ -202,7 +202,7 @@ export class UserControlManager {
 
           if (!this.hasVerifiedPermissions) {
             this.adminVerifyModal.requestPermission({
-              description: "Configuring user module permissions requires administrator security verification. Please enter your administrator password.",
+              description: "Configuring user module permissions requires administrator security verification. Please enter your administrator username and password.",
               onSuccess: () => {
                 this.grantPermissionsAccess();
                 proceed();

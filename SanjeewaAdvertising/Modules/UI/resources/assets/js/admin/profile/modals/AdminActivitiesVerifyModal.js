@@ -46,16 +46,25 @@ export class AdminActivitiesVerifyModal {
     if (this.form) this.form.reset();
     if (this.errorEl) this.errorEl.style.display = "none";
 
-    const verifiedAdmin = this.dataLoader?.getVerifiedAdmin();
-    const defaultUser = verifiedAdmin?.username || window.__CURRENT_ADMIN_USERNAME__ || "";
     if (this.usernameInput) {
-      this.usernameInput.value = defaultUser;
+      this.usernameInput.value = "";
+      this.usernameInput.setAttribute("readonly", "readonly");
+    }
+    if (this.passwordInput) {
+      this.passwordInput.value = "";
+      this.passwordInput.setAttribute("readonly", "readonly");
     }
 
     this.overlay.classList.add("active");
     setTimeout(() => {
+      if (this.usernameInput) {
+        this.usernameInput.removeAttribute("readonly");
+        this.usernameInput.value = "";
+        this.usernameInput.focus();
+      }
       if (this.passwordInput) {
-        this.passwordInput.focus();
+        this.passwordInput.removeAttribute("readonly");
+        this.passwordInput.value = "";
       }
     }, 150);
   }
@@ -63,18 +72,23 @@ export class AdminActivitiesVerifyModal {
   close() {
     if (!this.overlay) return;
     this.overlay.classList.remove("active");
+    if (this.form) this.form.reset();
+    if (this.usernameInput) {
+      this.usernameInput.value = "";
+      this.usernameInput.setAttribute("readonly", "readonly");
+    }
+    if (this.passwordInput) {
+      this.passwordInput.value = "";
+      this.passwordInput.setAttribute("readonly", "readonly");
+    }
   }
 
   async submit() {
-    const verifiedAdmin = this.dataLoader?.getVerifiedAdmin();
-    const username =
-      this.usernameInput?.value.trim() ||
-      verifiedAdmin?.username ||
-      window.__CURRENT_ADMIN_USERNAME__;
+    const username = this.usernameInput?.value.trim();
     const password = this.passwordInput?.value;
 
     if (!username || !password) {
-      this.showError("Please enter your administrator password.");
+      this.showError("Please enter both username and password.");
       return;
     }
 
@@ -92,11 +106,11 @@ export class AdminActivitiesVerifyModal {
         this.close();
         this.onVerified();
       } else {
-        const msg = response?.message || "Invalid administrator password.";
+        const msg = response?.message || "Invalid administrator credentials.";
         this.showError(msg);
       }
     } catch (err) {
-      const msg = err?.data?.message || err?.message || "Failed to verify administrator password.";
+      const msg = err?.data?.message || err?.message || "Failed to verify administrator credentials.";
       this.showError(msg);
     } finally {
       if (this.submitBtn) {
