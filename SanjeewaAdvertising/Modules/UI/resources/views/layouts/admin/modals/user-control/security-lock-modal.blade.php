@@ -8,17 +8,21 @@
         </div>
         <h3 class="ap-lock-title">Security Verification Required</h3>
         <p class="ap-lock-desc" id="secVerifyDesc">
-            This action requires administrator credentials. Please enter your administrator password to proceed.
+            This action requires administrator credentials. Please enter your administrator username and password to proceed.
         </p>
 
-        <form class="ap-lock-form" id="formVerifySecurityAccess">
+        <form class="ap-lock-form" id="formVerifySecurityAccess" autocomplete="off">
+            <!-- Decoy inputs to trap browser autofill -->
+            <input type="text" name="fake_sec_username_trap" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="password" name="fake_sec_password_trap" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+
             <div class="ap-lock-field">
                 <label for="secVerifyUsername">Admin Username</label>
-                <input type="text" id="secVerifyUsername" placeholder="e.g. admin" required readonly autocomplete="username">
+                <input type="text" id="secVerifyUsername" placeholder="e.g. admin" required autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             <div class="ap-lock-field">
                 <label for="secVerifyPassword">Admin Password</label>
-                <input type="password" id="secVerifyPassword" placeholder="••••••••" required autocomplete="current-password">
+                <input type="password" id="secVerifyPassword" placeholder="Password" required autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly');">
             </div>
 
             <div class="ap-lock-error" id="secVerifyError"></div>

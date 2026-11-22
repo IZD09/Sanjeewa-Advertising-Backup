@@ -101,18 +101,26 @@ export class AdminVerifyModal {
     if (this.form) this.form.reset();
     if (this.errorMsg) this.errorMsg.style.display = "none";
 
-    const defaultUser = window.__CURRENT_ADMIN_USERNAME__ || "";
-    if (this.usernameInput && defaultUser) {
-      this.usernameInput.value = defaultUser;
+    if (this.usernameInput) {
+      this.usernameInput.value = "";
+      this.usernameInput.setAttribute("readonly", "readonly");
+    }
+    if (this.passwordInput) {
+      this.passwordInput.value = "";
+      this.passwordInput.setAttribute("readonly", "readonly");
     }
 
     this.overlay.classList.add("active");
 
     setTimeout(() => {
-      if (this.usernameInput && !this.usernameInput.value) {
+      if (this.usernameInput) {
+        this.usernameInput.removeAttribute("readonly");
+        this.usernameInput.value = "";
         this.usernameInput.focus();
-      } else if (this.passwordInput) {
-        this.passwordInput.focus();
+      }
+      if (this.passwordInput) {
+        this.passwordInput.removeAttribute("readonly");
+        this.passwordInput.value = "";
       }
     }, 150);
   }
@@ -122,6 +130,14 @@ export class AdminVerifyModal {
     this.overlay.classList.remove("active");
     if (this.form) this.form.reset();
     if (this.errorMsg) this.errorMsg.style.display = "none";
+    if (this.usernameInput) {
+      this.usernameInput.value = "";
+      this.usernameInput.setAttribute("readonly", "readonly");
+    }
+    if (this.passwordInput) {
+      this.passwordInput.value = "";
+      this.passwordInput.setAttribute("readonly", "readonly");
+    }
 
     const cancelledCb = this.onCancelled;
     this.currentActionCallback = null;
