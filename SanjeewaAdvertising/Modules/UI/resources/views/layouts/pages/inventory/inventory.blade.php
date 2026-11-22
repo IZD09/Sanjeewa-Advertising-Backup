@@ -95,6 +95,7 @@
           @include('ui::layouts.modals.inventory.select-brands-modal')
           @include('ui::layouts.modals.inventory.adjust-stock-modal')
           @include('ui::layouts.modals.inventory.add-stock-modal')
+          @include('ui::layouts.modals.grn.view-grn-modal')
 
 
 

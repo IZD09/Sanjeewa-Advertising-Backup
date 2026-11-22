@@ -16,8 +16,12 @@ class GrnResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $grnCode = 'GRN-'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
+
         return [
             'id' => $this->id,
+            'grn_id' => $grnCode,
+            'grn_number' => $grnCode,
             'at_time' => $this->at_time?->toIso8601String() ?? $this->at_time,
             'grn_statuses_id' => $this->grn_statuses_id,
             'status' => $this->grnStatus?->grn_status ?? null,
@@ -25,6 +29,7 @@ class GrnResource extends JsonResource
             'stocks_count' => $this->whenCounted('stocks'),
             'purchase_orders' => PurchaseOrderResource::collection($this->whenLoaded('purchaseOrders')),
             'stocks' => $this->whenLoaded('stocks'),
+            'grm_items' => $this->whenLoaded('grmItems'),
         ];
     }
 }

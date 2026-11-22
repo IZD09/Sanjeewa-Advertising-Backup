@@ -54,6 +54,11 @@ class SeederTest extends TestCase
         $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Pending']);
         $this->assertDatabaseHas('grn_statuses', ['grn_status' => 'Pending Stock']);
 
+        // 5b. stock_units
+        $this->assertGreaterThan(0, DB::table('stock_units')->count());
+        $this->assertDatabaseHas('stock_units', ['unit' => 'Pieces', 'symble' => 'pcs']);
+        $this->assertDatabaseHas('stock_units', ['unit' => 'Rolls', 'symble' => 'roll']);
+
         // 6. admin_statuses, admin_types
         $this->assertGreaterThan(0, DB::table('admin_statuses')->count());
         $this->assertGreaterThan(0, DB::table('admin_types')->count());

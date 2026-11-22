@@ -145,11 +145,14 @@ export class StockItemSelector {
 
       this.activeGrnItems.forEach((item) => {
         const poBadge = item.po_id ? `[PO #${item.po_id}] ` : "";
+        const catText = `${item.category_name || "General"} / ${item.subcategory_name || "General"}`;
+        const brandText = item.brand_name ? ` | Brand: ${item.brand_name}` : "";
+        const batchText = item.batch_no ? ` | Batch: ${item.batch_no}` : " | No Batch ID";
         const costText = item.unit_cost !== undefined ? ` | Cost: Rs. ${Number(item.unit_cost).toFixed(2)}` : "";
         const qtyText = item.qty !== undefined ? ` | Qty: ${item.qty}` : "";
         const opt = document.createElement("option");
         opt.value = String(item.id);
-        opt.textContent = `${poBadge}${item.code} - ${item.name} (${item.category_name || "General"}${qtyText}${costText})`;
+        opt.textContent = `${poBadge}${item.code} - ${item.name} (${catText}${brandText}${batchText}${qtyText}${costText})`;
         itemSelect.appendChild(opt);
       });
 
@@ -220,9 +223,8 @@ export class StockItemSelector {
   }
 
   /**
-   * Set the active item SKU and automatically select its Category, Subcategory, Brand,
-   * populate Quantity Received, Unit Purchase Cost, Standard Selling Price,
-   * and trigger live financial calculations.
+   * Set the active item SKU, populate Quantity Received, Unit Purchase Cost,
+   * Standard Selling Price, and trigger live financial calculations.
    *
    * @param {Object} item
    */
@@ -230,7 +232,8 @@ export class StockItemSelector {
     if (!item) return;
 
     const masterItems = this.getItems();
-    const fullItem = masterItems.find((it) => Number(it.id) === Number(item.id)) || item;
+    const masterItem = masterItems.find((it) => Number(it.id) === Number(item.id)) || {};
+    const fullItem = { ...masterItem, ...item };
     this.selectedItem = fullItem;
 
     const idInput = document.getElementById("addStockSelectedItemId");
@@ -241,49 +244,21 @@ export class StockItemSelector {
       itemSelect.value = String(fullItem.id);
     }
 
-    // 1. Automatically select Category & Subcategory
-    const catSelect = document.getElementById("addStockCategorySelect");
-    if (catSelect && fullItem.category_id) {
-      catSelect.value = String(fullItem.category_id);
-      this.handleCategoryChange(fullItem.category_id);
-      const subcatSelect = document.getElementById("addStockSubcategorySelect");
-      if (subcatSelect && fullItem.subcategories_id) {
-        subcatSelect.value = String(fullItem.subcategories_id);
-      }
-    }
-
-    // 2. Automatically select Brand (from compatible brands)
-    const brandSelect = document.getElementById("addStockBrandSelect");
-    if (brandSelect) {
-      const compatible =
-        Array.isArray(fullItem.compatible_brands) && fullItem.compatible_brands.length > 0
-          ? fullItem.compatible_brands
-          : this.getBrands();
-
-      if (compatible.length > 0) {
-        brandSelect.innerHTML = '<option value="">-- Select Brand --</option>';
-        compatible.forEach((b) => {
-          brandSelect.insertAdjacentHTML("beforeend", `<option value="${b.id}">${b.brand}</option>`);
-        });
-        brandSelect.value = String(compatible[0].id);
-      }
-    }
-
-    // 3. Automatically populate Quantity Received
+    // 1. Automatically populate Quantity Received
     const qtyInput = document.getElementById("addStockQty");
     const qtyVal = item.qty || item.qty_received || item.qty_ordered || 1;
     if (qtyInput) {
       qtyInput.value = qtyVal;
     }
 
-    // 4. Automatically populate Unit Purchase Cost (LKR)
+    // 2. Automatically populate Unit Purchase Cost (LKR)
     const unitCostInput = document.getElementById("addStockUnitCost");
     const purchaseCost = item.unit_cost !== undefined ? item.unit_cost : (fullItem.unit_cost || 0);
     if (unitCostInput) {
       unitCostInput.value = Number(purchaseCost).toFixed(2);
     }
 
-    // 5. Automatically populate Standard Selling Price (LKR)
+    // 3. Automatically populate Standard Selling Price (LKR)
     const sellingPriceInput = document.getElementById("addStockSellingPrice");
     if (sellingPriceInput) {
       const sellPrice =
@@ -293,14 +268,14 @@ export class StockItemSelector {
       sellingPriceInput.value = Number(sellPrice).toFixed(2);
     }
 
-    // 6. Notify callbacks and calculate financials immediately
+    // 4. Notify callbacks and calculate financials immediately
     this.onItemSelected(fullItem);
     this.onCalculate();
   }
 
   /**
-   * Add the currently selected item and its configured inputs to the staged queue table.
-   * Removes the item from the SKU dropdown and updates live calculations.
+   * Add the currently selected item and its GRN-derived Category, Subcategory, Brand, and Batch ID
+   * to the staged queue table. Removes the item from the SKU dropdown and updates live calculations.
    */
   addSelectedItemToStaged() {
     if (!this.selectedItem) {
@@ -308,26 +283,30 @@ export class StockItemSelector {
       return;
     }
 
-    const brandSelect = document.getElementById("addStockBrandSelect");
-    const brandId = Number(brandSelect?.value) || null;
-    const brandName = brandSelect?.options[brandSelect.selectedIndex]?.text || "Generic";
+    const allBrands = this.getBrands();
+    const compatible =
+      Array.isArray(this.selectedItem.compatible_brands) && this.selectedItem.compatible_brands.length > 0
+        ? this.selectedItem.compatible_brands
+        : allBrands;
 
-    if (!brandId) {
-      this.showToast("Please select a brand for the item.", "warning");
-      return;
-    }
+    const brandId =
+      Number(this.selectedItem.brand_id) ||
+      (compatible.length > 0 ? Number(compatible[0].id) : Number(allBrands[0]?.id || 1));
+    const brandName =
+      this.selectedItem.brand_name ||
+      (compatible.length > 0 ? compatible[0].brand : (allBrands[0]?.brand || "Generic"));
 
-    const qty = parseInt(document.getElementById("addStockQty")?.value, 10);
-    if (isNaN(qty) || qty <= 0) {
-      this.showToast("Quantity received must be at least 1.", "warning");
-      return;
-    }
+    const grnQty = parseInt(this.selectedItem.qty || this.selectedItem.qty_received || this.selectedItem.qty_ordered || 1, 10);
+    const receivedQty = 0;
 
-    const unitCost = parseFloat(document.getElementById("addStockUnitCost")?.value) || 0;
-    const sellingPrice = parseFloat(document.getElementById("addStockSellingPrice")?.value) || 0;
+    const unitCost = this.selectedItem.unit_cost !== undefined ? parseFloat(this.selectedItem.unit_cost) || 0 : 0;
+    const sellingPrice =
+      this.selectedItem.selling_price !== undefined
+        ? parseFloat(this.selectedItem.selling_price) || 0
+        : unitCost > 0 ? roundToTwo(unitCost * 1.25) : 0;
 
-    const batchOption = document.querySelector('input[name="addStockBatchOption"]:checked')?.value || "NEW";
-    const batchId = batchOption === "EXISTING" ? Number(document.getElementById("addStockBatchSelect")?.value) || null : null;
+    const batchId = this.selectedItem.batch_id ? Number(this.selectedItem.batch_id) : null;
+    const batchNo = this.selectedItem.batch_no || (batchId ? `BAT-${String(batchId).padStart(3, "0")}` : null);
 
     const stagedItem = {
       id: this.selectedItem.id,
@@ -335,14 +314,18 @@ export class StockItemSelector {
       name: this.selectedItem.name || `Item #${this.selectedItem.id}`,
       category_id: this.selectedItem.category_id,
       category_name: this.selectedItem.category_name || "General",
+      subcategories_id: this.selectedItem.subcategories_id,
+      subcategory_name: this.selectedItem.subcategory_name || "General",
       brand_id: brandId,
       brand_name: brandName,
-      qty: qty,
+      grn_qty: grnQty,
+      qty: receivedQty,
       unit_cost: unitCost,
       selling_price: sellingPrice,
-      subtotal: qty * unitCost,
+      subtotal: receivedQty * unitCost,
       batch_id: batchId,
-      create_new_batch: batchOption === "NEW" || !batchId,
+      batch_no: batchNo,
+      create_new_batch: !batchId,
       original_item: { ...this.selectedItem },
     };
 
@@ -376,42 +359,53 @@ export class StockItemSelector {
 
     const masterItems = this.getItems();
     const allBrands = this.getBrands();
-    const batchOption = document.querySelector('input[name="addStockBatchOption"]:checked')?.value || "NEW";
-    const batchId = batchOption === "EXISTING" ? Number(document.getElementById("addStockBatchSelect")?.value) || null : null;
 
     const itemsToAdd = [...this.activeGrnItems];
     itemsToAdd.forEach((item) => {
-      const fullItem = masterItems.find((it) => Number(it.id) === Number(item.id)) || item;
+      const masterItem = masterItems.find((it) => Number(it.id) === Number(item.id)) || {};
+      const fullItem = { ...masterItem, ...item };
       const compatible =
         Array.isArray(fullItem.compatible_brands) && fullItem.compatible_brands.length > 0
           ? fullItem.compatible_brands
           : allBrands;
 
-      const brandId = compatible.length > 0 ? compatible[0].id : (allBrands[0]?.id || 1);
-      const brandName = compatible.length > 0 ? compatible[0].brand : (allBrands[0]?.brand || "Generic");
+      const brandId =
+        Number(fullItem.brand_id) ||
+        (compatible.length > 0 ? Number(compatible[0].id) : Number(allBrands[0]?.id || 1));
+      const brandName =
+        fullItem.brand_name ||
+        (compatible.length > 0 ? compatible[0].brand : (allBrands[0]?.brand || "Generic"));
 
-      const qty = parseInt(item.qty || item.qty_received || item.qty_ordered || 1, 10);
-      const unitCost = item.unit_cost !== undefined ? parseFloat(item.unit_cost) : (parseFloat(fullItem.unit_cost) || 0);
+      const grnQty = parseInt(fullItem.qty || fullItem.qty_received || fullItem.qty_ordered || 1, 10);
+      const receivedQty = 0;
+      const unitCost = fullItem.unit_cost !== undefined ? parseFloat(fullItem.unit_cost) : 0;
       const sellingPrice =
-        item.selling_price !== undefined
-          ? parseFloat(item.selling_price)
-          : parseFloat(fullItem.selling_price) || (unitCost > 0 ? roundToTwo(unitCost * 1.25) : 0);
+        fullItem.selling_price !== undefined
+          ? parseFloat(fullItem.selling_price)
+          : unitCost > 0 ? roundToTwo(unitCost * 1.25) : 0;
+
+      const batchId = fullItem.batch_id ? Number(fullItem.batch_id) : null;
+      const batchNo = fullItem.batch_no || (batchId ? `BAT-${String(batchId).padStart(3, "0")}` : null);
 
       this.stagedItems.push({
-        id: item.id,
-        code: item.code || `SKU-${item.id}`,
-        name: item.name || `Item #${item.id}`,
-        category_id: fullItem.category_id || item.category_id,
-        category_name: fullItem.category_name || item.category_name || "General",
+        id: fullItem.id,
+        code: fullItem.code || `SKU-${fullItem.id}`,
+        name: fullItem.name || `Item #${fullItem.id}`,
+        category_id: fullItem.category_id,
+        category_name: fullItem.category_name || "General",
+        subcategories_id: fullItem.subcategories_id,
+        subcategory_name: fullItem.subcategory_name || "General",
         brand_id: brandId,
         brand_name: brandName,
-        qty: qty,
+        grn_qty: grnQty,
+        qty: receivedQty,
         unit_cost: unitCost,
         selling_price: sellingPrice,
-        subtotal: qty * unitCost,
+        subtotal: receivedQty * unitCost,
         batch_id: batchId,
-        create_new_batch: batchOption === "NEW" || !batchId,
-        original_item: { ...item, ...fullItem },
+        batch_no: batchNo,
+        create_new_batch: !batchId,
+        original_item: { ...fullItem },
       });
     });
 
@@ -480,16 +474,22 @@ export class StockItemSelector {
 
     if (!container || !tbody) return;
 
+    container.style.display = "block";
+
     if (this.stagedItems.length === 0) {
-      container.style.display = "none";
-      tbody.innerHTML = "";
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="padding: 24px 12px; text-align: center; color: var(--text-muted, #8c8c8c); font-size: 12px;">
+            <i class="fa-solid fa-cart-plus" style="font-size: 18px; color: #bfbfbf; display: block; margin-bottom: 6px;"></i>
+            No items queued yet. Please select a GRN and click <strong>Add</strong> or <strong>Add All</strong> to add items.
+          </td>
+        </tr>
+      `;
       if (queueBadge) queueBadge.style.display = "none";
       if (countBadge) countBadge.textContent = "0 items";
       if (totalCostEl) totalCostEl.textContent = "Rs. 0.00";
       return;
     }
-
-    container.style.display = "block";
     if (queueBadge) queueBadge.style.display = "inline-flex";
     if (queueCount) queueCount.textContent = String(this.stagedItems.length);
     if (countBadge) countBadge.textContent = `${this.stagedItems.length} item${this.stagedItems.length > 1 ? "s" : ""}`;
@@ -500,31 +500,43 @@ export class StockItemSelector {
     this.stagedItems.forEach((item) => {
       grandCost += Number(item.subtotal || 0);
 
+      const batchNoText = item.batch_no || (item.batch_id ? `BAT-${String(item.batch_id).padStart(3, "0")}` : null);
+      const batchBadgeHtml = batchNoText
+        ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-family: monospace; font-size: 11px; font-weight: 700; color: #722ed1; background: #f9f0ff; border: 1px solid #d3adf7; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+             <i class="fa-solid fa-barcode"></i> ${batchNoText}
+           </span>`
+        : `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted, #8c8c8c); background: var(--surface-2, #f5f5f5); border: 1px solid var(--border, #d9d9d9); padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+             No Batch ID
+           </span>`;
+
       const tr = document.createElement("tr");
       tr.style.borderBottom = "1px solid var(--border)";
       tr.innerHTML = `
-        <td style="padding: 6px 8px; vertical-align: middle; max-width: 180px; word-break: break-word;">
+        <td style="padding: 6px 8px; vertical-align: middle; max-width: 170px; word-break: break-word;">
           <div style="font-weight: 700; color: #1677ff; font-size: 11.5px; word-break: break-all;">${item.code}</div>
           <div style="font-size: 11px; color: var(--text); line-height: 1.3; word-break: break-word;">${item.name}</div>
         </td>
-        <td style="padding: 6px 8px; vertical-align: middle; font-size: 11px; color: var(--text-muted); width: 90px; word-break: break-word;">
-          ${item.brand_name || "-"}
+        <td style="padding: 6px 8px; vertical-align: middle; font-size: 11px; color: var(--text); font-weight: 600; width: 100px; word-break: break-word;">
+          ${item.category_name || "General"}
         </td>
-        <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 70px;">
-          <input type="number" min="1" step="1" value="${item.qty}" 
+        <td style="padding: 6px 8px; vertical-align: middle; font-size: 11px; color: var(--text-muted); width: 105px; word-break: break-word;">
+          ${item.subcategory_name || "General"}
+        </td>
+        <td style="padding: 6px 8px; vertical-align: middle; font-size: 11px; color: var(--text); font-weight: 600; width: 90px; word-break: break-word;">
+          ${item.brand_name || "Generic"}
+        </td>
+        <td style="padding: 6px 8px; vertical-align: middle; width: 115px;">
+          ${batchBadgeHtml}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 55px; font-size: 11.5px; font-weight: 600; color: var(--text-muted);">
+          ${item.grn_qty ?? item.qty}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 75px;">
+          <input type="number" min="0" max="${item.grn_qty ?? item.qty}" step="1" value="${item.qty}" 
             class="inv-search-input staged-qty-input" 
             data-item-id="${item.id}"
-            style="width: 56px; height: 26px; padding: 2px 4px; text-align: center; font-size: 11.5px; font-weight: 600; box-sizing: border-box;" 
-            title="Adjust received quantity">
-        </td>
-        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11px; font-family: monospace; width: 85px; white-space: nowrap;">
-          ${Number(item.unit_cost).toFixed(2)}
-        </td>
-        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11px; font-family: monospace; color: #52c41a; width: 85px; white-space: nowrap;">
-          ${Number(item.selling_price).toFixed(2)}
-        </td>
-        <td style="padding: 6px 8px; text-align: right; vertical-align: middle; font-size: 11.5px; font-weight: 700; color: #1677ff; font-family: monospace; width: 95px; white-space: nowrap;" class="staged-row-subtotal">
-          Rs. ${Number(item.subtotal).toFixed(2)}
+            style="width: 60px; height: 26px; padding: 2px 4px; text-align: center; font-size: 11.5px; font-weight: 700; color: #1677ff; box-sizing: border-box;" 
+            title="Enter received quantity (max ${item.grn_qty ?? item.qty})">
         </td>
         <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 45px;">
           <button type="button" class="ant-btn ant-btn-text btn-remove-staged" data-item-id="${item.id}" 
@@ -546,16 +558,18 @@ export class StockItemSelector {
     tbody.querySelectorAll(".staged-qty-input").forEach((input) => {
       input.addEventListener("input", (e) => {
         const id = Number(e.target.dataset.itemId);
-        const newQty = parseInt(e.target.value, 10);
-        if (!isNaN(newQty) && newQty > 0) {
+        let newQty = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+        if (!isNaN(newQty) && newQty >= 0) {
           const item = this.stagedItems.find((it) => Number(it.id) === id);
           if (item) {
+            const maxQty = Number(item.grn_qty);
+            if (!isNaN(maxQty) && maxQty > 0 && newQty > maxQty) {
+              newQty = maxQty;
+              e.target.value = String(maxQty);
+              this.showToast(`Received quantity for "${item.code}" cannot exceed GRN Qty (${maxQty}).`, "warning");
+            }
             item.qty = newQty;
             item.subtotal = newQty * Number(item.unit_cost);
-            const rowSubtotal = e.target.closest("tr")?.querySelector(".staged-row-subtotal");
-            if (rowSubtotal) {
-              rowSubtotal.textContent = `Rs. ${item.subtotal.toFixed(2)}`;
-            }
             this.updateStagedSummary();
             this.onCalculate();
           }

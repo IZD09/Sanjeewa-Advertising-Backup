@@ -24,6 +24,7 @@ class StockItemService
             'subcategory.category',
             'brands',
             'stocks.brand',
+            'stockUnit',
         ])->withCount(['stocks', 'brands'])->orderBy('id', 'desc');
 
         $search = isset($filters['search']) ? trim((string) $filters['search']) : '';
@@ -115,13 +116,14 @@ class StockItemService
             'subcategories_id' => (int) $data['subcategories_id'],
             'low_stock_qty' => isset($data['low_stock_qty']) ? (int) $data['low_stock_qty'] : 10,
             'reorder_qty' => isset($data['reorder_qty']) ? (int) $data['reorder_qty'] : 20,
+            'stock_units_id' => isset($data['stock_units_id']) ? (int) $data['stock_units_id'] : 1,
         ]);
 
         if (! empty($data['brands']) && is_array($data['brands'])) {
             $stockItem->brands()->sync($data['brands']);
         }
 
-        $stockItem->load(['subcategory.category', 'brands', 'stocks.brand'])->loadCount(['stocks', 'brands']);
+        $stockItem->load(['subcategory.category', 'brands', 'stocks.brand', 'stockUnit'])->loadCount(['stocks', 'brands']);
 
         return $stockItem;
     }
@@ -149,6 +151,9 @@ class StockItemService
         if (isset($data['reorder_qty'])) {
             $updateData['reorder_qty'] = (int) $data['reorder_qty'];
         }
+        if (isset($data['stock_units_id'])) {
+            $updateData['stock_units_id'] = (int) $data['stock_units_id'];
+        }
 
         if (! empty($updateData)) {
             $stockItem->update($updateData);
@@ -158,7 +163,7 @@ class StockItemService
             $stockItem->brands()->sync($data['brands']);
         }
 
-        $stockItem->load(['subcategory.category', 'brands', 'stocks.brand'])->loadCount(['stocks', 'brands']);
+        $stockItem->load(['subcategory.category', 'brands', 'stocks.brand', 'stockUnit'])->loadCount(['stocks', 'brands']);
 
         return $stockItem;
     }

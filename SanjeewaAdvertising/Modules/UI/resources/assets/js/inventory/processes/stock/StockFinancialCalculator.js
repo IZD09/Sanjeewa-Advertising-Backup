@@ -15,6 +15,7 @@ export class StockFinancialCalculator {
   constructor(options = {}) {
     this.getCurrentStockQty = options.getCurrentStockQty || (() => 0);
     this.getStagedItems = options.getStagedItems || (() => []);
+    this.getSelectedItemQty = options.getSelectedItemQty || (() => 0);
   }
 
   /**
@@ -60,7 +61,8 @@ export class StockFinancialCalculator {
         totalUnits += q;
       });
     } else {
-      const qty = parseFloat(document.getElementById("addStockQty")?.value) || 0;
+      const qtyEl = document.getElementById("addStockQty");
+      const qty = qtyEl ? (parseFloat(qtyEl.value) || 0) : (parseFloat(this.getSelectedItemQty()) || 0);
       const buy = parseFloat(document.getElementById("addStockUnitCost")?.value) || 0;
       const sell = parseFloat(document.getElementById("addStockSellingPrice")?.value) || 0;
       totalCost = qty * buy;

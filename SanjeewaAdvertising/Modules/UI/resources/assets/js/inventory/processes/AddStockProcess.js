@@ -9,6 +9,7 @@
  */
 
 import { RequestHandler } from "../../core/RequestHandler.js";
+import { ViewGRNModal } from "../../grn/modals/ViewGRNModal.js";
 import {
   StockItemSelector,
   StockModeManager,
@@ -32,11 +33,13 @@ export class AddStockProcess {
     this.stockItems = [];
     this.grns = [];
     this.isSubmitting = false;
+    this.viewGrnModal = null;
 
     // 1. Financial & Quantity Calculator Subclass
     this.calculator = new StockFinancialCalculator({
       getCurrentStockQty: () => this.modeManager.selectedStock?.qty || 0,
       getStagedItems: () => this.itemSelector?.stagedItems || [],
+      getSelectedItemQty: () => this.itemSelector?.selectedItem?.qty || 0,
     });
 
     // 2. Mode & Batch Options Subclass
@@ -111,6 +114,20 @@ export class AddStockProcess {
       });
     }
 
+    // View Selected GRN Button trigger
+    const viewGrnBtn = document.getElementById("btnViewSelectedGrn");
+    if (viewGrnBtn) {
+      viewGrnBtn.addEventListener("click", () => {
+        const select = document.getElementById("addStockGrnSelect");
+        const selectedGrnId = select ? select.value : null;
+        if (!selectedGrnId) {
+          this.showToast("Please select a GRN reference first", "warning");
+          return;
+        }
+        this.viewGrn(selectedGrnId);
+      });
+    }
+
     // Save button trigger
     const saveBtn = document.getElementById("saveNewStockBtn");
     if (saveBtn) {
@@ -147,6 +164,11 @@ export class AddStockProcess {
    * @param {string|number} grnId
    */
   handleGrnChange(grnId) {
+    const viewBtn = document.getElementById("btnViewSelectedGrn");
+    if (viewBtn) {
+      viewBtn.disabled = !grnId;
+    }
+
     if (!grnId) {
       this.itemSelector.setGrnContext(null);
       this.calculator.calculate();
@@ -155,6 +177,31 @@ export class AddStockProcess {
     const grn = this.grns.find((g) => String(g.id) === String(grnId));
     this.itemSelector.setGrnContext(grn || null);
     this.calculator.calculate();
+  }
+
+  /**
+   * View details of selected GRN inside #viewGrnModal.
+   * @param {string|number} grnId
+   */
+  async viewGrn(grnId) {
+    if (!grnId) return;
+
+    if (!this.viewGrnModal) {
+      this.viewGrnModal = new ViewGRNModal({
+        getGrnRecords: () => this.grns,
+        formatCurrency: (amt) => {
+          const val = Number(amt) || 0;
+          return "Rs. " + val.toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+      });
+    }
+
+    try {
+      await this.viewGrnModal.viewGRN(grnId);
+    } catch (err) {
+      console.error("Failed to view GRN:", err);
+      this.showToast("Could not display GRN details", "error");
+    }
   }
 
   /**
@@ -189,9 +236,8 @@ export class AddStockProcess {
 
       if (remainingGrns.length > 0) {
         if (String(grnSelect.value) === String(grnId) || !grnSelect.value) {
-          const nextGrn = remainingGrns[0];
-          grnSelect.value = String(nextGrn.id);
-          this.handleGrnChange(nextGrn.id);
+          grnSelect.value = "";
+          this.handleGrnChange("");
         }
       } else {
         grnSelect.innerHTML = '<option value="">-- No Pending GRNs to Stock --</option>';
@@ -232,9 +278,8 @@ export class AddStockProcess {
         availableGrns.forEach((grn) => {
           grnSelect.insertAdjacentHTML("beforeend", `<option value="${grn.id}">${grn.label || `GRN #${grn.id}`}</option>`);
         });
-        const targetGrn = availableGrns[0];
-        grnSelect.value = String(targetGrn.id);
-        this.handleGrnChange(targetGrn.id);
+        grnSelect.value = "";
+        this.handleGrnChange("");
       } else {
         grnSelect.innerHTML = '<option value="">-- No Pending GRNs to Stock --</option>';
         grnSelect.value = "";
@@ -313,16 +358,17 @@ export class AddStockProcess {
     if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
 
     const grnSelect = document.getElementById("addStockGrnSelect");
-    if (grnSelect && this.grns.length > 0) {
-      const targetGrn = this.grns.find((g) => g.items && g.items.length > 0) || this.grns[0];
-      grnSelect.value = String(targetGrn.id);
-      this.handleGrnChange(targetGrn.id);
+    if (grnSelect) {
+      grnSelect.value = "";
+      this.handleGrnChange("");
     }
   }
 
   /**
-   * Collect payload and execute shipment submission.
-   * Supports bulk queued items from the staged table or single item fallback.
+   * Collect payload and execute Receive & Add Stock shipment submission.
+   * 1. Verifies selected GRN is in Pending Stock status.
+   * 2. Validates queued items and their Received quantities (> 0).
+   * 3. Submits items with allocated batch_id (to increment batch stock) or null (to create new batch & stock).
    */
   async execute() {
     if (this.isSubmitting) return;
@@ -331,114 +377,62 @@ export class AddStockProcess {
     const grnId = Number(document.getElementById("addStockGrnSelect")?.value) || null;
     const addDate = document.getElementById("addStockDate")?.value || null;
 
-    // A. Bulk submission path when items are queued in the table
-    if (stagedItems.length > 0) {
-      const payload = {
-        grn_id: grnId,
-        add_date: addDate,
-        items: stagedItems.map((item) => ({
-          stock_items_id: Number(item.id),
-          brands_id: Number(item.brand_id),
-          qty: parseInt(item.qty, 10),
-          buy: parseFloat(item.unit_cost) || 0,
-          price: parseFloat(item.selling_price) || 0,
-          batch_id: item.batch_id || null,
-          create_new_batch: item.create_new_batch !== false,
-        })),
-      };
-
-      const validation = this.validator.validate(payload, false);
-      if (!validation.isValid) {
-        this.showToast(validation.error, "error");
-        return;
-      }
-
-      const saveBtn = document.getElementById("saveNewStockBtn");
-      const originalBtnHtml = saveBtn?.innerHTML || "";
-      this.isSubmitting = true;
-
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-      }
-
-      try {
-        const response = await this.http.post("/api/v1/inventory/stocks", payload);
-
-        if (response && response.success) {
-          const msg = `Successfully added ${stagedItems.length} items to stock for GRN #${grnId}.`;
-
-          this.itemSelector.clearStaged();
-
-          // Update in-memory GRNs and remove GRN if all stocked
-          if (grnId) {
-            const targetGrn = this.grns.find((g) => Number(g.id) === Number(grnId));
-            if (targetGrn && Array.isArray(targetGrn.items)) {
-              const stockedIds = new Set(payload.items.map((it) => Number(it.stock_items_id)));
-              targetGrn.items = targetGrn.items.filter((it) => !stockedIds.has(Number(it.id)));
-              targetGrn.pending_count = targetGrn.items.length;
-              if (targetGrn.items.length === 0) {
-                this.removeGrnFromDropdown(grnId);
-              }
-            }
-          }
-
-          this.showToast(msg, "success");
-          this.closeModal();
-
-          // Reload master datasets in background
-          this.loadMasterData();
-
-          if (typeof this.onSuccess === "function") {
-            await this.onSuccess(response.data);
-          }
-        } else {
-          this.showToast(response?.message || "Failed to save stock shipment.", "error");
-        }
-      } catch (err) {
-        console.error("Error executing bulk Add Stock Process:", err);
-        this.showToast(err.response?.data?.message || "Server error while saving stock shipment.", "error");
-      } finally {
-        this.isSubmitting = false;
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.innerHTML = originalBtnHtml;
-        }
-      }
+    if (!grnId) {
+      this.showToast("Please select a GRN Reference first.", "error");
       return;
     }
 
-    // B. Single item submission path (backward compatible fallback)
-    const isUpdate = this.modeManager.mode === "UPDATE" || !!this.modeManager.selectedStock;
-    const stockId = this.modeManager.selectedStock?.id || Number(document.getElementById("addStockExistingSelect")?.value) || null;
-    const itemId = this.itemSelector.selectedItem?.id || Number(document.getElementById("addStockSelectedItemId")?.value) || Number(document.getElementById("addStockItemSelect")?.value) || null;
-    const brandId = Number(document.getElementById("addStockBrandSelect")?.value) || null;
-    const qty = parseInt(document.getElementById("addStockQty")?.value, 10);
-    const buy = parseFloat(document.getElementById("addStockUnitCost")?.value);
-    const price = parseFloat(document.getElementById("addStockSellingPrice")?.value);
+    const selectedGrn = this.grns.find((g) => Number(g.id) === Number(grnId)) || null;
+    if (!selectedGrn) {
+      this.showToast("Selected GRN could not be found. Please refresh and try again.", "error");
+      return;
+    }
 
-    const batchOption = document.querySelector('input[name="addStockBatchOption"]:checked')?.value || "NEW";
-    const batchId = batchOption === "EXISTING" ? Number(document.getElementById("addStockBatchSelect")?.value) || null : null;
+    const isPendingStock =
+      Number(selectedGrn.grn_statuses_id) === 6 ||
+      String(selectedGrn.status || "").trim().toLowerCase() === "pending stock";
+    if (!isPendingStock) {
+      this.showToast(
+        `Selected GRN is in '${selectedGrn.status || "Unknown"}' status. Only GRNs in 'Pending Stock' status can be added to stock.`,
+        "error"
+      );
+      return;
+    }
 
-    const payload = {
-      stock_id: isUpdate ? stockId : null,
-      stock_items_id: itemId,
-      brands_id: brandId,
+    if (stagedItems.length === 0) {
+      this.showToast("Please add at least one item to the Queued Stock Items to Receive table.", "warning");
+      return;
+    }
+
+    const validationPayload = {
       grn_id: grnId,
-      qty: qty,
-      buy: isNaN(buy) ? 0 : buy,
-      price: isNaN(price) ? 0 : price,
+      grn: selectedGrn,
       add_date: addDate,
-      batch_id: batchId,
-      create_new_batch: batchOption === "NEW" || !batchId,
-      use_existing_batch: batchOption === "EXISTING",
+      items: stagedItems.map((item) => ({
+        stock_items_id: Number(item.id),
+        item_code: item.code,
+        item_name: item.name,
+        brands_id: Number(item.brand_id),
+        grn_qty: Number(item.grn_qty) || null,
+        qty: parseInt(item.qty, 10),
+        buy: parseFloat(item.unit_cost) || 0,
+        price: parseFloat(item.selling_price) || 0,
+        batch_id: item.batch_id ? Number(item.batch_id) : null,
+        create_new_batch: !item.batch_id,
+      })),
     };
 
-    const validation = this.validator.validate(payload, isUpdate);
+    const validation = this.validator.validate(validationPayload, false);
     if (!validation.isValid) {
       this.showToast(validation.error, "error");
       return;
     }
+
+    const payload = {
+      grn_id: grnId,
+      add_date: addDate,
+      items: validationPayload.items.map(({ item_code, item_name, grn_qty, ...rest }) => rest),
+    };
 
     const saveBtn = document.getElementById("saveNewStockBtn");
     const originalBtnHtml = saveBtn?.innerHTML || "";
@@ -450,37 +444,28 @@ export class AddStockProcess {
     }
 
     try {
-      const response = isUpdate && stockId
-        ? await this.http.put(`/api/v1/inventory/stocks/${stockId}`, payload)
-        : await this.http.post("/api/v1/inventory/stocks", payload);
+      const response = await this.http.post("/api/v1/inventory/stocks", payload);
 
       if (response && response.success) {
-        const msg = isUpdate
-          ? `Stock #${stockId} successfully updated with +${qty.toLocaleString()} units.`
-          : `New Stock record successfully created with ${qty.toLocaleString()} units.`;
+        const msg = response.message || `Successfully received ${stagedItems.length} item(s) into stock for GRN #${grnId}.`;
 
-        // 1. Immediately remove the item from the active GRN pool
-        if (itemId) {
-          this.itemSelector.removeItemFromGrn(itemId);
+        this.itemSelector.clearStaged();
 
-          // 2. Remove the item from in-memory this.grns list
-          if (grnId) {
-            const targetGrn = this.grns.find((g) => Number(g.id) === Number(grnId));
-            if (targetGrn && Array.isArray(targetGrn.items)) {
-              targetGrn.items = targetGrn.items.filter((it) => Number(it.id) !== Number(itemId));
-              targetGrn.pending_count = targetGrn.items.length;
-              if (targetGrn.items.length === 0) {
-                this.removeGrnFromDropdown(grnId);
-              }
-            }
+        // Update in-memory GRNs and remove GRN if all items are stocked
+        const stockedIds = new Set(payload.items.map((it) => Number(it.stock_items_id)));
+        if (Array.isArray(selectedGrn.items)) {
+          selectedGrn.items = selectedGrn.items.filter((it) => !stockedIds.has(Number(it.id)));
+          selectedGrn.pending_count = selectedGrn.items.length;
+          if (selectedGrn.items.length === 0) {
+            this.removeGrnFromDropdown(grnId);
           }
         }
 
         this.showToast(msg, "success");
         this.closeModal();
 
-        // 3. Reload master datasets in background to maintain full sync
-        this.loadMasterData();
+        // Reload master datasets and refresh Stock Management & Movements tables
+        await this.loadMasterData();
 
         if (typeof this.onSuccess === "function") {
           await this.onSuccess(response.data);
@@ -490,7 +475,15 @@ export class AddStockProcess {
       }
     } catch (err) {
       console.error("Error executing Add Stock Process:", err);
-      this.showToast(err.response?.data?.message || "Server error while saving stock shipment.", "error");
+      const errData = err?.response?.data || err?.data || null;
+      let errMsg = errData?.message || err?.message || "Server error while saving stock shipment.";
+      if (errData?.errors && typeof errData.errors === "object") {
+        const firstKey = Object.keys(errData.errors)[0];
+        if (firstKey && Array.isArray(errData.errors[firstKey]) && errData.errors[firstKey][0]) {
+          errMsg = errData.errors[firstKey][0];
+        }
+      }
+      this.showToast(errMsg, "error");
     } finally {
       this.isSubmitting = false;
       if (saveBtn) {

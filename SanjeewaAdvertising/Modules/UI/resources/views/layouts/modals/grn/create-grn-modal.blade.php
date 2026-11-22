@@ -248,7 +248,7 @@
     <div class="po-modal-footer">
       <button type="button" class="ant-btn ant-btn-default" data-close-grn-modal="createGrnModal">Cancel</button>
       <button type="button" class="ant-btn ant-btn-primary" id="saveNewGrnModalBtn">
-        <i class="fa-solid fa-circle-check"></i> Complete &amp; Save GRN
+        <i class="fa-solid fa-circle-check"></i> Create GRN
       </button>
     </div>
 

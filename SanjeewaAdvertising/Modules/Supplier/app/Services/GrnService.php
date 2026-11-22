@@ -9,7 +9,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Services\NotificationService;
 use Modules\Core\Support\MobileNumberHelper;
+use Modules\Inventory\Models\Brand;
+use Modules\Inventory\Models\GrmItem;
+use Modules\Inventory\Models\ItemBatch;
 use Modules\Inventory\Models\Stock;
+use Modules\Inventory\Models\StockMovement;
+use Modules\Inventory\Models\StockMovementType;
 use Modules\Supplier\Models\Grn;
 use Modules\Supplier\Models\GrnStatus;
 use Modules\Supplier\Models\Supplier;
@@ -26,7 +31,14 @@ class GrnService
     public function buildQuery(array $filters = []): Builder
     {
         $query = Grn::query()
-            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'grnStatus'])
+            ->with([
+                'purchaseOrders.supplier',
+                'stocks.stockItem.stockUnit',
+                'stocks.brand',
+                'stocks.grmItems.itemBatch',
+                'grmItems.itemBatch',
+                'grnStatus',
+            ])
             ->withCount('stocks');
 
         if (! empty($filters['from_date'])) {
@@ -122,13 +134,22 @@ class GrnService
     public function getGrnById(int $id): ?Grn
     {
         return Grn::query()
-            ->with(['purchaseOrders.supplier', 'stocks.stockItem', 'payments', 'grnStatus'])
+            ->with([
+                'purchaseOrders.supplier',
+                'purchaseOrders.items.stockItem.stockUnit',
+                'stocks.stockItem.stockUnit',
+                'stocks.brand',
+                'stocks.grmItems.itemBatch',
+                'grmItems.itemBatch',
+                'payments',
+                'grnStatus',
+            ])
             ->withCount('stocks')
             ->find($id);
     }
 
     /**
-     * Create a new GRN with optional purchase order link and stock items.
+     * Create a new GRN with linked purchase orders, batches, stock items, GRN items, and stock movements.
      *
      * @param  array<string, mixed>  $data
      */
@@ -143,34 +164,204 @@ class GrnService
                 $statusId = GrnStatus::STATUS_PENDING;
             }
 
+            $atTime = ! empty($data['at_time']) ? $data['at_time'] : now();
+
             $grn = Grn::create([
-                'at_time' => ! empty($data['at_time']) ? $data['at_time'] : now(),
+                'at_time' => $atTime,
                 'grn_statuses_id' => $statusId,
             ]);
 
             $attachedPos = [];
+            $usedInvoices = [];
+
+            $normalizeInvoice = function (?string $rawInv, int $poId) use (&$usedInvoices, $grn): ?string {
+                $inv = $rawInv !== null ? trim($rawInv) : '';
+                if ($inv === '') {
+                    return null;
+                }
+
+                $candidate = substr($inv, 0, 45);
+                $existsInDb = DB::table('grn_has_puches_order')
+                    ->where('supplyer_invoice', $candidate)
+                    ->exists();
+
+                if ($existsInDb || in_array($candidate, $usedInvoices, true)) {
+                    $suffix = "-{$grn->id}-{$poId}";
+                    $candidate = substr($inv, 0, 45 - strlen($suffix)).$suffix;
+                }
+
+                $usedInvoices[] = $candidate;
+
+                return $candidate;
+            };
 
             if (! empty($data['purchase_orders']) && is_array($data['purchase_orders'])) {
                 foreach ($data['purchase_orders'] as $poItem) {
                     $poId = is_array($poItem) ? (int) ($poItem['id'] ?? $poItem['purchase_orders_id'] ?? 0) : (int) $poItem;
-                    $inv = is_array($poItem) ? ($poItem['supplyer_invoice'] ?? ($data['supplyer_invoice'] ?? null)) : ($data['supplyer_invoice'] ?? null);
+                    $rawInv = is_array($poItem)
+                        ? ($poItem['supplyer_invoice'] ?? ($data['supplyer_invoice'] ?? null))
+                        : ($data['supplyer_invoice'] ?? null);
                     if ($poId > 0) {
-                        $attachedPos[$poId] = ['supplyer_invoice' => $inv];
+                        $attachedPos[$poId] = ['supplyer_invoice' => $normalizeInvoice($rawInv, $poId)];
                     }
                 }
             } elseif (! empty($data['purchase_order_ids']) && is_array($data['purchase_order_ids'])) {
                 foreach ($data['purchase_order_ids'] as $poId) {
                     $id = (int) $poId;
                     if ($id > 0) {
-                        $attachedPos[$id] = ['supplyer_invoice' => $data['supplyer_invoice'] ?? null];
+                        $attachedPos[$id] = ['supplyer_invoice' => $normalizeInvoice($data['supplyer_invoice'] ?? null, $id)];
                     }
                 }
             } elseif (! empty($data['purchase_orders_id'])) {
-                $attachedPos[(int) $data['purchase_orders_id']] = ['supplyer_invoice' => $data['supplyer_invoice'] ?? null];
+                $poId = (int) $data['purchase_orders_id'];
+                if ($poId > 0) {
+                    $attachedPos[$poId] = ['supplyer_invoice' => $normalizeInvoice($data['supplyer_invoice'] ?? null, $poId)];
+                }
             }
 
             if (! empty($attachedPos)) {
                 $grn->purchaseOrders()->attach($attachedPos);
+            }
+
+            if (! empty($data['stocks']) && is_array($data['stocks'])) {
+                $defaultBrandId = Brand::query()->value('id')
+                    ?? Brand::query()->create(['brand' => 'Generic'])->id;
+
+                $movementType = StockMovementType::query()->firstOrCreate(
+                    ['id' => 1],
+                    ['stock_movements_type' => 'GRN / Purchase Receipt']
+                );
+
+                $touchedPoIds = [];
+
+                foreach ($data['stocks'] as $stockItem) {
+                    $stockItemId = (int) ($stockItem['stock_items_id'] ?? 0);
+                    if ($stockItemId <= 0) {
+                        continue;
+                    }
+
+                    $brandId = ! empty($stockItem['brands_id'])
+                        ? (int) $stockItem['brands_id']
+                        : ((int) (DB::table('stock_items_has_brands')
+                            ->where('stock_items_id', $stockItemId)
+                            ->value('brands_id') ?? $defaultBrandId));
+
+                    if (! Brand::where('id', $brandId)->exists()) {
+                        $brandId = (int) $defaultBrandId;
+                    }
+
+                    DB::table('stock_items_has_brands')->insertOrIgnore([
+                        'stock_items_id' => $stockItemId,
+                        'brands_id' => $brandId,
+                    ]);
+
+                    $qty = max(1, (int) ($stockItem['qty'] ?? $stockItem['receiving_qty'] ?? 1));
+                    $buyCost = (float) ($stockItem['buy'] ?? $stockItem['unit_cost'] ?? 0);
+                    $price = isset($stockItem['price']) && (float) $stockItem['price'] > 0
+                        ? (float) $stockItem['price']
+                        : round($buyCost * 1.25, 2);
+
+                    // Determine Batch (Existing Batch vs New Stock / New Batch)
+                    $requestedBatchId = ! empty($stockItem['batch_id']) ? (int) $stockItem['batch_id'] : null;
+                    $batchMode = strtoupper(trim((string) ($stockItem['batch_mode'] ?? '')));
+                    $createNewBatch = array_key_exists('create_new_batch', $stockItem)
+                        ? (bool) $stockItem['create_new_batch']
+                        : ($batchMode !== 'EXISTING' && $requestedBatchId === null);
+
+                    $batchId = null;
+                    if (! $createNewBatch && $requestedBatchId !== null) {
+                        $existingBatch = ItemBatch::query()
+                            ->where('id', $requestedBatchId)
+                            ->where('stock_items_id', $stockItemId)
+                            ->first() ?? ItemBatch::query()->find($requestedBatchId);
+
+                        if ($existingBatch) {
+                            $batchId = $existingBatch->id;
+                        }
+                    }
+
+                    if ($batchId === null) {
+                        $newBatch = ItemBatch::create([
+                            'stock_items_id' => $stockItemId,
+                        ]);
+                        $batchId = $newBatch->id;
+                    }
+
+                    // Create Stock record
+                    $stock = Stock::create([
+                        'stock_items_id' => $stockItemId,
+                        'brands_id' => $brandId,
+                        'qty' => $qty,
+                        'price' => $price,
+                        'buy' => $buyCost,
+                        'add_date' => $grn->at_time ?? now(),
+                        'grn_id' => $grn->id,
+                    ]);
+
+                    // Link GRN, ItemBatch, and Stock in grm_items
+                    GrmItem::updateOrCreate(
+                        [
+                            'grn_id' => $grn->id,
+                            'item_batches_id' => $batchId,
+                            'stock_id' => $stock->id,
+                        ],
+                        [
+                            'qty' => $qty,
+                        ]
+                    );
+
+                    // Record Stock Movement (GRN / Purchase Receipt)
+                    StockMovement::create([
+                        'stock_id' => $stock->id,
+                        'stock_movements_types_id' => $movementType->id,
+                        'qty' => $qty,
+                        'date' => $grn->at_time ?? now(),
+                        'source_id' => $grn->id,
+                    ]);
+
+                    // Update Linked Purchase Order Item (qty_received & unit_cost)
+                    $poTargetId = ! empty($stockItem['purchase_orders_id'])
+                        ? (int) $stockItem['purchase_orders_id']
+                        : (! empty($data['purchase_orders_id']) ? (int) $data['purchase_orders_id'] : null);
+
+                    if (! $poTargetId && ! empty($attachedPos)) {
+                        $poTargetId = DB::table('purchase_order_items')
+                            ->whereIn('purchase_orders_id', array_keys($attachedPos))
+                            ->where('stock_items_id', $stockItemId)
+                            ->whereColumn('qty_received', '<', 'qty_ordered')
+                            ->value('purchase_orders_id')
+                            ?? DB::table('purchase_order_items')
+                                ->whereIn('purchase_orders_id', array_keys($attachedPos))
+                                ->where('stock_items_id', $stockItemId)
+                                ->value('purchase_orders_id')
+                            ?? array_key_first($attachedPos);
+                    }
+
+                    if ($poTargetId) {
+                        $poItemQuery = DB::table('purchase_order_items')
+                            ->where('purchase_orders_id', $poTargetId)
+                            ->where('stock_items_id', $stockItemId);
+
+                        if ($poItemQuery->exists()) {
+                            $updateData = [
+                                'qty_received' => DB::raw('qty_received + '.$qty),
+                            ];
+                            if ($buyCost > 0) {
+                                $updateData['unit_cost'] = $buyCost;
+                            }
+                            $poItemQuery->update($updateData);
+                        }
+
+                        $touchedPoIds[$poTargetId] = (int) $poTargetId;
+                    }
+                }
+
+                if (! empty($touchedPoIds)) {
+                    $poService = app(PurchaseOrderService::class);
+                    foreach ($touchedPoIds as $poId) {
+                        $poService->syncPurchaseOrderStatus($poId);
+                    }
+                }
             }
 
             return $this->getGrnById($grn->id) ?? $grn;
@@ -256,6 +447,13 @@ class GrnService
     public function deleteGrn(Grn $grn): bool
     {
         return DB::transaction(function () use ($grn) {
+            $stockIds = $grn->stocks()->pluck('id')->all();
+            DB::table('grm_items')->where('grn_id', $grn->id)->delete();
+            if (! empty($stockIds)) {
+                DB::table('grm_items')->whereIn('stock_id', $stockIds)->delete();
+                DB::table('stock_movements')->whereIn('stock_id', $stockIds)->delete();
+                DB::table('stock')->whereIn('id', $stockIds)->delete();
+            }
             $grn->purchaseOrders()->detach();
 
             return (bool) $grn->delete();
@@ -364,16 +562,51 @@ class GrnService
             $itemTotal = $qty * $unitCost;
             $subTotal += $itemTotal;
 
+            $grmItem = $stock->relationLoaded('grmItems')
+                ? ($stock->grmItems->firstWhere('grn_id', $grn->id) ?? $stock->grmItems->first())
+                : null;
+            $batchNum = $grmItem?->item_batches_id ?? $stock->id;
+
             $items[] = [
                 'item_id' => $stock->stockItem?->code ?? ('ITM-'.$stock->stock_items_id),
                 'stock_items_id' => $stock->stock_items_id,
                 'item_name' => $stock->stockItem?->name ?? ('Item #'.$stock->stock_items_id),
-                'unit' => 'Units',
+                'brands_id' => $stock->brands_id,
+                'brand_name' => $stock->brand?->brand ?? 'Generic',
+                'unit' => $stock->stockItem?->stockUnit?->unit ?? $stock->stockItem?->stockUnit?->symble ?? 'Units',
                 'qty_received' => $qty,
                 'unit_cost' => $unitCost,
                 'item_total' => $itemTotal,
-                'batch_id' => 'BAT-'.str_pad((string) $stock->id, 3, '0', STR_PAD_LEFT),
+                'batch_id' => 'BAT-'.str_pad((string) $batchNum, 3, '0', STR_PAD_LEFT),
+                'item_batches_id' => $grmItem?->item_batches_id,
             ];
+        }
+
+        if (empty($items) && $grn->relationLoaded('purchaseOrders')) {
+            foreach ($grn->purchaseOrders as $order) {
+                if ($order->relationLoaded('items')) {
+                    foreach ($order->items as $poi) {
+                        $qty = (int) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered);
+                        $unitCost = (float) $poi->unit_cost;
+                        $itemTotal = $qty * $unitCost;
+                        $subTotal += $itemTotal;
+
+                        $items[] = [
+                            'item_id' => $poi->stockItem?->code ?? ('ITM-'.$poi->stock_items_id),
+                            'stock_items_id' => $poi->stock_items_id,
+                            'item_name' => $poi->stockItem?->name ?? ('Item #'.$poi->stock_items_id),
+                            'brands_id' => null,
+                            'brand_name' => 'Pending Allocation',
+                            'unit' => $poi->stockItem?->stockUnit?->unit ?? $poi->stockItem?->stockUnit?->symble ?? 'Units',
+                            'qty_received' => $qty,
+                            'unit_cost' => $unitCost,
+                            'item_total' => $itemTotal,
+                            'batch_id' => 'PENDING',
+                            'item_batches_id' => null,
+                        ];
+                    }
+                }
+            }
         }
 
         $grnCode = 'GRN-'.str_pad((string) $grn->id, 4, '0', STR_PAD_LEFT);

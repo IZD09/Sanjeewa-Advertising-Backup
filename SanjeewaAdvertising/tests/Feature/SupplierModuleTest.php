@@ -247,7 +247,11 @@ class SupplierModuleTest extends TestCase
         $createRes->assertStatus(201);
         $grnId = $createRes->json('data.id');
 
-        $this->assertSame(0, Stock::where('grn_id', $grnId)->count());
+        $this->assertSame(1, Stock::where('grn_id', $grnId)->count());
+        $this->assertDatabaseHas('grm_items', [
+            'grn_id' => $grnId,
+            'qty' => 15,
+        ]);
 
         $this->patchJson("/api/v1/grns/{$grnId}/status", [
             'status' => 'Pending Stock',
@@ -265,12 +269,12 @@ class SupplierModuleTest extends TestCase
             ->assertJsonPath('data.status', 'Pending Stock')
             ->assertJsonPath('data.grn_statuses_id', 6);
 
-        $this->assertSame(0, Stock::where('grn_id', $grnId)->count());
+        $this->assertSame(1, Stock::where('grn_id', $grnId)->count());
         $this->assertSame(1, $inventoryUser->notifications()->count());
         $this->assertSame(0, $otherUser->notifications()->count());
     }
 
-    public function test_grn_and_po_data_endpoints_load_from_database_with_20_rows_pagination(): void
+    public function test_grn_and_po_data_endpoints_load_from_database_with20_rows_pagination(): void
     {
         $supplier = Supplier::create([
             'name' => 'Paginated Supplier',

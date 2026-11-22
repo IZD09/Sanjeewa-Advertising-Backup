@@ -42,6 +42,7 @@ class StockItem extends Model
         'code',
         'low_stock_qty',
         'reorder_qty',
+        'stock_units_id',
     ];
 
     /**
@@ -55,7 +56,16 @@ class StockItem extends Model
             'subcategories_id' => 'integer',
             'low_stock_qty' => 'integer',
             'reorder_qty' => 'integer',
+            'stock_units_id' => 'integer',
         ];
+    }
+
+    /**
+     * Get the stock unit that this item is measured in.
+     */
+    public function stockUnit(): BelongsTo
+    {
+        return $this->belongsTo(StockUnit::class, 'stock_units_id', 'id');
     }
 
     /**

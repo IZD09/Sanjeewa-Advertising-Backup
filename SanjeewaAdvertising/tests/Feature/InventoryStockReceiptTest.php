@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\Models\Brand;
 use Modules\Inventory\Models\Category;
+use Modules\Inventory\Models\GrmItem;
 use Modules\Inventory\Models\ItemBatch;
 use Modules\Inventory\Models\Stock;
 use Modules\Inventory\Models\StockItem;
@@ -149,7 +150,10 @@ class InventoryStockReceiptTest extends TestCase
         $subcat = Subcategory::create(['subcategory' => 'Frontlit', 'categories_id' => $category->id]);
         $brand = Brand::create(['brand' => 'StarFlex']);
         $item = StockItem::create(['name' => 'Frontlit 440gsm', 'code' => 'FLX-001', 'subcategories_id' => $subcat->id]);
-        $grn = Grn::create(['at_time' => now()]);
+        $grn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING_STOCK,
+        ]);
 
         $payload = [
             'stock_items_id' => $item->id,
@@ -295,11 +299,16 @@ class InventoryStockReceiptTest extends TestCase
         $this->assertNull($otherGrnData1);
         $this->assertCount(2, $grnData1['items']);
 
-        // Check calculations on item 1: 50 * 150.00 = 7500.00
+        // Check calculations and GRN item metadata (Category, Subcategory, Brand, Batch ID) on item 1: 50 * 150.00 = 7500.00
         $item1Data = collect($grnData1['items'])->firstWhere('id', $item1->id);
         $this->assertEquals(50, $item1Data['qty']);
         $this->assertEquals(150.00, $item1Data['unit_cost']);
         $this->assertEquals(7500.00, $item1Data['total_cost']);
+        $this->assertEquals('Display Media', $item1Data['category_name']);
+        $this->assertEquals('Vinyl', $item1Data['subcategory_name']);
+        $this->assertEquals('Avery', $item1Data['brand_name']);
+        $this->assertNull($item1Data['batch_id']);
+        $this->assertNull($item1Data['batch_no']);
 
         // Step 2: Add item 1 to stock
         $payload = [
@@ -442,7 +451,11 @@ class InventoryStockReceiptTest extends TestCase
         $brand = Brand::create(['brand' => 'Avery']);
         $item1 = StockItem::create(['name' => 'Gloss Vinyl', 'code' => 'VIN-001', 'subcategories_id' => $subcat->id]);
         $item2 = StockItem::create(['name' => 'Matte Vinyl', 'code' => 'VIN-002', 'subcategories_id' => $subcat->id]);
-        $grn = Grn::create(['at_time' => now()]);
+        $existingBatchForItem2 = ItemBatch::create(['stock_items_id' => $item2->id]);
+        $grn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING_STOCK,
+        ]);
 
         $payload = [
             'grn_id' => $grn->id,
@@ -454,6 +467,7 @@ class InventoryStockReceiptTest extends TestCase
                     'qty' => 50,
                     'buy' => 120.00,
                     'price' => 180.00,
+                    'batch_id' => null,
                     'create_new_batch' => true,
                 ],
                 [
@@ -462,7 +476,8 @@ class InventoryStockReceiptTest extends TestCase
                     'qty' => 30,
                     'buy' => 140.00,
                     'price' => 210.00,
-                    'create_new_batch' => true,
+                    'batch_id' => $existingBatchForItem2->id,
+                    'create_new_batch' => false,
                 ],
             ],
         ];
@@ -486,6 +501,21 @@ class InventoryStockReceiptTest extends TestCase
             'grn_id' => $grn->id,
         ]);
 
+        // Verify item2 used its existing batch ID while item1 generated a new batch
+        $this->assertDatabaseHas('grm_items', [
+            'grn_id' => $grn->id,
+            'item_batches_id' => $existingBatchForItem2->id,
+            'qty' => 30,
+        ]);
+
+        $newBatchForItem1 = ItemBatch::where('stock_items_id', $item1->id)->first();
+        $this->assertNotNull($newBatchForItem1);
+        $this->assertDatabaseHas('grm_items', [
+            'grn_id' => $grn->id,
+            'item_batches_id' => $newBatchForItem1->id,
+            'qty' => 50,
+        ]);
+
         $this->assertDatabaseHas('stock_movements', [
             'source_id' => $grn->id,
             'stock_movements_types_id' => 1,
@@ -496,6 +526,165 @@ class InventoryStockReceiptTest extends TestCase
             'source_id' => $grn->id,
             'stock_movements_types_id' => 1,
             'qty' => 30,
+        ]);
+    }
+
+    public function test_rejects_adding_stock_when_grn_is_not_in_pending_stock_status(): void
+    {
+        $category = Category::create(['category' => 'Validation Cat']);
+        $subcat = Subcategory::create(['subcategory' => 'Validation Sub', 'categories_id' => $category->id]);
+        $brand = Brand::create(['brand' => 'Validation Brand']);
+        $item = StockItem::create(['name' => 'Test Media', 'code' => 'VAL-001', 'subcategories_id' => $subcat->id]);
+
+        $pendingGrn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING,
+        ]);
+
+        $response = $this->postJson('/api/v1/inventory/stocks', [
+            'grn_id' => $pendingGrn->id,
+            'add_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'stock_items_id' => $item->id,
+                    'brands_id' => $brand->id,
+                    'qty' => 10,
+                    'buy' => 100.00,
+                    'price' => 150.00,
+                    'batch_id' => null,
+                    'create_new_batch' => true,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['grn_id']);
+    }
+
+    public function test_adds_received_qty_to_existing_batch_stock_and_creates_new_batch_stock_when_unallocated(): void
+    {
+        $category = Category::create(['category' => 'Batch Flow Cat']);
+        $subcat = Subcategory::create(['subcategory' => 'Batch Flow Sub', 'categories_id' => $category->id]);
+        $brand = Brand::create(['brand' => 'Mimaki']);
+        $itemWithBatch = StockItem::create(['name' => 'Cyan Ink 1L', 'code' => 'INK-C01', 'subcategories_id' => $subcat->id]);
+        $itemWithoutBatch = StockItem::create(['name' => 'Magenta Ink 1L', 'code' => 'INK-M01', 'subcategories_id' => $subcat->id]);
+
+        // Pre-existing batch & stock for itemWithBatch (qty = 20)
+        $previousGrn = Grn::create([
+            'at_time' => now()->subDays(3),
+            'grn_statuses_id' => GrnStatus::STATUS_COMPLETED,
+        ]);
+        $allocatedBatch = ItemBatch::create(['stock_items_id' => $itemWithBatch->id]);
+        $existingBatchStock = Stock::create([
+            'stock_items_id' => $itemWithBatch->id,
+            'brands_id' => $brand->id,
+            'qty' => 20,
+            'buy' => 7500.00,
+            'price' => 9500.00,
+            'grn_id' => $previousGrn->id,
+            'add_date' => now()->subDays(3),
+        ]);
+        GrmItem::create([
+            'grn_id' => $previousGrn->id,
+            'item_batches_id' => $allocatedBatch->id,
+            'stock_id' => $existingBatchStock->id,
+            'qty' => 20,
+        ]);
+
+        // New Pending Stock GRN with both items
+        $status = PurchaseOrderStatus::firstOrCreate(['id' => 2], ['purchase_orders_status' => 'Approved']);
+        $supplier = Supplier::create(['name' => 'Ink Supplier', 'mobile' => '0775554443']);
+        $po = PurchaseOrder::create([
+            'add_date' => now(),
+            'suppliers_id' => $supplier->id,
+            'purchase_orders_status_id' => $status->id,
+        ]);
+        PurchaseOrderItem::create([
+            'purchase_orders_id' => $po->id,
+            'stock_items_id' => $itemWithBatch->id,
+            'unit_cost' => 7800.00,
+            'qty_ordered' => 15,
+            'qty_received' => 0,
+        ]);
+        PurchaseOrderItem::create([
+            'purchase_orders_id' => $po->id,
+            'stock_items_id' => $itemWithoutBatch->id,
+            'unit_cost' => 7800.00,
+            'qty_ordered' => 10,
+            'qty_received' => 0,
+        ]);
+
+        $pendingStockGrn = Grn::create([
+            'at_time' => now()->subHour(),
+            'grn_statuses_id' => GrnStatus::STATUS_PENDING_STOCK,
+        ]);
+        $pendingStockGrn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-BATCH-01']);
+
+        // Receive both items: itemWithBatch has allocated batch, itemWithoutBatch has no batch
+        $response = $this->postJson('/api/v1/inventory/stocks', [
+            'grn_id' => $pendingStockGrn->id,
+            'add_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'stock_items_id' => $itemWithBatch->id,
+                    'brands_id' => $brand->id,
+                    'qty' => 15,
+                    'buy' => 7800.00,
+                    'price' => 9800.00,
+                    'batch_id' => $allocatedBatch->id,
+                    'create_new_batch' => false,
+                ],
+                [
+                    'stock_items_id' => $itemWithoutBatch->id,
+                    'brands_id' => $brand->id,
+                    'qty' => 10,
+                    'buy' => 7800.00,
+                    'price' => 9800.00,
+                    'batch_id' => null,
+                    'create_new_batch' => true,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true);
+
+        // 1. Existing batch stock should be incremented: 20 + 15 = 35
+        $this->assertDatabaseHas('stock', [
+            'id' => $existingBatchStock->id,
+            'stock_items_id' => $itemWithBatch->id,
+            'qty' => 35,
+        ]);
+
+        // 2. Unallocated item should get a new ItemBatch and new Stock record with qty = 10
+        $newBatch = ItemBatch::where('stock_items_id', $itemWithoutBatch->id)->first();
+        $this->assertNotNull($newBatch);
+        $this->assertDatabaseHas('stock', [
+            'stock_items_id' => $itemWithoutBatch->id,
+            'grn_id' => $pendingStockGrn->id,
+            'qty' => 10,
+        ]);
+        $this->assertDatabaseHas('grm_items', [
+            'grn_id' => $pendingStockGrn->id,
+            'item_batches_id' => $newBatch->id,
+            'qty' => 10,
+        ]);
+
+        // 3. Stock movements recorded for both items
+        $this->assertDatabaseHas('stock_movements', [
+            'stock_id' => $existingBatchStock->id,
+            'source_id' => $pendingStockGrn->id,
+            'qty' => 15,
+        ]);
+        $this->assertDatabaseHas('stock_movements', [
+            'source_id' => $pendingStockGrn->id,
+            'qty' => 10,
+        ]);
+
+        // 4. GRN automatically marked Completed once all items are received
+        $this->assertDatabaseHas('grn', [
+            'id' => $pendingStockGrn->id,
+            'grn_statuses_id' => GrnStatus::STATUS_COMPLETED,
         ]);
     }
 }

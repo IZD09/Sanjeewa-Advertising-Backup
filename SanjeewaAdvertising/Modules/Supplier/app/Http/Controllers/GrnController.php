@@ -87,8 +87,12 @@ class GrnController extends BaseApiController
             return $this->notFound('GRN not found.');
         }
 
+        $formatted = $this->grnService->formatGrnRecord($grn);
+        $resource = (new GrnResource($grn))->toArray(request());
+        $merged = array_merge($resource, $formatted);
+
         return $this->success(
-            new GrnResource($grn),
+            $merged,
             'GRN details retrieved successfully.'
         );
     }

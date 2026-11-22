@@ -7,4 +7,5 @@ export { FilterProcess } from "./FilterProcess.js";
 export { FormButtonProcess } from "./FormButtonProcess.js";
 export { ExportProcess } from "./ExportProcess.js";
 export { MetricsProcess } from "./MetricsProcess.js";
-
+export { CreateGrnProcess } from "./CreateGrnProcess.js";
+export { CreatePoProcess } from "./CreatePoProcess.js";

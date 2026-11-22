@@ -43,6 +43,15 @@ export class StockModeManager {
         if (wrap) {
           wrap.style.display = e.target.value === "EXISTING" ? "block" : "none";
         }
+        if (e.target.value === "EXISTING") {
+          const batchSelect = document.getElementById("addStockBatchSelect");
+          if (batchSelect && !batchSelect.value) {
+            const firstValid = batchSelect.querySelector('option[value]:not([value=""])');
+            if (firstValid) {
+              batchSelect.value = firstValid.value;
+            }
+          }
+        }
       });
     });
   }
@@ -103,17 +112,29 @@ export class StockModeManager {
    */
   populateExistingBatches(batches = []) {
     const batchSelect = document.getElementById("addStockBatchSelect");
+    const optNew = document.getElementById("addStockBatchOptNew");
+    const optExisting = document.getElementById("addStockBatchOptExisting");
+    const wrap = document.getElementById("addStockExistingBatchWrap");
     if (!batchSelect) return;
 
     batchSelect.innerHTML = '<option value="">-- Select Existing Batch No --</option>';
     if (!Array.isArray(batches) || batches.length === 0) {
       batchSelect.insertAdjacentHTML("beforeend", '<option value="" disabled>(No existing batches - a new batch will be generated)</option>');
+      if (optExisting) optExisting.disabled = true;
+      if (optNew) optNew.checked = true;
+      if (wrap) wrap.style.display = "none";
       return;
     }
+
+    if (optExisting) optExisting.disabled = false;
 
     batches.forEach((b) => {
       batchSelect.insertAdjacentHTML("beforeend", `<option value="${b.id}">${b.batch_no || `Batch #${b.id}`}</option>`);
     });
+
+    if (optExisting && optExisting.checked) {
+      batchSelect.value = String(batches[0].id);
+    }
   }
 
   /**

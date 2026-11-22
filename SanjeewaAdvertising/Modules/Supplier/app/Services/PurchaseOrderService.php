@@ -23,7 +23,7 @@ class PurchaseOrderService
     public function buildQuery(array $filters = []): Builder
     {
         $query = PurchaseOrder::query()
-            ->with(['supplier', 'items.stockItem', 'grns', 'status'])
+            ->with(['supplier', 'items.stockItem.stockUnit', 'grns', 'status'])
             ->withCount('items');
 
         $search = trim((string) ($filters['search'] ?? $filters['q'] ?? ''));
@@ -207,7 +207,12 @@ class PurchaseOrderService
         $ordered = (int) ($totals->total_ordered ?? 0);
         $received = (int) ($totals->total_received ?? 0);
 
-        if ($ordered > 0 && $received >= $ordered) {
+        $hasUnfinishedItems = DB::table('purchase_order_items')
+            ->where('purchase_orders_id', $poId)
+            ->whereColumn('qty_received', '<', 'qty_ordered')
+            ->exists();
+
+        if ($ordered > 0 && $received >= $ordered && ! $hasUnfinishedItems) {
             $statusId = PurchaseOrderStatus::STATUS_COMPLETED;
         } elseif ($received > 0) {
             $statusId = PurchaseOrderStatus::STATUS_PARTIAL;
@@ -361,7 +366,7 @@ class PurchaseOrderService
                 'item_id' => $item->stockItem?->code ?? ('ITM-'.$item->stock_items_id),
                 'stock_items_id' => $item->stock_items_id,
                 'item_name' => $item->stockItem?->name ?? ('Item #'.$item->stock_items_id),
-                'unit' => 'Units',
+                'unit' => $item->stockItem?->stockUnit?->unit ?? $item->stockItem?->stockUnit?->symble ?? 'Units',
                 'qty_ordered' => $qtyOrdered,
                 'qty_received' => $qtyReceived,
                 'unit_cost' => $unitCost,

@@ -46,6 +46,13 @@
     "file": "assets/ValidatBuilder-DPg4PYww.js",
     "name": "ValidatBuilder"
   },
+  "_ViewGRNModal-CYEqXbOk.js": {
+    "file": "assets/ViewGRNModal-CYEqXbOk.js",
+    "name": "ViewGRNModal",
+    "imports": [
+      "_BaseModalHandler-BzI2OdAS.js"
+    ]
+  },
   "_ViewOrderModal-CMnnpZTf.js": {
     "file": "assets/ViewOrderModal-CMnnpZTf.js",
     "name": "ViewOrderModal",
@@ -329,7 +336,7 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-E0UI6bi-.js",
+    "file": "assets/grn-DxEXsixG.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
@@ -339,11 +346,12 @@
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_ActionMenuHelper-CmW00VbZ.js"
+      "_ActionMenuHelper-CmW00VbZ.js",
+      "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-BgtzKPWx.js",
+    "file": "assets/inventory-BCiKwLlA.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
@@ -353,7 +361,8 @@
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_FormValidator-DavQ7TG5.js",
-      "_ValidatBuilder-DPg4PYww.js"
+      "_ValidatBuilder-DPg4PYww.js",
+      "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
   "resources/assets/js/login.js": {

@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      VIEW / PRINT GRN VOUCHER MODAL
      ========================================================================== -->
-<div class="po-modal-overlay" id="viewGrnModal">
+<div class="po-modal-overlay" id="viewGrnModal" style="z-index: 1050;">
   <div class="po-modal po-modal-large" style="max-width: 820px; max-height: 90vh;">
     <div class="po-modal-header">
       <h3><i class="fa-solid fa-file-invoice"></i> Goods Received Note (GRN) Document</h3>

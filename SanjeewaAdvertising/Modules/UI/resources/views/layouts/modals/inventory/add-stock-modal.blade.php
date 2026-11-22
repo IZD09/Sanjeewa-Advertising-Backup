@@ -2,7 +2,7 @@
      3. ADD / RECEIVE STOCK SHIPMENT MODAL (Database Aligned)
      ========================================================================== -->
 <div class="po-modal-overlay" id="addStockModal" style="overflow-x: hidden;">
-  <div class="po-modal po-modal-large" style="max-width: 860px; width: 95vw; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;">
+  <div class="po-modal po-modal-large" style="max-width: 980px; width: 95vw; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;">
     <div class="po-modal-header">
       <h3><i class="fa-solid fa-boxes-packing" style="color: #1677ff;"></i> <span id="addStockModalTitle">Receive &amp; Add Material Stock</span></h3>
       <button type="button" class="modal-close-btn" data-close-inv-modal="addStockModal" aria-label="Close modal">
@@ -11,43 +11,20 @@
     </div>
 
     <div class="po-modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; max-height: calc(92vh - 130px); overflow-y: auto !important; overflow-x: hidden !important; width: 100%; box-sizing: border-box;">
-      <!-- 0. Stock Action Mode Selection (New Stock vs Update Existing Stock) -->
-      <div style="background: var(--surface-2, #f5f5f5); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; width: 100%; box-sizing: border-box;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">
-          <i class="fa-solid fa-layer-group" style="color: #1677ff;"></i> Stock Action Type
-        </div>
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center; width: 100%; box-sizing: border-box;">
-          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
-            <input type="radio" name="addStockMode" id="addStockModeNew" value="NEW" checked>
-            <span><i class="fa-solid fa-plus-circle" style="color: #1677ff;"></i> Receive as New Stock Record</span>
-          </label>
-          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
-            <input type="radio" name="addStockMode" id="addStockModeUpdate" value="UPDATE">
-            <span><i class="fa-solid fa-arrows-rotate" style="color: #52c41a;"></i> Update / Add to Existing Stock Entry</span>
-          </label>
-        </div>
-
-        <!-- Existing Stock Dropdown (Visible only in UPDATE mode or when item has existing stocks) -->
-        <div id="addStockExistingSelectWrap" style="display: none; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); width: 100%; box-sizing: border-box;">
-          <label class="po-label" for="addStockExistingSelect" style="margin-bottom: 6px;">
-            <span>Select Existing Stock Record to Update <span class="req" style="color: #ff4d4f;">*</span></span>
-            <span class="hint">Choose which stock record's quantity will be incremented</span>
-          </label>
-          <select id="addStockExistingSelect" name="add_stock_existing_item" class="inv-select" style="width: 100%; box-sizing: border-box;">
-            <option value="">-- Choose Existing Stock Record --</option>
-          </select>
-        </div>
-      </div>
-
       <!-- 1. GRN Reference Selection (Step 1) -->
       <div class="po-field" style="margin: 0; width: 100%; box-sizing: border-box;">
         <label class="po-label" for="addStockGrnSelect" style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700;">
           <span>Select GRN Reference <span class="req" style="color: #ff4d4f;">*</span></span>
           <span class="hint" id="addStockGrnHint" style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-left: 8px;">Select a GRN to filter Purchase Order items</span>
         </label>
-        <select id="addStockGrnSelect" name="add_stock_grn" class="inv-select" style="width: 100%; box-sizing: border-box;">
-          <option value="">-- Select GRN Reference --</option>
-        </select>
+        <div style="display: flex; gap: 8px; align-items: center; width: 100%; box-sizing: border-box;">
+          <select id="addStockGrnSelect" name="add_stock_grn" class="inv-select" style="flex: 1; min-width: 0; height: 38px; box-sizing: border-box;">
+            <option value="">-- Select GRN Reference --</option>
+          </select>
+          <button type="button" id="btnViewSelectedGrn" class="ant-btn ant-btn-default" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; height: 38px; font-weight: 600; white-space: nowrap; border-radius: 6px; color: #1677ff; border-color: #91caff; flex-shrink: 0;" title="View selected GRN details" disabled>
+            <i class="fa-solid fa-eye"></i> <span>View GRN</span>
+          </button>
+        </div>
       </div>
 
       <!-- 2. Material Stock Item with Interactive Select (Step 2) -->
@@ -76,7 +53,7 @@
         </div>
 
         <!-- Staged Items Table (Queue) -->
-        <div id="addStockStagedContainer" style="display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; width: 100%; box-sizing: border-box;">
+        <div id="addStockStagedContainer" style="display: block; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; width: 100%; box-sizing: border-box;">
           <div style="background: var(--surface-2, #fafafa); padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div style="font-size: 11.5px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px;">
               <i class="fa-solid fa-cart-flatbed" style="color: #1677ff;"></i>
@@ -87,126 +64,44 @@
               <span>Queued Cost: </span><strong id="addStockStagedTotalCost" style="color: #1677ff;">Rs. 0.00</strong>
             </div>
           </div>
-          <div class="staged-table-scroll-wrap" style="max-height: 200px; overflow-y: auto; overflow-x: auto; width: 100%; box-sizing: border-box;">
+          <div class="staged-table-scroll-wrap" style="max-height: 220px; overflow-y: auto; overflow-x: auto; width: 100%; box-sizing: border-box;">
             <table class="inv-table" style="width: 100%; font-size: 12px; margin: 0; border-collapse: collapse;">
               <thead>
                 <tr style="background: #fafafa; border-bottom: 1px solid var(--border);">
                   <th style="padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px;">Material Item / SKU</th>
+                  <th style="padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 100px;">Category</th>
+                  <th style="padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 105px;">Subcategory</th>
                   <th style="padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 90px;">Brand</th>
-                  <th style="padding: 7px 8px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 70px;">Qty</th>
-                  <th style="padding: 7px 8px; text-align: right; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 85px;">Unit Cost</th>
-                  <th style="padding: 7px 8px; text-align: right; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 85px;">Sell Price</th>
-                  <th style="padding: 7px 8px; text-align: right; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 95px;">Subtotal</th>
+                  <th style="padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 115px;">Batch Allocation</th>
+                  <th style="padding: 7px 8px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 55px;">Qty</th>
+                  <th style="padding: 7px 8px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 75px;">Received</th>
                   <th style="padding: 7px 8px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 11px; width: 45px;">Action</th>
                 </tr>
               </thead>
               <tbody id="addStockStagedTbody">
-                <!-- Populated dynamically via JS -->
+                <tr>
+                  <td colspan="8" style="padding: 24px 12px; text-align: center; color: var(--text-muted, #8c8c8c); font-size: 12px;">
+                    <i class="fa-solid fa-cart-plus" style="font-size: 18px; color: #bfbfbf; display: block; margin-bottom: 6px;"></i>
+                    No items queued yet. Please select a GRN and click <strong>Add</strong> or <strong>Add All</strong> to add items.
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- 3. Classification & Brand Selectors (Auto-selected on Item pick) -->
-      <div class="add-stock-grid-3" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; box-sizing: border-box;">
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockCategorySelect">
-            <span>Category <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <select id="addStockCategorySelect" name="add_stock_category" class="inv-select" style="width: 100%; box-sizing: border-box;">
-            <option value="">-- Select Category --</option>
-          </select>
-        </div>
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockSubcategorySelect">
-            <span>Subcategory <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <select id="addStockSubcategorySelect" name="add_stock_subcategory" class="inv-select" style="width: 100%; box-sizing: border-box;" disabled>
-            <option value="">-- Choose Category First --</option>
-          </select>
-        </div>
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockBrandSelect">
-            <span>Brand <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <select id="addStockBrandSelect" name="add_stock_brand" class="inv-select" style="width: 100%; box-sizing: border-box;">
-            <option value="">-- Select Brand --</option>
-          </select>
-        </div>
+      <!-- 3. Received Date -->
+      <div class="po-field" style="margin: 0; max-width: 240px; width: 100%; box-sizing: border-box;">
+        <label class="po-label" for="addStockDate" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
+          <span>Received Date <span class="req" style="color: #ff4d4f;">*</span></span>
+        </label>
+        <input type="date" id="addStockDate" name="add_stock_date" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%; height: 38px; box-sizing: border-box;">
       </div>
 
-      <!-- 4. Batch Number Selection (Existing Batch vs New Batch) -->
-      <div style="background: var(--surface-2, #f5f5f5); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; width: 100%; box-sizing: border-box;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">
-          <i class="fa-solid fa-barcode" style="color: #722ed1;"></i> Batch Number Allocation
-        </div>
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; width: 100%; box-sizing: border-box;">
-          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-            <input type="radio" name="addStockBatchOption" id="addStockBatchOptNew" value="NEW" checked>
-            <span>Generate New Batch</span>
-          </label>
-          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-            <input type="radio" name="addStockBatchOption" id="addStockBatchOptExisting" value="EXISTING">
-            <span>Select Existing Batch</span>
-          </label>
-        </div>
-
-        <div id="addStockExistingBatchWrap" style="display: none; width: 100%; box-sizing: border-box;">
-          <label class="po-label" for="addStockBatchSelect" style="margin-bottom: 4px;">
-            <span>Existing Batch Number</span>
-          </label>
-          <select id="addStockBatchSelect" name="add_stock_batch" class="inv-select" style="width: 100%; box-sizing: border-box;">
-            <option value="">-- Select Existing Batch No --</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 5. Received Date, Quantity & Pricing (4 Fields with Red Asterisks) -->
-      <div class="add-stock-grid-2" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; width: 100%; box-sizing: border-box;">
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockDate" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-            <span>Received Date <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <input type="date" id="addStockDate" name="add_stock_date" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%; box-sizing: border-box;">
-        </div>
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockQty" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-            <span>Quantity Received <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <input type="number" id="addStockQty" name="add_stock_qty" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%; box-sizing: border-box;" min="1" step="1" placeholder="Enter quantity">
-        </div>
-      </div>
-
-      <div class="add-stock-grid-2" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; width: 100%; box-sizing: border-box;">
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockUnitCost" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-            <span>Unit Purchase Cost (LKR) <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <input type="number" id="addStockUnitCost" name="add_stock_unit_cost" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%; box-sizing: border-box;" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="po-field" style="margin: 0; min-width: 0;">
-          <label class="po-label" for="addStockSellingPrice" style="margin-bottom: 6px; display: block; font-size: 11.5px; font-weight: 700;">
-            <span>Standard Selling Price (LKR) <span class="req" style="color: #ff4d4f;">*</span></span>
-          </label>
-          <input type="number" id="addStockSellingPrice" name="add_stock_selling_price" class="inv-search-input" style="padding-left: 12px; padding-right: 12px; width: 100%; box-sizing: border-box;" min="0" step="0.01" placeholder="0.00">
-        </div>
-      </div>
-
-      <!-- 6. Live Financial & Stock Calculation Summary Box -->
-      <div class="inv-impact-box" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; box-sizing: border-box;">
-        <div>
-          <span style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Total Shipment Purchase Cost:</span>
-          <div id="addStockTotalCost" style="font-size: 16px; font-weight: 800; color: #1677ff; margin-top: 2px;">Rs. 0.00</div>
-        </div>
-        <div id="addStockUpdateQtyIndicator" style="display: none; text-align: center; font-size: 12px; color: var(--text); background: rgba(82, 196, 26, 0.1); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(82, 196, 26, 0.3);">
-          <span style="color: #52c41a; font-weight: 700;">Stock Increment:</span>
-          <span id="addStockUpdateQtyCalc">0 + 0 = 0 Units</span>
-        </div>
-        <div style="text-align: right;">
-          <span style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Estimated Retail Value:</span>
-          <div id="addStockTotalValue" style="font-size: 16px; font-weight: 800; color: #52c41a; margin-top: 2px;">Rs. 0.00</div>
-        </div>
+      <div id="addStockUpdateQtyIndicator" style="display: none; text-align: center; font-size: 12px; color: var(--text); background: rgba(82, 196, 26, 0.1); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(82, 196, 26, 0.3); width: 100%; box-sizing: border-box;">
+        <span style="color: #52c41a; font-weight: 700;">Stock Increment:</span>
+        <span id="addStockUpdateQtyCalc">0 + 0 = 0 Units</span>
       </div>
     </div>
 

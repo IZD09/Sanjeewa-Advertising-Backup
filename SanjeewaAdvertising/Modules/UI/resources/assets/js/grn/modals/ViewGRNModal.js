@@ -37,9 +37,36 @@ export class ViewGRNModal extends BaseModalHandler {
     }
   }
 
-  viewGRN(grnNumber) {
-    const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
-    const rec = grnRecords.find(r => r.grn_number === grnNumber);
+  async viewGRN(identifierOrRecord) {
+    let rec = null;
+    if (typeof identifierOrRecord === "object" && identifierOrRecord !== null) {
+      rec = identifierOrRecord;
+    } else {
+      const grnRecords = this.ctx.getGrnRecords ? this.ctx.getGrnRecords() : [];
+      rec = grnRecords.find(r => 
+        r.grn_number === identifierOrRecord || 
+        r.grn_id === identifierOrRecord || 
+        String(r.id) === String(identifierOrRecord)
+      );
+
+      if (!rec && identifierOrRecord) {
+        try {
+          const numericId = String(identifierOrRecord).replace(/\D/g, "");
+          if (numericId) {
+            const res = await fetch(`/api/v1/grns/${numericId}`, {
+              headers: { "Accept": "application/json" }
+            });
+            const json = await res.json();
+            if (json && json.success && json.data) {
+              rec = json.data;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch GRN details:", err);
+        }
+      }
+    }
+
     if (!rec) return;
 
     this.activeGrnContext = rec;
@@ -58,11 +85,18 @@ export class ViewGRNModal extends BaseModalHandler {
     const docNetTotal = document.getElementById("grnDocNetTotal");
     const tbody = document.getElementById("grnDocItemsTbody");
 
-    if (docNo) docNo.textContent = rec.grn_number;
-    if (docDate) docDate.textContent = rec.received_date;
-    if (docSupplier) docSupplier.textContent = rec.supplier_name;
-    if (docContact) docContact.textContent = rec.supplier_contact || rec.supplier_invoice_no || "N/A";
-    if (docPO) docPO.textContent = rec.purchase_order_no || "N/A";
+    const formatCurrency = (amt) => {
+      if (this.ctx && typeof this.ctx.formatCurrency === "function") {
+        return this.ctx.formatCurrency(amt);
+      }
+      return "Rs. " + Number(amt || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    if (docNo) docNo.textContent = rec.grn_number || rec.grn_id || (`GRN #${rec.id}`);
+    if (docDate) docDate.textContent = rec.received_date || rec.at_time || "-";
+    if (docSupplier) docSupplier.textContent = rec.supplier_name || "-";
+    if (docContact) docContact.textContent = rec.supplier_contact || rec.supplier_invoice_no || rec.supplier_invoice || "N/A";
+    if (docPO) docPO.textContent = rec.purchase_order_no || rec.po_numbers || "N/A";
     const statusKey = String(rec.status || "Pending").toLowerCase().trim();
     let badgeClass = "pending";
     if (statusKey === "completed") {
@@ -83,28 +117,37 @@ export class ViewGRNModal extends BaseModalHandler {
       docStatusTable.className = `grn-status-badge ${badgeClass}`;
       docStatusTable.textContent = rec.status || "Pending";
     }
-    if (docReceivedBy) docReceivedBy.textContent = rec.received_by;
-    if (docRemarks) docRemarks.textContent = rec.remarks || "No additional notes provided.";
-    if (docSubTotal) docSubTotal.textContent = this.ctx.formatCurrency(rec.sub_total);
-    if (docDiscount) docDiscount.textContent = this.ctx.formatCurrency(rec.discount || 0);
-    if (docNetTotal) docNetTotal.textContent = this.ctx.formatCurrency(rec.net_total);
+    if (docReceivedBy) docReceivedBy.textContent = rec.received_by || "Storekeeper";
+    if (docRemarks) docRemarks.textContent = rec.remarks || "Consignment inspected upon receipt.";
+    if (docSubTotal) docSubTotal.textContent = formatCurrency(rec.sub_total || 0);
+    if (docDiscount) docDiscount.textContent = formatCurrency(rec.discount || 0);
+    if (docNetTotal) docNetTotal.textContent = formatCurrency(rec.net_total || rec.sub_total || 0);
 
     if (tbody) {
       tbody.innerHTML = "";
-      if (rec.items && rec.items.length > 0) {
-        rec.items.forEach((item, idx) => {
+      const items = rec.items || [];
+      if (items.length > 0) {
+        items.forEach((item, idx) => {
+          const qty = Number(item.qty_received || item.qty || 0);
+          const unitCost = Number(item.unit_cost || item.buy || 0);
+          const total = Number(item.item_total || item.total_cost || (qty * unitCost));
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${idx + 1}</td>
-            <td><strong>${item.item_name}</strong> <span style="font-size: 11px; color: #666;">(${item.item_id})</span></td>
+            <td><strong>${item.item_name || item.name}</strong> <span style="font-size: 11px; color: #666;">(${item.item_id || item.code || "SKU"})</span></td>
             <td><span class="grn-code-badge" style="font-size: 11px;">${item.batch_id || "PENDING"}</span></td>
-            <td>${item.unit}</td>
-            <td class="text-right"><strong>${(item.qty_received || 0).toLocaleString()}</strong></td>
-            <td class="text-right">${this.ctx.formatCurrency(item.unit_cost)}</td>
-            <td class="text-right" style="font-weight: bold;">${this.ctx.formatCurrency(item.item_total)}</td>
+            <td>${item.unit || "Units"}</td>
+            <td class="text-right"><strong>${qty.toLocaleString()}</strong></td>
+            <td class="text-right">${formatCurrency(unitCost)}</td>
+            <td class="text-right" style="font-weight: bold;">${formatCurrency(total)}</td>
           `;
           tbody.appendChild(tr);
         });
+      } else {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="7" style="text-align: center; color: #888; padding: 16px;">No items found in this GRN record.</td>`;
+        tbody.appendChild(tr);
       }
     }
 
