@@ -229,6 +229,41 @@
               <span style="font-size: 11.5px; font-weight: 800; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">Online/QR</span>
             </div>
           </div>
+
+          <!-- Cash Tendered & Change / Shortfall Calculator (Visible only when Payment > 0 & Method = Cash) -->
+          <div class="po-cash-tendered-card" id="grnCashTenderedGroup" style="display: none; margin-top: 12px;">
+            <div class="pay-field" style="margin: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="pay-label" for="grnCashReceived" style="margin: 0; font-weight: 800; font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-money-bill-wave" style="color: #10b981;"></i>
+                  <span>Cash Given (Rs.)</span>
+                </label>
+                <span class="hint" style="font-size: 10.5px; color: var(--text-muted);">Cash Payment</span>
+              </div>
+              <div style="position: relative; display: flex; align-items: center;">
+                <span style="position: absolute; left: 14px; font-weight: 800; font-size: 13px; color: var(--text-muted); pointer-events: none; z-index: 2;">Rs.</span>
+                <input type="number" id="grnCashReceived" name="grn_cash_received" class="pay-input" min="0" step="any" placeholder="Enter cash amount handed over..." style="height: 40px; padding-left: 42px; padding-right: 14px; border-radius: 8px; font-size: 14px; font-weight: 700; width: 100%; box-sizing: border-box;">
+              </div>
+            </div>
+
+            <div class="po-cash-breakdown-grid">
+              <div class="po-cash-metric">
+                <span class="po-cash-metric-label">Payment Amount</span>
+                <strong class="po-cash-metric-value" id="grnCashPayableVal">Rs. 0.00</strong>
+              </div>
+              <div class="po-cash-metric">
+                <span class="po-cash-metric-label">Cash Given</span>
+                <strong class="po-cash-metric-value" id="grnCashGivenVal">Rs. 0.00</strong>
+              </div>
+              <div class="po-cash-metric po-cash-status-box is-idle" id="grnCashStatusBox">
+                <span class="po-cash-metric-label po-cash-status-left">
+                  <i class="fa-solid fa-coins" id="grnCashStatusIcon"></i>
+                  <span id="grnCashStatusLabel">Change / Shortfall</span>
+                </span>
+                <strong class="po-cash-status-amount" id="grnCashStatusAmount">—</strong>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Dynamic Method Details Container -->

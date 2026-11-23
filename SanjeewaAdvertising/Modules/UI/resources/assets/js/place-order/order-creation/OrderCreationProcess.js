@@ -15,6 +15,7 @@ import { OrderItemModel } from "./OrderItemModel.js";
 import { OrderItemValidator } from "./OrderItemValidator.js";
 import { OrderFormFieldsHandler } from "./OrderFormFieldsHandler.js";
 import { OrderQueueTableHandler } from "./OrderQueueTableHandler.js";
+import { CashPaymentHandler } from "../../core/CashPaymentHandler.js";
 
 export class OrderCreationProcess {
   /**
@@ -39,6 +40,19 @@ export class OrderCreationProcess {
     this.queueTable = new OrderQueueTableHandler({
       onRowClick: (uid) => this.handleRowClickToEdit(uid),
       onRemoveClick: (uid) => this.handleRemoveItem(uid),
+    });
+
+    this.cashPaymentHandler = new CashPaymentHandler({
+      payableInputId: "poPaidAmount",
+      paymentMethodSelectId: "poPaymentMethod",
+      cashSectionId: "poCashTenderedGroup",
+      cashReceivedInputId: "poCashReceived",
+      payableDisplayId: "poCashPayableVal",
+      cashGivenDisplayId: "poCashGivenVal",
+      statusBoxId: "poCashStatusBox",
+      statusIconId: "poCashStatusIcon",
+      statusLabelId: "poCashStatusLabel",
+      statusAmountId: "poCashStatusAmount",
     });
 
     this.bindEvents();
@@ -142,18 +156,21 @@ export class OrderCreationProcess {
     const paidInput = document.getElementById("poPaidAmount");
     const paidAmount = parseFloat(paidInput?.value) || 0;
 
-    if (this.pricingCalculator && typeof this.pricingCalculator.calculateBillingSummary === "function") {
-      return this.pricingCalculator.calculateBillingSummary(grandTotal, paidAmount);
+    const result = this.pricingCalculator && typeof this.pricingCalculator.calculateBillingSummary === "function"
+      ? this.pricingCalculator.calculateBillingSummary(grandTotal, paidAmount)
+      : {
+          totalAmount: grandTotal,
+          paidAmount,
+          balanceAmount: Math.max(0, Math.round((grandTotal - paidAmount) * 100) / 100),
+          paymentStatus: "Unpaid",
+          paymentStatusId: 1,
+        };
+
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.update();
     }
 
-    const balanceAmount = Math.max(0, Math.round((grandTotal - paidAmount) * 100) / 100);
-    return {
-      totalAmount: grandTotal,
-      paidAmount,
-      balanceAmount,
-      paymentStatus: "Unpaid",
-      paymentStatusId: 1,
-    };
+    return result;
   }
 
   /**
@@ -306,12 +323,22 @@ export class OrderCreationProcess {
     const paidAmount = parseFloat(document.getElementById("poPaidAmount")?.value) || 0;
     const paymentMethodId = document.getElementById("poPaymentMethod")?.value || "";
 
-    return this.validator.validateSubmission({
+    const baseValidation = this.validator.validateSubmission({
       customer,
       items: this.queueTable.getAllItems(),
       paidAmount,
       paymentMethodId,
     });
+
+    if (!baseValidation.isValid) {
+      return baseValidation;
+    }
+
+    if (this.cashPaymentHandler) {
+      return this.cashPaymentHandler.validate();
+    }
+
+    return { isValid: true };
   }
 
   /**
@@ -321,6 +348,9 @@ export class OrderCreationProcess {
     this.queueTable.clear();
     this.fieldsHandler.setEditMode(false);
     this.fieldsHandler.clearFields();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
     this.recalculateAll();
   }
 }

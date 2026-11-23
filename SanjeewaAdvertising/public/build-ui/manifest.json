@@ -53,8 +53,8 @@
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
-  "_ViewOrderModal-CMnnpZTf.js": {
-    "file": "assets/ViewOrderModal-CMnnpZTf.js",
+  "_ViewOrderModal-DsZr9S8h.js": {
+    "file": "assets/ViewOrderModal-DsZr9S8h.js",
     "name": "ViewOrderModal",
     "imports": [
       "_RequestHandler-CzHZMMVQ.js",
@@ -161,7 +161,7 @@
     "isEntry": true
   },
   "resources/assets/css/payments.css": {
-    "file": "assets/payments-BwUluBsk.css",
+    "file": "assets/payments-DcJHiF5t.css",
     "name": "payments",
     "names": [
       "payments.css"
@@ -170,7 +170,7 @@
     "isEntry": true
   },
   "resources/assets/css/place-order.css": {
-    "file": "assets/place-order-AQNATul9.css",
+    "file": "assets/place-order-BDXcrgr1.css",
     "name": "place-order",
     "names": [
       "place-order.css"
@@ -376,7 +376,7 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-CABSY6oF.js",
+    "file": "assets/payments-BEnkZFO0.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
@@ -387,11 +387,11 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-CMnnpZTf.js"
+      "_ViewOrderModal-DsZr9S8h.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-BctfsepX.js",
+    "file": "assets/place-order-B-3UU9pZ.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
@@ -404,7 +404,7 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-CMnnpZTf.js"
+      "_ViewOrderModal-DsZr9S8h.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {

@@ -13,6 +13,7 @@ export { MobileNumberHelper, getMobileSearchVariants, matchesMobile } from "./Mo
 export { ActionMenuHelper, toggleRowActionMenu, closeAllActionMenus } from "./ActionMenuHelper.js";
 export { ConfirmModalHelper, openCancelOrderModal, closeCancelModal } from "./ConfirmModalHelper.js";
 export { StatusHelper, getStatusRowClass, getPaymentStageRowClass } from "./StatusHelper.js";
+export { CashPaymentHandler } from "./CashPaymentHandler.js";
 
 export default {
   BaseTableLoader: "./BaseTableLoader.js",
@@ -24,5 +25,6 @@ export default {
   MobileNumberHelper: "./MobileNumberHelper.js",
   ActionMenuHelper: "./ActionMenuHelper.js",
   ConfirmModalHelper: "./ConfirmModalHelper.js",
-  StatusHelper: "./StatusHelper.js"
+  StatusHelper: "./StatusHelper.js",
+  CashPaymentHandler: "./CashPaymentHandler.js"
 };

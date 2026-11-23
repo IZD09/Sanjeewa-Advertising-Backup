@@ -12,6 +12,7 @@
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
 import { RequestHandler } from "../../core/RequestHandler.js";
+import { CashPaymentHandler } from "../../core/CashPaymentHandler.js";
 import { InvoicePaymentBuilder } from "../builders/InvoicePaymentBuilder.js";
 import { InvoicePaymentProcessor } from "../processors/InvoicePaymentProcessor.js";
 
@@ -48,6 +49,22 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     this.selectedPaymentTypeId = 1;
     this.selectedMethod = "Cash";
     this.isSubmitting = false;
+
+    this.cashPaymentHandler = new CashPaymentHandler({
+      payableInputId: "invModalAmount",
+      paymentMethodSelectId: "invPaymentTypeId",
+      cashSectionId: "invCashTenderedGroup",
+      cashReceivedInputId: "invCashReceived",
+      payableDisplayId: "invCashPayableVal",
+      cashGivenDisplayId: "invCashGivenVal",
+      statusBoxId: "invCashStatusBox",
+      statusIconId: "invCashStatusIcon",
+      statusLabelId: "invCashStatusLabel",
+      statusAmountId: "invCashStatusAmount",
+      isCashMethod: () =>
+        Number(this.selectedPaymentTypeId) === 1 ||
+        /\bcash\b/i.test(String(this.selectedMethod || "")),
+    });
 
     window.__activeRecordInvoicePaymentModal = this;
     this.bindEvents();
@@ -250,6 +267,9 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     this.resetCustomerUI();
     this.renderSelectedJobsTable();
     this.recalculateSummary();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
 
     // Load customer directory
     await this.loadCustomers();
@@ -585,6 +605,9 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     this.resetCustomerUI();
     this.renderSelectedJobsTable();
     this.recalculateSummary();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
   }
 
   /**
@@ -927,6 +950,10 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
     } else {
       stageSelect.value = "Advance Payment";
     }
+
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.update();
+    }
   }
 
   /**
@@ -960,6 +987,10 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       const cId = parseInt(c.getAttribute("data-type-id"), 10);
       c.classList.toggle("selected", cId === this.selectedPaymentTypeId);
     });
+
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.update();
+    }
   }
 
   /**
@@ -987,6 +1018,17 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       this.showToast("Please enter a valid payment amount greater than Rs. 0.", "error");
       this.resetConfirmButton();
       return;
+    }
+
+    if (this.cashPaymentHandler) {
+      const cashValidation = this.cashPaymentHandler.validate();
+      if (!cashValidation.isValid) {
+        this.showToast(cashValidation.error, "error");
+        const cashEl = document.getElementById(cashValidation.targetId);
+        if (cashEl) cashEl.focus();
+        this.resetConfirmButton();
+        return;
+      }
     }
 
     this.isSubmitting = true;

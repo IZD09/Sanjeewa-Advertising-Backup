@@ -394,12 +394,12 @@
                 </div>
 
                 <!-- Row: Payment Method & Payment Status (Database loaded) -->
-                <div class="po-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="po-field-row po-payment-method-row">
                   <!-- Payment Method Dropdown (Database loaded, required when paid > 0) -->
                   <div class="po-field" id="poPaymentMethodGroup">
                     <label class="po-label" for="poPaymentMethod">
                       <span>Payment Method <span class="req" id="poPaymentMethodReq" style="display: none;">*</span></span>
-                      <span class="hint" id="poPaymentMethodHint">Database: payment_types</span>
+                      <span class="hint" id="poPaymentMethodHint">Method</span>
                     </label>
                     <select id="poPaymentMethod" class="po-select">
                       @forelse($paymentTypes as $pm)
@@ -421,7 +421,7 @@
                   <div class="po-field" id="poPaymentStatusGroup">
                     <label class="po-label" for="poPaymentStatus">
                       <span>Payment Status <span class="req">*</span></span>
-                      <span class="hint">Auto-set by payment</span>
+                      <span class="hint">Auto-set</span>
                     </label>
                     <select id="poPaymentStatus" class="po-select" disabled style="cursor: not-allowed; opacity: 0.85;">
                       @forelse($paymentStatuses as $ps)
@@ -438,6 +438,35 @@
                         <option value="3">Partial</option>
                       @endforelse
                     </select>
+                  </div>
+                </div>
+
+                <!-- Cash Tendered & Change / Shortfall Calculator (Visible only when Advance > 0 & Method = Cash) -->
+                <div class="po-cash-tendered-card" id="poCashTenderedGroup" style="display: none;">
+                  <div class="po-field">
+                    <label class="po-label" for="poCashReceived">
+                      <span><i class="fa-solid fa-money-bill-wave" style="color: var(--green, #16a34a); margin-right: 5px;"></i> Cash Given by Customer (Rs.)</span>
+                      <span class="hint">Cash Payment</span>
+                    </label>
+                    <input type="number" id="poCashReceived" class="po-input" min="0" step="any" placeholder="Enter cash amount received from customer...">
+                  </div>
+
+                  <div class="po-cash-breakdown-grid">
+                    <div class="po-cash-metric">
+                      <span class="po-cash-metric-label">Payment Amount</span>
+                      <strong class="po-cash-metric-value" id="poCashPayableVal">Rs. 0.00</strong>
+                    </div>
+                    <div class="po-cash-metric">
+                      <span class="po-cash-metric-label">Cash Given</span>
+                      <strong class="po-cash-metric-value" id="poCashGivenVal">Rs. 0.00</strong>
+                    </div>
+                    <div class="po-cash-metric po-cash-status-box is-idle" id="poCashStatusBox">
+                      <span class="po-cash-metric-label po-cash-status-left">
+                        <i class="fa-solid fa-coins" id="poCashStatusIcon"></i>
+                        <span id="poCashStatusLabel">Change / Shortfall</span>
+                      </span>
+                      <strong class="po-cash-status-amount" id="poCashStatusAmount">—</strong>
+                    </div>
                   </div>
                 </div>
 

@@ -347,6 +347,23 @@ html[data-theme="dark"] .po-header-banner {
     gap: 14px;
 }
 
+.po-payment-method-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.po-payment-method-row .po-label {
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.po-payment-method-row .po-label .hint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .po-payment-notice {
     display: flex;
     align-items: flex-start;
@@ -2121,6 +2138,124 @@ html[data-theme="dark"] .po-editing-badge {
     font-size: 15px;
     font-weight: 800;
     color: var(--text);
+}
+
+/* ==========================================================================
+   Cash Tendered & Change / Shortfall Calculator (Reusable across Payment UI)
+   ========================================================================== */
+.po-cash-tendered-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    animation: fadeIn 0.18s ease;
+}
+
+.po-cash-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 640px) {
+    .po-cash-breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.po-cash-metric {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    min-width: 0;
+}
+
+.po-cash-metric-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-cash-metric-value {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.po-cash-status-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.po-cash-status-box .po-cash-metric-label {
+    color: inherit;
+}
+
+.po-cash-status-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.po-cash-status-amount {
+    font-size: 13.5px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.po-cash-status-box.is-idle {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.po-cash-status-box.is-change,
+.po-cash-status-box.is-exact {
+    background: rgba(22, 163, 74, 0.10);
+    border-color: rgba(22, 163, 74, 0.35);
+    color: #15803d;
+}
+
+html[data-theme="dark"] .po-cash-status-box.is-change,
+html[data-theme="dark"] .po-cash-status-box.is-exact {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #4ade80;
+}
+
+.po-cash-status-box.is-shortfall {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #dc2626;
+}
+
+html[data-theme="dark"] .po-cash-status-box.is-shortfall {
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.35);
+    color: #f87171;
 }
 
 /* ==========================================================================

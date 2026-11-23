@@ -11,6 +11,7 @@
 
 import { BaseModalHandler } from "../../core/BaseModalHandler.js";
 import { RequestHandler } from "../../core/RequestHandler.js";
+import { CashPaymentHandler } from "../../core/CashPaymentHandler.js";
 import { GrnPaymentBuilder } from "../builders/GrnPaymentBuilder.js";
 import { GrnPaymentProcessor } from "../processors/GrnPaymentProcessor.js";
 
@@ -44,6 +45,22 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     this.selectedPaymentTypeId = 1;
     this.selectedMethod = "Cash";
     this.isSubmitting = false;
+
+    this.cashPaymentHandler = new CashPaymentHandler({
+      payableInputId: "grnModalAmount",
+      paymentMethodSelectId: "grnPaymentTypeId",
+      cashSectionId: "grnCashTenderedGroup",
+      cashReceivedInputId: "grnCashReceived",
+      payableDisplayId: "grnCashPayableVal",
+      cashGivenDisplayId: "grnCashGivenVal",
+      statusBoxId: "grnCashStatusBox",
+      statusIconId: "grnCashStatusIcon",
+      statusLabelId: "grnCashStatusLabel",
+      statusAmountId: "grnCashStatusAmount",
+      isCashMethod: () =>
+        Number(this.selectedPaymentTypeId) === 1 ||
+        /\bcash\b/i.test(String(this.selectedMethod || "")),
+    });
 
     this.bindEvents();
   }
@@ -217,6 +234,9 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     this.resetSupplierUI();
     this.renderSelectedPoTable();
     this.recalculateSummary();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
 
     // Load suppliers & available purchase orders concurrently
     await Promise.all([
@@ -520,6 +540,9 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     this.renderSelectedPoTable();
     this.recalculateSummary();
     this.updateMethodFields();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
   }
 
   clearSelectedSupplier() {
@@ -533,6 +556,9 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     this.renderSelectedPoTable();
     this.recalculateSummary();
     this.updateMethodFields();
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.reset();
+    }
   }
 
   addPoObject(grnOrPo) {
@@ -890,6 +916,10 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     } else {
       stageSelect.value = "Advance Payment";
     }
+
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.update();
+    }
   }
 
   setPaymentType(typeId, methodName = null) {
@@ -917,6 +947,10 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     });
 
     this.updateMethodFields();
+
+    if (this.cashPaymentHandler) {
+      this.cashPaymentHandler.update();
+    }
   }
 
   updateMethodFields() {
@@ -996,6 +1030,16 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
     if (isNaN(amount) || amount <= 0) {
       this.showToast("Please enter a valid disbursement amount greater than Rs. 0.", "error");
       return;
+    }
+
+    if (this.cashPaymentHandler) {
+      const cashValidation = this.cashPaymentHandler.validate();
+      if (!cashValidation.isValid) {
+        this.showToast(cashValidation.error, "error");
+        const cashEl = document.getElementById(cashValidation.targetId);
+        if (cashEl) cashEl.focus();
+        return;
+      }
     }
 
     const stage = document.getElementById("grnModalStageSelect")?.value || "Advance Payment";
