@@ -311,6 +311,91 @@ class PrintJobService
     }
 
     /**
+     * Create multiple print jobs for a single customer in one atomic transaction.
+     * Any initial advance deposit is sequentially allocated across the created jobs.
+     *
+     * @param  array<string, mixed>  $data
+     * @return Collection<int, PrintJob>
+     */
+    public function createPrintJobsBatch(array $data): Collection
+    {
+        return DB::transaction(function () use ($data): Collection {
+            $orders = $data['orders'] ?? [];
+            $remainingPaid = max(0.0, (float) ($data['payment_amount'] ?? $data['paid_amount'] ?? 0));
+            $paymentTypeId = ! empty($data['payment_types_id']) ? (int) $data['payment_types_id'] : null;
+            $addDate = $data['add_date'] ?? now();
+            $totalOrdersCount = count($orders);
+            $createdJobs = new Collection;
+
+            foreach ($orders as $index => $orderData) {
+                $itemTotal = $this->calculateOrderTotal($orderData);
+                $isLastOrder = ($index === $totalOrdersCount - 1);
+
+                $allocatedPaid = 0.0;
+                if ($remainingPaid > 0) {
+                    if ($isLastOrder) {
+                        $allocatedPaid = round($remainingPaid, 2);
+                    } elseif ($itemTotal > 0) {
+                        $allocatedPaid = round(min($remainingPaid, $itemTotal), 2);
+                    }
+                    $remainingPaid = max(0.0, round($remainingPaid - $allocatedPaid, 2));
+                }
+
+                $jobPayload = array_merge($orderData, [
+                    'customer_id' => (int) $data['customer_id'],
+                    'add_date' => $addDate,
+                    'total_amount' => $itemTotal,
+                    'paid_amount' => $allocatedPaid,
+                    'payment_amount' => $allocatedPaid,
+                    'payment_types_id' => $allocatedPaid > 0 ? $paymentTypeId : null,
+                    'payment_statuses_id' => null,
+                ]);
+
+                $createdJobs->push($this->createPrintJob($jobPayload));
+            }
+
+            return $createdJobs;
+        });
+    }
+
+    /**
+     * Compute the total payable amount for a single order item payload.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function calculateOrderTotal(array $data): float
+    {
+        if (! empty($data['total_amount']) && (float) $data['total_amount'] > 0) {
+            return round((float) $data['total_amount'], 2);
+        }
+
+        $unitPrice = (float) ($data['unit_price'] ?? 0);
+        $qty = max(1, (int) ($data['qty'] ?? 1));
+        $width = (float) ($data['wtdth'] ?? 0);
+        $height = (float) ($data['hight'] ?? 0);
+        $unit = ! empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
+        $unitSymbol = $unit?->simble ?? 'ft';
+
+        if ($unitSymbol === 'pcs') {
+            $subtotal = $unitPrice * $qty;
+        } else {
+            $areaSqFt = match ($unitSymbol) {
+                'in' => ($width * $height) / 144,
+                'cm' => ($width * $height) / 929.0304,
+                'mm' => ($width * $height) / 92903.04,
+                'm' => ($width * $height) * 10.7639,
+                default => ($width * $height),
+            };
+            $subtotal = $areaSqFt * $unitPrice * $qty;
+        }
+
+        $designFee = (isset($data['design_status']) && $data['design_status'] === 'Shop Creates Design') ? 500.0 : 0.0;
+        $discount = max(0.0, (float) ($data['discount'] ?? 0));
+
+        return round(max(0.0, $subtotal + $designFee - $discount), 2);
+    }
+
+    /**
      * Update an existing print job.
      *
      * @param  array<string, mixed>  $data

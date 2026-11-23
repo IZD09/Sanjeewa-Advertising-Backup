@@ -20,8 +20,7 @@ class PrintJobController extends BaseApiController
 {
     public function __construct(
         protected PrintJobService $printJobService
-    ) {
-    }
+    ) {}
 
     /**
      * Display the Print Jobs Production Floor view populated with real database datasets from PrintJob module.
@@ -128,10 +127,25 @@ class PrintJobController extends BaseApiController
     }
 
     /**
-     * Store a newly created print job in storage.
+     * Store one or more newly created print jobs in storage.
      */
     public function store(StorePrintJobRequest $request): JsonResponse
     {
+        if ($request->has('orders')) {
+            $printJobs = $this->printJobService->createPrintJobsBatch($request->validated());
+            $count = $printJobs->count();
+
+            return $this->created(
+                [
+                    'count' => $count,
+                    'orders' => PrintJobResource::collection($printJobs),
+                ],
+                $count === 1
+                    ? 'Print job created successfully.'
+                    : "{$count} print jobs created successfully."
+            );
+        }
+
         $printJob = $this->printJobService->createPrintJob($request->validated());
 
         return $this->created(

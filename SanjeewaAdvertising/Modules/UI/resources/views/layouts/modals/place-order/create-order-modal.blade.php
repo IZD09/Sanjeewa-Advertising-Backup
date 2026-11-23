@@ -24,7 +24,7 @@
     </div>
 
     <div class="po-modal-body" style="padding: 22px; max-height: calc(92vh - 65px); overflow-y: auto;">
-      <form id="placeOrderForm" autocomplete="off">
+      <form id="placeOrderForm" autocomplete="off" novalidate>
         <div class="po-form-grid po-form-vertical">
 
           <!-- Section 1: Customer & Product Details -->
@@ -293,12 +293,89 @@
               </div>
             </div>
 
+            <!-- Add / Update Order Action Bar -->
+            <div class="po-add-order-bar">
+              <div class="po-add-order-meta">
+                <div class="po-item-total-pill">
+                  <span>Order Item Total:</span>
+                  <strong id="liveOrderItemTotal">Rs. 0.00</strong>
+                </div>
+                <span class="po-editing-badge" id="editingOrderBadge" style="display: none;">
+                  <i class="fa-solid fa-pen"></i> Editing Order
+                </span>
+              </div>
+
+              <div class="po-add-order-actions">
+                <button type="button" class="po-btn po-btn-secondary" id="cancelEditOrderItemBtn" style="display: none;">
+                  <i class="fa-solid fa-xmark"></i> Cancel Edit
+                </button>
+                <button type="button" class="po-btn po-btn-primary" id="addOrderItemBtn">
+                  <i class="fa-solid fa-plus"></i> Add Order
+                </button>
+              </div>
+            </div>
+
           </div>
 
-          <!-- Section 3: Payment & Billing Details -->
+          <!-- Section 3: Queued Orders Table -->
+          <div class="po-section-card" id="queuedOrdersSection">
+            <div class="po-section-header po-queued-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="step-badge">3</span>
+                <div>
+                  <h3>Queued Orders for Customer</h3>
+                  <span class="po-section-subtitle">Click on any order row to load its details back into the form for editing</span>
+                </div>
+              </div>
+              <div class="po-queued-header-badges">
+                <span class="po-queued-count-badge" id="queuedOrdersCountBadge">0 Orders</span>
+              </div>
+            </div>
+
+            <div class="po-queued-table-wrap">
+              <table class="po-queued-table" id="queuedOrdersTable">
+                <thead>
+                  <tr>
+                    <th style="width: 44px; text-align: center;">#</th>
+                    <th>Printing Type &amp; Design</th>
+                    <th>Assigned Staff</th>
+                    <th>Dimensions</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th style="text-align: right;">Unit Price</th>
+                    <th style="text-align: right;">Discount</th>
+                    <th>Delivery &amp; Deadline</th>
+                    <th style="text-align: right;">Total (Rs.)</th>
+                    <th style="width: 60px; text-align: center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="queuedOrdersTableBody">
+                  <tr class="po-queued-empty-row">
+                    <td colspan="10">
+                      <div class="po-queued-empty-state">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>No orders added yet. Fill in the order details above and click <strong>Add Order</strong> to queue orders for this customer.</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="po-queued-footer">
+              <span class="po-queued-footer-hint">
+                <i class="fa-solid fa-hand-pointer"></i> Tip: Click any row to edit it, or use the trash icon to remove it.
+              </span>
+              <div class="po-queued-grand-total">
+                <span>Combined Orders Total:</span>
+                <strong id="queuedOrdersGrandTotal">Rs. 0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Payment & Billing Details -->
           <div class="po-section-card">
             <div class="po-section-header">
-              <span class="step-badge">3</span>
+              <span class="step-badge">4</span>
               <div>
                 <h3>Payment & Billing Details</h3>
                 <span class="po-section-subtitle">Record advance deposit, select payment method, and review balance calculation</span>

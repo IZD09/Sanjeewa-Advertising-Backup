@@ -592,4 +592,174 @@ class PrintJobModuleTest extends TestCase
             'payment_statuses_id' => 2,
         ]);
     }
+
+    public function test_can_create_multiple_orders_for_same_customer_with_advance_payment_allocation(): void
+    {
+        $unit = Unit::firstOrCreate(['id' => 1], ['simble' => 'ft', 'name' => 'Feet']);
+        $deliveryMethod = DeliveryMethod::firstOrCreate(['id' => 1], ['methord' => 'Customer Pickup']);
+        $deadline = now()->addDays(3)->format('Y-m-d');
+
+        $payload = [
+            'customer_id' => $this->customer->id,
+            'paid_amount' => 5000.00,
+            'payment_amount' => 5000.00,
+            'payment_types_id' => 1,
+            'orders' => [
+                [
+                    'users_id' => $this->user->id,
+                    'print_types_id' => $this->printType->id,
+                    'wtdth' => 10,
+                    'hight' => 4,
+                    'unit_id' => $unit->id,
+                    'delivery_method_id' => $deliveryMethod->id,
+                    'qty' => 1,
+                    'unit_price' => 100.00,
+                    'discount' => 0,
+                    'design_status' => 'Customer Provides Design',
+                    'total_amount' => 4000.00,
+                    'delivery_date' => $deadline,
+                    'deadline' => $deadline,
+                    'discription' => 'Banner 1',
+                ],
+                [
+                    'users_id' => $this->user->id,
+                    'print_types_id' => $this->printType->id,
+                    'wtdth' => 10,
+                    'hight' => 6,
+                    'unit_id' => $unit->id,
+                    'delivery_method_id' => $deliveryMethod->id,
+                    'qty' => 1,
+                    'unit_price' => 100.00,
+                    'discount' => 0,
+                    'design_status' => 'Customer Provides Design',
+                    'total_amount' => 6000.00,
+                    'delivery_date' => $deadline,
+                    'deadline' => $deadline,
+                    'discription' => 'Banner 2',
+                ],
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => '2 print jobs created successfully.',
+            ])
+            ->assertJsonPath('data.count', 2)
+            ->assertJsonCount(2, 'data.orders');
+
+        $firstJobId = $response->json('data.orders.0.id');
+        $secondJobId = $response->json('data.orders.1.id');
+
+        $this->assertDatabaseHas('print_jobs', [
+            'id' => $firstJobId,
+            'customer_id' => $this->customer->id,
+            'discription' => 'Banner 1',
+        ]);
+        $this->assertDatabaseHas('print_jobs', [
+            'id' => $secondJobId,
+            'customer_id' => $this->customer->id,
+            'discription' => 'Banner 2',
+        ]);
+
+        // Order 1 fully covered (4000 / 4000 -> Completed status 2)
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $firstJobId,
+            'payment' => 4000.00,
+            'payment_types_id' => 1,
+            'payment_statuses_id' => 2,
+        ]);
+
+        // Order 2 receives remaining advance (1000 / 6000 -> Partial status 3)
+        $this->assertDatabaseHas('payments', [
+            'print_jobs_id' => $secondJobId,
+            'payment' => 1000.00,
+            'payment_types_id' => 1,
+            'payment_statuses_id' => 3,
+        ]);
+    }
+
+    public function test_can_create_multiple_orders_without_advance_payment(): void
+    {
+        $unit = Unit::firstOrCreate(['id' => 1], ['simble' => 'ft', 'name' => 'Feet']);
+        $deliveryMethod = DeliveryMethod::firstOrCreate(['id' => 1], ['methord' => 'Customer Pickup']);
+        $deadline = now()->addDays(2)->format('Y-m-d');
+
+        $payload = [
+            'customer_id' => $this->customer->id,
+            'paid_amount' => 0,
+            'orders' => [
+                [
+                    'users_id' => $this->user->id,
+                    'print_types_id' => $this->printType->id,
+                    'wtdth' => 5,
+                    'hight' => 3,
+                    'unit_id' => $unit->id,
+                    'delivery_method_id' => $deliveryMethod->id,
+                    'qty' => 2,
+                    'unit_price' => 100.00,
+                    'deadline' => $deadline,
+                ],
+                [
+                    'users_id' => $this->user->id,
+                    'print_types_id' => $this->printType->id,
+                    'wtdth' => 4,
+                    'hight' => 2,
+                    'unit_id' => $unit->id,
+                    'delivery_method_id' => $deliveryMethod->id,
+                    'qty' => 1,
+                    'unit_price' => 120.00,
+                    'deadline' => $deadline,
+                ],
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/print-jobs', $payload);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.count', 2);
+
+        $firstJobId = $response->json('data.orders.0.id');
+        $secondJobId = $response->json('data.orders.1.id');
+
+        $this->assertDatabaseMissing('payments', ['print_jobs_id' => $firstJobId]);
+        $this->assertDatabaseMissing('payments', ['print_jobs_id' => $secondJobId]);
+    }
+
+    public function test_batch_order_creation_validates_empty_orders_and_missing_payment_method(): void
+    {
+        $emptyResponse = $this->postJson('/api/v1/print-jobs', [
+            'customer_id' => $this->customer->id,
+            'orders' => [],
+        ]);
+
+        $emptyResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['orders']);
+
+        $unit = Unit::firstOrCreate(['id' => 1], ['simble' => 'ft', 'name' => 'Feet']);
+        $deliveryMethod = DeliveryMethod::firstOrCreate(['id' => 1], ['methord' => 'Customer Pickup']);
+
+        $missingPaymentMethodResponse = $this->postJson('/api/v1/print-jobs', [
+            'customer_id' => $this->customer->id,
+            'paid_amount' => 500.00,
+            'orders' => [
+                [
+                    'users_id' => $this->user->id,
+                    'print_types_id' => $this->printType->id,
+                    'wtdth' => 5,
+                    'hight' => 5,
+                    'unit_id' => $unit->id,
+                    'delivery_method_id' => $deliveryMethod->id,
+                    'qty' => 1,
+                    'unit_price' => 100.00,
+                    'deadline' => now()->addDays(2)->format('Y-m-d'),
+                ],
+            ],
+        ]);
+
+        $missingPaymentMethodResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['payment_types_id']);
+    }
 }

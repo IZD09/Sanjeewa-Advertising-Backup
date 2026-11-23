@@ -13,6 +13,7 @@
 import { RequestHandler } from "../../core/RequestHandler.js";
 import { PrintingOrderBuilder, PrintingOrder } from "../builders/PrintingOrderBuilder.js";
 import { PRINTING_TYPES, PRINTING_TYPE_PRODUCTS } from "../PlaceOrderDataLoad.js";
+import { OrderCreationProcess } from "../order-creation/OrderCreationProcess.js";
 
 export class PlaceOrderProcess {
   /**
@@ -61,8 +62,15 @@ export class PlaceOrderProcess {
     this.http = new RequestHandler();
 
     this.setupDatePickers();
-    this.bindEvents();
     this.hydrateDropdownsFromServerScript();
+
+    this.orderCreationProcess = new OrderCreationProcess({
+      pricingCalculator: this.pricingCalculator,
+      getSelectedCustomer: () => this.resolveSelectedCustomer(),
+      showToast: this.showToast,
+    });
+
+    this.bindEvents();
 
     const typeSelect = document.getElementById("poPrintingType");
     if (typeSelect) {
@@ -70,6 +78,28 @@ export class PlaceOrderProcess {
     }
 
     this.updateCalculation();
+  }
+
+  /**
+   * Resolve currently selected customer from handler or hidden DOM fallback.
+   *
+   * @returns {Object|null}
+   */
+  resolveSelectedCustomer() {
+    let customer = this.getSelectedCustomer();
+    if (!customer || !customer.id) {
+      const hiddenId = document.getElementById("selectedCustomerId")?.value;
+      const custName = document.getElementById("selectedCustName")?.textContent;
+      const custMobile = document.getElementById("selectedCustMobile")?.textContent;
+      if (hiddenId && custName && custName !== "Customer Name") {
+        customer = {
+          id: parseInt(hiddenId, 10),
+          name: custName,
+          mobile: custMobile || "",
+        };
+      }
+    }
+    return customer && customer.id ? customer : null;
   }
 
   /**
@@ -265,35 +295,6 @@ export class PlaceOrderProcess {
         this.resetForm();
       });
     }
-
-    const calcFields = [
-      "poWidth",
-      "poHeight",
-      "poUnit",
-      "poQty",
-      "poUnitPrice",
-      "poDiscount",
-      "poPaidAmount",
-      "poDesignStatus",
-      "poPrintingType",
-      "poPaymentMethod",
-    ];
-
-    calcFields.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener("input", () => {
-          if (this.pricingCalculator) {
-            this.pricingCalculator.calculateMainForm();
-          }
-        });
-        el.addEventListener("change", () => {
-          if (this.pricingCalculator) {
-            this.pricingCalculator.calculateMainForm();
-          }
-        });
-      }
-    });
   }
 
   populateProductsForType(typeKey, selectKey = null) {
@@ -340,6 +341,9 @@ export class PlaceOrderProcess {
    * @returns {Object|null}
    */
   updateCalculation() {
+    if (this.orderCreationProcess) {
+      return this.orderCreationProcess.recalculateAll();
+    }
     if (this.pricingCalculator) {
       return this.pricingCalculator.calculateMainForm();
     }
@@ -516,7 +520,11 @@ export class PlaceOrderProcess {
   }
 
   openConfirmation() {
-    const validation = this.validate();
+    const customer = this.resolveSelectedCustomer();
+    const validation = this.orderCreationProcess
+      ? this.orderCreationProcess.validateForReview(customer)
+      : this.validate();
+
     if (!validation.isValid) {
       this.showToast(validation.error, "error");
       if (validation.targetId) {
@@ -526,29 +534,51 @@ export class PlaceOrderProcess {
       return;
     }
 
-    const data = this.getFormData();
+    const queuedItems = this.orderCreationProcess ? this.orderCreationProcess.getQueuedItems() : [];
+    const billing = this.orderCreationProcess
+      ? this.orderCreationProcess.recalculateBillingSummary()
+      : this.getFormData().calc;
+
+    const paymentMethodEl = document.getElementById("poPaymentMethod");
+    const paymentMethodName = paymentMethodEl?.selectedOptions?.[0]?.textContent?.trim() || "Cash";
+
     const setTxt = (id, txt) => {
       const el = document.getElementById(id);
       if (el) el.textContent = txt;
     };
 
     const fmtOpts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-    setTxt("confCustName", data.selectedCustomer?.name || "-");
-    setTxt("confCustMobile", data.selectedCustomer?.mobile || "-");
-    setTxt("confProduct", data.printingTypeName || "Printing Job");
-    setTxt("confSpecs", `${data.width} × ${data.height} ${data.unitSymbol} (Qty: ${data.qty})`);
-    setTxt("confTotal", `Rs. ${data.calc.totalAmount.toLocaleString("en-LK", fmtOpts)}`);
-    setTxt("confPaid", `Rs. ${data.calc.paidAmount.toLocaleString("en-LK", fmtOpts)}`);
-    setTxt("confBalance", `Rs. ${data.calc.balanceAmount.toLocaleString("en-LK", fmtOpts)}`);
-    setTxt("confStatus", data.paymentStatusName || data.calc.paymentStatus);
-    setTxt("confDeadline", data.requiredDate);
-    setTxt("confDeliveryMethod", data.deliveryMethodName);
+    setTxt("confCustName", customer?.name || "-");
+    setTxt("confCustMobile", customer?.mobile || "-");
+
+    if (queuedItems.length === 1) {
+      const first = queuedItems[0];
+      setTxt("confProduct", first.printingTypeName || "Printing Job");
+      setTxt("confSpecs", `${first.getDimensionsLabel()} (Qty: ${first.qty})`);
+      setTxt("confDeadline", first.requiredDate || "-");
+      setTxt("confDeliveryMethod", first.deliveryMethodName || "-");
+    } else {
+      const typeNames = queuedItems.map((item) => item.printingTypeName).filter(Boolean);
+      const totalQty = queuedItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+      const deadlines = [...new Set(queuedItems.map((item) => item.requiredDate).filter(Boolean))];
+      const deliveries = [...new Set(queuedItems.map((item) => item.deliveryMethodName).filter(Boolean))];
+
+      setTxt("confProduct", `${queuedItems.length} Orders (${typeNames.slice(0, 2).join(", ")}${typeNames.length > 2 ? "..." : ""})`);
+      setTxt("confSpecs", `${queuedItems.length} Items • Total Qty: ${totalQty}`);
+      setTxt("confDeadline", deadlines.join(", ") || "-");
+      setTxt("confDeliveryMethod", deliveries.join(", ") || "-");
+    }
+
+    setTxt("confTotal", `Rs. ${billing.totalAmount.toLocaleString("en-LK", fmtOpts)}`);
+    setTxt("confPaid", `Rs. ${billing.paidAmount.toLocaleString("en-LK", fmtOpts)}`);
+    setTxt("confBalance", `Rs. ${billing.balanceAmount.toLocaleString("en-LK", fmtOpts)}`);
+    setTxt("confStatus", billing.paymentStatus || "Unpaid");
 
     const pmRow = document.getElementById("confPaymentMethodRow");
     const pmVal = document.getElementById("confPaymentMethod");
-    if (data.calc.paidAmount > 0) {
+    if (billing.paidAmount > 0) {
       if (pmRow) pmRow.style.display = "flex";
-      if (pmVal) pmVal.textContent = data.paymentMethodName;
+      if (pmVal) pmVal.textContent = paymentMethodName;
     } else {
       if (pmRow) pmRow.style.display = "none";
     }
@@ -557,7 +587,7 @@ export class PlaceOrderProcess {
   }
 
   /**
-   * Submit new order to backend API database via PrintJob module.
+   * Submit queued orders to backend API database via PrintJob module.
    */
   async confirmAndPlaceOrder() {
     const confirmBtn = document.getElementById("confirmPlaceOrderBtn");
@@ -565,65 +595,85 @@ export class PlaceOrderProcess {
       return;
     }
 
-    const validation = this.validate();
+    const customer = this.resolveSelectedCustomer();
+    const validation = this.orderCreationProcess
+      ? this.orderCreationProcess.validateForReview(customer)
+      : this.validate();
+
     if (!validation.isValid) {
       this.showToast(validation.error, "error");
+      this.closeModal("orderConfirmationModal");
+      if (validation.targetId) {
+        const el = document.getElementById(validation.targetId);
+        if (el) el.focus();
+      }
+      return;
+    }
+
+    const queuedItems = this.orderCreationProcess
+      ? this.orderCreationProcess.getQueuedItems()
+      : [];
+
+    if (queuedItems.length === 0) {
+      this.showToast("Please add at least one order to the table before placing the order.", "error");
       this.closeModal("orderConfirmationModal");
       return;
     }
 
     this.isSubmitting = true;
-    const data = this.getFormData();
     const origText = confirmBtn ? confirmBtn.innerHTML : "";
 
     if (confirmBtn) {
       confirmBtn.dataset.submitting = "true";
       confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Order...';
+      confirmBtn.innerHTML = queuedItems.length > 1
+        ? `<i class="fa-solid fa-spinner fa-spin"></i> Saving ${queuedItems.length} Orders...`
+        : '<i class="fa-solid fa-spinner fa-spin"></i> Saving Order...';
     }
 
     try {
-      // 1. Prepare backend payload for /api/v1/print-jobs
-      const customerId = parseInt(data.selectedCustomer?.id, 10) || 1;
-      const printTypeId = parseInt(data.printingTypeId, 10) || 1;
-      const unitId = parseInt(data.unitId, 10) || 1;
-      const statusId = parseInt(data.statusId, 10) || 1;
-      const paymentTypeId = parseInt(data.paymentMethodId, 10) || 1;
+      const billing = this.orderCreationProcess.recalculateBillingSummary();
+      const paymentMethodId = parseInt(document.getElementById("poPaymentMethod")?.value, 10) || 1;
 
       const payload = {
-        users_id: parseInt(data.userId, 10) || 1,
-        customer_id: customerId,
-        print_types_id: printTypeId,
-        wtdth: Math.round(data.width),
-        hight: Math.round(data.height),
-        unit_id: unitId,
-        delivery_method_id: data.deliveryMethodId || 1,
-        qty: data.qty,
-        unit_price: data.unitPrice,
-        discount: data.discount,
-        design_status: data.designStatus,
-        total_amount: data.calc.totalAmount,
-        payment_amount: data.calc.paidAmount,
-        paid_amount: data.calc.paidAmount,
-        payment_types_id: data.calc.paidAmount > 0 ? paymentTypeId : null,
-        payment_statuses_id: data.paymentStatusId || data.calc.paymentStatusId || 1,
-        delivery_date: data.requiredDate,
-        deadline: data.requiredDate,
-        discription: data.notes,
-        notes: data.notes,
+        customer_id: parseInt(customer.id, 10),
+        payment_amount: billing.paidAmount,
+        paid_amount: billing.paidAmount,
+        payment_types_id: billing.paidAmount > 0 ? paymentMethodId : null,
+        payment_statuses_id: billing.paymentStatusId || 1,
+        orders: queuedItems.map((item) => ({
+          users_id: parseInt(item.userId, 10) || 1,
+          print_types_id: parseInt(item.printingTypeId, 10),
+          wtdth: Math.round(Number(item.width) || 0),
+          hight: Math.round(Number(item.height) || 0),
+          unit_id: parseInt(item.unitId, 10) || 1,
+          delivery_method_id: parseInt(item.deliveryMethodId, 10) || 1,
+          qty: parseInt(item.qty, 10) || 1,
+          unit_price: Number(item.unitPrice) || 0,
+          discount: Number(item.discount) || 0,
+          design_status: item.designStatus || "Customer Provides Design",
+          total_amount: Number(item.totalAmount) || 0,
+          delivery_date: item.requiredDate,
+          deadline: item.requiredDate,
+          discription: item.notes || null,
+          notes: item.notes || null,
+        })),
       };
 
-      // 2. Send API request to create order in database via PrintJob module
+      // Send multi-order batch request to PrintJob module
       const result = await this.http.post("/api/v1/print-jobs", payload);
 
       if (result && result.success === false) {
-        throw new Error(result.message || "Failed to store print job in database.");
+        throw new Error(result.message || "Failed to store print jobs in database.");
       }
 
-      const createdJob = result?.data || result;
-      const newJobId = createdJob?.id || Date.now();
+      const responseData = result?.data || result;
+      const createdOrders = Array.isArray(responseData?.orders)
+        ? responseData.orders
+        : [responseData];
+      const createdCount = Number(responseData?.count) || createdOrders.length || queuedItems.length;
 
-      // 3. Reload data from database without full page reload
+      // Reload data from database without full page reload
       let updatedOrders = [];
       let updatedPayments = [];
 
@@ -633,17 +683,26 @@ export class PlaceOrderProcess {
         updatedPayments = fresh.payments;
       }
 
-      // 4. Close confirmation modal & notify user
+      // Close modals & notify user
       this.closeModal("orderConfirmationModal");
       this.closeModal("createOrderModal");
-      this.showToast(`Order ORD-2026-${1000 + Number(newJobId)} placed successfully!`, "success");
 
-      // 5. Reset form and fire callback to refresh UI tables & KPIs
+      if (createdCount === 1) {
+        const firstId = createdOrders[0]?.id || Date.now();
+        this.showToast(`Order ORD-2026-${1000 + Number(firstId)} placed successfully!`, "success");
+      } else {
+        this.showToast(`${createdCount} orders placed successfully for ${customer.name}!`, "success");
+      }
+
+      // Reset form and refresh UI tables & KPIs
       this.resetForm();
-      this.onOrderPlaced(createdJob, updatedOrders, updatedPayments);
+      this.onOrderPlaced(createdOrders[0] || responseData, updatedOrders, updatedPayments);
     } catch (err) {
       console.error("[PlaceOrderProcess] Order placement error:", err);
-      const errMsg = err?.data?.message || err?.message || "Error saving order to database. Please try again.";
+      const validationErrors = err?.data?.errors
+        ? Object.values(err.data.errors).flat().join(" ")
+        : null;
+      const errMsg = validationErrors || err?.data?.message || err?.message || "Error saving orders to database. Please try again.";
       this.showToast(errMsg, "error");
     } finally {
       this.isSubmitting = false;
@@ -698,7 +757,9 @@ export class PlaceOrderProcess {
 
     this.setupDatePickers();
 
-    if (this.pricingCalculator) {
+    if (this.orderCreationProcess) {
+      this.orderCreationProcess.resetAll();
+    } else if (this.pricingCalculator) {
       this.pricingCalculator.calculateMainForm();
     }
 

@@ -60,6 +60,159 @@ export class PricingCalculator {
   }
 
   /**
+   * Pure per-item calculation for the Order Creation Form (Section 2).
+   *
+   * @param {Object} params
+   * @returns {{
+   *   areaSqFt: number,
+   *   designFee: number,
+   *   subtotal: number,
+   *   totalAmount: number,
+   *   qty: number,
+   *   discount: number,
+   *   isPieceUnit: boolean
+   * }}
+   */
+  calculateItemPricing({
+    width = 0,
+    height = 0,
+    unitVal = "1",
+    unitSymbol = "ft",
+    qty = 1,
+    unitPrice = 0,
+    discount = 0,
+    designStatus = "Customer Provides Design",
+  } = {}) {
+    const safeWidth = parseFloat(width) || 0;
+    const safeHeight = parseFloat(height) || 0;
+    const safeQty = parseInt(qty, 10) || 1;
+    const safeUnitPrice = parseFloat(unitPrice) || 0;
+    const safeDiscount = Math.max(0, parseFloat(discount) || 0);
+    const isPieceUnit = String(unitSymbol || "").toLowerCase() === "pcs" || String(unitVal) === "6";
+
+    let areaSqFt = 0;
+    let subtotal = 0;
+
+    if (isPieceUnit) {
+      subtotal = safeQty * safeUnitPrice;
+    } else {
+      areaSqFt = this.calculateAreaInSqFt(safeWidth, safeHeight, unitSymbol || unitVal);
+      subtotal = areaSqFt * safeUnitPrice * safeQty;
+    }
+
+    const designFee = designStatus === "Shop Creates Design" ? 500.00 : 0;
+    subtotal = Math.round(subtotal * 100) / 100;
+    const totalAmount = Math.max(0, Math.round((subtotal + designFee - safeDiscount) * 100) / 100);
+
+    return {
+      areaSqFt,
+      designFee,
+      subtotal,
+      totalAmount,
+      qty: safeQty,
+      discount: safeDiscount,
+      isPieceUnit,
+    };
+  }
+
+  /**
+   * Calculate & render Section 4 Payment & Billing Summary from a given grand total.
+   *
+   * @param {number} grandTotal
+   * @param {number} rawPaidAmount
+   * @returns {{
+   *   totalAmount: number,
+   *   paidAmount: number,
+   *   balanceAmount: number,
+   *   paymentStatus: string,
+   *   paymentStatusId: number
+   * }}
+   */
+  calculateBillingSummary(grandTotal = 0, rawPaidAmount = 0) {
+    const totalAmount = Math.max(0, Math.round((Number(grandTotal) || 0) * 100) / 100);
+    let paidAmount = parseFloat(rawPaidAmount) || 0;
+
+    if (paidAmount < 0) {
+      paidAmount = 0;
+      const paidInput = document.getElementById("poPaidAmount");
+      if (paidInput) paidInput.value = "0.00";
+    }
+
+    const balanceAmount = Math.max(0, Math.round((totalAmount - paidAmount) * 100) / 100);
+
+    let paymentStatus = "Unpaid";
+    let statusClass = "unpaid";
+    let paymentStatusId = 1;
+    let targetType = "unpaid";
+
+    if (paidAmount >= totalAmount && totalAmount > 0) {
+      paymentStatus = "Paid";
+      statusClass = "paid";
+      paymentStatusId = 2;
+      targetType = "paid";
+    } else if (paidAmount > 0 && balanceAmount > 0) {
+      paymentStatus = "Partially Paid";
+      statusClass = "partially-paid";
+      paymentStatusId = 3;
+      targetType = "partial";
+    }
+
+    // Auto-sync poPaymentStatus dropdown
+    const payStatusSelect = document.getElementById("poPaymentStatus");
+    if (payStatusSelect) {
+      const opts = Array.from(payStatusSelect.options);
+      let matched = null;
+      if (targetType === "paid") {
+        matched = opts.find(o => /paid|completed/i.test(o.textContent) && !/partial|unpaid/i.test(o.textContent))
+          || opts.find(o => o.value === "2");
+      } else if (targetType === "partial") {
+        matched = opts.find(o => /partial/i.test(o.textContent))
+          || opts.find(o => o.value === "3");
+      } else {
+        matched = opts.find(o => /pending|unpaid/i.test(o.textContent))
+          || opts.find(o => o.value === "1");
+      }
+      if (matched) {
+        payStatusSelect.value = matched.value;
+        paymentStatusId = parseInt(matched.value, 10) || paymentStatusId;
+      }
+    }
+
+    const fmtOpts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    const totalElem = document.getElementById("liveTotalAmount");
+    const paidElem = document.getElementById("livePaidAmount");
+    const balanceElem = document.getElementById("liveBalanceAmount");
+    const statusElem = document.getElementById("livePaymentStatus");
+
+    if (totalElem) totalElem.textContent = `Rs. ${totalAmount.toLocaleString("en-LK", fmtOpts)}`;
+    if (paidElem) paidElem.textContent = `Rs. ${paidAmount.toLocaleString("en-LK", fmtOpts)}`;
+    if (balanceElem) balanceElem.textContent = `Rs. ${balanceAmount.toLocaleString("en-LK", fmtOpts)}`;
+    if (statusElem) {
+      statusElem.textContent = paymentStatus;
+      statusElem.className = `status-badge ${statusClass}`;
+    }
+
+    const payMethodGroup = document.getElementById("poPaymentMethodGroup");
+    const payMethodReq = document.getElementById("poPaymentMethodReq");
+    const payMethodSelect = document.getElementById("poPaymentMethod");
+    const payNotice = document.getElementById("poPaymentNotice");
+
+    if (paidAmount > 0) {
+      if (payMethodGroup) payMethodGroup.classList.add("highlight-payment-active");
+      if (payMethodReq) payMethodReq.style.display = "inline";
+      if (payNotice) payNotice.style.display = "flex";
+      if (payMethodSelect) payMethodSelect.required = true;
+    } else {
+      if (payMethodGroup) payMethodGroup.classList.remove("highlight-payment-active");
+      if (payMethodReq) payMethodReq.style.display = "none";
+      if (payNotice) payNotice.style.display = "none";
+      if (payMethodSelect) payMethodSelect.required = false;
+    }
+
+    return { totalAmount, paidAmount, balanceAmount, paymentStatus, paymentStatusId };
+  }
+
+  /**
    * Real-time calculation for main order creation form.
    *
    * @returns {{
