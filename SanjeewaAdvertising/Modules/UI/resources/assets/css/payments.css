@@ -2139,7 +2139,7 @@ html[data-theme="dark"] .installment-badge {
 .po-cash-breakdown-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
 }
 
 @media (max-width: 640px) {
@@ -2152,16 +2152,18 @@ html[data-theme="dark"] .installment-badge {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 4px;
-    padding: 9px 12px;
+    gap: 3px;
+    padding: 8px 10px;
     border-radius: 8px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .po-cash-metric-label {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -2169,13 +2171,20 @@ html[data-theme="dark"] .installment-badge {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .po-cash-metric-value {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--text);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+    letter-spacing: -0.2px;
 }
 
 .po-cash-status-box {
@@ -2183,29 +2192,57 @@ html[data-theme="dark"] .installment-badge {
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    gap: 4px;
-    padding: 9px 12px;
+    gap: 3px;
+    padding: 8px 10px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
     border: 1px solid var(--border);
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .po-cash-status-box .po-cash-metric-label {
     color: inherit;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .po-cash-status-left {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.po-cash-status-left i {
+    flex-shrink: 0;
+    font-size: 10.5px;
+}
+
+.po-cash-status-left span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
 }
 
 .po-cash-status-amount {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 800;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+    letter-spacing: -0.2px;
 }
 
 .po-cash-status-box.is-idle {

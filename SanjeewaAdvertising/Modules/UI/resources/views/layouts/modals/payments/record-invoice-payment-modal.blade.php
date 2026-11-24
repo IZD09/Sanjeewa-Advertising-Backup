@@ -259,7 +259,7 @@
               <div class="po-cash-metric po-cash-status-box is-idle" id="invCashStatusBox">
                 <span class="po-cash-metric-label po-cash-status-left">
                   <i class="fa-solid fa-coins" id="invCashStatusIcon"></i>
-                  <span id="invCashStatusLabel">Change / Shortfall</span>
+                  <span id="invCashStatusLabel" title="Change / Due">Change / Due</span>
                 </span>
                 <strong class="po-cash-status-amount" id="invCashStatusAmount">—</strong>
               </div>

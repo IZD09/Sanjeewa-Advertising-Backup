@@ -277,23 +277,47 @@ export class CashPaymentHandler {
     if (state.status === "change") {
       boxEl.classList.add("is-change");
       if (iconEl) iconEl.className = "fa-solid fa-hand-holding-dollar";
-      if (labelEl) labelEl.textContent = "Change to Return";
-      if (amountEl) amountEl.textContent = this.formatCurrency(state.changeAmount);
+      if (labelEl) {
+        labelEl.textContent = "Change Return";
+        labelEl.title = "Change to Return";
+      }
+      if (amountEl) {
+        amountEl.textContent = this.formatCurrency(state.changeAmount);
+        amountEl.title = this.formatCurrency(state.changeAmount);
+      }
     } else if (state.status === "shortfall") {
       boxEl.classList.add("is-shortfall");
       if (iconEl) iconEl.className = "fa-solid fa-triangle-exclamation";
-      if (labelEl) labelEl.textContent = "Shortfall (Still Needed)";
-      if (amountEl) amountEl.textContent = this.formatCurrency(state.shortfallAmount);
+      if (labelEl) {
+        labelEl.textContent = "Shortfall / Due";
+        labelEl.title = "Shortfall (Still Needed)";
+      }
+      if (amountEl) {
+        amountEl.textContent = this.formatCurrency(state.shortfallAmount);
+        amountEl.title = this.formatCurrency(state.shortfallAmount);
+      }
     } else if (state.status === "exact") {
       boxEl.classList.add("is-exact");
       if (iconEl) iconEl.className = "fa-solid fa-circle-check";
-      if (labelEl) labelEl.textContent = "Exact Cash";
-      if (amountEl) amountEl.textContent = this.formatCurrency(0);
+      if (labelEl) {
+        labelEl.textContent = "Exact Cash";
+        labelEl.title = "Exact Cash Given";
+      }
+      if (amountEl) {
+        amountEl.textContent = this.formatCurrency(0);
+        amountEl.title = this.formatCurrency(0);
+      }
     } else {
       boxEl.classList.add("is-idle");
       if (iconEl) iconEl.className = "fa-solid fa-coins";
-      if (labelEl) labelEl.textContent = "Change / Shortfall";
-      if (amountEl) amountEl.textContent = "—";
+      if (labelEl) {
+        labelEl.textContent = "Change / Due";
+        labelEl.title = "Change / Shortfall";
+      }
+      if (amountEl) {
+        amountEl.textContent = "—";
+        amountEl.title = "";
+      }
     }
   }
 }
