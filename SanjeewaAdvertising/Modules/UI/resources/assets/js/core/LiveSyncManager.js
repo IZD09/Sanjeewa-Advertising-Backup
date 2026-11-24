@@ -1,13 +1,15 @@
 /**
- * SanjeewaAdvertising - Core Live Sync Manager (Option 2 Architecture)
+ * SanjeewaAdvertising - Core Live Sync Manager (Optimized Option 2 Architecture)
  *
- * Lightweight, zero-dependency real-time synchronization across all users and tabs:
- * - Polls GET /api/v1/live-sync/versions (Cache-backed, zero DB queries) every 4s
+ * Lightweight, zero-dependency real-time synchronization built for 60-150+ concurrent users:
+ * - Same-Browser Tab Leader Election: only 1 tab per browser polls the server and shares
+ *   updates with all other open tabs via BroadcastChannel
+ * - 8s Base Interval + Random Jitter (±1.5s): prevents synchronized polling spikes
+ * - ETag / If-None-Match (HTTP 304 Not Modified): 0-byte server responses when nothing changed
+ * - Staggered Reload Delay (200ms–1500ms): prevents DB thundering herd when an update occurs
  * - Sends X-Background-Poll: 1 so session inactivity timeout is never reset
- * - Only invokes subscribed page refresh callbacks when a channel's version increases
- * - Uses browser BroadcastChannel for instant (<5ms) cross-tab sync on the same PC
- * - Automatically pauses polling when the browser tab is hidden and syncs immediately on return
- * - Safe with Hotwire Turbo navigation (prevents duplicate listeners and memory leaks)
+ * - Auto-pauses when browser tab is hidden and syncs immediately upon return
+ * - Safe with Hotwire Turbo navigation
  */
 
 export class LiveSyncManager {
@@ -16,20 +18,29 @@ export class LiveSyncManager {
   /**
    * @param {Object} [options={}]
    * @param {string} [options.endpoint="/api/v1/live-sync/versions"]
-   * @param {number} [options.intervalMs=4000]
+   * @param {number} [options.intervalMs=8000]
+   * @param {number} [options.jitterMs=1500]
+   * @param {number} [options.staggerMinMs=200]
+   * @param {number} [options.staggerMaxMs=1500]
    * @param {string} [options.broadcastChannelName="sanjeewa_live_sync"]
    */
   constructor(options = {}) {
     this.endpoint = options.endpoint || "/api/v1/live-sync/versions";
-    this.intervalMs = options.intervalMs || 4000;
+    this.intervalMs = options.intervalMs || 8000;
+    this.jitterMs = options.jitterMs ?? 1500;
+    this.staggerMinMs = options.staggerMinMs ?? 200;
+    this.staggerMaxMs = options.staggerMaxMs ?? 1500;
     this.broadcastChannelName = options.broadcastChannelName || "sanjeewa_live_sync";
+    this.leaderStorageKey = "sanjeewa_live_sync_leader";
+    this.leaderLeaseMs = Math.max(15000, this.intervalMs * 2);
 
-    /** @type {Map<string, { key: string, channels: string[], callback: Function, isRunning: boolean, pendingRerun: boolean }>} */
+    /** @type {Map<string, { key: string, channels: string[], callback: Function, isRunning: boolean, pendingRerun: boolean, staggerTimerId: number|null }>} */
     this.subscriptions = new Map();
 
     /** @type {Record<string, number>} */
     this.knownVersions = {};
 
+    this.lastEtag = "";
     this.timerId = null;
     this.isChecking = false;
     this.hasInitializedVersions = false;
@@ -58,7 +69,7 @@ export class LiveSyncManager {
    * @param {string|string[]} channels
    * @param {Function} callback
    * @param {Object} [options={}]
-   * @param {string} [options.key] Unique key to prevent duplicate subscriptions on Turbo reloads
+   * @param {string} [options.key]
    * @returns {Function} Unsubscribe function
    */
   static subscribe(channels, callback, options = {}) {
@@ -78,11 +89,11 @@ export class LiveSyncManager {
    * Trigger an immediate version check.
    */
   static checkNow() {
-    return LiveSyncManager.getInstance().checkVersions();
+    return LiveSyncManager.getInstance().checkVersions({ forcePoll: true });
   }
 
   /**
-   * Initialize browser BroadcastChannel for instant same-browser multi-tab sync.
+   * Initialize browser BroadcastChannel for leader-to-follower sync & instant local mutations.
    * @private
    */
   initBroadcastChannel() {
@@ -97,7 +108,12 @@ export class LiveSyncManager {
         if (!msg || msg.sender === this.tabId) return;
 
         if (msg.type === "mutation" && Array.isArray(msg.channels) && msg.channels.length > 0) {
-          this.triggerSubscribersForChannels(msg.channels);
+          this.triggerSubscribersForChannels(msg.channels, { immediate: true });
+        } else if (msg.type === "versions" && msg.versions && typeof msg.versions === "object") {
+          if (msg.etag) {
+            this.lastEtag = msg.etag;
+          }
+          this.applyVersionMap(msg.versions, { baselineOnly: !this.hasInitializedVersions, immediate: false });
         }
       };
     } catch (err) {
@@ -106,7 +122,7 @@ export class LiveSyncManager {
   }
 
   /**
-   * Bind visibility and Turbo lifecycle listeners.
+   * Bind visibility, Turbo navigation, and unload listeners.
    * @private
    */
   bindLifecycleEvents() {
@@ -114,19 +130,20 @@ export class LiveSyncManager {
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
+        this.releaseLeadership();
         this.stopPolling();
       } else if (this.subscriptions.size > 0) {
-        this.checkVersions();
-        this.startPolling();
+        this.checkVersions({ forcePoll: true });
+        this.scheduleNextPoll();
       }
     });
 
-    // Clear page-scoped subscriptions before Turbo swaps the body
     document.addEventListener("turbo:before-visit", () => {
       this.clearAllSubscriptions();
     });
 
     window.addEventListener("beforeunload", () => {
+      this.releaseLeadership();
       this.stopPolling();
       if (this.broadcastChannel) {
         try {
@@ -136,6 +153,58 @@ export class LiveSyncManager {
         }
       }
     });
+  }
+
+  /**
+   * Attempt to claim or renew the single-tab poller leadership lease for this browser.
+   *
+   * @returns {boolean} True if this tab is the active leader
+   */
+  tryAcquireLeadership() {
+    if (typeof localStorage === "undefined") {
+      return true;
+    }
+
+    try {
+      const now = Date.now();
+      const raw = localStorage.getItem(this.leaderStorageKey);
+      if (raw) {
+        const current = JSON.parse(raw);
+        if (current && current.tabId !== this.tabId && Number(current.expiresAt) > now) {
+          return false;
+        }
+      }
+
+      localStorage.setItem(
+        this.leaderStorageKey,
+        JSON.stringify({
+          tabId: this.tabId,
+          expiresAt: now + this.leaderLeaseMs,
+        })
+      );
+      return true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /**
+   * Release leadership lease if this tab currently holds it.
+   */
+  releaseLeadership() {
+    if (typeof localStorage === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem(this.leaderStorageKey);
+      if (raw) {
+        const current = JSON.parse(raw);
+        if (current && current.tabId === this.tabId) {
+          localStorage.removeItem(this.leaderStorageKey);
+        }
+      }
+    } catch (_) {
+      // ignore storage errors
+    }
   }
 
   /**
@@ -161,17 +230,23 @@ export class LiveSyncManager {
 
     const key = options.key || `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+    const existing = this.subscriptions.get(key);
+    if (existing && existing.staggerTimerId) {
+      clearTimeout(existing.staggerTimerId);
+    }
+
     this.subscriptions.set(key, {
       key,
       channels: channelList,
       callback,
       isRunning: false,
       pendingRerun: false,
+      staggerTimerId: null,
     });
 
-    // Fetch baseline versions for newly added channels, then start polling
-    this.checkVersions({ baselineOnly: !this.hasInitializedVersions });
-    this.startPolling();
+    // Establish baseline versions on first mount, then start jittered polling loop
+    this.checkVersions({ baselineOnly: !this.hasInitializedVersions, forcePoll: !this.hasInitializedVersions });
+    this.scheduleNextPoll();
 
     return () => {
       this.unsubscribe(key);
@@ -184,8 +259,14 @@ export class LiveSyncManager {
    * @param {string} key
    */
   unsubscribe(key) {
+    const sub = this.subscriptions.get(key);
+    if (sub && sub.staggerTimerId) {
+      clearTimeout(sub.staggerTimerId);
+    }
     this.subscriptions.delete(key);
+
     if (this.subscriptions.size === 0) {
+      this.releaseLeadership();
       this.stopPolling();
     }
   }
@@ -194,6 +275,11 @@ export class LiveSyncManager {
    * Clear all active page subscriptions (used on Turbo page navigation).
    */
   clearAllSubscriptions() {
+    this.subscriptions.forEach((sub) => {
+      if (sub.staggerTimerId) {
+        clearTimeout(sub.staggerTimerId);
+      }
+    });
     this.subscriptions.clear();
     this.stopPolling();
   }
@@ -210,7 +296,9 @@ export class LiveSyncManager {
 
     if (channelList.length === 0) return;
 
-    // Also advance our local known version check quietly so this tab doesn't double-refresh
+    // Reset ETag so the next server poll fetches the freshly bumped versions cleanly
+    this.lastEtag = "";
+
     if (this.broadcastChannel) {
       try {
         this.broadcastChannel.postMessage({
@@ -226,74 +314,93 @@ export class LiveSyncManager {
   }
 
   /**
-   * Start periodic lightweight version checks.
+   * Schedule the next poll with random jitter (±jitterMs) to spread load smoothly.
    */
-  startPolling() {
+  scheduleNextPoll() {
     if (this.timerId || this.subscriptions.size === 0) return;
     if (typeof document !== "undefined" && document.hidden) return;
 
-    this.timerId = setInterval(() => {
+    const jitterOffset = Math.round((Math.random() * 2 - 1) * this.jitterMs);
+    const delay = Math.max(3000, this.intervalMs + jitterOffset);
+
+    this.timerId = setTimeout(async () => {
+      this.timerId = null;
       if (typeof document !== "undefined" && document.hidden) {
         return;
       }
-      this.checkVersions();
-    }, this.intervalMs);
+      if (this.subscriptions.size === 0) {
+        return;
+      }
+
+      await this.checkVersions();
+      this.scheduleNextPoll();
+    }, delay);
   }
 
   /**
-   * Stop periodic version checks.
+   * Stop scheduled polling timer.
    */
   stopPolling() {
     if (this.timerId) {
-      clearInterval(this.timerId);
+      clearTimeout(this.timerId);
       this.timerId = null;
     }
   }
 
   /**
-   * Collect all unique channel names currently subscribed on this page.
-   *
-   * @returns {string[]}
-   */
-  getSubscribedChannels() {
-    const set = new Set();
-    this.subscriptions.forEach((sub) => {
-      sub.channels.forEach((c) => set.add(c));
-    });
-    return Array.from(set);
-  }
-
-  /**
-   * Query the lightweight cache-backed versions endpoint and refresh only changed channels.
+   * Query the lightweight cache-backed versions endpoint (only when this tab is the leader).
+   * Uses ETag / If-None-Match for 0-byte HTTP 304 Not Modified responses when unchanged.
    *
    * @param {Object} [options={}]
    * @param {boolean} [options.baselineOnly=false]
+   * @param {boolean} [options.forcePoll=false]
    */
-  async checkVersions({ baselineOnly = false } = {}) {
+  async checkVersions({ baselineOnly = false, forcePoll = false } = {}) {
     if (this.isChecking || this.subscriptions.size === 0) return;
 
-    const channels = this.getSubscribedChannels();
-    if (channels.length === 0) return;
+    // Only the elected leader tab polls the server (unless baseline/forced)
+    const isLeader = this.tryAcquireLeadership();
+    if (!isLeader && !forcePoll) {
+      return;
+    }
 
     this.isChecking = true;
 
     try {
-      const url = `${this.endpoint}?channels=${encodeURIComponent(channels.join(","))}`;
-      const response = await fetch(url, {
+      const headers = {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+        "X-Background-Poll": "1",
+      };
+
+      if (this.lastEtag && !baselineOnly) {
+        headers["If-None-Match"] = this.lastEtag;
+      }
+
+      // Leader polls all channels in one tiny cache read so all follower tabs receive updates
+      const response = await fetch(`${this.endpoint}?channels=all`, {
         method: "GET",
         credentials: "same-origin",
-        headers: {
-          Accept: "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-          "X-Background-Poll": "1",
-        },
+        headers,
       });
+
+      // 304 Not Modified -> 0 bytes transferred, nothing changed!
+      if (response.status === 304) {
+        this.hasInitializedVersions = true;
+        return;
+      }
 
       if (!response.ok) {
         if (response.status === 401) {
+          this.releaseLeadership();
           this.stopPolling();
         }
         return;
+      }
+
+      const responseEtag = response.headers.get("ETag") || "";
+      if (responseEtag) {
+        this.lastEtag = responseEtag;
       }
 
       const json = await response.json().catch(() => null);
@@ -302,27 +409,21 @@ export class LiveSyncManager {
         return;
       }
 
-      const changedChannels = [];
-
-      Object.entries(versions).forEach(([channel, rawVersion]) => {
-        const version = Number(rawVersion) || 0;
-        const previous = this.knownVersions[channel];
-
-        if (previous === undefined) {
-          this.knownVersions[channel] = version;
-        } else if (version > previous) {
-          this.knownVersions[channel] = version;
-          if (!baselineOnly) {
-            changedChannels.push(channel);
-          }
+      // Share freshly polled versions with all follower tabs in the same browser
+      if (this.broadcastChannel) {
+        try {
+          this.broadcastChannel.postMessage({
+            type: "versions",
+            sender: this.tabId,
+            versions,
+            etag: responseEtag,
+          });
+        } catch (_) {
+          // ignore
         }
-      });
-
-      this.hasInitializedVersions = true;
-
-      if (changedChannels.length > 0) {
-        this.triggerSubscribersForChannels(changedChannels);
       }
+
+      this.applyVersionMap(versions, { baselineOnly, immediate: false });
     } catch (_) {
       // Silently ignore transient network blips during background sync
     } finally {
@@ -331,12 +432,45 @@ export class LiveSyncManager {
   }
 
   /**
+   * Compare incoming version map against locally known versions and trigger changed subscribers.
+   *
+   * @private
+   * @param {Record<string, number>} versions
+   * @param {Object} [options={}]
+   */
+  applyVersionMap(versions, { baselineOnly = false, immediate = false } = {}) {
+    const changedChannels = [];
+
+    Object.entries(versions).forEach(([channel, rawVersion]) => {
+      const version = Number(rawVersion) || 0;
+      const previous = this.knownVersions[channel];
+
+      if (previous === undefined) {
+        this.knownVersions[channel] = version;
+      } else if (version > previous) {
+        this.knownVersions[channel] = version;
+        if (!baselineOnly) {
+          changedChannels.push(channel);
+        }
+      }
+    });
+
+    this.hasInitializedVersions = true;
+
+    if (changedChannels.length > 0) {
+      this.triggerSubscribersForChannels(changedChannels, { immediate });
+    }
+  }
+
+  /**
    * Execute callbacks for any subscriptions matching the changed channels.
-   * Guards against overlapping concurrent executions per subscription.
+   * Applies staggered random delay (200ms–1500ms) on remote updates to prevent DB spikes.
    *
    * @param {string[]} changedChannels
+   * @param {Object} [options={}]
+   * @param {boolean} [options.immediate=false]
    */
-  triggerSubscribersForChannels(changedChannels) {
+  triggerSubscribersForChannels(changedChannels, { immediate = false } = {}) {
     const changedSet = new Set(changedChannels.map((c) => String(c).toLowerCase()));
 
     this.subscriptions.forEach((sub) => {
@@ -348,7 +482,28 @@ export class LiveSyncManager {
         return;
       }
 
-      this.runSubscriptionCallback(sub, changedChannels);
+      if (immediate) {
+        if (sub.staggerTimerId) {
+          clearTimeout(sub.staggerTimerId);
+          sub.staggerTimerId = null;
+        }
+        this.runSubscriptionCallback(sub, changedChannels);
+        return;
+      }
+
+      // Stagger remote reloads across 200ms–1500ms to eliminate thundering herd DB spikes
+      if (sub.staggerTimerId) {
+        return; // already scheduled
+      }
+
+      const staggerDelay =
+        this.staggerMinMs + Math.floor(Math.random() * Math.max(0, this.staggerMaxMs - this.staggerMinMs));
+
+      sub.staggerTimerId = setTimeout(() => {
+        sub.staggerTimerId = null;
+        if (!this.subscriptions.has(sub.key)) return;
+        this.runSubscriptionCallback(sub, changedChannels);
+      }, staggerDelay);
     });
   }
 

@@ -87,4 +87,45 @@ class LiveSyncTest extends TestCase
         $this->assertGreaterThan($before['orders'], $after['orders']);
         $this->assertGreaterThan($before['dashboard'], $after['dashboard']);
     }
+
+    public function test_returns_304_not_modified_when_etag_matches_and_200_after_bump(): void
+    {
+        $first = $this->getJson('/api/v1/live-sync/versions?channels=orders,dashboard');
+        $first->assertOk();
+
+        $etag = (string) $first->headers->get('ETag');
+        $this->assertNotEmpty($etag);
+
+        // Unchanged -> 304 Not Modified (0 bytes)
+        $unchanged = $this->withHeader('If-None-Match', $etag)
+            ->getJson('/api/v1/live-sync/versions?channels=orders,dashboard');
+        $unchanged->assertStatus(304);
+
+        // After a mutation bump -> 200 OK with new ETag
+        app(LiveSyncService::class)->bump('orders');
+
+        $updated = $this->withHeader('If-None-Match', $etag)
+            ->getJson('/api/v1/live-sync/versions?channels=orders,dashboard');
+        $updated->assertOk();
+        $this->assertNotSame($etag, (string) $updated->headers->get('ETag'));
+    }
+
+    public function test_supports_since_parameter_for_has_updates_check(): void
+    {
+        $service = app(LiveSyncService::class);
+        $versions = $service->bump('orders');
+        $currentVersion = $versions['orders'];
+
+        $noUpdates = $this->getJson("/api/v1/live-sync/versions?channels=orders&since={$currentVersion}");
+        $noUpdates->assertOk()
+            ->assertJsonPath('data.has_updates', false)
+            ->assertJsonPath('data.changed', []);
+
+        $service->bump('orders');
+
+        $hasUpdates = $this->getJson("/api/v1/live-sync/versions?channels=orders&since={$currentVersion}");
+        $hasUpdates->assertOk()
+            ->assertJsonPath('data.has_updates', true)
+            ->assertJsonPath('data.changed', ['orders']);
+    }
 }

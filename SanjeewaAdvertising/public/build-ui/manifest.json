@@ -30,8 +30,8 @@
     "file": "assets/FormValidator-DavQ7TG5.js",
     "name": "FormValidator"
   },
-  "_LiveSyncManager-BNWu265G.js": {
-    "file": "assets/LiveSyncManager-BNWu265G.js",
+  "_LiveSyncManager-COtD295Z.js": {
+    "file": "assets/LiveSyncManager-COtD295Z.js",
     "name": "LiveSyncManager"
   },
   "_MobileNumberHelper-Cjypt2Ll.js": {
@@ -57,8 +57,8 @@
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
-  "_ViewOrderModal-CCusNFEp.js": {
-    "file": "assets/ViewOrderModal-CCusNFEp.js",
+  "_ViewOrderModal-C9g2xKQA.js": {
+    "file": "assets/ViewOrderModal-C9g2xKQA.js",
     "name": "ViewOrderModal",
     "imports": [
       "_RequestHandler-DktZQXl-.js",
@@ -165,7 +165,7 @@
     "isEntry": true
   },
   "resources/assets/css/payments.css": {
-    "file": "assets/payments-DcJHiF5t.css",
+    "file": "assets/payments-BDDDQOl6.css",
     "name": "payments",
     "names": [
       "payments.css"
@@ -174,7 +174,7 @@
     "isEntry": true
   },
   "resources/assets/css/place-order.css": {
-    "file": "assets/place-order-BDXcrgr1.css",
+    "file": "assets/place-order-CZJMJFQP.css",
     "name": "place-order",
     "names": [
       "place-order.css"
@@ -300,7 +300,7 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-0QkKyAfP.js",
+    "file": "assets/core-BzAQ0Vti.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
@@ -316,11 +316,11 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-BNWu265G.js"
+      "_LiveSyncManager-COtD295Z.js"
     ]
   },
   "resources/assets/js/customers.js": {
-    "file": "assets/customers-C742rK1n.js",
+    "file": "assets/customers-waslu_z8.js",
     "name": "customers",
     "src": "resources/assets/js/customers.js",
     "isEntry": true,
@@ -328,7 +328,7 @@
       "_RequestHandler-DktZQXl-.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_LiveSyncManager-BNWu265G.js"
+      "_LiveSyncManager-COtD295Z.js"
     ]
   },
   "resources/assets/js/dashboard.js": {
@@ -342,7 +342,7 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-BjjVZPFM.js",
+    "file": "assets/grn-1NBTwbCt.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
@@ -353,12 +353,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
-      "_LiveSyncManager-BNWu265G.js",
+      "_LiveSyncManager-COtD295Z.js",
       "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-D9XoySCY.js",
+    "file": "assets/inventory-BgWgPN87.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
@@ -369,7 +369,7 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
-      "_LiveSyncManager-BNWu265G.js",
+      "_LiveSyncManager-COtD295Z.js",
       "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
@@ -384,7 +384,7 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-CpNyMpg6.js",
+    "file": "assets/payments-iOYjfz2A.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
@@ -395,12 +395,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-CCusNFEp.js",
-      "_LiveSyncManager-BNWu265G.js"
+      "_ViewOrderModal-C9g2xKQA.js",
+      "_LiveSyncManager-COtD295Z.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-BROlTVDe.js",
+    "file": "assets/place-order-C1HTgP7U.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
@@ -413,12 +413,12 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-CCusNFEp.js",
-      "_LiveSyncManager-BNWu265G.js"
+      "_ViewOrderModal-C9g2xKQA.js",
+      "_LiveSyncManager-COtD295Z.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-BOrv6yWF.js",
+    "file": "assets/print-jobs-DWqnXD2O.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,
@@ -427,7 +427,7 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-BNWu265G.js"
+      "_LiveSyncManager-COtD295Z.js"
     ]
   },
   "resources/assets/js/profile.js": {
