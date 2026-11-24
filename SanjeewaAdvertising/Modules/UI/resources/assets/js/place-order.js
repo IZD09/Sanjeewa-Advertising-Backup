@@ -32,6 +32,7 @@ import {
 } from "./place-order/index.js";
 import { ActionMenuHelper } from "./core/ActionMenuHelper.js";
 import { ConfirmModalHelper } from "./core/ConfirmModalHelper.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 class PlaceOrderManager {
   constructor() {
@@ -233,6 +234,15 @@ class PlaceOrderManager {
     this.updateCalculation();
     this.renderOrdersTable();
     this.updateKPIs();
+
+    // 4. Subscribe to live updates across all users & tabs
+    LiveSyncManager.subscribe(
+      ["orders", "print_jobs", "payments", "customers"],
+      async () => {
+        await this.reloadOrdersFromPrintJobService();
+      },
+      { key: "place-order-live-sync" }
+    );
   }
 
   setupDatePickers() {

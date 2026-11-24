@@ -22,6 +22,7 @@ import {
     PrintJobMetricsProcess
 } from "./print-jobs/index.js";
 import { ConfirmModalHelper } from "./core/ConfirmModalHelper.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 export class PrintJobsManager {
     constructor() {
@@ -81,6 +82,14 @@ export class PrintJobsManager {
 
         this.initUI();
         this.loadInitialData();
+
+        LiveSyncManager.subscribe(
+            ['print_jobs', 'orders', 'inventory'],
+            async () => {
+                await this.reloadFloorData(true);
+            },
+            { key: 'print-jobs-live-sync' }
+        );
     }
 
     initUI() {

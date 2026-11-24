@@ -5,6 +5,7 @@
  */
 
 import { RequestHandler } from "../core/RequestHandler.js";
+import { LiveSyncManager } from "../core/LiveSyncManager.js";
 
 export class DashboardDataService {
   /**
@@ -22,6 +23,7 @@ export class DashboardDataService {
     this.callbacks = [];
     this.eventSource = null;
     this.pollInterval = null;
+    this.unsubscribeLiveSync = null;
     this.lastData = null;
   }
 
@@ -78,18 +80,17 @@ export class DashboardDataService {
       await this.fetchData(this.apiUrl);
     }
 
-    // 3. Connect Server-Sent Events (SSE) asynchronously AFTER the page has completed loading.
-    // Delaying EventSource until after 'load' ensures the browser tab's loading spinner
-    // completes normally and does not spin perpetually.
-    if (this.sseUrl && typeof EventSource !== "undefined") {
-      this.scheduleSSEConnection();
-    } else {
-      // Fallback to polling if EventSource is not supported
-      this.startPolling(30000);
+    // 3. Subscribe to unified LiveSyncManager (Option 2: Cache version polling + BroadcastChannel)
+    // Replaces per-page SSE connections so PHP workers are never blocked.
+    if (this.apiUrl) {
+      this.unsubscribeLiveSync = LiveSyncManager.subscribe(
+        "dashboard",
+        async () => {
+          await this.fetchData(this.apiUrl, { headers: { "X-Background-Poll": "1" } });
+        },
+        { key: "dashboard-live-sync" }
+      );
     }
-
-    // 4. Ensure SSE is cleanly closed before navigating away or closing the tab
-    this.bindLifecycleEvents();
   }
 
   /**
@@ -297,6 +298,10 @@ export class DashboardDataService {
   destroy() {
     this.stopPolling();
     this.disconnectSSE();
+    if (typeof this.unsubscribeLiveSync === "function") {
+      this.unsubscribeLiveSync();
+      this.unsubscribeLiveSync = null;
+    }
     this.callbacks = [];
     this.lastData = null;
   }

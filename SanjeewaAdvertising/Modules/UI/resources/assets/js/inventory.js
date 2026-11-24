@@ -24,6 +24,7 @@ import {
   BrandProcess,
   AddStockProcess
 } from "./inventory/index.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 export class InventoryManager {
   constructor() {
@@ -136,6 +137,19 @@ export class InventoryManager {
     } else {
       this.switchTab("stock");
     }
+
+    // Subscribe to live updates across all users & tabs
+    LiveSyncManager.subscribe(
+      ["inventory", "grn", "print_jobs"],
+      async () => {
+        await this.tableHandler.fetchData();
+        this.movementsHandler.fetchStats();
+        this.movementsHandler.fetchMovements(1);
+        this.categoriesHandler.fetchData();
+        this.stockItemsHandler.fetchData();
+      },
+      { key: "inventory-live-sync" }
+    );
   }
 
   saveData() { this.dataLoader.saveData(); }

@@ -27,6 +27,7 @@ import {
   FilterProcess,
   MetricsProcess
 } from "./payments/index.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 export class PaymentsManager {
   constructor() {
@@ -176,6 +177,26 @@ export class PaymentsManager {
     } else {
       await this.loadAndRenderInvoice();
     }
+
+    // Subscribe to live updates across all users & tabs
+    LiveSyncManager.subscribe(
+      ["payments", "orders", "grn"],
+      async () => {
+        const tab = this.activeTab;
+        if (tab === "collections") {
+          await this.loadAndRenderCollections(true);
+        } else if (tab === "grn") {
+          await this.loadAndRenderGrn(true);
+        } else if (tab === "expenses") {
+          await this.loadAndRenderExpenses(true);
+        } else if (tab === "overview") {
+          await this.loadAndRenderOverview(true);
+        } else {
+          await this.loadAndRenderInvoice(true);
+        }
+      },
+      { key: "payments-live-sync" }
+    );
   }
 
   /**

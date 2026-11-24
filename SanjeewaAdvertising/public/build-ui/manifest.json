@@ -30,12 +30,16 @@
     "file": "assets/FormValidator-DavQ7TG5.js",
     "name": "FormValidator"
   },
+  "_LiveSyncManager-BNWu265G.js": {
+    "file": "assets/LiveSyncManager-BNWu265G.js",
+    "name": "LiveSyncManager"
+  },
   "_MobileNumberHelper-Cjypt2Ll.js": {
     "file": "assets/MobileNumberHelper-Cjypt2Ll.js",
     "name": "MobileNumberHelper"
   },
-  "_RequestHandler-CzHZMMVQ.js": {
-    "file": "assets/RequestHandler-CzHZMMVQ.js",
+  "_RequestHandler-DktZQXl-.js": {
+    "file": "assets/RequestHandler-DktZQXl-.js",
     "name": "RequestHandler"
   },
   "_StatusHelper-BgrHG_5r.js": {
@@ -53,11 +57,11 @@
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
-  "_ViewOrderModal-DsZr9S8h.js": {
-    "file": "assets/ViewOrderModal-DsZr9S8h.js",
+  "_ViewOrderModal-CCusNFEp.js": {
+    "file": "assets/ViewOrderModal-CCusNFEp.js",
     "name": "ViewOrderModal",
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
@@ -215,7 +219,7 @@
     "isEntry": true
   },
   "resources/assets/js/admin/admin-login.js": {
-    "file": "assets/admin-login-C1yq63Y2.js",
+    "file": "assets/admin-login-DCqH_vt0.js",
     "name": "admin-login",
     "src": "resources/assets/js/admin/admin-login.js",
     "isEntry": true,
@@ -225,62 +229,62 @@
     ]
   },
   "resources/assets/js/admin/dashboard.js": {
-    "file": "assets/dashboard-DrC5_HqI.js",
+    "file": "assets/dashboard-C4DKIUsQ.js",
     "name": "dashboard",
     "src": "resources/assets/js/admin/dashboard.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js"
+      "_RequestHandler-DktZQXl-.js"
     ]
   },
   "resources/assets/js/admin/hr-management/processes/AdminHRManager.js": {
-    "file": "assets/AdminHRManager-DhP4VBee.js",
+    "file": "assets/AdminHRManager-BdU4m89V.js",
     "name": "AdminHRManager",
     "src": "resources/assets/js/admin/hr-management/processes/AdminHRManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
   "resources/assets/js/admin/login.js": {
-    "file": "assets/login-D-Rjea31.js",
+    "file": "assets/login-BbF_VwjQ.js",
     "name": "login",
     "src": "resources/assets/js/admin/login.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/admin/profile/processes/AdminProfileManager.js": {
-    "file": "assets/AdminProfileManager-DZi2Hsu-.js",
+    "file": "assets/AdminProfileManager-Qw9lHPYZ.js",
     "name": "AdminProfileManager",
     "src": "resources/assets/js/admin/profile/processes/AdminProfileManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
-    "file": "assets/UserControlManager-BWlhMvEC.js",
+    "file": "assets/UserControlManager-BpUAX8WT.js",
     "name": "UserControlManager",
     "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_MobileNumberHelper-Cjypt2Ll.js"
     ]
   },
   "resources/assets/js/app.js": {
-    "file": "assets/app-QaT-3d6Y.js",
+    "file": "assets/app-D771Hys-.js",
     "name": "app",
     "src": "resources/assets/js/app.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js"
+      "_RequestHandler-DktZQXl-.js"
     ]
   },
   "resources/assets/js/components/sidebar.js": {
@@ -296,12 +300,12 @@
     "isEntry": true
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-D6tG3oBB.js",
+    "file": "assets/core-0QkKyAfP.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
@@ -311,22 +315,24 @@
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
-      "_StatusHelper-BgrHG_5r.js"
+      "_StatusHelper-BgrHG_5r.js",
+      "_LiveSyncManager-BNWu265G.js"
     ]
   },
   "resources/assets/js/customers.js": {
-    "file": "assets/customers-C7haEUL3.js",
+    "file": "assets/customers-C742rK1n.js",
     "name": "customers",
     "src": "resources/assets/js/customers.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BasePaginationHandler-CxkMXfSO.js",
-      "_MobileNumberHelper-Cjypt2Ll.js"
+      "_MobileNumberHelper-Cjypt2Ll.js",
+      "_LiveSyncManager-BNWu265G.js"
     ]
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-CVlbapNG.js",
+    "file": "assets/dashboard-DMIqrSZs.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
     "isEntry": true,
@@ -336,67 +342,70 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-1HGuUmpO.js",
+    "file": "assets/grn-BjjVZPFM.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
+      "_LiveSyncManager-BNWu265G.js",
       "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-BCiKwLlA.js",
+    "file": "assets/inventory-D9XoySCY.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
+      "_LiveSyncManager-BNWu265G.js",
       "_ViewGRNModal-CYEqXbOk.js"
     ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-BsrZWMcR.js",
+    "file": "assets/login-BCiCx0fQ.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-BEnkZFO0.js",
+    "file": "assets/payments-CpNyMpg6.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-DsZr9S8h.js"
+      "_ViewOrderModal-CCusNFEp.js",
+      "_LiveSyncManager-BNWu265G.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-B-3UU9pZ.js",
+    "file": "assets/place-order-BROlTVDe.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
@@ -404,11 +413,12 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-DsZr9S8h.js"
+      "_ViewOrderModal-CCusNFEp.js",
+      "_LiveSyncManager-BNWu265G.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-CMwQpAGN.js",
+    "file": "assets/print-jobs-BOrv6yWF.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,
@@ -416,22 +426,23 @@
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
-      "_StatusHelper-BgrHG_5r.js"
+      "_StatusHelper-BgrHG_5r.js",
+      "_LiveSyncManager-BNWu265G.js"
     ]
   },
   "resources/assets/js/profile.js": {
-    "file": "assets/profile-D--dfLaI.js",
+    "file": "assets/profile-BkzNIu3b.js",
     "name": "profile",
     "src": "resources/assets/js/profile.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/profile/UserProfileManager.js": {
-    "file": "assets/UserProfileManager-C6oHPPYa.js",
+    "file": "assets/UserProfileManager-C6ixSplO.js",
     "name": "UserProfileManager",
     "src": "resources/assets/js/profile/UserProfileManager.js",
     "isEntry": true,
@@ -441,12 +452,12 @@
     ]
   },
   "resources/assets/js/reports.js": {
-    "file": "assets/reports-DmcCwjHN.js",
+    "file": "assets/reports-DSvEkbRo.js",
     "name": "reports",
     "src": "resources/assets/js/reports.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js",
+      "_RequestHandler-DktZQXl-.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
@@ -454,12 +465,12 @@
     ]
   },
   "resources/assets/js/settings.js": {
-    "file": "assets/settings-CuLkU0CT.js",
+    "file": "assets/settings-CtOlQrli.js",
     "name": "settings",
     "src": "resources/assets/js/settings.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-CzHZMMVQ.js"
+      "_RequestHandler-DktZQXl-.js"
     ]
   },
   "resources/assets/sass/app.scss": {

@@ -14,6 +14,7 @@ export { ActionMenuHelper, toggleRowActionMenu, closeAllActionMenus } from "./Ac
 export { ConfirmModalHelper, openCancelOrderModal, closeCancelModal } from "./ConfirmModalHelper.js";
 export { StatusHelper, getStatusRowClass, getPaymentStageRowClass } from "./StatusHelper.js";
 export { CashPaymentHandler } from "./CashPaymentHandler.js";
+export { LiveSyncManager } from "./LiveSyncManager.js";
 
 export default {
   BaseTableLoader: "./BaseTableLoader.js",
@@ -26,5 +27,6 @@ export default {
   ActionMenuHelper: "./ActionMenuHelper.js",
   ConfirmModalHelper: "./ConfirmModalHelper.js",
   StatusHelper: "./StatusHelper.js",
-  CashPaymentHandler: "./CashPaymentHandler.js"
+  CashPaymentHandler: "./CashPaymentHandler.js",
+  LiveSyncManager: "./LiveSyncManager.js"
 };

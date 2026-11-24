@@ -23,6 +23,7 @@ import {
   MetricsProcess
 } from "./grn/index.js";
 import { ActionMenuHelper } from "./core/ActionMenuHelper.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 export class GRNManager {
   constructor() {
@@ -234,6 +235,22 @@ export class GRNManager {
         this.metricsProcess.renderOpenPoBadge();
       }).catch(() => {});
     }
+
+    // Subscribe to live updates across all users & tabs
+    LiveSyncManager.subscribe(
+      ["grn", "inventory", "payments"],
+      async () => {
+        const view = this.currentView;
+        if (view === "po") {
+          await this.loadAndRenderPO(true);
+        } else if (view === "suppliers") {
+          await this.loadAndRenderSuppliers(true);
+        } else if (view !== "form") {
+          await this.loadAndRenderGRN(true);
+        }
+      },
+      { key: "grn-live-sync" }
+    );
   }
 
   /**

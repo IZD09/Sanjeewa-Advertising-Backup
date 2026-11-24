@@ -179,6 +179,17 @@ export class RequestHandler {
         throw error;
       }
 
+      // Broadcast live-sync channels to other open tabs in the same browser after successful mutations
+      if (method !== "GET" && method !== "HEAD" && typeof window !== "undefined" && window.LiveSyncManager) {
+        const syncedChannelsHeader = response.headers.get("X-Live-Sync-Channels");
+        if (syncedChannelsHeader) {
+          const channels = syncedChannelsHeader.split(",").map(c => c.trim()).filter(Boolean);
+          if (channels.length > 0) {
+            window.LiveSyncManager.notifyLocalMutation(channels);
+          }
+        }
+      }
+
       return data;
     } catch (err) {
       clearTimeout(timeoutId);

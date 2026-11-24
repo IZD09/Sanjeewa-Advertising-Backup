@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
+use Modules\Core\Http\Middleware\BroadcastLiveSyncVersion;
 use Modules\Core\Http\Middleware\CheckSessionInactivity;
 use Modules\User\Http\Middleware\CheckModulePermission;
 use Modules\User\Models\User;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             CheckSessionInactivity::class,
+            BroadcastLiveSyncVersion::class,
         ]);
 
         $middleware->api(prepend: [
@@ -54,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
         ], append: [
             CheckSessionInactivity::class,
+            BroadcastLiveSyncVersion::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

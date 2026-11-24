@@ -19,6 +19,7 @@ import {
   RegisterCustomerProcess,
   CustomerFilterProcess,
 } from "./customers/index.js";
+import { LiveSyncManager } from "./core/LiveSyncManager.js";
 
 export class CustomersManager {
   constructor() {
@@ -79,6 +80,23 @@ export class CustomersManager {
     );
     this.renderCards();
     this.updateKPIs(data.kpis);
+
+    // Subscribe to live updates across all users & tabs
+    LiveSyncManager.subscribe(
+      ["customers", "orders"],
+      async () => {
+        const fresh = await this.dataLoader.fetchCustomersData({
+          sort_by: "id",
+          sort_order: "asc",
+        });
+        this.customers = (fresh.customers || []).slice().sort(
+          (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0)
+        );
+        this.renderCards();
+        this.updateKPIs(fresh.kpis);
+      },
+      { key: "customers-live-sync" }
+    );
   }
 
   renderCards() {
