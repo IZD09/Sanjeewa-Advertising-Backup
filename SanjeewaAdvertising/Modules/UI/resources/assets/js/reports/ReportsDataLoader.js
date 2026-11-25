@@ -78,7 +78,7 @@ export class ReportsDataLoader {
    * @param {Object} [filters={}]
    * @returns {Promise<Object>}
    */
-  async fetchReportData(filters = {}) {
+  async fetchReportData(filters = {}, requestOptions = {}) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, val]) => {
       if (val !== undefined && val !== null && val !== "") {
@@ -87,7 +87,7 @@ export class ReportsDataLoader {
     });
 
     const url = `${this.endpoints.reportsData}?${params.toString()}`;
-    const result = await this.http.get(url);
+    const result = await this.http.get(url, {}, requestOptions);
     if (result && result.charts) {
       this.savePayloadCache(result.charts);
     }

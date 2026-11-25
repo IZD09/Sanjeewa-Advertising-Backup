@@ -186,6 +186,58 @@ export class ReportsManager {
   }
 
   /**
+   * Toggle the non-blocking report generation waiting animation & protect filter buttons.
+   *
+   * @param {boolean} isLoading
+   * @param {string} [title]
+   * @param {string} [subtitle]
+   */
+  setReportLoading(
+    isLoading,
+    title = "Generating Report...",
+    subtitle = "Compiling audited financial metrics, charts, and tables..."
+  ) {
+    const overlay = document.getElementById("repLoadingOverlay");
+    const titleEl = document.getElementById("repLoadingTitle");
+    const subtitleEl = document.getElementById("repLoadingSubtitle");
+    const kpiGrid = document.querySelector(".rep-kpi-grid");
+    const applyBtn = document.getElementById("btnApplyDateFilter");
+    const exportBtn = document.getElementById("btnExportReportCSV");
+    const printBtn = document.getElementById("btnPrintReportPDF");
+    const presetBtns = document.querySelectorAll(".rep-preset-btn");
+
+    if (titleEl && title) titleEl.textContent = title;
+    if (subtitleEl && subtitle) subtitleEl.textContent = subtitle;
+
+    if (overlay) {
+      overlay.classList.toggle("is-visible", Boolean(isLoading));
+      overlay.setAttribute("aria-busy", isLoading ? "true" : "false");
+    }
+
+    if (kpiGrid) {
+      kpiGrid.classList.toggle("is-loading", Boolean(isLoading));
+    }
+
+    if (applyBtn) {
+      applyBtn.disabled = Boolean(isLoading);
+      if (isLoading) {
+        if (!applyBtn.dataset.originalHtml) {
+          applyBtn.dataset.originalHtml = applyBtn.innerHTML;
+        }
+        applyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating...`;
+      } else if (applyBtn.dataset.originalHtml) {
+        applyBtn.innerHTML = applyBtn.dataset.originalHtml;
+      }
+    }
+
+    if (exportBtn) exportBtn.disabled = Boolean(isLoading);
+    if (printBtn) printBtn.disabled = Boolean(isLoading);
+    presetBtns.forEach((btn) => {
+      btn.disabled = Boolean(isLoading);
+    });
+  }
+
+  /**
    * Handle date preset or custom range application without full-page reloads.
    * Updates executive KPI cards, charts, and table records asynchronously.
    *
@@ -198,9 +250,23 @@ export class ReportsManager {
       date_to: range.to || null
     };
 
+    const periodText = range.from && range.to ? `${range.from} to ${range.to}` : "selected period";
+    this.setReportLoading(
+      true,
+      "Generating Report...",
+      `Compiling KPIs, charts, and ledger tables for ${periodText}...`
+    );
+
     try {
-      this.showToast("Fetching updated report data...", "info");
-      const result = await this.dataLoader.fetchReportData(filters);
+      const result = await this.dataLoader.fetchReportData(filters, {
+        onShedRetry: ({ retryAfterSec }) => {
+          this.setReportLoading(
+            true,
+            "Waiting for Priority Slot...",
+            `Server is busy with critical transactions — retrying automatically in ${retryAfterSec}s...`
+          );
+        }
+      });
 
       if (result && result.success) {
         // 1. Update Executive KPI summary cards via MetricsProcess & ExecutiveKpiCardBuilder
@@ -216,23 +282,27 @@ export class ReportsManager {
         }
 
         // 3. Update table data without refreshing the page
-        this.salesOrdersTableHandler.fetchData({ ...filters, page: 1 });
-        this.cashFlowTableHandler.fetchData({ ...filters, page: 1 });
-        this.operatingExpensesTableHandler.fetchData({ ...filters, page: 1 });
-        this.customerReceivablesTableHandler.fetchData({ ...filters, page: 1 });
-        this.inventoryStockTableHandler.fetchData({ ...filters, page: 1 });
-        this.supplierGrnTableHandler.fetchData({ ...filters, page: 1 });
+        await Promise.allSettled([
+          this.salesOrdersTableHandler.fetchData({ ...filters, page: 1 }),
+          this.cashFlowTableHandler.fetchData({ ...filters, page: 1 }),
+          this.operatingExpensesTableHandler.fetchData({ ...filters, page: 1 }),
+          this.customerReceivablesTableHandler.fetchData({ ...filters, page: 1 }),
+          this.inventoryStockTableHandler.fetchData({ ...filters, page: 1 }),
+          this.supplierGrnTableHandler.fetchData({ ...filters, page: 1 })
+        ]);
 
         // 4. Update Profit & Loss statement
         if (result.tables?.profitLoss) {
           this.updateProfitLossStatement(result.tables.profitLoss);
         }
 
-        this.showToast(`Reports & Charts updated for period: ${range.from} to ${range.to}`);
+        this.showToast(`Reports & Charts updated for period: ${periodText}`);
       }
     } catch (err) {
       console.error("[ReportsManager] Error updating report data:", err);
       this.showToast("Failed to refresh report data. Please retry.", "warning");
+    } finally {
+      this.setReportLoading(false);
     }
   }
 

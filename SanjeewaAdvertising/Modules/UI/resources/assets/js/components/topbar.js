@@ -342,9 +342,15 @@ class TopbarController {
         headers: {
           "Accept": "application/json",
           "X-Requested-With": "XMLHttpRequest",
+          "X-Request-Priority": "low",
         },
+        priority: "low",
         credentials: "same-origin"
       });
+
+      if (response.status === 503) {
+        return;
+      }
 
       if (!response.ok) return;
 

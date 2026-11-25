@@ -10,6 +10,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Modules\Core\Http\Middleware\BroadcastLiveSyncVersion;
 use Modules\Core\Http\Middleware\CheckSessionInactivity;
+use Modules\Core\Http\Middleware\RequestPriorityMiddleware;
 use Modules\User\Http\Middleware\CheckModulePermission;
 use Modules\User\Models\User;
 
@@ -43,10 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'module.permission' => CheckModulePermission::class,
+            'request.priority' => RequestPriorityMiddleware::class,
         ]);
 
         $middleware->web(append: [
             CheckSessionInactivity::class,
+            RequestPriorityMiddleware::class,
             BroadcastLiveSyncVersion::class,
         ]);
 
@@ -56,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
         ], append: [
             CheckSessionInactivity::class,
+            RequestPriorityMiddleware::class,
             BroadcastLiveSyncVersion::class,
         ]);
     })

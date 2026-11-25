@@ -1299,6 +1299,157 @@ html[data-theme="dark"] .rep-table tr.row-status-pending > td {
     border-bottom-color: rgba(245, 158, 11, 0.32) !important;
     border-right-color: rgba(245, 158, 11, 0.30) !important;
 }
+
+/* ==========================================================================
+   Report Generation Waiting Animation Overlay (Light & Dark Modes)
+   ========================================================================== */
+.rep-kpi-grid.is-loading .rep-kpi-card {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.rep-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 72px;
+    background: rgba(248, 250, 252, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 12px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.rep-loading-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.rep-loading-card {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 16px;
+    padding: 28px 34px;
+    min-width: 320px;
+    max-width: 440px;
+    text-align: center;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    transform: translateY(6px);
+    transition: transform 0.22s ease;
+}
+
+.rep-loading-overlay.is-visible .rep-loading-card {
+    transform: translateY(0);
+}
+
+.rep-loading-spinner {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rep-spinner-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid rgba(22, 119, 255, 0.18);
+    border-top-color: #1677ff;
+    border-right-color: #38bdf8;
+    animation: repSpin 0.85s linear infinite;
+}
+
+.rep-spinner-icon {
+    font-size: 20px;
+    color: #1677ff;
+    animation: repPulse 1.4s ease-in-out infinite;
+}
+
+.rep-loading-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text, #0f172a);
+}
+
+.rep-loading-subtitle {
+    margin: 0 0 16px;
+    font-size: 12.5px;
+    color: var(--text-muted, #64748b);
+    line-height: 1.45;
+}
+
+.rep-loading-bar {
+    width: 100%;
+    height: 5px;
+    background: rgba(22, 119, 255, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.rep-loading-bar-fill {
+    width: 42%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #1677ff, #38bdf8, #1677ff);
+    animation: repProgressSlide 1.25s ease-in-out infinite;
+}
+
+@keyframes repSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes repPulse {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes repProgressSlide {
+    0% {
+        transform: translateX(-110%);
+    }
+    100% {
+        transform: translateX(260%);
+    }
+}
+
+html[data-theme="dark"] .rep-loading-overlay {
+    background: rgba(15, 23, 42, 0.72);
+}
+
+html[data-theme="dark"] .rep-loading-card {
+    background: var(--surface, #1e293b);
+    border-color: var(--border, #334155);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .rep-spinner-ring {
+    border-color: rgba(56, 189, 248, 0.2);
+    border-top-color: #38bdf8;
+    border-right-color: #60a5fa;
+}
+
+html[data-theme="dark"] .rep-spinner-icon {
+    color: #38bdf8;
+}
 html[data-theme="dark"] .rep-table tr.row-stage-overdue > td,
 html[data-theme="dark"] .rep-table tr.row-status-cancelled > td {
     background-color: rgba(220, 38, 38, 0.14) !important;

@@ -30,16 +30,16 @@
     "file": "assets/FormValidator-DavQ7TG5.js",
     "name": "FormValidator"
   },
-  "_LiveSyncManager-5XDpZg_L.js": {
-    "file": "assets/LiveSyncManager-5XDpZg_L.js",
+  "_LiveSyncManager-jxbHYhVd.js": {
+    "file": "assets/LiveSyncManager-jxbHYhVd.js",
     "name": "LiveSyncManager"
   },
   "_MobileNumberHelper-Cjypt2Ll.js": {
     "file": "assets/MobileNumberHelper-Cjypt2Ll.js",
     "name": "MobileNumberHelper"
   },
-  "_RequestHandler-DktZQXl-.js": {
-    "file": "assets/RequestHandler-DktZQXl-.js",
+  "_RequestHandler-CbVRafyg.js": {
+    "file": "assets/RequestHandler-CbVRafyg.js",
     "name": "RequestHandler"
   },
   "_StatusHelper-BgrHG_5r.js": {
@@ -57,11 +57,11 @@
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
-  "_ViewOrderModal-zZCNg9Tz.js": {
-    "file": "assets/ViewOrderModal-zZCNg9Tz.js",
+  "_ViewOrderModal-B-RgWZiQ.js": {
+    "file": "assets/ViewOrderModal-B-RgWZiQ.js",
     "name": "ViewOrderModal",
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
@@ -192,7 +192,7 @@
     "isEntry": true
   },
   "resources/assets/css/reports.css": {
-    "file": "assets/reports-DxAkwdrT.css",
+    "file": "assets/reports-Bg5Y1rGw.css",
     "name": "reports",
     "names": [
       "reports.css"
@@ -219,7 +219,7 @@
     "isEntry": true
   },
   "resources/assets/js/admin/admin-login.js": {
-    "file": "assets/admin-login-DCqH_vt0.js",
+    "file": "assets/admin-login-ChaZP49W.js",
     "name": "admin-login",
     "src": "resources/assets/js/admin/admin-login.js",
     "isEntry": true,
@@ -229,64 +229,64 @@
     ]
   },
   "resources/assets/js/admin/dashboard.js": {
-    "file": "assets/dashboard-B_vg3Swf.js",
+    "file": "assets/dashboard-BM_BpLyD.js",
     "name": "dashboard",
     "src": "resources/assets/js/admin/dashboard.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_RequestHandler-CbVRafyg.js",
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/admin/hr-management/processes/AdminHRManager.js": {
-    "file": "assets/AdminHRManager-BdU4m89V.js",
+    "file": "assets/AdminHRManager-Cy-sX0-8.js",
     "name": "AdminHRManager",
     "src": "resources/assets/js/admin/hr-management/processes/AdminHRManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
   "resources/assets/js/admin/login.js": {
-    "file": "assets/login-BbF_VwjQ.js",
+    "file": "assets/login-BfwAR5pT.js",
     "name": "login",
     "src": "resources/assets/js/admin/login.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/admin/profile/processes/AdminProfileManager.js": {
-    "file": "assets/AdminProfileManager-Qw9lHPYZ.js",
+    "file": "assets/AdminProfileManager-BKeGyZQL.js",
     "name": "AdminProfileManager",
     "src": "resources/assets/js/admin/profile/processes/AdminProfileManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
-    "file": "assets/UserControlManager-BI9QUbPY.js",
+    "file": "assets/UserControlManager-oyntn4i1.js",
     "name": "UserControlManager",
     "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/app.js": {
-    "file": "assets/app-D771Hys-.js",
+    "file": "assets/app-vhEPsATF.js",
     "name": "app",
     "src": "resources/assets/js/app.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js"
+      "_RequestHandler-CbVRafyg.js"
     ]
   },
   "resources/assets/js/components/sidebar.js": {
@@ -296,21 +296,21 @@
     "isEntry": true
   },
   "resources/assets/js/components/topbar.js": {
-    "file": "assets/topbar-BVGppLHv.js",
+    "file": "assets/topbar-DzpAYZB9.js",
     "name": "topbar",
     "src": "resources/assets/js/components/topbar.js",
     "isEntry": true,
     "imports": [
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-Bmz_ruOA.js",
+    "file": "assets/core-CNrFY-7U.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
@@ -321,23 +321,23 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/customers.js": {
-    "file": "assets/customers-C85P666x.js",
+    "file": "assets/customers-C9Fr4KLd.js",
     "name": "customers",
     "src": "resources/assets/js/customers.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-CMFMSf1m.js",
+    "file": "assets/dashboard-DDjPd-x1.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
     "isEntry": true,
@@ -347,70 +347,70 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-4mPvdXeL.js",
+    "file": "assets/grn-TEnAeY1b.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
-      "_LiveSyncManager-5XDpZg_L.js",
+      "_LiveSyncManager-jxbHYhVd.js",
       "_ViewGRNModal-Dh-S5Nyf.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-BK1nWhZh.js",
+    "file": "assets/inventory-Crg8oP5X.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
-      "_LiveSyncManager-5XDpZg_L.js",
+      "_LiveSyncManager-jxbHYhVd.js",
       "_ViewGRNModal-Dh-S5Nyf.js"
     ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-BpoY6dq8.js",
+    "file": "assets/login-CMqCcaJr.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-CqJ1W_yU.js",
+    "file": "assets/payments-DxZrABYG.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-zZCNg9Tz.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_ViewOrderModal-B-RgWZiQ.js",
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-Ce5s-qFn.js",
+    "file": "assets/place-order-CleCbblB.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_BaseModalHandler-BzI2OdAS.js",
@@ -418,12 +418,12 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-zZCNg9Tz.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_ViewOrderModal-B-RgWZiQ.js",
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-CA9rL2KJ.js",
+    "file": "assets/print-jobs-D7vUmXhi.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,
@@ -432,22 +432,22 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-5XDpZg_L.js"
+      "_LiveSyncManager-jxbHYhVd.js"
     ]
   },
   "resources/assets/js/profile.js": {
-    "file": "assets/profile-BkzNIu3b.js",
+    "file": "assets/profile-KD-yZFBb.js",
     "name": "profile",
     "src": "resources/assets/js/profile.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_ValidatBuilder-DPg4PYww.js"
     ]
   },
   "resources/assets/js/profile/UserProfileManager.js": {
-    "file": "assets/UserProfileManager-C6ixSplO.js",
+    "file": "assets/UserProfileManager-CO3mNW_J.js",
     "name": "UserProfileManager",
     "src": "resources/assets/js/profile/UserProfileManager.js",
     "isEntry": true,
@@ -457,12 +457,12 @@
     ]
   },
   "resources/assets/js/reports.js": {
-    "file": "assets/reports-DSvEkbRo.js",
+    "file": "assets/reports-Bq-kcFVe.js",
     "name": "reports",
     "src": "resources/assets/js/reports.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js",
+      "_RequestHandler-CbVRafyg.js",
       "_BaseTableLoader-DB2dbnJ4.js",
       "_BaseTableRowBuilder-CrSEebSa.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
@@ -470,12 +470,12 @@
     ]
   },
   "resources/assets/js/settings.js": {
-    "file": "assets/settings-CtOlQrli.js",
+    "file": "assets/settings-CMjRsW5m.js",
     "name": "settings",
     "src": "resources/assets/js/settings.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js"
+      "_RequestHandler-CbVRafyg.js"
     ]
   },
   "resources/assets/sass/app.scss": {

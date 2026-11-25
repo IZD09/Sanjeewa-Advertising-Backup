@@ -364,6 +364,11 @@ export class LiveSyncManager {
       return;
     }
 
+    // Defer background poll if a critical HIGH-priority request is currently in-flight
+    if (typeof window !== "undefined" && window.__saRequestPriorityScheduler?.activeHigh > 0) {
+      return;
+    }
+
     this.isChecking = true;
 
     try {
@@ -371,6 +376,7 @@ export class LiveSyncManager {
         Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest",
         "X-Background-Poll": "1",
+        "X-Request-Priority": "low",
       };
 
       if (this.lastEtag && !baselineOnly) {
@@ -381,12 +387,18 @@ export class LiveSyncManager {
       const response = await fetch(`${this.endpoint}?channels=all`, {
         method: "GET",
         credentials: "same-origin",
+        priority: "low",
         headers,
       });
 
       // 304 Not Modified -> 0 bytes transferred, nothing changed!
       if (response.status === 304) {
         this.hasInitializedVersions = true;
+        return;
+      }
+
+      // 503 Load Shedding -> silently skip this tick; next scheduled poll will retry automatically
+      if (response.status === 503) {
         return;
       }
 

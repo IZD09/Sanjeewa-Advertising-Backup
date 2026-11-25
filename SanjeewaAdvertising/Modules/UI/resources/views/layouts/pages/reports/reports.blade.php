@@ -198,7 +198,22 @@
                                 </div>
                             </div>
 
-                            <div class="rep-tab-body">
+                            <div class="rep-tab-body" style="position: relative;">
+
+                                <!-- Non-Blocking Report Generation Waiting Overlay -->
+                                <div class="rep-loading-overlay" id="repLoadingOverlay" aria-live="polite" aria-busy="false">
+                                    <div class="rep-loading-card">
+                                        <div class="rep-loading-spinner">
+                                            <span class="rep-spinner-ring"></span>
+                                            <i class="fa-solid fa-chart-line rep-spinner-icon"></i>
+                                        </div>
+                                        <h4 class="rep-loading-title" id="repLoadingTitle">Generating Report...</h4>
+                                        <p class="rep-loading-subtitle" id="repLoadingSubtitle">Compiling audited financial metrics, charts, and tables...</p>
+                                        <div class="rep-loading-bar">
+                                            <div class="rep-loading-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <!-- TAB 1: Sales & Orders Report -->
                                 @include('ui::layouts.pages.reports.tabs.sales-orders')
