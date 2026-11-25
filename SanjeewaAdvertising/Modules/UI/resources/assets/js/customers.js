@@ -49,7 +49,7 @@ export class CustomersManager {
       showToast: (msg, type) => this.showToast(msg, type),
       onCustomerRegistered: (newCust) => {
         this.customers.push(newCust);
-        this.customers.sort((a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0));
+        this.customers = this.sortCustomers(this.customers);
         this.renderCards();
         this.updateKPIs();
       },
@@ -75,9 +75,7 @@ export class CustomersManager {
       sort_by: "id",
       sort_order: "asc",
     });
-    this.customers = (data.customers || []).slice().sort(
-      (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0)
-    );
+    this.customers = this.sortCustomers(data.customers || []);
     this.renderCards();
     this.updateKPIs(data.kpis);
 
@@ -89,14 +87,31 @@ export class CustomersManager {
           sort_by: "id",
           sort_order: "asc",
         });
-        this.customers = (fresh.customers || []).slice().sort(
-          (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0)
-        );
+        this.customers = this.sortCustomers(fresh.customers || []);
         this.renderCards();
         this.updateKPIs(fresh.kpis);
       },
       { key: "customers-live-sync" }
     );
+  }
+
+  /**
+   * Sort customers by highest pending balance first, then alphabetically by name (A-Z).
+   *
+   * @param {Array} list
+   * @returns {Array}
+   */
+  sortCustomers(list = []) {
+    return (list || []).slice().sort((a, b) => {
+      const balA = Number(a?.pending_balance ?? a?.pendingBalance ?? 0);
+      const balB = Number(b?.pending_balance ?? b?.pendingBalance ?? 0);
+      if (Math.abs(balB - balA) > 0.009) {
+        return balB - balA;
+      }
+      const nameA = String(a?.name || "").trim().toLowerCase();
+      const nameB = String(b?.name || "").trim().toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
   }
 
   renderCards() {

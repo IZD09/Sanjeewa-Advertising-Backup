@@ -243,6 +243,63 @@ class PlaceOrderManager {
       },
       { key: "place-order-live-sync" }
     );
+
+    // 5. Auto-open Order Creation Form & pre-select customer when navigated from Customer Card "New Order"
+    await this.handleIncomingNewOrderQuery();
+  }
+
+  async handleIncomingNewOrderQuery() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const shouldOpen = params.get("open_order_modal") === "1" || params.get("new_order") === "1";
+    const customerIdParam = params.get("customer_id");
+
+    if (!shouldOpen && !customerIdParam) return;
+
+    if (customerIdParam) {
+      const targetId = Number(customerIdParam);
+      let matched = (this.customers || []).find((c) => Number(c.id) === targetId);
+
+      // Fallback 1: check full server-embedded customers list directly
+      if (!matched) {
+        const serverEl = document.getElementById("serverCustomersData");
+        if (serverEl && serverEl.textContent) {
+          try {
+            const parsed = JSON.parse(serverEl.textContent);
+            if (Array.isArray(parsed)) {
+              matched = parsed.find((c) => Number(c.id) === targetId);
+            }
+          } catch (_) {
+            // ignore parse error
+          }
+        }
+      }
+
+      // Fallback 2: fetch customer directly from API
+      if (!matched && targetId > 0 && this.dataLoader?.http) {
+        try {
+          const res = await this.dataLoader.http.get(`/api/v1/customers/${targetId}`);
+          const custData = res?.data || res;
+          if (custData && custData.id) {
+            matched = custData;
+          }
+        } catch (_) {
+          // ignore fetch error
+        }
+      }
+
+      if (matched && this.customerHandler) {
+        this.customerHandler.selectCustomer(matched);
+      }
+    }
+
+    if (shouldOpen) {
+      this.openCreateOrderModal();
+    }
+
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }
 
   setupDatePickers() {
@@ -452,6 +509,7 @@ const bootPlaceOrder = () => {
   if (!container) return;
 
   if (window.placeOrderApp && container.dataset.placeOrderBooted === "1") {
+    window.placeOrderApp.handleIncomingNewOrderQuery();
     return;
   }
 

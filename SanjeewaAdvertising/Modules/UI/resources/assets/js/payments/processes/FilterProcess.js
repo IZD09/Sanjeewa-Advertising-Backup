@@ -31,13 +31,30 @@ export class FilterProcess {
     this.invoiceStatusFilter = "ALL";
     this.invoiceMethodFilter = "ALL";
 
-    // Filters for Collectable Payments
-    this.collectionSearch = "";
+    // Hydrate URL query params before NavigationProcess.switchTab() normalizes the URL
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const viewParam = urlParams ? (urlParams.get("view") || "").trim() : "";
+    const initialSearch = urlParams ? (urlParams.get("search") || "").trim() : "";
+    const initialCustomerId = urlParams ? (urlParams.get("customer_id") || "").trim() : "";
+    const initialSupplierId = urlParams ? (urlParams.get("supplier_id") || "").trim() : "";
+    const initialPendingOnly = urlParams ? urlParams.get("pending_only") === "1" : false;
+
+    const isCollectionsView = viewParam === "collections" || viewParam === "collect-payments" || viewParam === "collectable";
+    const isGrnView = viewParam === "grn-payment" || viewParam === "grn";
+
+    // Filters for Collectable Payments (hydrate from URL query params if navigated from Customer Card)
+    const hydrateCollections = isCollectionsView || Boolean(initialCustomerId);
+    this.collectionSearch = hydrateCollections ? initialSearch.toLowerCase() : "";
+    this.collectionSearchRaw = hydrateCollections ? initialSearch : "";
+    this.collectionCustomerId = initialCustomerId ? Number(initialCustomerId) : null;
     this.collectionStatusFilter = "ALL";
 
-    // Filters for GRN Payments
-    this.grnSearch = "";
-    this.grnStatusFilter = "ALL";
+    // Filters for GRN Payments (hydrate from URL query params if navigated from Supplier Card)
+    const hydrateGrn = isGrnView || Boolean(initialSupplierId);
+    this.grnSearch = hydrateGrn ? initialSearch.toLowerCase() : "";
+    this.grnSearchRaw = hydrateGrn ? initialSearch : "";
+    this.grnSupplierId = initialSupplierId ? Number(initialSupplierId) || initialSupplierId : null;
+    this.grnStatusFilter = hydrateGrn && initialPendingOnly ? "PENDING_DUE" : "ALL";
     this.grnMethodFilter = "ALL";
   }
 
@@ -83,7 +100,11 @@ export class FilterProcess {
     // 1b. Collectable Payments Filters
     const colSearch = document.getElementById("payCollectionSearch");
     if (colSearch) {
+      if (this.collectionSearchRaw) {
+        colSearch.value = this.collectionSearchRaw;
+      }
       colSearch.addEventListener("input", (e) => {
+        this.collectionCustomerId = null;
         this.collectionSearch = e.target.value.toLowerCase().trim();
         if (this.ctx.renderCollectionTable) this.ctx.renderCollectionTable(true);
       });
@@ -101,6 +122,8 @@ export class FilterProcess {
     if (colReset) {
       colReset.addEventListener("click", () => {
         this.collectionSearch = "";
+        this.collectionSearchRaw = "";
+        this.collectionCustomerId = null;
         this.collectionStatusFilter = "ALL";
         if (colSearch) colSearch.value = "";
         if (colStatus) colStatus.value = "ALL";
@@ -111,7 +134,11 @@ export class FilterProcess {
     // 2. GRN Filters
     const grnSearch = document.getElementById("payGrnSearch");
     if (grnSearch) {
+      if (this.grnSearchRaw) {
+        grnSearch.value = this.grnSearchRaw;
+      }
       grnSearch.addEventListener("input", (e) => {
+        this.grnSupplierId = null;
         this.grnSearch = e.target.value.toLowerCase().trim();
         if (this.ctx.renderGrnTable) this.ctx.renderGrnTable(true);
       });
@@ -119,6 +146,9 @@ export class FilterProcess {
 
     const grnStatus = document.getElementById("payGrnStatusFilter");
     if (grnStatus) {
+      if (this.grnStatusFilter && this.grnStatusFilter !== "ALL") {
+        grnStatus.value = this.grnStatusFilter;
+      }
       grnStatus.addEventListener("change", (e) => {
         this.grnStatusFilter = e.target.value;
         if (this.ctx.renderGrnTable) this.ctx.renderGrnTable(true);
@@ -137,6 +167,8 @@ export class FilterProcess {
     if (grnReset) {
       grnReset.addEventListener("click", () => {
         this.grnSearch = "";
+        this.grnSearchRaw = "";
+        this.grnSupplierId = null;
         this.grnStatusFilter = "ALL";
         this.grnMethodFilter = "ALL";
         if (grnSearch) grnSearch.value = "";

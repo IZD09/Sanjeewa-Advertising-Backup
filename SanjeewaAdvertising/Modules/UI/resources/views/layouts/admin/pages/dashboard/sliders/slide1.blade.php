@@ -60,9 +60,9 @@
 
     <article class="stat-card" data-slide="newCustomers">
       <div class="stat-top">
-        <span>New Customers</span>
+        <span>Total Customers</span>
         <span class="stat-icon green">
-          <i class="fa-solid fa-user-plus"></i>
+          <i class="fa-solid fa-users"></i>
         </span>
       </div>
       <h3>{{ $art3['value'] ?? '—' }}</h3>

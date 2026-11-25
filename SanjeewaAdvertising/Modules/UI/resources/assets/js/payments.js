@@ -332,7 +332,8 @@ export class PaymentsManager {
       this.dataLoader.orders,
       this.collectionSearch,
       this.collectionStatusFilter,
-      resetPage
+      resetPage,
+      this.filterProcess?.collectionCustomerId ?? null
     );
   }
 
@@ -342,7 +343,8 @@ export class PaymentsManager {
       this.grnSearch,
       this.grnStatusFilter,
       this.grnMethodFilter,
-      resetPage
+      resetPage,
+      this.filterProcess?.grnSupplierId ?? null
     );
   }
 

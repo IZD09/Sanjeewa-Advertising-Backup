@@ -86,6 +86,7 @@
       <div class="pay-filter-group">
         <select id="payGrnStatusFilter" class="pay-select" aria-label="Filter by Stage">
           <option value="ALL">All Stages</option>
+          <option value="PENDING_DUE">Pending / Advance (Due)</option>
           <option value="Complete Payment">Complete Payment</option>
           <option value="Pending Payment">Pending Payment</option>
           <option value="Advance Payment">Advance Payment</option>

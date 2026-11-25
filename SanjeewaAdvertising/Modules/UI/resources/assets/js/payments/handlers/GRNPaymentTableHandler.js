@@ -45,21 +45,48 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
     this.lastSearch = "";
     this.lastStatus = "ALL";
     this.lastMethod = "ALL";
+    this.lastSupplierId = null;
   }
 
   /**
-   * Filter GRN payments by search keyword, stage/status, and payment method.
+   * Normalize supplier IDs like 5 or "SUP-005" to a comparable canonical value.
+   *
+   * @param {string|number|null|undefined} id
+   * @returns {number|string|null}
+   */
+  normalizeSupplierId(id) {
+    if (id === null || id === undefined || id === "") return null;
+    const raw = String(id).trim();
+    const digitsMatch = raw.match(/(\d+)$/);
+    if (digitsMatch) {
+      const num = Number(digitsMatch[1]);
+      if (num > 0) return num;
+    }
+    return raw.toLowerCase();
+  }
+
+  /**
+   * Filter GRN payments by search keyword, stage/status, payment method, and supplier ID.
    *
    * @param {Array} grnPayments
    * @param {string} grnSearch
    * @param {string} grnStatusFilter
    * @param {string} grnMethodFilter
+   * @param {number|string|null} [supplierId=null]
    * @returns {Array}
    */
-  getFilteredPayments(grnPayments = [], grnSearch = "", grnStatusFilter = "ALL", grnMethodFilter = "ALL") {
+  getFilteredPayments(grnPayments = [], grnSearch = "", grnStatusFilter = "ALL", grnMethodFilter = "ALL", supplierId = null) {
     const term = (grnSearch || "").toLowerCase().trim();
+    const targetSupplierId = this.normalizeSupplierId(supplierId);
 
     return (grnPayments || []).filter(p => {
+      if (targetSupplierId !== null) {
+        const itemSupplierId = this.normalizeSupplierId(p.supplierId ?? p.supplier_id ?? null);
+        if (itemSupplierId !== null && itemSupplierId !== targetSupplierId) {
+          return false;
+        }
+      }
+
       const grnNumber = String(p.grnNumber || p.grn_number || "").toLowerCase();
       const poNumber = String(p.poNumber || p.po_number || p.purchase_order_no || "").toLowerCase();
       const supplierName = String(p.supplierName || p.supplier_name || "").toLowerCase();
@@ -77,8 +104,12 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
         (Array.isArray(p.poNumbers) && p.poNumbers.some(po => String(po).toLowerCase().includes(term))) ||
         (Array.isArray(p.po_numbers) && p.po_numbers.some(po => String(po).toLowerCase().includes(term)));
 
-      const stage = p.stage || (p.payment_status === "Paid" ? "Complete Payment" : "Pending Payment");
-      const matchesStatus = grnStatusFilter === "ALL" || stage === grnStatusFilter;
+      const balance = Number(p.balance ?? p.balanceAmount ?? p.balance_amount ?? 0);
+      const stage = p.stage || (p.payment_status === "Paid" || balance <= 0.009 ? "Complete Payment" : "Pending Payment");
+      const matchesStatus = grnStatusFilter === "ALL" ||
+        (grnStatusFilter === "PENDING_DUE"
+          ? (balance > 0.009 || stage !== "Complete Payment")
+          : stage === grnStatusFilter);
       const matchesMethod = StatusHelper.matchesPaymentMethod(p.method, grnMethodFilter);
 
       return matchesSearch && matchesStatus && matchesMethod;
@@ -93,9 +124,16 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
    * @param {string} grnStatusFilter
    * @param {string} grnMethodFilter
    * @param {boolean} [resetPage=false]
+   * @param {number|string|null} [supplierId=null]
    */
-  render(grnPayments = [], grnSearch = "", grnStatusFilter = "ALL", grnMethodFilter = "ALL", resetPage = false) {
-    if (resetPage || grnSearch !== this.lastSearch || grnStatusFilter !== this.lastStatus || grnMethodFilter !== this.lastMethod) {
+  render(grnPayments = [], grnSearch = "", grnStatusFilter = "ALL", grnMethodFilter = "ALL", resetPage = false, supplierId = null) {
+    if (
+      resetPage ||
+      grnSearch !== this.lastSearch ||
+      grnStatusFilter !== this.lastStatus ||
+      grnMethodFilter !== this.lastMethod ||
+      supplierId !== this.lastSupplierId
+    ) {
       this.currentPage = 1;
     }
 
@@ -103,6 +141,7 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
     this.lastSearch = grnSearch || "";
     this.lastStatus = grnStatusFilter || "ALL";
     this.lastMethod = grnMethodFilter || "ALL";
+    this.lastSupplierId = supplierId;
 
     this.renderCurrent();
   }
@@ -118,7 +157,8 @@ export class GRNPaymentTableHandler extends BaseTableLoader {
       this.lastDataset,
       this.lastSearch,
       this.lastStatus,
-      this.lastMethod
+      this.lastMethod,
+      this.lastSupplierId
     );
 
     if (filtered.length === 0) {

@@ -64,7 +64,14 @@ class CustomerService
      */
     public function getCustomersData(array $filters = []): array
     {
-        $customers = $this->getAllCustomers($filters);
+        $customers = $this->buildQuery($filters)
+            ->with([
+                'printJobs.unit',
+                'printJobs.cost.printCosts',
+                'printJobs.payments',
+                'printJobs.latestStatusHistory',
+            ])
+            ->get();
         $totalCustomers = Customer::count();
         $totalOrders = DB::table('print_jobs')->count();
 

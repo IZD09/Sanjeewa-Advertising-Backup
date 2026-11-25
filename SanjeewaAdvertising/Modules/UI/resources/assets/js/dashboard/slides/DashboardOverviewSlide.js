@@ -140,10 +140,10 @@ export class DashboardOverviewSlide extends DashboardBaseSlide {
       .setBars(jobsArt.bars || [], 'red-bars')
       .render();
 
-    // 3. Article 3: New Customers
+    // 3. Article 3: Total Customers
     new StatCardRenderer(this.articles.customers || this.articles.article3)
-      .setTitle('New Customers')
-      .setIcon('fa-solid fa-user-plus')
+      .setTitle('Total Customers')
+      .setIcon('fa-solid fa-users')
       .setColor('green')
       .setValue(
         formatNumber(

@@ -63,6 +63,7 @@ export class SupplierCardBuilder {
     this.status = data.status || "Active";
     this.approvedPoCount = Number(data.approvedPoCount ?? data.approved_purchase_orders_count ?? data.ungrnedPoCount ?? 0);
     this.ungrnedPoCount = this.approvedPoCount;
+    this.pendingPayable = Number(data.pending_payable ?? data.pendingPayable ?? 0);
   }
 
   getInitials() {
@@ -128,6 +129,14 @@ export class SupplierCardBuilder {
     const safeTerms = this.escapeHtml(this.paymentTerms);
     const jsName = this.name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     const jsCode = (this.code || (this.id ? `SUP-${String(this.id).padStart(3, "0")}` : "")).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const payableAmount = Math.max(0, Number(this.pendingPayable || 0));
+    const hasPayable = payableAmount > 0.009;
+    const formattedPayable = payableAmount.toLocaleString("en-LK", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const payableColor = hasPayable ? "#dc2626" : "#059669";
+    const grnPaymentsUrl = `/payments?view=grn-payment&supplier_id=${encodeURIComponent(this.id || "")}&search=${encodeURIComponent(this.name || "")}${hasPayable ? "&pending_only=1" : ""}`;
 
     return `
       <div class="customer-card-box supplier-card-box ${theme.themeClass || ''} ${isDisabled ? 'supplier-card-disabled' : ''}" data-supplier-code="${safeCode}" style="background: ${isDisabled ? 'rgba(239, 68, 68, 0.04)' : theme.bg}; border-color: ${isDisabled ? 'rgba(239, 68, 68, 0.35)' : theme.border};">
@@ -153,12 +162,15 @@ export class SupplierCardBuilder {
               <i class="fa-solid fa-clipboard-check" style="font-size: 11px; margin-right: 4px; ${this.approvedPoCount > 0 ? 'color: #1677ff;' : 'opacity: 0.6;'}"></i>${this.approvedPoCount} ${this.approvedPoCount === 1 ? 'PO' : 'POs'}
             </strong>
           </div>
-          <div class="cust-stat-item">
-            <span>Payment Terms</span>
-            <strong>
-              <i class="fa-solid fa-handshake" style="font-size: 11px; margin-right: 4px; color: var(--text-muted);"></i>${safeTerms}
+          <a href="${grnPaymentsUrl}" class="cust-stat-item" title="View GRN payments for ${safeName}" style="text-decoration: none; cursor: pointer; display: flex; flex-direction: column;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              Pending Payable
+              ${hasPayable ? '<i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 9px; opacity: 0.75;"></i>' : ""}
+            </span>
+            <strong style="color: ${payableColor};">
+              Rs. ${formattedPayable}
             </strong>
-          </div>
+          </a>
         </div>
         <div class="cust-card-actions">
           <!-- Line 1: Primary Procurement Actions (+ PO and + GRN) -->

@@ -172,7 +172,13 @@ class SupplierService
         $perPage = isset($filters['per_page']) ? max(1, min(100, (int) $filters['per_page'])) : 20;
         $paginator = $this->getSuppliers($filters, $perPage);
 
-        $suppliers = collect($paginator->items())
+        $supplierCollection = new Collection($paginator->items());
+        $supplierCollection->load([
+            'purchaseOrders.items',
+            'purchaseOrders.grns.payments',
+        ]);
+
+        $suppliers = $supplierCollection
             ->map(fn (Supplier $supplier) => $this->formatSupplierRecord($supplier))
             ->values()
             ->all();
@@ -192,6 +198,42 @@ class SupplierService
     }
 
     /**
+     * Calculate the total pending payable balance owed to a supplier across all non-cancelled POs.
+     */
+    public function calculatePendingPayable(Supplier $supplier): float
+    {
+        if (! $supplier->relationLoaded('purchaseOrders')) {
+            return 0.0;
+        }
+
+        $totalPoAmount = 0.0;
+        $countedPaymentIds = [];
+        $totalPaidAmount = 0.0;
+
+        foreach ($supplier->purchaseOrders as $po) {
+            if ((int) $po->purchase_orders_status_id === PurchaseOrderStatus::STATUS_CANCELLED) {
+                continue;
+            }
+
+            $totalPoAmount += (float) $po->items->sum(
+                fn ($item) => (float) ($item->unit_cost ?? 0) * (int) ($item->qty_ordered ?? 0)
+            );
+
+            foreach ($po->grns as $grn) {
+                foreach ($grn->payments ?? [] as $payment) {
+                    $paymentId = (int) $payment->id;
+                    if (! isset($countedPaymentIds[$paymentId])) {
+                        $countedPaymentIds[$paymentId] = true;
+                        $totalPaidAmount += (float) ($payment->payment ?? 0);
+                    }
+                }
+            }
+        }
+
+        return round(max(0.0, $totalPoAmount - $totalPaidAmount), 2);
+    }
+
+    /**
      * Format a Supplier Eloquent model into the UI array representation.
      *
      * @return array<string, mixed>
@@ -199,6 +241,7 @@ class SupplierService
     public function formatSupplierRecord(Supplier $supplier): array
     {
         $code = 'SUP-'.str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT);
+        $pendingPayable = $this->calculatePendingPayable($supplier);
 
         return [
             'id' => $supplier->id,
@@ -219,6 +262,7 @@ class SupplierService
             'purchase_orders_count' => (int) ($supplier->purchase_orders_count ?? 0),
             'pending_purchase_orders_count' => (int) ($supplier->pending_purchase_orders_count ?? 0),
             'approved_purchase_orders_count' => (int) ($supplier->approved_purchase_orders_count ?? 0),
+            'pending_payable' => $pendingPayable,
         ];
     }
 }

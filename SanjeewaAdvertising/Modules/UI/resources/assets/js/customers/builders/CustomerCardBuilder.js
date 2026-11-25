@@ -50,8 +50,14 @@ export class CustomerCardBuilder {
     this.location = data.address || data.city || data.location || (data.email ? data.email.split("@")[0] : "Colombo");
     this.badge = data.badge || data.category || (data.print_jobs_count > 10 ? "VIP" : (data.print_jobs_count > 5 ? "Corporate" : "Regular"));
     this.totalOrders = data.print_jobs_count ?? data.totalOrders ?? 0;
-    this.totalSpent = data.totalSpent ?? (this.totalOrders * 8500);
-    this.newOrderUrl = data.newOrderUrl || "/place-order";
+    this.pendingBalance = Number(data.pending_balance ?? data.pendingBalance ?? 0);
+    this.pendingOrdersCount = Number(data.pending_orders_count ?? data.pendingOrdersCount ?? 0);
+    this.collectionsUrl =
+      data.collectionsUrl ||
+      `/payments?view=collections&customer_id=${encodeURIComponent(this.id || "")}&search=${encodeURIComponent(this.name || "")}`;
+    this.newOrderUrl =
+      data.newOrderUrl ||
+      `/place-order?open_order_modal=1&customer_id=${encodeURIComponent(this.id || "")}`;
   }
 
   setId(id) {
@@ -145,10 +151,13 @@ export class CustomerCardBuilder {
     const theme = this.getCardTheme();
     const badgeStyle = this.getBadgeStyle();
     const badgeClass = this.getBadgeClass();
-    const formattedSpent = Number(this.totalSpent || 0).toLocaleString("en-LK", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+    const pendingAmount = Math.max(0, Number(this.pendingBalance || 0));
+    const hasPending = pendingAmount > 0.009;
+    const formattedPending = pendingAmount.toLocaleString("en-LK", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
+    const pendingColor = hasPending ? "#dc2626" : "#059669";
 
     return `
       <div class="customer-card-box ${theme.themeClass || ""}" data-customer-id="${this.id || ""}" style="background: ${theme.bg}; border-color: ${theme.border};">
@@ -163,7 +172,13 @@ export class CustomerCardBuilder {
         </div>
         <div class="cust-stats-row">
           <div class="cust-stat-item"><span>Total Orders</span><strong>${this.totalOrders} Orders</strong></div>
-          <div class="cust-stat-item"><span>Total Spent</span><strong>Rs. ${formattedSpent}</strong></div>
+          <a href="${this.collectionsUrl}" class="cust-stat-item cust-stat-pending-link" title="View pending payment orders for ${this.name}" style="text-decoration: none; cursor: pointer; display: flex; flex-direction: column;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              Pending Due
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 9px; opacity: 0.75;"></i>
+            </span>
+            <strong style="color: ${pendingColor};">Rs. ${formattedPending}</strong>
+          </a>
         </div>
         <div class="cust-card-actions">
           <a href="${this.newOrderUrl}" class="po-btn po-btn-secondary" style="height: 32px; font-size: 11px;">

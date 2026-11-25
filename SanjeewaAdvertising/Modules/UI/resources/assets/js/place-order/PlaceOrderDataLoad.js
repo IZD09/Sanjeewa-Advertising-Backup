@@ -54,7 +54,7 @@ export class PlaceOrderDataLoad {
     this.endpoints = options.endpoints || {
       orders: "/api/v1/print-jobs/place-order-data",
       fallbackOrders: "/print-jobs/place-order-data",
-      customers: "/api/v1/customers",
+      customers: "/api/v1/customers?all=1",
       payments: "/api/v1/payments"
     };
 

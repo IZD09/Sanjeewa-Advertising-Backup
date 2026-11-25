@@ -36,6 +36,7 @@ export class CollectablePaymentsTableHandler extends BaseTableLoader {
     this.lastDataset = [];
     this.lastSearch = "";
     this.lastStatus = "ALL";
+    this.lastCustomerId = null;
   }
 
   /**
@@ -63,11 +64,18 @@ export class CollectablePaymentsTableHandler extends BaseTableLoader {
    * @param {string} statusFilter
    * @returns {Array}
    */
-  getFilteredCollectables(orders = [], search = "", statusFilter = "ALL") {
+  getFilteredCollectables(orders = [], search = "", statusFilter = "ALL", customerId = null) {
     const term = (search || "").toLowerCase().trim();
     const collectables = this.getCollectableItems(orders);
 
     return collectables.filter((job) => {
+      if (customerId !== null && customerId !== undefined && Number(customerId) > 0) {
+        const jobCustId = Number(job.customerId ?? job.customer_id ?? 0);
+        if (jobCustId > 0 && jobCustId !== Number(customerId)) {
+          return false;
+        }
+      }
+
       const formattedId = String(job.formattedId || job.orderId || `ORD-2026-${1000 + Number(job.rawId || job.jobId || job.id || 0)}`).toLowerCase();
       const rawId = String(job.rawId || job.jobId || job.id || "").toLowerCase();
       const customerName = String(job.customerName || job.customer_name || "").toLowerCase();
@@ -96,15 +104,22 @@ export class CollectablePaymentsTableHandler extends BaseTableLoader {
    * @param {string} search
    * @param {string} statusFilter
    * @param {boolean} [resetPage=false]
+   * @param {number|null} [customerId=null]
    */
-  render(orders = [], search = "", statusFilter = "ALL", resetPage = false) {
-    if (resetPage || search !== this.lastSearch || statusFilter !== this.lastStatus) {
+  render(orders = [], search = "", statusFilter = "ALL", resetPage = false, customerId = null) {
+    if (
+      resetPage ||
+      search !== this.lastSearch ||
+      statusFilter !== this.lastStatus ||
+      customerId !== this.lastCustomerId
+    ) {
       this.currentPage = 1;
     }
 
     this.lastDataset = orders || [];
     this.lastSearch = search || "";
     this.lastStatus = statusFilter || "ALL";
+    this.lastCustomerId = customerId;
 
     this.renderCurrent();
   }
@@ -119,7 +134,8 @@ export class CollectablePaymentsTableHandler extends BaseTableLoader {
     const filtered = this.getFilteredCollectables(
       this.lastDataset,
       this.lastSearch,
-      this.lastStatus
+      this.lastStatus,
+      this.lastCustomerId
     );
 
     if (filtered.length === 0) {

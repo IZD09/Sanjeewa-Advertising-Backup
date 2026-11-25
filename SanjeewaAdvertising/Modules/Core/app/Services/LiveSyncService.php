@@ -78,6 +78,11 @@ class LiveSyncService
 
         Cache::forever(self::CACHE_KEY, $versions);
 
+        // Invalidate shared dashboard snapshot cache immediately when dashboard channel bumps
+        if (in_array('dashboard', $normalized, true)) {
+            Cache::forget('ui:dashboard:shared_snapshot');
+        }
+
         return $versions;
     }
 

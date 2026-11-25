@@ -236,29 +236,76 @@ class DashboardService
             : ($currentMonthCustomers > 0 ? 100.0 : 0.0);
         $custTrendState = $custTrend >= 0 ? 'positive' : 'negative';
 
-        // 4. Article 4: Pending Invoices / Receivables
+        // 4. Article 4: Pending Invoices / Receivables (Actual unpaid & partial balances across non-cancelled jobs)
         $pendingInvoicesAmount = 0.0;
         $currentMonthPending = 0.0;
         $lastMonthPending = 0.0;
         $invoicesBars = array_fill(0, 7, 0);
 
-        if (Schema::hasTable('payments')) {
-            $pendingInvoicesAmount = (float) Payment::where('payment_statuses_id', 1)->sum('payment');
-            $currentMonthPending = (float) Payment::where('payment_statuses_id', 1)
-                ->whereYear('pay_date', $currentYear)
-                ->whereMonth('pay_date', $currentMonth)
-                ->sum('payment');
-            $lastMonthPending = (float) Payment::where('payment_statuses_id', 1)
-                ->whereYear('pay_date', $lastMonthYear)
-                ->whereMonth('pay_date', $lastMonth)
-                ->sum('payment');
+        if (Schema::hasTable('print_jobs')) {
+            $statusMap = $statusHistory ?? collect();
+            $jobsForReceivables = PrintJob::query()
+                ->with(['unit', 'cost.printCosts', 'payments'])
+                ->get();
 
-            $dailyPendingSums = collect(range(6, 0))->map(function ($daysAgo) use ($now) {
-                $date = (clone $now)->subDays($daysAgo)->toDateString();
+            $dailyPendingMap = [];
+            foreach (range(6, 0) as $daysAgo) {
+                $dailyPendingMap[(clone $now)->subDays($daysAgo)->toDateString()] = 0.0;
+            }
 
-                return (float) Payment::where('payment_statuses_id', 1)->whereDate('pay_date', $date)->sum('payment');
-            });
+            foreach ($jobsForReceivables as $job) {
+                $statusId = (int) $statusMap->get($job->id, 1);
+                if ($statusId === 9) {
+                    continue; // Skip cancelled jobs
+                }
 
+                $costSum = (float) ($job->cost?->printCosts?->sum('price') ?? 0);
+                $unitPrice = $costSum > 0 ? $costSum : 120.00;
+                $qty = max(1, (int) $job->qty);
+                $width = (float) ($job->wtdth > 0 ? $job->wtdth : 10);
+                $height = (float) ($job->hight > 0 ? $job->hight : 4);
+                $unitSymbol = strtolower((string) ($job->unit?->simble ?? 'ft'));
+
+                if ($unitSymbol === 'pcs') {
+                    $subtotal = $unitPrice * $qty;
+                } else {
+                    $areaSqFt = match ($unitSymbol) {
+                        'in', 'inches' => ($width * $height) / 144,
+                        'cm' => ($width * $height) / 929.0304,
+                        'mm' => ($width * $height) / 92903.04,
+                        'm', 'meters' => ($width * $height) * 10.7639,
+                        default => ($width * $height),
+                    };
+                    $subtotal = $areaSqFt * $unitPrice * $qty;
+                }
+
+                $discount = (float) ($job->cost?->discount ?? 0);
+                $totalBill = max(0.0, $subtotal - $discount);
+                $paidAmount = (float) $job->payments->sum('payment');
+                $balanceDue = max(0.0, $totalBill - $paidAmount);
+
+                if ($balanceDue <= 0.0) {
+                    continue;
+                }
+
+                $pendingInvoicesAmount += $balanceDue;
+
+                if ($job->add_date) {
+                    $jobDate = Carbon::parse($job->add_date);
+                    if ((int) $jobDate->year === $currentYear && (int) $jobDate->month === $currentMonth) {
+                        $currentMonthPending += $balanceDue;
+                    } elseif ((int) $jobDate->year === $lastMonthYear && (int) $jobDate->month === $lastMonth) {
+                        $lastMonthPending += $balanceDue;
+                    }
+
+                    $dateStr = $jobDate->toDateString();
+                    if (array_key_exists($dateStr, $dailyPendingMap)) {
+                        $dailyPendingMap[$dateStr] += $balanceDue;
+                    }
+                }
+            }
+
+            $dailyPendingSums = collect(array_values($dailyPendingMap));
             $maxInvDaily = $dailyPendingSums->max();
             $invoicesBars = $dailyPendingSums->map(function ($val) use ($maxInvDaily) {
                 return $maxInvDaily > 0 ? max(10, min(100, (int) round(($val / $maxInvDaily) * 100))) : 0;
