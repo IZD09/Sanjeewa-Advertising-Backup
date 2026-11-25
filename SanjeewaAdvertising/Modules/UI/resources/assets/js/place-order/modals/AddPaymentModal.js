@@ -5,7 +5,7 @@
  * with robust frontend validation and direct integration with the MySQL `payments` schema:
  * - Frontend validation: amount > 0, amount <= balance, order validation, valid payment method
  * - Real-time calculation and live visual status feedback
- * - Backend API submission to `POST /api/v1/payments` with Laravel 422 error handling
+ * - Backend API submission to `POST /advertising/payments` with Laravel 422 error handling
  * - Automatic update of order balance, status, table row, KPIs, and receipt modal
  *
  * Extends BaseModalHandler core class.
@@ -510,7 +510,7 @@ export class AddPaymentModal extends BaseModalHandler {
     let dbPaymentId = null;
 
     try {
-      // 3. Send strictly validated database payload to `/api/v1/payments`
+      // 3. Send strictly validated database payload to `/advertising/payments`
       const apiPayload = {
         payment: Math.round(amount * 100) / 100,
         print_jobs_id: printJobId,
@@ -527,7 +527,7 @@ export class AddPaymentModal extends BaseModalHandler {
       let apiResData = null;
 
       try {
-        const apiRes = await this.http.post("/api/v1/payments", apiPayload);
+        const apiRes = await this.http.post("/advertising/payments", apiPayload);
         if (apiRes && apiRes.data) {
           apiResData = apiRes.data;
           if (apiRes.data.id) {

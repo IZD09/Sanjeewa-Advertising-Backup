@@ -2,7 +2,7 @@
  * SanjeewaAdvertising - Categories & Subcategories Tab Handler
  *
  * Orchestrates the Categories & Subcategories UI Tab (Tab 3):
- * - Fetches Categories, Subcategories, and KPI stats from the Inventory backend API (/api/v1/inventory/categories/data)
+ * - Fetches Categories, Subcategories, and KPI stats from the Inventory backend API (/advertising/inventory/categories/data)
  * - Renders KPI cards using InventoryKpiCardBuilder
  * - Renders Categories master list using CategoryBuilder
  * - Renders Subcategories table rows using SubcategoryBuilder
@@ -41,9 +41,7 @@ export class CategoriesTabHandler extends BaseTableLoader {
 
     this.http = new RequestHandler();
     this.onFilterStock = options.onFilterStock || (() => {});
-    this.showToast = options.showToast || ((msg, type) => {
-      console.log(`[Toast ${type}]: ${msg}`);
-    });
+    this.showToast = options.showToast || (() => {});
 
     this.categories = [];
     this.subcategories = [];
@@ -192,16 +190,16 @@ export class CategoriesTabHandler extends BaseTableLoader {
     this.showLoadingState();
 
     try {
-      const response = await this.http.get("/api/v1/inventory/categories/data");
+      const response = await this.http.get("/advertising/inventory/categories/data");
 
       if (response && response.success && response.data) {
         this.applyPayload(response.data);
       } else {
         // Fallback to individual endpoints if needed
         const [catRes, subcatRes, statsRes] = await Promise.all([
-          this.http.get("/api/v1/inventory/categories"),
-          this.http.get("/api/v1/inventory/subcategories"),
-          this.http.get("/api/v1/inventory/categories/stats")
+          this.http.get("/advertising/inventory/categories"),
+          this.http.get("/advertising/inventory/subcategories"),
+          this.http.get("/advertising/inventory/categories/stats")
         ]);
 
         const categories = (catRes && Array.isArray(catRes.data)) ? catRes.data : [];

@@ -22,7 +22,7 @@ class StoreAdminRequest extends FormRequest
             return $user->username === 'admin' || (method_exists($user, 'canAccessModule') && $user->canAccessModule('User Control', 'create'));
         }
 
-        if ($this->is('admin/*') || $this->is('api/v1/admin/*')) {
+        if ($this->is('admin/*') || $this->is('advertising/admin/*')) {
             return false;
         }
 

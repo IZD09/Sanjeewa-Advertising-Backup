@@ -60,21 +60,12 @@
 
 /* Ant Design Buttons */
 .ant-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     gap: 8px;
-    height: 36px;
     padding: 0 16px;
     font-size: 13.5px;
-    font-weight: 500;
-    border-radius: 6px;
-    border: 1px solid var(--border, #d9d9d9);
+    border-color: var(--border, #d9d9d9);
     background: var(--surface, #ffffff);
     color: var(--text, #334155);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
-    outline: none;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -84,47 +75,7 @@
     background: var(--blue-subtle, #f0f7ff);
 }
 
-.ant-btn-primary {
-    background: #1677ff;
-    border-color: #1677ff;
-    color: #ffffff;
-}
-
-.ant-btn-primary:hover {
-    background: #4096ff;
-    border-color: #4096ff;
-    color: #ffffff;
-}
-
-.ant-btn-secondary {
-    background: #722ed1;
-    border-color: #722ed1;
-    color: #ffffff;
-}
-
-.ant-btn-secondary:hover {
-    background: #9254de;
-    border-color: #9254de;
-    color: #ffffff;
-}
-
-.ant-btn-success {
-    background: #10b981;
-    border-color: #10b981;
-    color: #ffffff;
-}
-
-.ant-btn-success:hover {
-    background: #34d399;
-    border-color: #34d399;
-    color: #ffffff;
-}
-
-.ant-btn-sm {
-    height: 28px;
-    padding: 0 10px;
-    font-size: 12px;
-}
+/* .ant-btn-primary, .ant-btn-secondary, .ant-btn-success, .ant-btn-sm consolidated in core.css */
 
 /* Summary KPI Grid */
 .hr-summary-grid {

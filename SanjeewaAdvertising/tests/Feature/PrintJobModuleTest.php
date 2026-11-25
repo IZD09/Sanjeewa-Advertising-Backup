@@ -81,7 +81,7 @@ class PrintJobModuleTest extends TestCase
             'discount' => 100.00,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -110,7 +110,7 @@ class PrintJobModuleTest extends TestCase
             'deadline' => $targetDate,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -136,7 +136,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 10,
         ]);
 
-        $response = $this->getJson('/api/v1/print-jobs');
+        $response = $this->getJson('/advertising/print-jobs');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -161,7 +161,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 12,
         ]);
 
-        $response = $this->getJson('/api/v1/print-jobs/all');
+        $response = $this->getJson('/advertising/print-jobs/all');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -181,7 +181,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 8,
         ]);
 
-        $response = $this->getJson("/api/v1/print-jobs/{$job->id}");
+        $response = $this->getJson("/advertising/print-jobs/{$job->id}");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -201,7 +201,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 3,
         ]);
 
-        $response = $this->putJson("/api/v1/print-jobs/{$job->id}", [
+        $response = $this->putJson("/advertising/print-jobs/{$job->id}", [
             'qty' => 15,
         ]);
 
@@ -224,7 +224,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 4,
         ]);
 
-        $response = $this->deleteJson("/api/v1/print-jobs/{$job->id}");
+        $response = $this->deleteJson("/advertising/print-jobs/{$job->id}");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -247,14 +247,14 @@ class PrintJobModuleTest extends TestCase
 
         $newStatus = PrintJobStatus::firstOrCreate(['print_job_states' => 'Completed']);
 
-        $response = $this->patchJson("/api/v1/print-jobs/{$job->id}/status", [
+        $response = $this->patchJson("/advertising/print-jobs/{$job->id}/status", [
             'print_job_statuses_id' => $newStatus->id,
         ]);
 
         $response->assertStatus(200)
             ->assertJsonPath('data.current_status.id', $newStatus->id);
 
-        $historyResponse = $this->getJson("/api/v1/print-jobs/{$job->id}/status-history");
+        $historyResponse = $this->getJson("/advertising/print-jobs/{$job->id}/status-history");
         $historyResponse->assertStatus(200)
             ->assertJsonStructure(['data' => [['print_jobs_id', 'print_job_statuses_id']]]);
     }
@@ -280,7 +280,7 @@ class PrintJobModuleTest extends TestCase
             'add_at' => now(),
         ]);
 
-        $response = $this->putJson("/api/v1/print-jobs/{$job->id}/cost", [
+        $response = $this->putJson("/advertising/print-jobs/{$job->id}/cost", [
             'discount' => 50.00,
             'print_cost_ids' => [$printCost->id],
         ]);
@@ -300,7 +300,7 @@ class PrintJobModuleTest extends TestCase
             'qty' => 77,
         ]);
 
-        $response = $this->getJson('/api/v1/print-jobs/search?q=Test Customer');
+        $response = $this->getJson('/advertising/print-jobs/search?q=Test Customer');
 
         $response->assertStatus(200)
             ->assertJsonStructure(['data']);
@@ -309,7 +309,7 @@ class PrintJobModuleTest extends TestCase
     public function test_can_manage_print_job_statuses(): void
     {
         // 1. Create status
-        $response = $this->postJson('/api/v1/print-job-statuses', [
+        $response = $this->postJson('/advertising/print-job-statuses', [
             'print_job_states' => 'Archived_'.uniqid(),
         ]);
 
@@ -317,23 +317,23 @@ class PrintJobModuleTest extends TestCase
         $statusId = $response->json('data.id');
 
         // 2. Show status
-        $showResponse = $this->getJson("/api/v1/print-job-statuses/{$statusId}");
+        $showResponse = $this->getJson("/advertising/print-job-statuses/{$statusId}");
         $showResponse->assertStatus(200);
 
         // 3. Update status
-        $updateResponse = $this->putJson("/api/v1/print-job-statuses/{$statusId}", [
+        $updateResponse = $this->putJson("/advertising/print-job-statuses/{$statusId}", [
             'print_job_states' => 'ReadyForDelivery_'.uniqid(),
         ]);
         $updateResponse->assertStatus(200);
 
         // 4. Delete status
-        $deleteResponse = $this->deleteJson("/api/v1/print-job-statuses/{$statusId}");
+        $deleteResponse = $this->deleteJson("/advertising/print-job-statuses/{$statusId}");
         $deleteResponse->assertStatus(200);
     }
 
     public function test_can_retrieve_place_order_demo_data(): void
     {
-        $response = $this->getJson('/api/v1/print-jobs/place-order-data');
+        $response = $this->getJson('/advertising/print-jobs/place-order-data');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -386,7 +386,7 @@ class PrintJobModuleTest extends TestCase
             'print_job_statuses_id' => $this->status->id,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -441,7 +441,7 @@ class PrintJobModuleTest extends TestCase
             'print_job_statuses_id' => $this->status->id,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -479,7 +479,7 @@ class PrintJobModuleTest extends TestCase
             'discription' => 'Urgent vinyl banner with grommets',
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.delivery_method_id', $deliveryMethod->id)
@@ -505,7 +505,7 @@ class PrintJobModuleTest extends TestCase
             'paid_amount' => 0.00,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
         $response->assertStatus(201);
 
         $jobId = $response->json('data.id');
@@ -529,7 +529,7 @@ class PrintJobModuleTest extends TestCase
             'payment_types_id' => 1,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
         $response->assertStatus(201);
 
         $jobId = $response->json('data.id');
@@ -555,7 +555,7 @@ class PrintJobModuleTest extends TestCase
             'payment_types_id' => 1,
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
         $response->assertStatus(201);
 
         $jobId = $response->json('data.id');
@@ -582,7 +582,7 @@ class PrintJobModuleTest extends TestCase
             'payment_statuses_id' => 2, // Manually marked as completed
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
         $response->assertStatus(201);
 
         $jobId = $response->json('data.id');
@@ -640,7 +640,7 @@ class PrintJobModuleTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -716,7 +716,7 @@ class PrintJobModuleTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/v1/print-jobs', $payload);
+        $response = $this->postJson('/advertising/print-jobs', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.count', 2);
@@ -730,7 +730,7 @@ class PrintJobModuleTest extends TestCase
 
     public function test_batch_order_creation_validates_empty_orders_and_missing_payment_method(): void
     {
-        $emptyResponse = $this->postJson('/api/v1/print-jobs', [
+        $emptyResponse = $this->postJson('/advertising/print-jobs', [
             'customer_id' => $this->customer->id,
             'orders' => [],
         ]);
@@ -741,7 +741,7 @@ class PrintJobModuleTest extends TestCase
         $unit = Unit::firstOrCreate(['id' => 1], ['simble' => 'ft', 'name' => 'Feet']);
         $deliveryMethod = DeliveryMethod::firstOrCreate(['id' => 1], ['methord' => 'Customer Pickup']);
 
-        $missingPaymentMethodResponse = $this->postJson('/api/v1/print-jobs', [
+        $missingPaymentMethodResponse = $this->postJson('/advertising/print-jobs', [
             'customer_id' => $this->customer->id,
             'paid_amount' => 500.00,
             'orders' => [

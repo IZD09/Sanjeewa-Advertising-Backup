@@ -56,7 +56,7 @@ export class GRNDataLoader {
 
     try {
       const params = { per_page: 20, ...filters };
-      const response = await this.http.get("/api/v1/suppliers/data", params);
+      const response = await this.http.get("/advertising/suppliers/data", params);
       const data = response?.data || response;
       const list = data?.suppliers ?? (Array.isArray(data) ? data : []);
 
@@ -108,7 +108,7 @@ export class GRNDataLoader {
 
     try {
       const params = { per_page: 20, ...filters };
-      const response = await this.http.get("/api/v1/purchase-orders/data", params);
+      const response = await this.http.get("/advertising/purchase-orders/data", params);
       const data = response?.data || response;
       const orders = data?.purchase_orders ?? data?.orders ?? (Array.isArray(data) ? data : []);
 
@@ -183,7 +183,7 @@ export class GRNDataLoader {
       }
     }
 
-    const response = await this.http.patch(`/api/v1/purchase-orders/${id}`, payload);
+    const response = await this.http.patch(`/advertising/purchase-orders/${id}`, payload);
     await this.fetchPurchaseOrders({}, true);
     return response;
   }
@@ -202,7 +202,7 @@ export class GRNDataLoader {
 
     try {
       const params = { per_page: 20, ...filters };
-      const response = await this.http.get("/api/v1/grns/data", params);
+      const response = await this.http.get("/advertising/grns/data", params);
       const data = response?.data || response;
       const grns = data?.grns ?? data?.records ?? (Array.isArray(data) ? data : []);
 
@@ -247,7 +247,7 @@ export class GRNDataLoader {
    * @returns {Promise<Object>}
    */
   async updateGrnStatus(id, status) {
-    const response = await this.http.patch(`/api/v1/grns/${id}/status`, { status });
+    const response = await this.http.patch(`/advertising/grns/${id}/status`, { status });
     await this.fetchGrns({}, true);
     return response;
   }
@@ -283,7 +283,7 @@ export class GRNDataLoader {
       bank_account: data.bank_account && data.bank_account.trim() ? data.bank_account.trim() : null
     };
 
-    const response = await this.http.post("/api/v1/suppliers", payload);
+    const response = await this.http.post("/advertising/suppliers", payload);
     const newRecord = response?.data || response;
 
     // Refresh suppliers list from database
@@ -306,7 +306,7 @@ export class GRNDataLoader {
       bank_account: data.bank_account && data.bank_account.trim() ? data.bank_account.trim() : null
     };
 
-    const response = await this.http.put(`/api/v1/suppliers/${id}`, payload);
+    const response = await this.http.put(`/advertising/suppliers/${id}`, payload);
     const updatedRecord = response?.data || response;
 
     // Refresh suppliers list from database
@@ -321,7 +321,7 @@ export class GRNDataLoader {
    * @returns {Promise<Object>}
    */
   async toggleSupplierStatus(id) {
-    const response = await this.http.patch(`/api/v1/suppliers/${id}/toggle-status`, {});
+    const response = await this.http.patch(`/advertising/suppliers/${id}/toggle-status`, {});
     await this.fetchSuppliers({}, true);
     return response;
   }
@@ -332,7 +332,7 @@ export class GRNDataLoader {
    * @returns {Promise<boolean>}
    */
   async deleteSupplier(id) {
-    await this.http.delete(`/api/v1/suppliers/${id}`);
+    await this.http.delete(`/advertising/suppliers/${id}`);
     await this.fetchSuppliers({}, true);
     return true;
   }

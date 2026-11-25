@@ -131,9 +131,9 @@ export class AddExpenseBillModal extends BaseModalHandler {
     expenses.unshift(newBill);
     if (this.ctx.saveExpenses) this.ctx.saveExpenses();
 
-    // Persist to Database API (/api/v1/expenses)
+    // Persist to Database API (/advertising/expenses)
     const formattedDate = dueDate ? `${dueDate} 00:00:00` : new Date().toISOString().slice(0, 19).replace("T", " ");
-    this.http.post("/api/v1/expenses", {
+    this.http.post("/advertising/expenses", {
       expencesess_types_id: typeId,
       price: amount,
       expencesess_statuses_id: initialStatus === "Paid" ? 3 : 1,

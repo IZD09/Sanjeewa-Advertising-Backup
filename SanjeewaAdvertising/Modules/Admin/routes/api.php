@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
 use Modules\Admin\Http\Controllers\AdminUserController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Dedicated search, all, statuses, and types endpoints
     Route::get('admins/all', [AdminController::class, 'all'])->name('admin.all');
     Route::get('admins/search', [AdminController::class, 'search'])->name('admin.search');

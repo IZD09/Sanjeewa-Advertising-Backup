@@ -7,7 +7,7 @@ use Modules\User\Http\Controllers\UserController;
 use Modules\User\Http\Controllers\UserPermissionController;
 use Modules\User\Http\Controllers\UserProfileController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // User profile & security endpoints
     Route::prefix('user/profile')->middleware(['auth:web,admin'])->group(function () {
         Route::get('data', [UserProfileController::class, 'data'])->name('api.user.profile.data');

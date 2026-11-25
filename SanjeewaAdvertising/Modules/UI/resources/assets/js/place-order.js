@@ -278,7 +278,7 @@ class PlaceOrderManager {
       // Fallback 2: fetch customer directly from API
       if (!matched && targetId > 0 && this.dataLoader?.http) {
         try {
-          const res = await this.dataLoader.http.get(`/api/v1/customers/${targetId}`);
+          const res = await this.dataLoader.http.get(`/advertising/customers/${targetId}`);
           const custData = res?.data || res;
           if (custData && custData.id) {
             matched = custData;
@@ -430,7 +430,7 @@ class PlaceOrderManager {
     try {
       const payload = { print_job_statuses_id: Number(statusObj.id) };
       try {
-        await this.dataLoader.http.patch(`/api/v1/print-jobs/${rawId}/status`, payload);
+        await this.dataLoader.http.patch(`/advertising/print-jobs/${rawId}/status`, payload);
       } catch (e) {
         await this.dataLoader.http.patch(`/print-jobs/${rawId}/status`, payload);
       }

@@ -6,8 +6,8 @@
  * - Cascading Category -> Subcategory dropdown (disabled until category is chosen)
  * - System-generated SKU / Item Code (no manual input needed)
  * - Required Associated Brands modal selection (at least 1 brand required)
- * - Adding a new Stock Item (POST /api/v1/inventory/stock-items)
- * - Updating an existing Stock Item (PUT /api/v1/inventory/stock-items/{id})
+ * - Adding a new Stock Item (POST /advertising/inventory/stock-items)
+ * - Updating an existing Stock Item (PUT /advertising/inventory/stock-items/{id})
  */
 
 import { RequestHandler } from "../../core/RequestHandler.js";
@@ -21,7 +21,7 @@ export class StockItemProcess {
    */
   constructor(options = {}) {
     this.http = new RequestHandler();
-    this.showToast = options.showToast || ((msg, type) => console.log(`[Toast ${type}]: ${msg}`));
+    this.showToast = options.showToast || (() => {});
     this.onSuccess = options.onSuccess || (() => {});
 
     this.activeEditItem = null;
@@ -598,9 +598,9 @@ export class StockItemProcess {
         if (this.activeEditItem.code) {
           requestData.code = this.activeEditItem.code;
         }
-        response = await this.http.put(`/api/v1/inventory/stock-items/${this.activeEditItem.id}`, requestData);
+        response = await this.http.put(`/advertising/inventory/stock-items/${this.activeEditItem.id}`, requestData);
       } else {
-        response = await this.http.post("/api/v1/inventory/stock-items", requestData);
+        response = await this.http.post("/advertising/inventory/stock-items", requestData);
       }
 
       if (!response || response.success === false) {

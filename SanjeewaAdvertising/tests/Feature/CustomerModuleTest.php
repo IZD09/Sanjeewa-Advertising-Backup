@@ -21,7 +21,7 @@ class CustomerModuleTest extends TestCase
             'email' => 'johndoe@example.com',
         ];
 
-        $response = $this->postJson('/api/v1/customers', $payload);
+        $response = $this->postJson('/advertising/customers', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -44,7 +44,7 @@ class CustomerModuleTest extends TestCase
             ['name' => 'Alice', 'email' => 'alice@example.com', 'register_at' => now()]
         );
 
-        $response = $this->getJson('/api/v1/customers');
+        $response = $this->getJson('/advertising/customers');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -62,7 +62,7 @@ class CustomerModuleTest extends TestCase
             ['name' => 'Bob', 'email' => 'bob@example.com', 'register_at' => now()]
         );
 
-        $response = $this->getJson('/api/v1/customers/all');
+        $response = $this->getJson('/advertising/customers/all');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -79,7 +79,7 @@ class CustomerModuleTest extends TestCase
             ['name' => 'Charlie Chaplin', 'email' => 'charlie@example.com', 'register_at' => now()]
         );
 
-        $response = $this->getJson('/api/v1/customers/search?q=Charlie');
+        $response = $this->getJson('/advertising/customers/search?q=Charlie');
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);
@@ -98,17 +98,17 @@ class CustomerModuleTest extends TestCase
         );
 
         // Search "+94779646903" using local format "0779646903"
-        $this->getJson('/api/v1/customers/search?q=0779646903')
+        $this->getJson('/advertising/customers/search?q=0779646903')
             ->assertStatus(200)
             ->assertJsonFragment(['mobile' => '+94779646903']);
 
         // Partial local search "07796" should also find "+94779646903"
-        $this->getJson('/api/v1/customers/search?q=07796')
+        $this->getJson('/advertising/customers/search?q=07796')
             ->assertStatus(200)
             ->assertJsonFragment(['mobile' => '+94779646903']);
 
         // Search "0712345678" using international format "+94712345678"
-        $this->getJson('/api/v1/customers/search?q='.urlencode('+94712345678'))
+        $this->getJson('/advertising/customers/search?q='.urlencode('+94712345678'))
             ->assertStatus(200)
             ->assertJsonFragment(['mobile' => '0712345678']);
     }
@@ -123,19 +123,19 @@ class CustomerModuleTest extends TestCase
         ]);
 
         // Show
-        $showResponse = $this->getJson("/api/v1/customers/{$customer->id}");
+        $showResponse = $this->getJson("/advertising/customers/{$customer->id}");
         $showResponse->assertStatus(200)
             ->assertJsonPath('data.id', $customer->id);
 
         // Update
-        $updateResponse = $this->putJson("/api/v1/customers/{$customer->id}", [
+        $updateResponse = $this->putJson("/advertising/customers/{$customer->id}", [
             'name' => 'David Updated',
         ]);
         $updateResponse->assertStatus(200)
             ->assertJsonPath('data.name', 'David Updated');
 
         // Delete
-        $deleteResponse = $this->deleteJson("/api/v1/customers/{$customer->id}");
+        $deleteResponse = $this->deleteJson("/advertising/customers/{$customer->id}");
         $deleteResponse->assertStatus(200)
             ->assertJsonPath('message', 'Customer deleted successfully.');
 
@@ -151,7 +151,7 @@ class CustomerModuleTest extends TestCase
             'register_at' => now(),
         ]);
 
-        $response = $this->getJson("/api/v1/customers/{$customer->id}/print-jobs");
+        $response = $this->getJson("/advertising/customers/{$customer->id}/print-jobs");
 
         $response->assertStatus(200)
             ->assertJsonStructure([

@@ -106,7 +106,7 @@ class DashboardTest extends TestCase
 
     public function test_api_dashboard_endpoints(): void
     {
-        $response = $this->getJson('/api/v1/dashboard/data');
+        $response = $this->getJson('/advertising/dashboard/data');
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'overview',

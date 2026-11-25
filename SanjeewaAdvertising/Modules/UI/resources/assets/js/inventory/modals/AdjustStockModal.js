@@ -277,7 +277,7 @@ export class AdjustStockModal extends BaseModalHandler {
     }
 
     try {
-      const response = await this.http.post(`/api/v1/inventory/stocks/${stockId}/adjust`, payload);
+      const response = await this.http.post(`/advertising/inventory/stocks/${stockId}/adjust`, payload);
 
       if (response && response.success) {
         this.closeModal("adjustStockModal");

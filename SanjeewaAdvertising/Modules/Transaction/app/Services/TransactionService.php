@@ -269,15 +269,25 @@ class TransactionService
     {
         $perPage = isset($filters['per_page']) ? max(1, min(100, (int) $filters['per_page'])) : 20;
         $paginator = $this->getGrnPayments($filters, $perPage);
-        $allPayments = $this->getAllGrnPayments([]);
 
-        $totalBilled = $allPayments->sum(fn ($p) => (float) ($p->net_total ?? $p->totalBill ?? $p->payment ?? 0));
-        $totalDisbursed = $allPayments->sum(fn ($p) => (float) ($p->paid_amount ?? $p->payment ?? 0));
-        $totalPending = $allPayments->sum(fn ($p) => (float) ($p->balance ?? $p->balance_amount ?? 0));
+        $kpiRow = GrnPayment::query()
+            ->leftJoin('payment_statuses', 'grn_payments.payment_statuses_id', '=', 'payment_statuses.id')
+            ->selectRaw("
+                COUNT(*) as total_count,
+                COALESCE(SUM(grn_payments.payment), 0) as total_payment,
+                SUM(CASE WHEN payment_statuses.payment_status IN ('Completed', 'Paid') THEN 1 ELSE 0 END) as complete_count,
+                SUM(CASE WHEN payment_statuses.payment_status IN ('Partial', 'Advance') THEN 1 ELSE 0 END) as advance_count,
+                SUM(CASE WHEN payment_statuses.payment_status = 'Pending' THEN 1 ELSE 0 END) as pending_count
+            ")
+            ->first();
 
-        $completeCount = $allPayments->filter(fn ($p) => ($p->paymentStatus?->payment_status ?? '') === 'Completed' || ($p->paymentStatus?->payment_status ?? '') === 'Paid')->count();
-        $advanceCount = $allPayments->filter(fn ($p) => ($p->paymentStatus?->payment_status ?? '') === 'Partial' || ($p->paymentStatus?->payment_status ?? '') === 'Advance')->count();
-        $pendingCount = $allPayments->filter(fn ($p) => ($p->paymentStatus?->payment_status ?? '') === 'Pending')->count();
+        $totalBilled = (float) ($kpiRow->total_payment ?? 0);
+        $totalDisbursed = (float) ($kpiRow->total_payment ?? 0);
+        $totalPending = 0.0;
+        $completeCount = (int) ($kpiRow->complete_count ?? 0);
+        $advanceCount = (int) ($kpiRow->advance_count ?? 0);
+        $pendingCount = (int) ($kpiRow->pending_count ?? 0);
+        $totalCount = (int) ($kpiRow->total_count ?? 0);
 
         return [
             'grn_payments' => GrnPaymentResource::collection($paginator->items()),
@@ -289,7 +299,7 @@ class TransactionService
                     'complete' => $completeCount,
                     'advance' => $advanceCount,
                     'pending' => $pendingCount,
-                    'total' => $allPayments->count(),
+                    'total' => $totalCount,
                 ],
             ],
             'pagination' => [

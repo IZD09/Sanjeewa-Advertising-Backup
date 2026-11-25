@@ -266,7 +266,7 @@ export class PermissionHandler {
       this.renderSearchResults(this.filteredUsers, "");
 
       try {
-        const response = await this.http.get("/api/v1/users/all");
+        const response = await this.http.get("/advertising/users/all");
         if (response && response.success && Array.isArray(response.data)) {
           this.dataLoader.users = response.data.map(u => this.dataLoader.normalizeUser(u));
           this.dataLoader.saveUsers();
@@ -285,7 +285,7 @@ export class PermissionHandler {
     this.filteredUsers = this.filterLocalUsers(raw, query, isNumericId);
     this.renderSearchResults(this.filteredUsers, query);
 
-    // Search users from User Module (/api/v1/users/search) using RequestHandler
+    // Search users from User Module (/advertising/users/search) using RequestHandler
     const controller = new AbortController();
     this.searchAbortController = controller;
 
@@ -298,7 +298,7 @@ export class PermissionHandler {
         params.id = query;
       }
 
-      const response = await this.http.get("/api/v1/users/search", params, {
+      const response = await this.http.get("/advertising/users/search", params, {
         signal: controller.signal
       });
 

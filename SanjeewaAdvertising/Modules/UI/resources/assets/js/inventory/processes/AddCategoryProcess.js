@@ -3,7 +3,7 @@
  *
  * Handles the workflow for creating a new Material Category:
  * - Client-side validation before sending the HTTP request (using Core FormValidator & ValidatBuilder)
- * - HTTP POST request via Core RequestHandler to the Inventory module API (/api/v1/inventory/categories)
+ * - HTTP POST request via Core RequestHandler to the Inventory module API (/advertising/inventory/categories)
  * - Inline form toggle, loading state management, and UI refresh callbacks
  */
 
@@ -185,7 +185,7 @@ export class AddCategoryProcess {
     }
 
     try {
-      const response = await this.http.post("/api/v1/inventory/categories", {
+      const response = await this.http.post("/advertising/inventory/categories", {
         category: categoryName
       });
 

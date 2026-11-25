@@ -135,7 +135,7 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     try {
       const numericId = this.getNumericExpenseId(bill);
       if (numericId) {
-        const response = await this.http.put(`/api/v1/expenses/${numericId}`, {
+        const response = await this.http.put(`/advertising/expenses/${numericId}`, {
           expencesess_statuses_id: 3, // Paid
           price: paidAmount,
           pay_at: `${paidDate} 12:00:00`,
@@ -219,7 +219,7 @@ export class MarkExpensePaidModal extends BaseModalHandler {
     try {
       const numericId = this.getNumericExpenseId(bill);
       if (numericId) {
-        await this.http.put(`/api/v1/expenses/${numericId}`, {
+        await this.http.put(`/advertising/expenses/${numericId}`, {
           expencesess_statuses_id: 1, // Pending
           pay_at: null,
           pay_by: null,

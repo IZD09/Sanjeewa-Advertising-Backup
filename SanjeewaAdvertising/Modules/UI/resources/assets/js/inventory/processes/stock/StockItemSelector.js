@@ -25,7 +25,7 @@ export class StockItemSelector {
     this.getItems = options.getItems || (() => []);
     this.getCategories = options.getCategories || (() => []);
     this.getBrands = options.getBrands || (() => []);
-    this.showToast = options.showToast || ((msg, type) => console.log(`[Toast ${type}]: ${msg}`));
+    this.showToast = options.showToast || (() => {});
     this.onItemSelected = options.onItemSelected || (() => {});
     this.onItemCleared = options.onItemCleared || (() => {});
     this.onCategoryChanged = options.onCategoryChanged || (() => {});

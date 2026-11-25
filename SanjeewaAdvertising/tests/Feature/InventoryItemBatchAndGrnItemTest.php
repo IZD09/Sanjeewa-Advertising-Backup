@@ -59,7 +59,7 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
 
     public function test_can_create_and_retrieve_item_batch(): void
     {
-        $response = $this->postJson('/api/v1/inventory/item-batches', [
+        $response = $this->postJson('/advertising/inventory/item-batches', [
             'stock_items_id' => $this->stockItem->id,
         ]);
 
@@ -74,12 +74,12 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
             'stock_items_id' => $this->stockItem->id,
         ]);
 
-        $showResponse = $this->getJson("/api/v1/inventory/item-batches/{$batchId}");
+        $showResponse = $this->getJson("/advertising/inventory/item-batches/{$batchId}");
         $showResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.id', $batchId);
 
-        $listResponse = $this->getJson('/api/v1/inventory/item-batches');
+        $listResponse = $this->getJson('/advertising/inventory/item-batches');
         $listResponse->assertStatus(200)
             ->assertJsonPath('success', true);
     }
@@ -90,7 +90,7 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
             'stock_items_id' => $this->stockItem->id,
         ]);
 
-        $response = $this->postJson('/api/v1/inventory/grn-items', [
+        $response = $this->postJson('/advertising/inventory/grn-items', [
             'grn_id' => $this->grn->id,
             'item_batches_id' => $batch->id,
             'stock_id' => $this->stock->id,
@@ -111,7 +111,7 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
             'qty' => 25,
         ]);
 
-        $grnItemsResponse = $this->getJson("/api/v1/inventory/grn-items/grn/{$this->grn->id}");
+        $grnItemsResponse = $this->getJson("/advertising/inventory/grn-items/grn/{$this->grn->id}");
         $grnItemsResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(1, 'data');
@@ -167,7 +167,7 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
         ]);
 
         // Delete GRN item via API
-        $delItemRes = $this->deleteJson("/api/v1/inventory/grn-items/{$this->grn->id}/{$batch->id}/{$this->stock->id}");
+        $delItemRes = $this->deleteJson("/advertising/inventory/grn-items/{$this->grn->id}/{$batch->id}/{$this->stock->id}");
         $delItemRes->assertStatus(200)->assertJsonPath('success', true);
 
         $this->assertDatabaseMissing('grm_items', [
@@ -177,7 +177,7 @@ class InventoryItemBatchAndGrnItemTest extends TestCase
         ]);
 
         // Delete Batch via API
-        $delBatchRes = $this->deleteJson("/api/v1/inventory/item-batches/{$batch->id}");
+        $delBatchRes = $this->deleteJson("/advertising/inventory/item-batches/{$batch->id}");
         $delBatchRes->assertStatus(200)->assertJsonPath('success', true);
 
         $this->assertDatabaseMissing('item_batches', [

@@ -23,7 +23,7 @@ class InvoiceModuleTest extends TestCase
     public function test_can_manage_invoices(): void
     {
         // 1. Create Invoice
-        $response = $this->postJson('/api/v1/invoices', [
+        $response = $this->postJson('/advertising/invoices', [
             'customer_id' => $this->customer->id,
             'invoice_at' => now()->toDateString(),
         ]);
@@ -34,22 +34,22 @@ class InvoiceModuleTest extends TestCase
         $invoiceId = $response->json('data.id');
 
         // 2. List & All
-        $this->getJson('/api/v1/invoices')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/invoices/all')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson("/api/v1/invoices/search?customer_id={$this->customer->id}")->assertStatus(200);
+        $this->getJson('/advertising/invoices')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/invoices/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson("/advertising/invoices/search?customer_id={$this->customer->id}")->assertStatus(200);
 
         // 3. Show
-        $this->getJson("/api/v1/invoices/{$invoiceId}")
+        $this->getJson("/advertising/invoices/{$invoiceId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $invoiceId);
 
         // 4. Update
-        $this->putJson("/api/v1/invoices/{$invoiceId}", [
+        $this->putJson("/advertising/invoices/{$invoiceId}", [
             'due_date' => now()->addDays(7)->toDateString(),
         ])->assertStatus(200);
 
         // 5. Delete
-        $this->deleteJson("/api/v1/invoices/{$invoiceId}")->assertStatus(200);
+        $this->deleteJson("/advertising/invoices/{$invoiceId}")->assertStatus(200);
         $this->assertDatabaseMissing('invoice', ['id' => $invoiceId]);
     }
 }

@@ -5,7 +5,7 @@ use Modules\Supplier\Http\Controllers\GrnController;
 use Modules\Supplier\Http\Controllers\PurchaseOrderController;
 use Modules\Supplier\Http\Controllers\SupplierController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Suppliers
     Route::get('suppliers/data', [SupplierController::class, 'suppliersData'])->name('supplier.data');
     Route::get('suppliers/all', [SupplierController::class, 'all'])->name('supplier.all');

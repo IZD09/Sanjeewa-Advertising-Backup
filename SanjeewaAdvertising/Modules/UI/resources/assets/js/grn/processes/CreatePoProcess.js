@@ -48,7 +48,7 @@ export class CreatePoProcess {
     if (typeof callbacks.onStart === "function") callbacks.onStart();
 
     try {
-      const response = await this.http.get("/api/v1/inventory/stock-items/data");
+      const response = await this.http.get("/advertising/inventory/stock-items/data");
       if (response && response.success && response.data) {
         const rawItems = response.data.stock_items || [];
         this.dbCategories = Array.isArray(response.data.categories) ? response.data.categories : [];
@@ -278,7 +278,7 @@ export class CreatePoProcess {
   }
 
   /**
-   * Build payload for POST /api/v1/purchase-orders.
+   * Build payload for POST /advertising/purchase-orders.
    * @param {{supplier: string, supplierId: string|number|null, expDate: string, notes: string}} params
    * @returns {Object}
    */
@@ -316,7 +316,7 @@ export class CreatePoProcess {
    */
   async submitPurchaseOrder({ supplier, supplierId, expDate, notes }) {
     const payload = this.buildPayload({ supplier, supplierId, expDate, notes });
-    const response = await this.http.post("/api/v1/purchase-orders", payload);
+    const response = await this.http.post("/advertising/purchase-orders", payload);
     const createdPo = response?.data?.formatted || response?.data || response;
     const poCode = createdPo?.po_number || (createdPo?.id ? `PO-${String(createdPo.id).padStart(4, "0")}` : "PO-NEW");
 

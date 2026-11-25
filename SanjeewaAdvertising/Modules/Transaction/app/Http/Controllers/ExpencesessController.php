@@ -16,8 +16,7 @@ class ExpencesessController extends BaseApiController
 {
     public function __construct(
         protected ExpencesessService $expensesService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of operating expenses with pagination or all.
@@ -81,11 +80,27 @@ class ExpencesessController extends BaseApiController
     }
 
     /**
+     * Resolve a numeric ID or formatted code (e.g. EXP-2026-001) to an integer primary key.
+     */
+    protected function resolveExpenseId(int|string $id): int
+    {
+        if (is_int($id) || ctype_digit((string) $id)) {
+            return (int) $id;
+        }
+
+        if (preg_match('/(\d+)$/', (string) $id, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return 0;
+    }
+
+    /**
      * Display the specified expense.
      */
-    public function show(int $id): JsonResponse
+    public function show(int|string $id): JsonResponse
     {
-        $expense = $this->expensesService->getExpencesessById($id);
+        $expense = $this->expensesService->getExpencesessById($this->resolveExpenseId($id));
 
         if (! $expense) {
             return $this->notFound('Operating expense not found.');
@@ -100,9 +115,9 @@ class ExpencesessController extends BaseApiController
     /**
      * Update the specified expense in storage.
      */
-    public function update(UpdateExpencesessRequest $request, int $id): JsonResponse
+    public function update(UpdateExpencesessRequest $request, int|string $id): JsonResponse
     {
-        $expense = $this->expensesService->getExpencesessById($id);
+        $expense = $this->expensesService->getExpencesessById($this->resolveExpenseId($id));
 
         if (! $expense) {
             return $this->notFound('Operating expense not found.');
@@ -119,9 +134,9 @@ class ExpencesessController extends BaseApiController
     /**
      * Remove the specified expense from storage.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(int|string $id): JsonResponse
     {
-        $expense = $this->expensesService->getExpencesessById($id);
+        $expense = $this->expensesService->getExpencesessById($this->resolveExpenseId($id));
 
         if (! $expense) {
             return $this->notFound('Operating expense not found.');

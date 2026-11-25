@@ -79,7 +79,7 @@ class PaymentsPageEnglishTest extends TestCase
 
     public function test_available_print_jobs_and_purchase_orders_api_endpoints_work(): void
     {
-        $responseJobs = $this->getJson('/api/v1/invoices/available-jobs');
+        $responseJobs = $this->getJson('/advertising/invoices/available-jobs');
         $responseJobs->assertOk();
         $responseJobs->assertJsonStructure([
             'success',
@@ -87,7 +87,7 @@ class PaymentsPageEnglishTest extends TestCase
             'data',
         ]);
 
-        $responsePos = $this->getJson('/api/v1/grn-payments/available-pos');
+        $responsePos = $this->getJson('/advertising/grn-payments/available-pos');
         $responsePos->assertOk();
         $responsePos->assertJsonStructure([
             'success',

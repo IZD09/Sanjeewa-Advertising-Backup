@@ -13,11 +13,11 @@ export class CustomerDataLoader {
    */
   constructor(options = {}) {
     this.endpoints = options.endpoints || {
-      data: "/api/v1/customers/data",
-      customers: "/api/v1/customers?all=1",
-      all: "/api/v1/customers/all",
-      search: "/api/v1/customers/search",
-      create: "/api/v1/customers",
+      data: "/advertising/customers/data",
+      customers: "/advertising/customers?all=1",
+      all: "/advertising/customers/all",
+      search: "/advertising/customers/search",
+      create: "/advertising/customers",
     };
 
     this.http = new RequestHandler();

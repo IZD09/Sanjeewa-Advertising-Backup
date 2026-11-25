@@ -176,8 +176,8 @@ export class PaymentHistoryModal extends BaseModalHandler {
     if (this.ctx.dataLoader?.http && rawJobId) {
       try {
         const endpoints = [
-          `/api/v1/payments?print_jobs_id=${rawJobId}`,
-          `/api/v1/payments/all?print_jobs_id=${rawJobId}`,
+          `/advertising/payments?print_jobs_id=${rawJobId}`,
+          `/advertising/payments/all?print_jobs_id=${rawJobId}`,
           `/payments?print_jobs_id=${rawJobId}`
         ];
 
@@ -461,7 +461,7 @@ export class PaymentHistoryModal extends BaseModalHandler {
     const rawPaymentId = parseInt(String(paymentId).replace(/\D+/g, ""), 10);
     if (this.ctx.dataLoader?.http && rawPaymentId) {
       try {
-        await this.ctx.dataLoader.http.patch(`/api/v1/payments/${rawPaymentId}`, {
+        await this.ctx.dataLoader.http.patch(`/advertising/payments/${rawPaymentId}`, {
           payment_statuses_id: 4 // Reversed/Cancelled
         });
       } catch (e) {

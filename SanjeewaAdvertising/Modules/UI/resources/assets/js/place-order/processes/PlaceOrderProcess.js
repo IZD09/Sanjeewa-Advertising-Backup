@@ -661,7 +661,7 @@ export class PlaceOrderProcess {
       };
 
       // Send multi-order batch request to PrintJob module
-      const result = await this.http.post("/api/v1/print-jobs", payload);
+      const result = await this.http.post("/advertising/print-jobs", payload);
 
       if (result && result.success === false) {
         throw new Error(result.message || "Failed to store print jobs in database.");

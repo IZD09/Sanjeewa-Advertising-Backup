@@ -6,7 +6,7 @@ use Modules\Inventory\Http\Controllers\InventoryController;
 use Modules\Inventory\Http\Controllers\ItemBatchController;
 use Modules\Inventory\Http\Controllers\StockController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Categories & Subcategories Master Data
     Route::get('inventory/categories/data', [InventoryController::class, 'categoriesData'])->name('inventory.categories.data');
     Route::get('inventory/categories/stats', [InventoryController::class, 'categoriesStats'])->name('inventory.categories.stats');

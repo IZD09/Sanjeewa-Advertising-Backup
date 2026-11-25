@@ -12,6 +12,8 @@
 
 "use strict";
 
+import { LiveSyncManager } from "../core/LiveSyncManager.js";
+
 class TopbarController {
   constructor() {
     this.topbar = document.getElementById("topbar");
@@ -313,19 +315,30 @@ class TopbarController {
   }
 
   startNotificationPolling() {
-    if (this.notifPollTimer) clearInterval(this.notifPollTimer);
-    this.notifPollTimer = setInterval(() => {
-      if (!document.hidden) {
-        this.loadNotifications();
-      }
-    }, 45000);
+    if (typeof this._unsubscribeNotifSync === "function") {
+      this._unsubscribeNotifSync();
+      this._unsubscribeNotifSync = null;
+    }
+    if (this.notifPollTimer) {
+      clearInterval(this.notifPollTimer);
+      this.notifPollTimer = null;
+    }
+    this._unsubscribeNotifSync = LiveSyncManager.subscribe(
+      ["orders", "print_jobs", "payments", "inventory", "grn"],
+      () => {
+        if (!document.hidden) {
+          this.loadNotifications();
+        }
+      },
+      { key: "topbar-notifications-live-sync" }
+    );
   }
 
   async loadNotifications() {
     if (!this.notifToggle) return;
 
     try {
-      const response = await fetch("/api/v1/notifications", {
+      const response = await fetch("/advertising/notifications", {
         headers: {
           "Accept": "application/json",
           "X-Requested-With": "XMLHttpRequest",
@@ -414,7 +427,7 @@ class TopbarController {
   async markNotificationAsRead(id, actionUrl) {
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-      fetch(`/api/v1/notifications/${id}/read`, {
+      fetch(`/advertising/notifications/${id}/read`, {
         method: "PATCH",
         headers: {
           "Accept": "application/json",
@@ -436,7 +449,7 @@ class TopbarController {
   async markAllNotificationsAsRead() {
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-      const res = await fetch("/api/v1/notifications/mark-all-read", {
+      const res = await fetch("/advertising/notifications/mark-all-read", {
         method: "POST",
         headers: {
           "Accept": "application/json",

@@ -146,7 +146,7 @@ class SessionInactivityTimeoutTest extends TestCase
             ->withHeaders([
                 'X-Background-Poll' => '1',
             ])
-            ->getJson('/api/v1/users/all');
+            ->getJson('/advertising/users/all');
 
         $response->assertStatus(200);
         // The background poll must NOT have changed last_activity_time to now()

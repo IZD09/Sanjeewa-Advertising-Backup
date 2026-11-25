@@ -18,7 +18,7 @@ class PaymentsDataEndpointsTest extends TestCase
 
     public function test_invoice_payments_data_endpoint_returns_successful_response(): void
     {
-        $response = $this->getJson('/api/v1/invoices/data');
+        $response = $this->getJson('/advertising/invoices/data');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -42,7 +42,7 @@ class PaymentsDataEndpointsTest extends TestCase
 
     public function test_grn_payments_data_endpoint_returns_successful_response(): void
     {
-        $response = $this->getJson('/api/v1/grn-payments/data');
+        $response = $this->getJson('/advertising/grn-payments/data');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -66,7 +66,7 @@ class PaymentsDataEndpointsTest extends TestCase
 
     public function test_expenses_data_endpoint_returns_successful_response(): void
     {
-        $response = $this->getJson('/api/v1/expenses/data');
+        $response = $this->getJson('/advertising/expenses/data');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([

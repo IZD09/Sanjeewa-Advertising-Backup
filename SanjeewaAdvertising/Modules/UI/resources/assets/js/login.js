@@ -352,7 +352,7 @@ export class LoginManager {
     const remember = this.rememberCheckbox ? this.rememberCheckbox.checked : false;
 
     const loginEndpoint =
-      this.form?.getAttribute("action") || "/api/v1/auth/login";
+      this.form?.getAttribute("action") || "/advertising/auth/login";
     const redirectUrl =
       this.form?.dataset?.redirect || "/dashboard";
 
@@ -480,7 +480,7 @@ export class LoginManager {
 
     try {
       const http = new RequestHandler();
-      const response = await http.post("/api/v1/permissions/request", {
+      const response = await http.post("/advertising/permissions/request", {
         user_id: parseInt(userId, 10),
       });
 

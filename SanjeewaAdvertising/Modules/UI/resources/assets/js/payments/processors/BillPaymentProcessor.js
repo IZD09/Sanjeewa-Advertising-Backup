@@ -74,7 +74,7 @@ export class BillPaymentProcessor {
       return { success: false, errors: validation.errors };
     }
 
-    // 1. Dispatch request to Transaction Module via RequestHandler (POST /api/v1/expenses)
+    // 1. Dispatch request to Transaction Module via RequestHandler (POST /advertising/expenses)
     let backendExpense = null;
     try {
       const expensePayload = {
@@ -86,7 +86,7 @@ export class BillPaymentProcessor {
         notes: billData.notes || billData.paidNote || ""
       };
 
-      const response = await this.http.post("/api/v1/expenses", expensePayload);
+      const response = await this.http.post("/advertising/expenses", expensePayload);
       backendExpense = response?.data || response;
     } catch (apiErr) {
       console.warn("[BillPaymentProcessor] Transaction Module API error (proceeding with local synchronization):", apiErr);

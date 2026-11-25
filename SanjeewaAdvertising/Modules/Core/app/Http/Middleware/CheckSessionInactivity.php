@@ -74,7 +74,7 @@ class CheckSessionInactivity
             'admin/logout',
             'session/keep-alive',
             'session/inactivity-timeout',
-            'api/v1/session/*'
+            'advertising/session/*'
         );
     }
 
@@ -140,7 +140,7 @@ class CheckSessionInactivity
 
         $timeoutMessage = 'Your session has been deactivated due to 10 minutes of inactivity. Please log in again.';
 
-        if ($request->wantsJson() || $request->ajax() || $request->expectsJson() || $request->is('api/*')) {
+        if ($request->wantsJson() || $request->ajax() || $request->expectsJson() || $request->is('advertising/*') || $request->is('api/*')) {
             return response()->json([
                 'success' => false,
                 'message' => $timeoutMessage,

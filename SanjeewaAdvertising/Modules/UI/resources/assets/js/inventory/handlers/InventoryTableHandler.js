@@ -2,7 +2,7 @@
  * SanjeewaAdvertising - Inventory Table Handler
  *
  * Extends BaseTableLoader core class, directly fetching and orchestrating:
- * - View 2: Detailed Stock Batches from the backend database (/api/v1/inventory/stocks)
+ * - View 2: Detailed Stock Batches from the backend database (/advertising/inventory/stocks)
  * - View 1: Consolidated Summary (Item-wise totals across batches)
  *
  * Mirrors the architecture of CategoriesTabHandler, StockMovementsHandler, and StockItemsTabHandler:
@@ -46,7 +46,7 @@ export class InventoryTableHandler extends BaseTableLoader {
     });
 
     this.http = new RequestHandler();
-    this.showToast = options.showToast || ((msg, type) => console.log(`[Toast ${type}]: ${msg}`));
+    this.showToast = options.showToast || (() => {});
 
     this.activeView = "aggregated"; // 'aggregated' | 'batches'
     this.detailedStocks = [];
@@ -135,7 +135,7 @@ export class InventoryTableHandler extends BaseTableLoader {
     this.showLoading(isAggregated ? "Loading material catalog stock items..." : "Loading detailed stock batches...");
 
     try {
-      const response = await this.http.get("/api/v1/inventory/stocks?per_page=100");
+      const response = await this.http.get("/advertising/inventory/stocks?per_page=100");
       if (response && response.success && response.data) {
         this.applyPayload(response.data, page);
       }

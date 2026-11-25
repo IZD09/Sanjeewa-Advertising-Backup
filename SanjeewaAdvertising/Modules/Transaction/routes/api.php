@@ -7,7 +7,7 @@ use Modules\Transaction\Http\Controllers\ExpencesessTypeController;
 use Modules\Transaction\Http\Controllers\GrnPaymentController;
 use Modules\Transaction\Http\Controllers\PaymentController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Payment Types & Statuses
     Route::get('payments/types', [PaymentController::class, 'types'])->name('transaction.payments.types');
     Route::get('payments/statuses', [PaymentController::class, 'statuses'])->name('transaction.payments.statuses');

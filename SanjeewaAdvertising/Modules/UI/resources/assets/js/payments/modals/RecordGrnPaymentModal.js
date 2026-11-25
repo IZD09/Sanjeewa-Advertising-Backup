@@ -256,7 +256,7 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
 
   async loadSuppliers() {
     try {
-      const res = await this.http.get("/api/v1/suppliers/all");
+      const res = await this.http.get("/advertising/suppliers/all");
       const data = res?.data || res;
       this.suppliers = Array.isArray(data) ? data : (data?.data || []);
     } catch (err) {
@@ -268,7 +268,7 @@ export class RecordGrnPaymentModal extends BaseModalHandler {
   async loadAvailablePurchaseOrders() {
     let records = [];
     try {
-      const res = await this.http.get("/api/v1/grn-payments/available-pos");
+      const res = await this.http.get("/advertising/grn-payments/available-pos");
       const data = res?.data || res;
       const livePos = Array.isArray(data) ? data : (data?.pos || []);
       if (Array.isArray(livePos)) {

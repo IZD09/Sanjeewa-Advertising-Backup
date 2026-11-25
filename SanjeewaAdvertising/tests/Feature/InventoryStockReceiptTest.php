@@ -62,7 +62,7 @@ class InventoryStockReceiptTest extends TestCase
         ]);
 
         // Test form data endpoint
-        $formDataResponse = $this->getJson('/api/v1/inventory/stocks/form-data');
+        $formDataResponse = $this->getJson('/advertising/inventory/stocks/form-data');
         $formDataResponse->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonStructure([
@@ -70,7 +70,7 @@ class InventoryStockReceiptTest extends TestCase
             ]);
 
         // Test stocks listing
-        $listingResponse = $this->getJson('/api/v1/inventory/stocks?per_page=20');
+        $listingResponse = $this->getJson('/advertising/inventory/stocks?per_page=20');
         $listingResponse->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.pagination.total', 1)
@@ -118,7 +118,7 @@ class InventoryStockReceiptTest extends TestCase
             'add_date' => now(),
         ]);
 
-        $response = $this->getJson('/api/v1/inventory/stocks?per_page=20');
+        $response = $this->getJson('/advertising/inventory/stocks?per_page=20');
 
         $response->assertOk()
             ->assertJsonPath('success', true)
@@ -165,7 +165,7 @@ class InventoryStockReceiptTest extends TestCase
             'create_new_batch' => true,
         ];
 
-        $response = $this->postJson('/api/v1/inventory/stocks', $payload);
+        $response = $this->postJson('/advertising/inventory/stocks', $payload);
 
         $response->assertCreated()
             ->assertJsonPath('success', true)
@@ -222,7 +222,7 @@ class InventoryStockReceiptTest extends TestCase
             'batch_id' => $batch->id,
         ];
 
-        $response = $this->putJson("/api/v1/inventory/stocks/{$stock->id}", $payload);
+        $response = $this->putJson("/advertising/inventory/stocks/{$stock->id}", $payload);
 
         $response->assertOk()
             ->assertJsonPath('success', true)
@@ -291,7 +291,7 @@ class InventoryStockReceiptTest extends TestCase
         $otherGrn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-TEST-02']);
 
         // Step 1: Check form-data endpoint before stock added - only Pending Stock GRN is returned with both items
-        $formData1 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $formData1 = $this->getJson('/advertising/inventory/stocks/form-data')->json();
         $grnData1 = collect($formData1['data']['grns'])->firstWhere('id', $grn->id);
         $otherGrnData1 = collect($formData1['data']['grns'])->firstWhere('id', $otherGrn->id);
 
@@ -321,11 +321,11 @@ class InventoryStockReceiptTest extends TestCase
             'create_new_batch' => true,
         ];
 
-        $storeResponse = $this->postJson('/api/v1/inventory/stocks', $payload);
+        $storeResponse = $this->postJson('/advertising/inventory/stocks', $payload);
         $storeResponse->assertCreated();
 
         // Step 3: Check form-data endpoint after item 1 added - item 1 must be removed, only item 2 remains!
-        $formData2 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $formData2 = $this->getJson('/advertising/inventory/stocks/form-data')->json();
         $grnData2 = collect($formData2['data']['grns'])->firstWhere('id', $grn->id);
 
         $this->assertNotNull($grnData2);
@@ -343,11 +343,11 @@ class InventoryStockReceiptTest extends TestCase
             'create_new_batch' => true,
         ];
 
-        $storeResponse2 = $this->postJson('/api/v1/inventory/stocks', $payload2);
+        $storeResponse2 = $this->postJson('/advertising/inventory/stocks', $payload2);
         $storeResponse2->assertCreated();
 
         // Step 5: Check form-data endpoint after item 2 added - GRN is fully stocked, so it is removed from Select GRN Reference!
-        $formData3 = $this->getJson('/api/v1/inventory/stocks/form-data')->json();
+        $formData3 = $this->getJson('/advertising/inventory/stocks/form-data')->json();
         $grnData3 = collect($formData3['data']['grns'])->firstWhere('id', $grn->id);
 
         $this->assertNull($grnData3);
@@ -376,7 +376,7 @@ class InventoryStockReceiptTest extends TestCase
         ]);
 
         // 1. Adjust up (ADD: 100 -> 105)
-        $responseAdd = $this->postJson("/api/v1/inventory/stocks/{$stock->id}/adjust", [
+        $responseAdd = $this->postJson("/advertising/inventory/stocks/{$stock->id}/adjust", [
             'stock_id' => $stock->id,
             'adjustment_type' => 'ADD',
             'new_qty' => 105,
@@ -401,7 +401,7 @@ class InventoryStockReceiptTest extends TestCase
         ]);
 
         // 2. Adjust down (DEDUCT: 105 -> 95)
-        $responseDeduct = $this->postJson("/api/v1/inventory/stocks/{$stock->id}/adjust", [
+        $responseDeduct = $this->postJson("/advertising/inventory/stocks/{$stock->id}/adjust", [
             'stock_id' => $stock->id,
             'adjustment_type' => 'DEDUCT',
             'new_qty' => 95,
@@ -426,7 +426,7 @@ class InventoryStockReceiptTest extends TestCase
         ]);
 
         // 3. Adjust via direct endpoint
-        $responseDirect = $this->postJson('/api/v1/inventory/stocks/adjust', [
+        $responseDirect = $this->postJson('/advertising/inventory/stocks/adjust', [
             'stock_id' => $stock->id,
             'adjustment_type' => 'ADD',
             'new_qty' => 120,
@@ -482,7 +482,7 @@ class InventoryStockReceiptTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/v1/inventory/stocks', $payload);
+        $response = $this->postJson('/advertising/inventory/stocks', $payload);
 
         $response->assertCreated()
             ->assertJsonPath('success', true);
@@ -541,7 +541,7 @@ class InventoryStockReceiptTest extends TestCase
             'grn_statuses_id' => GrnStatus::STATUS_PENDING,
         ]);
 
-        $response = $this->postJson('/api/v1/inventory/stocks', [
+        $response = $this->postJson('/advertising/inventory/stocks', [
             'grn_id' => $pendingGrn->id,
             'add_date' => now()->toDateString(),
             'items' => [
@@ -621,7 +621,7 @@ class InventoryStockReceiptTest extends TestCase
         $pendingStockGrn->purchaseOrders()->attach($po->id, ['supplyer_invoice' => 'INV-BATCH-01']);
 
         // Receive both items: itemWithBatch has allocated batch, itemWithoutBatch has no batch
-        $response = $this->postJson('/api/v1/inventory/stocks', [
+        $response = $this->postJson('/advertising/inventory/stocks', [
             'grn_id' => $pendingStockGrn->id,
             'add_date' => now()->toDateString(),
             'items' => [

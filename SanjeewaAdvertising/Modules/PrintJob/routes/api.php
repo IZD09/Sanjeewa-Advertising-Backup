@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\PrintJob\Http\Controllers\PrintJobController;
 use Modules\PrintJob\Http\Controllers\PrintJobStatusController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Place order data (demo dataset without DB connection)
     Route::get('print-jobs/place-order-data', [PrintJobController::class, 'placeOrderData'])->name('printjob.jobs.place-order-data');
     Route::get('print-jobs/orders', [PrintJobController::class, 'placeOrderData'])->name('printjob.jobs.orders');

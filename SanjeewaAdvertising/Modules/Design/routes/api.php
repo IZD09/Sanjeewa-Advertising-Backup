@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Design\Http\Controllers\PrintCostController;
 use Modules\Design\Http\Controllers\PrintTypeController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Print Types
     Route::get('print-types/all', [PrintTypeController::class, 'all'])->name('design.print-types.all');
     Route::get('print-types/search', [PrintTypeController::class, 'search'])->name('design.print-types.search');

@@ -28,7 +28,7 @@ class SupplierModuleTest extends TestCase
         // 1. Create Supplier
         $mobile = '077'.rand(1000000, 9999999);
         $email = 'sup_'.uniqid().'@example.com';
-        $response = $this->postJson('/api/v1/suppliers', [
+        $response = $this->postJson('/advertising/suppliers', [
             'name' => 'Acme Supplies',
             'mobile' => $mobile,
             'email' => $email,
@@ -40,25 +40,25 @@ class SupplierModuleTest extends TestCase
         $supplierId = $response->json('data.id');
 
         // 2. List, All, Search
-        $this->getJson('/api/v1/suppliers')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/suppliers/all')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/suppliers/search?q=Acme')->assertStatus(200);
+        $this->getJson('/advertising/suppliers')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/suppliers/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/suppliers/search?q=Acme')->assertStatus(200);
 
         // 3. Show
-        $this->getJson("/api/v1/suppliers/{$supplierId}")
+        $this->getJson("/advertising/suppliers/{$supplierId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $supplierId);
 
         // 4. Update
-        $this->putJson("/api/v1/suppliers/{$supplierId}", [
+        $this->putJson("/advertising/suppliers/{$supplierId}", [
             'name' => 'Acme Supplies Updated',
         ])->assertStatus(200)->assertJsonPath('data.name', 'Acme Supplies Updated');
 
         // 5. Purchase orders sub-resource
-        $this->getJson("/api/v1/suppliers/{$supplierId}/purchase-orders")->assertStatus(200);
+        $this->getJson("/advertising/suppliers/{$supplierId}/purchase-orders")->assertStatus(200);
 
         // 6. Delete (disables supplier)
-        $this->deleteJson("/api/v1/suppliers/{$supplierId}")->assertStatus(200);
+        $this->deleteJson("/advertising/suppliers/{$supplierId}")->assertStatus(200);
         $this->assertDatabaseHas('suppliers', ['id' => $supplierId, 'status' => 'Disabled']);
     }
 
@@ -72,7 +72,7 @@ class SupplierModuleTest extends TestCase
         ]);
 
         // Create PO
-        $response = $this->postJson('/api/v1/purchase-orders', [
+        $response = $this->postJson('/advertising/purchase-orders', [
             'suppliers_id' => $supplier->id,
             'add_date' => now()->toDateString(),
         ]);
@@ -81,19 +81,19 @@ class SupplierModuleTest extends TestCase
         $poId = $response->json('data.id');
 
         // List & All
-        $this->getJson('/api/v1/purchase-orders')->assertStatus(200);
-        $this->getJson('/api/v1/purchase-orders/all')->assertStatus(200);
+        $this->getJson('/advertising/purchase-orders')->assertStatus(200);
+        $this->getJson('/advertising/purchase-orders/all')->assertStatus(200);
 
         // Show
-        $this->getJson("/api/v1/purchase-orders/{$poId}")->assertStatus(200);
+        $this->getJson("/advertising/purchase-orders/{$poId}")->assertStatus(200);
 
         // Update
-        $this->putJson("/api/v1/purchase-orders/{$poId}", [
+        $this->putJson("/advertising/purchase-orders/{$poId}", [
             'add_date' => now()->toDateString(),
         ])->assertStatus(200);
 
         // Delete
-        $this->deleteJson("/api/v1/purchase-orders/{$poId}")->assertStatus(200);
+        $this->deleteJson("/advertising/purchase-orders/{$poId}")->assertStatus(200);
         $this->assertDatabaseMissing('purchase_orders', ['id' => $poId]);
     }
 
@@ -112,7 +112,7 @@ class SupplierModuleTest extends TestCase
         ]);
 
         // Create GRN
-        $response = $this->postJson('/api/v1/grns', [
+        $response = $this->postJson('/advertising/grns', [
             'at_time' => now()->toDateTimeString(),
             'purchase_orders_id' => $po->id,
             'supplyer_invoice' => 'INV-TEST-001',
@@ -126,12 +126,12 @@ class SupplierModuleTest extends TestCase
         ]);
 
         // Cannot complete a GRN before it is Approved
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Completed',
         ])->assertStatus(422);
 
         // Approve GRN via grn_statuses_id
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Approved',
         ])->assertStatus(200)
             ->assertJsonPath('data.status', 'Approved')
@@ -143,28 +143,28 @@ class SupplierModuleTest extends TestCase
         ]);
 
         // Now can complete the Approved GRN
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Completed',
         ])->assertStatus(200)
             ->assertJsonPath('data.status', 'Completed')
             ->assertJsonPath('data.grn_statuses_id', 3);
 
         // Can cancel GRN
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Cancelled',
         ])->assertStatus(200)
             ->assertJsonPath('data.status', 'Cancelled')
             ->assertJsonPath('data.grn_statuses_id', 4);
 
         // List & All
-        $this->getJson('/api/v1/grns')->assertStatus(200);
-        $this->getJson('/api/v1/grns/all')->assertStatus(200);
+        $this->getJson('/advertising/grns')->assertStatus(200);
+        $this->getJson('/advertising/grns/all')->assertStatus(200);
 
         // Show
-        $this->getJson("/api/v1/grns/{$grnId}")->assertStatus(200);
+        $this->getJson("/advertising/grns/{$grnId}")->assertStatus(200);
 
         // Delete
-        $this->deleteJson("/api/v1/grns/{$grnId}")->assertStatus(200);
+        $this->deleteJson("/advertising/grns/{$grnId}")->assertStatus(200);
         $this->assertDatabaseMissing('grn', ['id' => $grnId]);
     }
 
@@ -230,7 +230,7 @@ class SupplierModuleTest extends TestCase
             'add_date' => now(),
         ]);
 
-        $createRes = $this->postJson('/api/v1/grns', [
+        $createRes = $this->postJson('/advertising/grns', [
             'at_time' => now()->toDateTimeString(),
             'purchase_orders_id' => $po->id,
             'supplyer_invoice' => 'INV-STK-001',
@@ -253,15 +253,15 @@ class SupplierModuleTest extends TestCase
             'qty' => 15,
         ]);
 
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Pending Stock',
         ])->assertStatus(422);
 
-        $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Approved',
         ])->assertStatus(200);
 
-        $completeRes = $this->patchJson("/api/v1/grns/{$grnId}/status", [
+        $completeRes = $this->patchJson("/advertising/grns/{$grnId}/status", [
             'status' => 'Pending Stock',
         ]);
 
@@ -294,7 +294,7 @@ class SupplierModuleTest extends TestCase
         }
 
         // Page 1 of GRN data should return max 20 rows
-        $grnPage1 = $this->getJson('/api/v1/grns/data?page=1&per_page=20')
+        $grnPage1 = $this->getJson('/advertising/grns/data?page=1&per_page=20')
             ->assertStatus(200)
             ->assertJsonPath('data.pagination.per_page', 20)
             ->assertJsonPath('data.pagination.current_page', 1);
@@ -303,14 +303,14 @@ class SupplierModuleTest extends TestCase
         $this->assertGreaterThanOrEqual(25, $grnPage1->json('data.pagination.total'));
 
         // Page 2 of GRN data should return the remaining rows without reload
-        $grnPage2 = $this->getJson('/api/v1/grns/data?page=2&per_page=20')
+        $grnPage2 = $this->getJson('/advertising/grns/data?page=2&per_page=20')
             ->assertStatus(200)
             ->assertJsonPath('data.pagination.current_page', 2);
 
         $this->assertNotEmpty($grnPage2->json('data.grns'));
 
         // Page 1 of Purchase Orders data should return max 20 rows
-        $poPage1 = $this->getJson('/api/v1/purchase-orders/data?page=1&per_page=20')
+        $poPage1 = $this->getJson('/advertising/purchase-orders/data?page=1&per_page=20')
             ->assertStatus(200)
             ->assertJsonPath('data.pagination.per_page', 20)
             ->assertJsonPath('data.pagination.current_page', 1);
@@ -343,7 +343,7 @@ class SupplierModuleTest extends TestCase
         ]);
 
         // Place PO using suppliers_id and line items
-        $response = $this->postJson('/api/v1/purchase-orders', [
+        $response = $this->postJson('/advertising/purchase-orders', [
             'suppliers_id' => $supplier->id,
             'add_date' => now()->toDateString(),
             'expected_date' => now()->addDays(5)->toDateString(),
@@ -400,7 +400,7 @@ class SupplierModuleTest extends TestCase
 
         // Place PO using auto-created supplier name
         $newSupplierName = 'Direct Imported Flex Hub';
-        $responseNewSup = $this->postJson('/api/v1/purchase-orders', [
+        $responseNewSup = $this->postJson('/advertising/purchase-orders', [
             'supplier_name' => $newSupplierName,
             'supplier_contact' => '0719988776',
             'items' => [

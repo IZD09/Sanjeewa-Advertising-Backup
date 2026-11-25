@@ -25,7 +25,7 @@ export class AddStockProcess {
    */
   constructor(options = {}) {
     this.http = new RequestHandler();
-    this.showToast = options.showToast || ((msg, type) => console.log(`[Toast ${type}]: ${msg}`));
+    this.showToast = options.showToast || (() => {});
     this.onSuccess = options.onSuccess || (() => {});
 
     this.categories = [];
@@ -145,7 +145,7 @@ export class AddStockProcess {
    */
   async loadMasterData() {
     try {
-      const response = await this.http.get("/api/v1/inventory/stocks/form-data");
+      const response = await this.http.get("/advertising/inventory/stocks/form-data");
       if (response && response.success && response.data) {
         this.categories = response.data.categories || [];
         this.brands = response.data.brands || [];
@@ -444,7 +444,7 @@ export class AddStockProcess {
     }
 
     try {
-      const response = await this.http.post("/api/v1/inventory/stocks", payload);
+      const response = await this.http.post("/advertising/inventory/stocks", payload);
 
       if (response && response.success) {
         const msg = response.message || `Successfully received ${stagedItems.length} item(s) into stock for GRN #${grnId}.`;

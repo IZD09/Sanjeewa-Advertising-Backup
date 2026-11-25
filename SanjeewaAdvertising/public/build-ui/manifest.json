@@ -30,8 +30,8 @@
     "file": "assets/FormValidator-DavQ7TG5.js",
     "name": "FormValidator"
   },
-  "_LiveSyncManager-COtD295Z.js": {
-    "file": "assets/LiveSyncManager-COtD295Z.js",
+  "_LiveSyncManager-5XDpZg_L.js": {
+    "file": "assets/LiveSyncManager-5XDpZg_L.js",
     "name": "LiveSyncManager"
   },
   "_MobileNumberHelper-Cjypt2Ll.js": {
@@ -50,15 +50,15 @@
     "file": "assets/ValidatBuilder-DPg4PYww.js",
     "name": "ValidatBuilder"
   },
-  "_ViewGRNModal-CYEqXbOk.js": {
-    "file": "assets/ViewGRNModal-CYEqXbOk.js",
+  "_ViewGRNModal-Dh-S5Nyf.js": {
+    "file": "assets/ViewGRNModal-Dh-S5Nyf.js",
     "name": "ViewGRNModal",
     "imports": [
       "_BaseModalHandler-BzI2OdAS.js"
     ]
   },
-  "_ViewOrderModal-C9g2xKQA.js": {
-    "file": "assets/ViewOrderModal-C9g2xKQA.js",
+  "_ViewOrderModal-zZCNg9Tz.js": {
+    "file": "assets/ViewOrderModal-zZCNg9Tz.js",
     "name": "ViewOrderModal",
     "imports": [
       "_RequestHandler-DktZQXl-.js",
@@ -66,7 +66,7 @@
     ]
   },
   "resources/assets/css/admin-hr-management.css": {
-    "file": "assets/admin-hr-management-Cl8w6zVr.css",
+    "file": "assets/admin-hr-management-H1CGEs3g.css",
     "name": "admin-hr-management",
     "names": [
       "admin-hr-management.css"
@@ -93,7 +93,7 @@
     "isEntry": true
   },
   "resources/assets/css/admin-user-control.css": {
-    "file": "assets/admin-user-control-BJCfimai.css",
+    "file": "assets/admin-user-control-DcCU8Siw.css",
     "name": "admin-user-control",
     "names": [
       "admin-user-control.css"
@@ -111,7 +111,7 @@
     "isEntry": true
   },
   "resources/assets/css/core.css": {
-    "file": "assets/core-qnI-rFP3.css",
+    "file": "assets/core-DxnONnDs.css",
     "name": "core",
     "names": [
       "core.css"
@@ -129,7 +129,7 @@
     "isEntry": true
   },
   "resources/assets/css/grn.css": {
-    "file": "assets/grn-CZEIov9d.css",
+    "file": "assets/grn-BKcbAZIo.css",
     "name": "grn",
     "names": [
       "grn.css"
@@ -138,7 +138,7 @@
     "isEntry": true
   },
   "resources/assets/css/inventory.css": {
-    "file": "assets/inventory-Cm63KpMI.css",
+    "file": "assets/inventory-DDVbyWxU.css",
     "name": "inventory",
     "names": [
       "inventory.css"
@@ -183,7 +183,7 @@
     "isEntry": true
   },
   "resources/assets/css/print-jobs.css": {
-    "file": "assets/print-jobs-D9VIxMCa.css",
+    "file": "assets/print-jobs-BkNHtYI0.css",
     "name": "print-jobs",
     "names": [
       "print-jobs.css"
@@ -229,12 +229,13 @@
     ]
   },
   "resources/assets/js/admin/dashboard.js": {
-    "file": "assets/dashboard-C4DKIUsQ.js",
+    "file": "assets/dashboard-B_vg3Swf.js",
     "name": "dashboard",
     "src": "resources/assets/js/admin/dashboard.js",
     "isEntry": true,
     "imports": [
-      "_RequestHandler-DktZQXl-.js"
+      "_RequestHandler-DktZQXl-.js",
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/admin/hr-management/processes/AdminHRManager.js": {
@@ -269,13 +270,14 @@
     ]
   },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
-    "file": "assets/UserControlManager-BpUAX8WT.js",
+    "file": "assets/UserControlManager-BI9QUbPY.js",
     "name": "UserControlManager",
     "src": "resources/assets/js/admin/user-control/processes/UserControlManager.js",
     "isEntry": true,
     "imports": [
       "_RequestHandler-DktZQXl-.js",
-      "_MobileNumberHelper-Cjypt2Ll.js"
+      "_MobileNumberHelper-Cjypt2Ll.js",
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/app.js": {
@@ -294,13 +296,16 @@
     "isEntry": true
   },
   "resources/assets/js/components/topbar.js": {
-    "file": "assets/topbar-D779Z6Kt.js",
+    "file": "assets/topbar-BVGppLHv.js",
     "name": "topbar",
     "src": "resources/assets/js/components/topbar.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_LiveSyncManager-5XDpZg_L.js"
+    ]
   },
   "resources/assets/js/core.js": {
-    "file": "assets/core-BzAQ0Vti.js",
+    "file": "assets/core-Bmz_ruOA.js",
     "name": "core",
     "src": "resources/assets/js/core.js",
     "isEntry": true,
@@ -316,11 +321,11 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-COtD295Z.js"
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/customers.js": {
-    "file": "assets/customers-DeazsQHs.js",
+    "file": "assets/customers-C85P666x.js",
     "name": "customers",
     "src": "resources/assets/js/customers.js",
     "isEntry": true,
@@ -328,11 +333,11 @@
       "_RequestHandler-DktZQXl-.js",
       "_BasePaginationHandler-CxkMXfSO.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
-      "_LiveSyncManager-COtD295Z.js"
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/dashboard.js": {
-    "file": "assets/dashboard-DMIqrSZs.js",
+    "file": "assets/dashboard-CMFMSf1m.js",
     "name": "dashboard",
     "src": "resources/assets/js/dashboard.js",
     "isEntry": true,
@@ -342,7 +347,7 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-DJxjslAd.js",
+    "file": "assets/grn-4mPvdXeL.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
@@ -353,12 +358,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_ActionMenuHelper-CmW00VbZ.js",
-      "_LiveSyncManager-COtD295Z.js",
-      "_ViewGRNModal-CYEqXbOk.js"
+      "_LiveSyncManager-5XDpZg_L.js",
+      "_ViewGRNModal-Dh-S5Nyf.js"
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-BgWgPN87.js",
+    "file": "assets/inventory-BK1nWhZh.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
@@ -369,12 +374,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_FormValidator-DavQ7TG5.js",
       "_ValidatBuilder-DPg4PYww.js",
-      "_LiveSyncManager-COtD295Z.js",
-      "_ViewGRNModal-CYEqXbOk.js"
+      "_LiveSyncManager-5XDpZg_L.js",
+      "_ViewGRNModal-Dh-S5Nyf.js"
     ]
   },
   "resources/assets/js/login.js": {
-    "file": "assets/login-BCiCx0fQ.js",
+    "file": "assets/login-BpoY6dq8.js",
     "name": "login",
     "src": "resources/assets/js/login.js",
     "isEntry": true,
@@ -384,7 +389,7 @@
     ]
   },
   "resources/assets/js/payments.js": {
-    "file": "assets/payments-CzL_XXGF.js",
+    "file": "assets/payments-CqJ1W_yU.js",
     "name": "payments",
     "src": "resources/assets/js/payments.js",
     "isEntry": true,
@@ -395,12 +400,12 @@
       "_BaseModalHandler-BzI2OdAS.js",
       "_MobileNumberHelper-Cjypt2Ll.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-C9g2xKQA.js",
-      "_LiveSyncManager-COtD295Z.js"
+      "_ViewOrderModal-zZCNg9Tz.js",
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/place-order.js": {
-    "file": "assets/place-order-AVPWDVme.js",
+    "file": "assets/place-order-Ce5s-qFn.js",
     "name": "place-order",
     "src": "resources/assets/js/place-order.js",
     "isEntry": true,
@@ -413,12 +418,12 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_ViewOrderModal-C9g2xKQA.js",
-      "_LiveSyncManager-COtD295Z.js"
+      "_ViewOrderModal-zZCNg9Tz.js",
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-DWqnXD2O.js",
+    "file": "assets/print-jobs-CA9rL2KJ.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,
@@ -427,7 +432,7 @@
       "_ActionMenuHelper-CmW00VbZ.js",
       "_ConfirmModalHelper-DtrZaNdB.js",
       "_StatusHelper-BgrHG_5r.js",
-      "_LiveSyncManager-COtD295Z.js"
+      "_LiveSyncManager-5XDpZg_L.js"
     ]
   },
   "resources/assets/js/profile.js": {

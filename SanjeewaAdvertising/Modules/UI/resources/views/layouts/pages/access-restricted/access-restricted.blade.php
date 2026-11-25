@@ -575,7 +575,7 @@
                             ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             : '';
 
-                        var response = await fetch('/api/v1/permissions/request', {
+                        var response = await fetch('/advertising/permissions/request', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

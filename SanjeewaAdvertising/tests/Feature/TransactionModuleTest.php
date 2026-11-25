@@ -70,7 +70,7 @@ class TransactionModuleTest extends TestCase
     public function test_can_manage_customer_payments(): void
     {
         // 1. Create Payment
-        $response = $this->postJson('/api/v1/payments', [
+        $response = $this->postJson('/advertising/payments', [
             'payment' => 1500.00,
             'print_jobs_id' => $this->printJob->id,
             'payment_types_id' => $this->paymentType->id,
@@ -85,30 +85,30 @@ class TransactionModuleTest extends TestCase
         $paymentId = $response->json('data.id');
 
         // 2. List, All, Types, Statuses
-        $this->getJson('/api/v1/payments')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/payments/all')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/payments/types')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/payments/statuses')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/payments')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/payments/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/payments/types')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/payments/statuses')->assertStatus(200)->assertJsonStructure(['data']);
 
         // 3. Show
-        $this->getJson("/api/v1/payments/{$paymentId}")
+        $this->getJson("/advertising/payments/{$paymentId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $paymentId);
 
         // 4. Update
-        $this->putJson("/api/v1/payments/{$paymentId}", [
+        $this->putJson("/advertising/payments/{$paymentId}", [
             'payment' => 2000.00,
         ])->assertStatus(200)->assertJsonPath('data.payment', 2000);
 
         // 5. Delete
-        $this->deleteJson("/api/v1/payments/{$paymentId}")->assertStatus(200);
+        $this->deleteJson("/advertising/payments/{$paymentId}")->assertStatus(200);
         $this->assertDatabaseMissing('payments', ['id' => $paymentId]);
     }
 
     public function test_can_manage_grn_payments(): void
     {
         // 1. Create GRN Payment
-        $response = $this->postJson('/api/v1/grn-payments', [
+        $response = $this->postJson('/advertising/grn-payments', [
             'payment' => 5000.00,
             'grn_id' => $this->grn->id,
             'payment_types_id' => $this->paymentType->id,
@@ -123,21 +123,21 @@ class TransactionModuleTest extends TestCase
         $paymentId = $response->json('data.id');
 
         // 2. List & All
-        $this->getJson('/api/v1/grn-payments')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/grn-payments/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/grn-payments')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/grn-payments/all')->assertStatus(200)->assertJsonStructure(['data']);
 
         // 3. Show
-        $this->getJson("/api/v1/grn-payments/{$paymentId}")
+        $this->getJson("/advertising/grn-payments/{$paymentId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $paymentId);
 
         // 4. Update
-        $this->putJson("/api/v1/grn-payments/{$paymentId}", [
+        $this->putJson("/advertising/grn-payments/{$paymentId}", [
             'payment' => 6000.00,
         ])->assertStatus(200)->assertJsonPath('data.payment', 6000);
 
         // 5. Delete
-        $this->deleteJson("/api/v1/grn-payments/{$paymentId}")->assertStatus(200);
+        $this->deleteJson("/advertising/grn-payments/{$paymentId}")->assertStatus(200);
         $this->assertDatabaseMissing('grn_payments', ['id' => $paymentId]);
     }
 
@@ -180,19 +180,19 @@ class TransactionModuleTest extends TestCase
         $user = User::first();
 
         // 1. Create Expense Type
-        $typeRes = $this->postJson('/api/v1/expense-types', [
+        $typeRes = $this->postJson('/advertising/expense-types', [
             'expencesess_type' => 'Internet & Phone',
         ])->assertStatus(201);
         $typeId = $typeRes->json('data.id');
 
         // 2. Create Expense Status
-        $statusRes = $this->postJson('/api/v1/expense-statuses', [
+        $statusRes = $this->postJson('/advertising/expense-statuses', [
             'expencesess_status' => 'Paid in Full',
         ])->assertStatus(201);
         $statusId = $statusRes->json('data.id');
 
         // 3. Create Expense
-        $expenseRes = $this->postJson('/api/v1/expenses', [
+        $expenseRes = $this->postJson('/advertising/expenses', [
             'expencesess_types_id' => $typeId,
             'price' => 7500.00,
             'expencesess_statuses_id' => $statusId,
@@ -207,24 +207,24 @@ class TransactionModuleTest extends TestCase
         $expenseId = $expenseRes->json('data.id');
 
         // 4. List & All & KPIs
-        $this->getJson('/api/v1/expenses')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/expenses/all')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/expenses/types')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/expenses/statuses')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/expenses/data')->assertStatus(200)->assertJsonStructure(['data' => ['expenses', 'kpis']]);
+        $this->getJson('/advertising/expenses')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/expenses/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/expenses/types')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/expenses/statuses')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/expenses/data')->assertStatus(200)->assertJsonStructure(['data' => ['expenses', 'kpis']]);
 
         // 5. Show
-        $this->getJson("/api/v1/expenses/{$expenseId}")
+        $this->getJson("/advertising/expenses/{$expenseId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $expenseId);
 
         // 6. Update
-        $this->putJson("/api/v1/expenses/{$expenseId}", [
+        $this->putJson("/advertising/expenses/{$expenseId}", [
             'price' => 8200.00,
         ])->assertStatus(200)->assertJsonPath('data.price', 8200);
 
         // 7. Delete
-        $this->deleteJson("/api/v1/expenses/{$expenseId}")->assertStatus(200);
+        $this->deleteJson("/advertising/expenses/{$expenseId}")->assertStatus(200);
         $this->assertDatabaseMissing('expencesess', ['id' => $expenseId]);
     }
 }

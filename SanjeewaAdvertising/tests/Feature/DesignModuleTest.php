@@ -18,7 +18,7 @@ class DesignModuleTest extends TestCase
     public function test_can_manage_print_types(): void
     {
         // 1. Create
-        $response = $this->postJson('/api/v1/print-types', [
+        $response = $this->postJson('/advertising/print-types', [
             'print_type' => 'Laser Engraving '.uniqid(),
         ]);
         $response->assertStatus(201)
@@ -27,19 +27,19 @@ class DesignModuleTest extends TestCase
         $typeId = $response->json('data.id');
 
         // 2. List & All
-        $this->getJson('/api/v1/print-types')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/print-types/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/print-types')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/print-types/all')->assertStatus(200)->assertJsonStructure(['data']);
 
         // 3. Show
-        $this->getJson("/api/v1/print-types/{$typeId}")->assertStatus(200)->assertJsonPath('data.id', $typeId);
+        $this->getJson("/advertising/print-types/{$typeId}")->assertStatus(200)->assertJsonPath('data.id', $typeId);
 
         // 4. Update
-        $this->putJson("/api/v1/print-types/{$typeId}", [
+        $this->putJson("/advertising/print-types/{$typeId}", [
             'print_type' => 'Laser Cut Updated '.uniqid(),
         ])->assertStatus(200);
 
         // 5. Delete
-        $this->deleteJson("/api/v1/print-types/{$typeId}")->assertStatus(200);
+        $this->deleteJson("/advertising/print-types/{$typeId}")->assertStatus(200);
         $this->assertDatabaseMissing('print_types', ['id' => $typeId]);
     }
 
@@ -52,7 +52,7 @@ class DesignModuleTest extends TestCase
         ]);
 
         // 1. Create PrintCost
-        $createResponse = $this->postJson('/api/v1/print-costs', [
+        $createResponse = $this->postJson('/advertising/print-costs', [
             'print_cost_type_id' => $costType->id,
             'price' => 150.50,
         ]);
@@ -61,19 +61,19 @@ class DesignModuleTest extends TestCase
         $costId = $createResponse->json('data.id');
 
         // 2. List & All
-        $this->getJson('/api/v1/print-costs')->assertStatus(200);
-        $this->getJson('/api/v1/print-costs/all')->assertStatus(200);
+        $this->getJson('/advertising/print-costs')->assertStatus(200);
+        $this->getJson('/advertising/print-costs/all')->assertStatus(200);
 
         // 3. Show
-        $this->getJson("/api/v1/print-costs/{$costId}")->assertStatus(200)->assertJsonPath('data.id', $costId);
+        $this->getJson("/advertising/print-costs/{$costId}")->assertStatus(200)->assertJsonPath('data.id', $costId);
 
         // 4. Update
-        $this->putJson("/api/v1/print-costs/{$costId}", [
+        $this->putJson("/advertising/print-costs/{$costId}", [
             'price' => 200.00,
         ])->assertStatus(200)->assertJsonPath('data.price', 200);
 
         // 5. Delete
-        $this->deleteJson("/api/v1/print-costs/{$costId}")->assertStatus(200);
+        $this->deleteJson("/advertising/print-costs/{$costId}")->assertStatus(200);
         $this->assertDatabaseMissing('print_cost', ['id' => $costId]);
     }
 
@@ -91,11 +91,11 @@ class DesignModuleTest extends TestCase
             'add_at' => now(),
         ]);
 
-        $this->getJson("/api/v1/print-types/{$printType->id}/costs")
+        $this->getJson("/advertising/print-types/{$printType->id}/costs")
             ->assertStatus(200)
             ->assertJsonStructure(['data']);
 
-        $this->getJson('/api/v1/print-costs/types/all')
+        $this->getJson('/advertising/print-costs/types/all')
             ->assertStatus(200)
             ->assertJsonStructure(['data']);
     }

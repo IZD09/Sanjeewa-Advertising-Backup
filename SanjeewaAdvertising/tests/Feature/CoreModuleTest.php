@@ -18,7 +18,7 @@ class CoreModuleTest extends TestCase
         $type = ActivityType::firstOrCreate(['activity_type' => 'System Log '.uniqid()]);
 
         // 1. Create activity
-        $response = $this->postJson('/api/v1/activities', [
+        $response = $this->postJson('/advertising/activities', [
             'activity_types_id' => $type->id,
             'activity' => 'User logged in',
         ]);
@@ -27,17 +27,17 @@ class CoreModuleTest extends TestCase
         $activityId = $response->json('data.id');
 
         // 2. List
-        $this->getJson('/api/v1/activities')
+        $this->getJson('/advertising/activities')
             ->assertStatus(200)
             ->assertJsonStructure(['data', 'pagination']);
 
         // 3. Types
-        $this->getJson('/api/v1/activities/types')
+        $this->getJson('/advertising/activities/types')
             ->assertStatus(200)
             ->assertJsonStructure(['data']);
 
         // 4. Show
-        $this->getJson("/api/v1/activities/{$activityId}")
+        $this->getJson("/advertising/activities/{$activityId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $activityId);
     }

@@ -311,7 +311,7 @@ export class CustomerHandler {
     }
 
     try {
-      const response = await this.http.post("/api/v1/customers", {
+      const response = await this.http.post("/advertising/customers", {
         name,
         mobile,
         email: null,

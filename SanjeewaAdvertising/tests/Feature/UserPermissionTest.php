@@ -46,7 +46,7 @@ class UserPermissionTest extends TestCase
 
     public function test_can_list_system_modules(): void
     {
-        $response = $this->getJson('/api/v1/system-modules?all=true');
+        $response = $this->getJson('/advertising/system-modules?all=true');
 
         $response->assertStatus(200)
             ->assertJson(['success' => true])
@@ -56,7 +56,7 @@ class UserPermissionTest extends TestCase
     public function test_can_create_system_module(): void
     {
         $name = 'Custom Module '.uniqid();
-        $response = $this->postJson('/api/v1/system-modules', [
+        $response = $this->postJson('/advertising/system-modules', [
             'system_module' => $name,
         ]);
 
@@ -68,7 +68,7 @@ class UserPermissionTest extends TestCase
 
     public function test_can_assign_permission_to_user(): void
     {
-        $response = $this->postJson("/api/v1/users/{$this->user->id}/permissions", [
+        $response = $this->postJson("/advertising/users/{$this->user->id}/permissions", [
             'system_modules_id' => $this->module->id,
             'view' => true,
             'create' => true,
@@ -113,7 +113,7 @@ class UserPermissionTest extends TestCase
             ]
         );
 
-        $response = $this->getJson("/api/v1/users/{$this->user->id}/permissions");
+        $response = $this->getJson("/advertising/users/{$this->user->id}/permissions");
 
         $response->assertStatus(200)
             ->assertJson(['success' => true])
@@ -124,7 +124,7 @@ class UserPermissionTest extends TestCase
     {
         $module2 = SystemModule::firstOrCreate(['system_module' => 'Second Test Module']);
 
-        $response = $this->putJson("/api/v1/users/{$this->user->id}/permissions/sync", [
+        $response = $this->putJson("/advertising/users/{$this->user->id}/permissions/sync", [
             'permissions' => [
                 [
                     'system_modules_id' => $this->module->id,
@@ -184,7 +184,7 @@ class UserPermissionTest extends TestCase
             ]
         );
 
-        $response = $this->deleteJson("/api/v1/users/{$this->user->id}/permissions/{$this->module->id}");
+        $response = $this->deleteJson("/advertising/users/{$this->user->id}/permissions/{$this->module->id}");
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);

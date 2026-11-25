@@ -80,7 +80,7 @@ export class GrnPaymentProcessor {
       return { success: false, errors: validation.errors };
     }
 
-    // 1. Dispatch request to Transaction Module via RequestHandler (POST /api/v1/grn-payments)
+    // 1. Dispatch request to Transaction Module via RequestHandler (POST /advertising/grn-payments)
     let backendPayment = null;
     try {
       const grnId = paymentData.grn_id || null;
@@ -98,7 +98,7 @@ export class GrnPaymentProcessor {
         allocations: paymentData.allocations || []
       };
 
-      const response = await this.http.post("/api/v1/grn-payments", grnPayload);
+      const response = await this.http.post("/advertising/grn-payments", grnPayload);
       backendPayment = response?.data || response;
       if (backendPayment && backendPayment.grn_id) {
         paymentData.grn_id = backendPayment.grn_id;

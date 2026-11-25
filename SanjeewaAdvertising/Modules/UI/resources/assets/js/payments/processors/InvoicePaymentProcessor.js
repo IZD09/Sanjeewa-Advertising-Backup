@@ -85,7 +85,7 @@ export class InvoicePaymentProcessor {
       return { success: false, errors: validation.errors };
     }
 
-    // 1. Dispatch request to Invoice Module via RequestHandler (POST /api/v1/invoices)
+    // 1. Dispatch request to Invoice Module via RequestHandler (POST /advertising/invoices)
     let backendInvoice = null;
     try {
       const rawCustId = paymentData.customer_id || paymentData.customerId;
@@ -124,7 +124,7 @@ export class InvoicePaymentProcessor {
         })
       };
 
-      const response = await this.http.post("/api/v1/invoices", invoicePayload);
+      const response = await this.http.post("/advertising/invoices", invoicePayload);
       backendInvoice = response?.data || response;
     } catch (apiErr) {
       console.warn("[InvoicePaymentProcessor] Invoice Module API error (proceeding with local synchronization):", apiErr);

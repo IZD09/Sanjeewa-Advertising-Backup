@@ -84,7 +84,7 @@ class AdminUserManagementTest extends TestCase
         $this->assertNotNull($admin);
 
         $unique = uniqid();
-        $response = $this->actingAs($admin, 'admin')->postJson('/api/v1/admin/users', [
+        $response = $this->actingAs($admin, 'admin')->postJson('/advertising/admin/users', [
             'first_name' => 'Nuwan',
             'last_name' => 'Pradeep',
             'mobile' => '078'.rand(1000000, 9999999),

@@ -2,8 +2,8 @@
  * SanjeewaAdvertising - Brand Process
  *
  * Handles client-side validation and HTTP operations for Brands:
- * - Adding a new Brand (POST /api/v1/inventory/brands)
- * - Updating an existing Brand (PUT /api/v1/inventory/brands/{id})
+ * - Adding a new Brand (POST /advertising/inventory/brands)
+ * - Updating an existing Brand (PUT /advertising/inventory/brands/{id})
  * - Form validation with FormValidator and ValidatBuilder
  */
 
@@ -142,11 +142,11 @@ export class BrandProcess {
       const isEdit = Boolean(this.activeEditBrand && this.activeEditBrand.id);
 
       if (isEdit) {
-        response = await this.http.put(`/api/v1/inventory/brands/${this.activeEditBrand.id}`, {
+        response = await this.http.put(`/advertising/inventory/brands/${this.activeEditBrand.id}`, {
           brand: brandName,
         });
       } else {
-        response = await this.http.post("/api/v1/inventory/brands", {
+        response = await this.http.post("/advertising/inventory/brands", {
           brand: brandName,
         });
       }

@@ -7,6 +7,7 @@
 "use strict";
 
 import { RequestHandler } from "../../../core/RequestHandler.js";
+import { LiveSyncManager } from "../../../core/LiveSyncManager.js";
 import { UserControlDataLoader } from "../UserControlDataLoader.js";
 import { UserHandler, AdminHandler, PermissionHandler } from "../handlers/index.js";
 import { AddUserModal, AddAdminModal, AdminVerifyModal, ViewUserProfileModal } from "../modals/index.js";
@@ -498,16 +499,20 @@ export class UserControlManager {
     });
   }
 
-  startLiveAutoUpdate(interval = 5000) {
+  startLiveAutoUpdate() {
     this.stopLiveAutoUpdate();
-    this.liveUpdateInterval = interval;
-
-    this.liveUpdateTimer = setInterval(() => {
-      this.pollUsersLive();
-    }, this.liveUpdateInterval);
+    this._unsubscribeLiveSync = LiveSyncManager.subscribe(
+      ["users"],
+      () => this.pollUsersLive(),
+      { key: "user-control-live-sync" }
+    );
   }
 
   stopLiveAutoUpdate() {
+    if (typeof this._unsubscribeLiveSync === "function") {
+      this._unsubscribeLiveSync();
+      this._unsubscribeLiveSync = null;
+    }
     if (this.liveUpdateTimer) {
       clearInterval(this.liveUpdateTimer);
       this.liveUpdateTimer = null;

@@ -6,11 +6,11 @@ use Modules\HR\Http\Controllers\HRController;
 use Modules\HR\Http\Controllers\SalaryController;
 use Modules\HR\Http\Controllers\StaffController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('hrs', HRController::class)->names('hr');
 });
 
-Route::middleware(['auth:web,admin'])->prefix('v1/hr')->group(function () {
+Route::middleware(['auth:web,admin'])->prefix('hr')->group(function () {
     Route::get('staff', [StaffController::class, 'index'])->name('hr.staff.index');
     Route::post('staff', [StaffController::class, 'store'])->name('hr.staff.store');
     Route::get('staff/{id}', [StaffController::class, 'show'])->name('hr.staff.show');

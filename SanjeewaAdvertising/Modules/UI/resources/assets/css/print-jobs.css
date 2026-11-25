@@ -63,55 +63,7 @@
     flex-wrap: wrap;
 }
 
-.ant-btn {
-    height: 36px;
-    padding: 0 15px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-    user-select: none;
-    text-decoration: none;
-    line-height: 1;
-    box-sizing: border-box;
-}
-
-.ant-btn-default {
-    background: var(--surface, #ffffff);
-    border-color: var(--border, #d9d9d9);
-    color: var(--text, #111827);
-}
-
-.ant-btn-default:hover {
-    color: #1677ff;
-    border-color: #1677ff;
-    background: var(--surface-2, #f8fafc);
-}
-
-.ant-btn-primary {
-    background: #1677ff;
-    border-color: #1677ff;
-    color: #ffffff;
-}
-
-.ant-btn-primary:hover {
-    background: #4096ff;
-    border-color: #4096ff;
-    color: #ffffff;
-}
-
-.ant-btn-sm {
-    height: 28px;
-    padding: 0 10px;
-    font-size: 12px;
-    border-radius: 4px;
-}
+/* Ant Design Button System consolidated in core.css */
 
 html[data-theme="dark"] .ant-btn-default {
     background: var(--surface-2, #1e293b);

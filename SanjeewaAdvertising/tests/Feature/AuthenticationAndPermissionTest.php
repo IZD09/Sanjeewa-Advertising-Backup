@@ -86,7 +86,7 @@ class AuthenticationAndPermissionTest extends TestCase
 
     public function test_admin_cannot_login_via_api_staff_auth_login_endpoint(): void
     {
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/advertising/auth/login', [
             'username' => 'admin',
             'password' => 'admin',
         ]);
@@ -345,7 +345,7 @@ class AuthenticationAndPermissionTest extends TestCase
 
     public function test_guest_cannot_create_user_via_user_module(): void
     {
-        $response = $this->postJson('/api/v1/users', [
+        $response = $this->postJson('/advertising/users', [
             'first_name' => 'Unauthorized',
             'last_name' => 'User',
             'mobile' => '0771112233',
@@ -371,7 +371,7 @@ class AuthenticationAndPermissionTest extends TestCase
             'user_statuses_id' => $activeStatus->id,
         ]);
 
-        $response = $this->actingAs($staffUser, 'web')->postJson('/api/v1/users', [
+        $response = $this->actingAs($staffUser, 'web')->postJson('/advertising/users', [
             'first_name' => 'Unauthorized',
             'last_name' => 'User',
             'mobile' => '0773334455',
@@ -388,7 +388,7 @@ class AuthenticationAndPermissionTest extends TestCase
         $admin = Admin::where('username', 'admin')->first();
         $unique = uniqid();
 
-        $response = $this->actingAs($admin, 'admin')->postJson('/api/v1/users', [
+        $response = $this->actingAs($admin, 'admin')->postJson('/advertising/users', [
             'first_name' => 'AdminCreated',
             'last_name' => 'User',
             'mobile' => '077'.rand(1000000, 9999999),
@@ -421,7 +421,7 @@ class AuthenticationAndPermissionTest extends TestCase
         $admin = Admin::where('username', 'admin')->first();
         $user = User::where('username', 'admin')->first();
 
-        $response = $this->actingAs($admin, 'admin')->patchJson("/api/v1/users/{$user->id}/status", [
+        $response = $this->actingAs($admin, 'admin')->patchJson("/advertising/users/{$user->id}/status", [
             'user_statuses_id' => 2,
         ]);
 

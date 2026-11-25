@@ -68,7 +68,7 @@ export class InventoryDataLoader {
    */
   async fetchFromBackend() {
     try {
-      const response = await this.http.get("/api/v1/inventory/stocks?per_page=100");
+      const response = await this.http.get("/advertising/inventory/stocks?per_page=100");
       if (response && response.success && response.data) {
         if (Array.isArray(response.data.items) && response.data.items.length > 0) {
           this.items = response.data.items;

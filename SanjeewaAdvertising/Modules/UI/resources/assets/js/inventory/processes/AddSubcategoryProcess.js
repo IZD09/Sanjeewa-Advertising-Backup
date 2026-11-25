@@ -3,7 +3,7 @@
  *
  * Handles the workflow for creating a new Material Subcategory:
  * - Client-side validation before sending the HTTP request (using Core FormValidator & ValidatBuilder)
- * - HTTP POST request via Core RequestHandler to the Inventory module API (/api/v1/inventory/subcategories)
+ * - HTTP POST request via Core RequestHandler to the Inventory module API (/advertising/inventory/subcategories)
  * - Inline form toggle, loading state management, and UI refresh callbacks
  */
 
@@ -216,7 +216,7 @@ export class AddSubcategoryProcess {
     }
 
     try {
-      const response = await this.http.post("/api/v1/inventory/subcategories", {
+      const response = await this.http.post("/advertising/inventory/subcategories", {
         categories_id: parseInt(categoryId, 10),
         subcategory: subcategoryName
       });

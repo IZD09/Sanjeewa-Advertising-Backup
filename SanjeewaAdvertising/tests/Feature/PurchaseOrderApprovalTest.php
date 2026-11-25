@@ -34,7 +34,7 @@ class PurchaseOrderApprovalTest extends TestCase
 
         $this->assertEquals(PurchaseOrderStatus::STATUS_PENDING, $po->purchase_orders_status_id);
 
-        $response = $this->patchJson("/api/v1/purchase-orders/{$po->id}", [
+        $response = $this->patchJson("/advertising/purchase-orders/{$po->id}", [
             'status' => 'Approved',
         ]);
 
@@ -63,7 +63,7 @@ class PurchaseOrderApprovalTest extends TestCase
             'purchase_orders_status_id' => PurchaseOrderStatus::STATUS_PENDING,
         ]);
 
-        $response = $this->patchJson("/api/v1/purchase-orders/{$po->id}", [
+        $response = $this->patchJson("/advertising/purchase-orders/{$po->id}", [
             'purchase_orders_status_id' => PurchaseOrderStatus::STATUS_APPROVED,
         ]);
 

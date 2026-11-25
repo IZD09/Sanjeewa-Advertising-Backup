@@ -5,7 +5,7 @@ use Modules\Core\Http\Controllers\ActivityController;
 use Modules\Core\Http\Controllers\LiveSyncController;
 use Modules\Core\Http\Controllers\NotificationController;
 
-Route::prefix('v1')->group(function () {
+Route::group([], function () {
     // Lightweight Live Sync Version Check (Zero-DB Cache Endpoint)
     Route::get('live-sync/versions', [LiveSyncController::class, 'versions'])->name('core.live-sync.versions');
 

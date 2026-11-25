@@ -109,7 +109,7 @@ export class ViewOrderModal extends BaseModalHandler {
     const rawId = order?.rawId || order?.job_id || order?.jobId || (typeof orderOrId === "number" ? orderOrId : (String(orderOrId).match(/\d+$/) ? Number(String(orderOrId).match(/\d+$/)[0]) : null));
     if (rawId && this.http) {
       try {
-        const res = await this.http.get(`/api/v1/print-jobs/${rawId}`);
+        const res = await this.http.get(`/advertising/print-jobs/${rawId}`);
         const data = res?.data || res;
         if (data && data.id) {
           const costSum = (data.cost?.printCosts || []).reduce((acc, c) => acc + (Number(c.price) || 0), 0);

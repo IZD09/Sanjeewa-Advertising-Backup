@@ -2,7 +2,7 @@
  * SanjeewaAdvertising - Stock Items Tab Handler
  *
  * Orchestrates Tab: Stock Items & Brands
- * - Fetches Stock Items, Brands, and Categories from /api/v1/inventory/stock-items/data
+ * - Fetches Stock Items, Brands, and Categories from /advertising/inventory/stock-items/data
  * - Extends BaseTableLoader for non-reloading pagination (max 20 rows per page)
  * - Renders stock items using StockItemRowBuilder (extends BaseTableRowBuilder)
  * - Renders brands list using BrandCardBuilder (extends BaseTableRowBuilder)
@@ -44,7 +44,7 @@ export class StockItemsTabHandler extends BaseTableLoader {
     });
 
     this.http = new RequestHandler();
-    this.showToast = options.showToast || ((msg, type) => console.log(`[Toast ${type}]: ${msg}`));
+    this.showToast = options.showToast || (() => {});
     this.onFilterStock = options.onFilterStock || (() => {});
 
     this.stockItems = [];
@@ -133,7 +133,7 @@ export class StockItemsTabHandler extends BaseTableLoader {
     this.showLoading("Loading catalog items & brand registry...");
 
     try {
-      const response = await this.http.get("/api/v1/inventory/stock-items/data");
+      const response = await this.http.get("/advertising/inventory/stock-items/data");
       if (response && response.success && response.data) {
         this.applyPayload(response.data);
       }

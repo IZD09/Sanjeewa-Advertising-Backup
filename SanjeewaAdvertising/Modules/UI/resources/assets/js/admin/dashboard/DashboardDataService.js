@@ -5,6 +5,7 @@
  */
 
 import { RequestHandler } from "../../core/RequestHandler.js";
+import { LiveSyncManager } from "../../core/LiveSyncManager.js";
 
 export class DashboardDataService {
   /**
@@ -17,11 +18,12 @@ export class DashboardDataService {
     this.months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     this.days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     this.apiUrl = options.apiUrl || "/dashboard/data";
-    this.sseUrl = options.sseUrl || "/dashboard/stream";
+    this.sseUrl = options.sseUrl || null;
     this.initialData = options.initialData || null;
     this.callbacks = [];
     this.eventSource = null;
     this.pollInterval = null;
+    this._unsubscribeLiveSync = null;
     this.lastData = null;
     this._lastPayloadHash = null;
   }
@@ -74,7 +76,7 @@ export class DashboardDataService {
   }
 
   /**
-   * Initialize data stream: loads initial data, connects SSE asynchronously after page load.
+   * Initialize dashboard data and subscribe to centralized LiveSyncManager.
    */
   async init() {
     // 1. Emit server-rendered initial payload immediately if provided
@@ -85,173 +87,31 @@ export class DashboardDataService {
       await this.fetchData(this.apiUrl);
     }
 
-    // 3. Connect Server-Sent Events (SSE) asynchronously AFTER the page has completed loading.
-    // Delaying EventSource until after 'load' ensures the browser tab's loading spinner
-    // completes normally and does not spin perpetually.
-    if (this.sseUrl && typeof EventSource !== "undefined") {
-      this.scheduleSSEConnection();
-    } else {
-      // Fallback to polling if EventSource is not supported
-      this.startPolling(30000);
-    }
-
-    // 4. Ensure SSE is cleanly closed before navigating away or closing the tab
-    this.bindLifecycleEvents();
-  }
-
-  /**
-   * Schedule SSE connection safely after window load event.
-   */
-  scheduleSSEConnection() {
-    if (this._sseTimer) {
-      clearTimeout(this._sseTimer);
-      this._sseTimer = null;
-    }
-
-    const startSSE = () => {
-      this._sseTimer = setTimeout(() => {
-        // Only connect if dashboard container is currently in the DOM
-        const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-        if (!isDashboard) {
-          return;
-        }
-        if (!this.eventSource) {
-          this.connectSSE(this.sseUrl);
-        }
-      }, 500);
-    };
-
-    if (document.readyState === "complete") {
-      startSSE();
-    } else {
-      window.addEventListener("load", startSSE, { once: true });
-    }
-  }
-
-  /**
-   * Bind page lifecycle listeners to cleanly disconnect SSE and avoid blocking server threads.
-   */
-  bindLifecycleEvents() {
-    if (this._lifecycleBound) return;
-    this._lifecycleBound = true;
-
-    this._onBeforeUnload = () => {
-      this.disconnectSSE();
-    };
-
-    this._onPageHide = () => {
-      this.disconnectSSE();
-    };
-
-    this._onVisibilityChange = () => {
-      if (document.hidden) {
-        // Disconnect SSE while tab is in background to save server resources
-        this.disconnectSSE();
-      } else if (this.sseUrl && !this.eventSource) {
-        // Only reconnect if on active dashboard page
-        const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-        if (isDashboard) {
-          this.connectSSE(this.sseUrl);
-        }
-      }
-    };
-
-    window.addEventListener("beforeunload", this._onBeforeUnload);
-    window.addEventListener("pagehide", this._onPageHide);
-    document.addEventListener("visibilitychange", this._onVisibilityChange);
-  }
-
-  /**
-   * Start periodic background polling for live updates.
-   * @param {number} [interval=30000]
-   */
-  startPolling(interval = 30000) {
-    this.stopPolling();
-    // Do not start polling if we are no longer on the dashboard
-    const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-    if (!isDashboard) return;
-
-    this.pollInterval = setInterval(async () => {
-      if (!document.hidden && this.apiUrl) {
-        await this.fetchData(this.apiUrl);
-      }
-    }, interval);
-  }
-
-  /**
-   * Stop background polling timer.
-   */
-  stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
-    }
-  }
-
-  /**
-   * Connect to Server-Sent Events (SSE) stream.
-   * @param {string} url
-   */
-  connectSSE(url) {
+    // 3. Subscribe to centralized LiveSyncManager (ETag 304 + tab leader election, zero SSE blocking)
     this.disconnectSSE();
-
-    // Guard: only connect if on active dashboard
-    const isDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-    if (!isDashboard) return;
-
-    try {
-      const targetUrl = url.includes("retry=")
-        ? url
-        : `${url}${url.includes("?") ? "&" : "?"}retry=15000`;
-      this.eventSource = new EventSource(targetUrl);
-
-      this.eventSource.onopen = () => {
-        // When SSE is connected, stop polling fallback if active
-        this.stopPolling();
-      };
-
-      this.eventSource.onmessage = event => {
-        try {
-          this.emitData(JSON.parse(event.data));
-        } catch (e) {
-          console.warn("[DashboardDataService] Failed to parse SSE data:", e);
+    this._unsubscribeLiveSync = LiveSyncManager.subscribe(
+      ["dashboard", "orders", "print_jobs", "payments", "inventory", "grn", "customers"],
+      async () => {
+        if (this.apiUrl) {
+          await this.fetchData(this.apiUrl);
         }
-      };
-
-      this.eventSource.onerror = err => {
-        if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
-          this.disconnectSSE();
-
-          // If user navigated away or logged out, stop immediately
-          const stillOnDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-          if (!stillOnDashboard) {
-            this.destroy();
-            return;
-          }
-
-          console.warn("[DashboardDataService] SSE closed permanently, falling back to background polling:", err);
-          this.startPolling(30000);
-        }
-      };
-    } catch (e) {
-      const stillOnDashboard = !!(document.getElementById("module-dashboard") || document.querySelector(".dashboard-content"));
-      if (!stillOnDashboard) {
-        this.destroy();
-        return;
-      }
-      console.warn("[DashboardDataService] EventSource setup failed, falling back to polling:", e);
-      this.startPolling(30000);
-    }
+      },
+      { key: "dashboard-live-sync" }
+    );
   }
 
   /**
-   * Disconnect the active SSE stream.
+   * Stop any active live-sync subscription (keeps legacy method name for compatibility).
    */
   disconnectSSE() {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (typeof this._unsubscribeLiveSync === "function") {
+      this._unsubscribeLiveSync();
+      this._unsubscribeLiveSync = null;
     }
+  }
+
+  stopPolling() {
+    this.disconnectSSE();
   }
 
   /**

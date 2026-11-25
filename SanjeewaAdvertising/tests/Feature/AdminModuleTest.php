@@ -35,7 +35,7 @@ class AdminModuleTest extends TestCase
             'password' => 'secret1234',
         ];
 
-        $response = $this->postJson('/api/v1/admins', $payload);
+        $response = $this->postJson('/advertising/admins', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -65,11 +65,11 @@ class AdminModuleTest extends TestCase
             'is_log' => 0,
         ]);
 
-        $this->getJson('/api/v1/admins')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
-        $this->getJson('/api/v1/admins/all')->assertStatus(200)->assertJsonStructure(['data']);
-        $this->getJson('/api/v1/admins/search?q=Searchable')->assertStatus(200);
-        $this->getJson('/api/v1/admins/types')->assertStatus(200);
-        $this->getJson('/api/v1/admins/statuses')->assertStatus(200);
+        $this->getJson('/advertising/admins')->assertStatus(200)->assertJsonStructure(['data', 'pagination']);
+        $this->getJson('/advertising/admins/all')->assertStatus(200)->assertJsonStructure(['data']);
+        $this->getJson('/advertising/admins/search?q=Searchable')->assertStatus(200);
+        $this->getJson('/advertising/admins/types')->assertStatus(200);
+        $this->getJson('/advertising/admins/statuses')->assertStatus(200);
     }
 
     public function test_can_show_update_and_change_status(): void
@@ -88,26 +88,26 @@ class AdminModuleTest extends TestCase
         ]);
 
         // Show
-        $this->getJson("/api/v1/admins/{$admin->id}")
+        $this->getJson("/advertising/admins/{$admin->id}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $admin->id);
 
         // Update
-        $this->putJson("/api/v1/admins/{$admin->id}", [
+        $this->putJson("/advertising/admins/{$admin->id}", [
             'first_name' => 'Updated Admin',
         ])->assertStatus(200)->assertJsonPath('data.first_name', 'Updated Admin');
 
         // Change Status
         $inactiveStatus = AdminStatus::firstOrCreate(['admin_statas' => 'Inactive']);
-        $this->patchJson("/api/v1/admins/{$admin->id}/status", [
+        $this->patchJson("/advertising/admins/{$admin->id}/status", [
             'admin_statuses_id' => $inactiveStatus->id,
         ])->assertStatus(200)->assertJsonPath('data.admin_statuses_id', $inactiveStatus->id);
 
         // Logins
-        $this->getJson("/api/v1/admins/{$admin->id}/logins")->assertStatus(200);
+        $this->getJson("/advertising/admins/{$admin->id}/logins")->assertStatus(200);
 
         // Delete
-        $this->deleteJson("/api/v1/admins/{$admin->id}")->assertStatus(200);
+        $this->deleteJson("/advertising/admins/{$admin->id}")->assertStatus(200);
         $this->assertDatabaseMissing('admins', ['id' => $admin->id]);
     }
 }

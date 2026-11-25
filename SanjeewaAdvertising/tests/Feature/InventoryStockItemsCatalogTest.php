@@ -19,7 +19,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
     public function test_can_retrieve_stock_items_data_payload(): void
     {
-        $response = $this->getJson('/api/v1/inventory/stock-items/data');
+        $response = $this->getJson('/advertising/inventory/stock-items/data');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -45,7 +45,7 @@ class InventoryStockItemsCatalogTest extends TestCase
         $brandName = 'Oracal Premium '.uniqid();
 
         // 1. Create brand
-        $createRes = $this->postJson('/api/v1/inventory/brands', [
+        $createRes = $this->postJson('/advertising/inventory/brands', [
             'brand' => $brandName,
         ]);
 
@@ -58,7 +58,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
         // 2. Update brand
         $updatedName = $brandName.' Updated';
-        $updateRes = $this->putJson("/api/v1/inventory/brands/{$brandId}", [
+        $updateRes = $this->putJson("/advertising/inventory/brands/{$brandId}", [
             'brand' => $updatedName,
         ]);
 
@@ -74,7 +74,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
     public function test_validates_brand_creation(): void
     {
-        $res = $this->postJson('/api/v1/inventory/brands', [
+        $res = $this->postJson('/advertising/inventory/brands', [
             'brand' => 'A',
         ]);
 
@@ -90,7 +90,7 @@ class InventoryStockItemsCatalogTest extends TestCase
         $name = 'High Gloss Vinyl 150gsm';
 
         // 1. Create stock item
-        $createRes = $this->postJson('/api/v1/inventory/stock-items', [
+        $createRes = $this->postJson('/advertising/inventory/stock-items', [
             'name' => $name,
             'code' => $sku,
             'subcategories_id' => $subcategory->id,
@@ -107,7 +107,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
         // 2. Update stock item
         $updatedName = 'High Gloss Vinyl 180gsm (Upgraded)';
-        $updateRes = $this->putJson("/api/v1/inventory/stock-items/{$itemId}", [
+        $updateRes = $this->putJson("/advertising/inventory/stock-items/{$itemId}", [
             'name' => $updatedName,
             'code' => $sku,
             'subcategories_id' => $subcategory->id,
@@ -130,7 +130,7 @@ class InventoryStockItemsCatalogTest extends TestCase
         $brand = Brand::first();
         $sku = strtoupper('TEST-QTY-'.uniqid());
 
-        $createRes = $this->postJson('/api/v1/inventory/stock-items', [
+        $createRes = $this->postJson('/advertising/inventory/stock-items', [
             'name' => 'Custom Qty Item',
             'code' => $sku,
             'subcategories_id' => $subcategory->id,
@@ -152,7 +152,7 @@ class InventoryStockItemsCatalogTest extends TestCase
 
     public function test_validates_stock_item_creation(): void
     {
-        $res = $this->postJson('/api/v1/inventory/stock-items', [
+        $res = $this->postJson('/advertising/inventory/stock-items', [
             'name' => '',
             'subcategories_id' => 999999,
         ]);
@@ -166,7 +166,7 @@ class InventoryStockItemsCatalogTest extends TestCase
         $subcategory = Subcategory::first();
         $brand = Brand::first();
 
-        $res = $this->postJson('/api/v1/inventory/stock-items', [
+        $res = $this->postJson('/advertising/inventory/stock-items', [
             'name' => 'Auto Code Material',
             'subcategories_id' => $subcategory->id,
             'brands' => [$brand->id],
@@ -191,7 +191,7 @@ class InventoryStockItemsCatalogTest extends TestCase
             ]);
         }
 
-        $response = $this->getJson('/api/v1/inventory/stock-items?page=1&per_page=20');
+        $response = $this->getJson('/advertising/inventory/stock-items?page=1&per_page=20');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)

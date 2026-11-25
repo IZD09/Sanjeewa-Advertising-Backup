@@ -2,9 +2,9 @@
  * SanjeewaAdvertising - Payments Data Loader
  *
  * Handles API communication via RequestHandler to:
- * 1. Invoice module (/api/v1/invoices/data)
- * 2. Transaction module for GRN payments (/api/v1/grn-payments/data)
- * 3. Transaction module for Operating Expenses (/api/v1/payments/expenses/data)
+ * 1. Invoice module (/advertising/invoices/data)
+ * 2. Transaction module for GRN payments (/advertising/grn-payments/data)
+ * 3. Transaction module for Operating Expenses (/advertising/payments/expenses/data)
  *
  * Provides client-side caching (localStorage) and field normalizations.
  * All demo and production records originate from backend service classes.
@@ -41,20 +41,13 @@ export class PaymentsDataLoader {
   }
 
   /**
-   * Purge legacy mockup and demo entries stored in browser localStorage.
+   * Purge legacy localStorage entries so stale browser cache never overrides live API data.
    */
   purgeLegacyCache() {
     try {
-      const liveVersion = "db_live_v3";
       if (typeof localStorage !== "undefined") {
-        if (localStorage.getItem("sa_payments_cache_version") !== liveVersion) {
-          localStorage.removeItem(this.storageKeys.orderPayments);
-          localStorage.removeItem(this.storageKeys.orders);
-          localStorage.removeItem(this.storageKeys.grnPayments);
-          localStorage.removeItem(this.storageKeys.grnRecords);
-          localStorage.removeItem(this.storageKeys.operatingExpenses);
-          localStorage.setItem("sa_payments_cache_version", liveVersion);
-        }
+        Object.values(this.storageKeys).forEach((key) => localStorage.removeItem(key));
+        localStorage.removeItem("sa_payments_cache_version");
       }
     } catch (e) {
       // LocalStorage access might be restricted in some environments
@@ -73,7 +66,7 @@ export class PaymentsDataLoader {
     }
 
     try {
-      const jobsRes = await this.http.get("/api/v1/invoices/available-jobs");
+      const jobsRes = await this.http.get("/advertising/invoices/available-jobs");
       const jobsData = jobsRes?.data || jobsRes;
       const liveJobs = Array.isArray(jobsData) ? jobsData : (jobsData?.jobs || []);
       if (Array.isArray(liveJobs) && liveJobs.length > 0) {
@@ -105,14 +98,6 @@ export class PaymentsDataLoader {
       console.warn("[PaymentsDataLoader] Failed to fetch live print jobs from database:", err);
     }
 
-    const savedOrders = localStorage.getItem(this.storageKeys.orders);
-    if (savedOrders) {
-      try {
-        this.orders = JSON.parse(savedOrders);
-      } catch (err) {
-        this.orders = [];
-      }
-    }
     return this.orders;
   }
 
@@ -133,7 +118,7 @@ export class PaymentsDataLoader {
       await this.fetchCollectableOrders(forceRefresh);
 
       // 2. Fetch invoice payments and KPIs from Invoice module
-      const response = await this.http.get("/api/v1/invoices/data", filters);
+      const response = await this.http.get("/advertising/invoices/data", filters);
       const data = response?.data || response;
       const raw = data?.invoices || (Array.isArray(data) ? data : null);
 
@@ -167,24 +152,6 @@ export class PaymentsDataLoader {
       console.warn("[PaymentsDataLoader] Failed to fetch invoices from API:", e);
     }
 
-    const savedPayments = localStorage.getItem(this.storageKeys.orderPayments);
-    if (savedPayments) {
-      try {
-        this.orderPayments = JSON.parse(savedPayments);
-      } catch (err) {
-        this.orderPayments = [];
-      }
-    }
-
-    const savedOrders = localStorage.getItem(this.storageKeys.orders);
-    if (savedOrders) {
-      try {
-        this.orders = JSON.parse(savedOrders);
-      } catch (err) {
-        this.orders = [];
-      }
-    }
-
     this.invoiceLoaded = true;
     return this.orderPayments;
   }
@@ -204,7 +171,7 @@ export class PaymentsDataLoader {
     try {
       // 1. Fetch live available purchase orders & GRN consignments from Transaction module / database
       try {
-        const poRes = await this.http.get("/api/v1/grn-payments/available-pos");
+        const poRes = await this.http.get("/advertising/grn-payments/available-pos");
         const poData = poRes?.data || poRes;
         const rawPos = Array.isArray(poData) ? poData : (poData?.pos || []);
         if (Array.isArray(rawPos) && rawPos.length > 0) {
@@ -228,7 +195,6 @@ export class PaymentsDataLoader {
             status: (Number(g.balanceAmount !== undefined ? g.balanceAmount : g.balance) || 0) <= 0 ? "Completed" : "Pending",
             received_date: g.received_date || new Date().toISOString().split("T")[0]
           }));
-          localStorage.setItem(this.storageKeys.grnRecords, JSON.stringify(this.grnRecords));
         }
       } catch (err) {
         console.warn("[PaymentsDataLoader] Failed to fetch live purchase orders from database:", err);
@@ -237,7 +203,7 @@ export class PaymentsDataLoader {
       // 1b. Fallback: Fetch stock consignment GRN records from Supplier module if needed
       if (this.grnRecords.length === 0) {
         try {
-          const grnRes = await this.http.get("/api/v1/grns/data");
+          const grnRes = await this.http.get("/advertising/grns/data");
           const grnData = grnRes?.data || grnRes;
           const rawGrns = grnData?.records || grnData?.grns || (Array.isArray(grnData) ? grnData : []);
           if (Array.isArray(rawGrns) && rawGrns.length > 0) {
@@ -259,7 +225,6 @@ export class PaymentsDataLoader {
               status: g.status || "Completed",
               received_date: g.received_date || g.created_at || new Date().toISOString().split("T")[0]
             }));
-            localStorage.setItem(this.storageKeys.grnRecords, JSON.stringify(this.grnRecords));
           }
         } catch (err) {
           console.warn("[PaymentsDataLoader] Failed to fetch GRNs from Supplier API:", err);
@@ -267,7 +232,7 @@ export class PaymentsDataLoader {
       }
 
       // 2. Fetch recorded GRN disbursements
-      const response = await this.http.get("/api/v1/grn-payments/data", filters);
+      const response = await this.http.get("/advertising/grn-payments/data", filters);
       const data = response?.data || response;
       const raw = data?.grn_payments || data?.grnPayments || (Array.isArray(data) ? data : null);
 
@@ -283,24 +248,6 @@ export class PaymentsDataLoader {
       }
     } catch (e) {
       console.warn("[PaymentsDataLoader] Failed to fetch GRN payments from API:", e);
-    }
-
-    const savedGrnPayments = localStorage.getItem(this.storageKeys.grnPayments);
-    if (savedGrnPayments) {
-      try {
-        this.grnPayments = JSON.parse(savedGrnPayments);
-      } catch (err) {
-        this.grnPayments = [];
-      }
-    }
-
-    const savedGrns = localStorage.getItem(this.storageKeys.grnRecords);
-    if (savedGrns) {
-      try {
-        this.grnRecords = JSON.parse(savedGrns);
-      } catch (err) {
-        this.grnRecords = [];
-      }
     }
 
     this.grnLoaded = true;
@@ -322,9 +269,9 @@ export class PaymentsDataLoader {
     try {
       let response = null;
       try {
-        response = await this.http.get("/api/v1/expenses/data", filters);
+        response = await this.http.get("/advertising/expenses/data", filters);
       } catch (err) {
-        response = await this.http.get("/api/v1/payments/expenses/data", filters);
+        response = await this.http.get("/advertising/payments/expenses/data", filters);
       }
       const data = response?.data || response;
       const raw = data?.expenses || (Array.isArray(data) ? data : null);
@@ -341,15 +288,6 @@ export class PaymentsDataLoader {
       }
     } catch (e) {
       console.warn("[PaymentsDataLoader] Failed to fetch Operating Expenses from API:", e);
-    }
-
-    const savedExpenses = localStorage.getItem(this.storageKeys.operatingExpenses);
-    if (savedExpenses) {
-      try {
-        this.expenses = JSON.parse(savedExpenses);
-      } catch (err) {
-        this.expenses = [];
-      }
     }
 
     this.expensesLoaded = true;
@@ -370,13 +308,9 @@ export class PaymentsDataLoader {
   }
 
   /**
-   * Synchronously load data from localStorage cache or trigger background sync.
+   * Return current in-memory datasets (populated via live API endpoints).
    */
   loadData() {
-    this.loadInvoicePayments();
-    this.loadGrnPayments();
-    this.loadOperatingExpenses();
-
     return {
       orders: this.orders,
       orderPayments: this.orderPayments,
@@ -387,72 +321,31 @@ export class PaymentsDataLoader {
   }
 
   loadInvoicePayments() {
-    const saved = localStorage.getItem(this.storageKeys.orderPayments);
-    if (saved) {
-      try {
-        this.orderPayments = JSON.parse(saved);
-      } catch (e) {
-        this.orderPayments = [];
-      }
-    }
-    const savedOrders = localStorage.getItem(this.storageKeys.orders);
-    if (savedOrders) {
-      try {
-        this.orders = JSON.parse(savedOrders);
-      } catch (e) {
-        this.orders = [];
-      }
-    }
     return this.orderPayments;
   }
 
   loadGrnPayments() {
-    const saved = localStorage.getItem(this.storageKeys.grnPayments);
-    if (saved) {
-      try {
-        this.grnPayments = JSON.parse(saved);
-      } catch (e) {
-        this.grnPayments = [];
-      }
-    }
-    const savedGrns = localStorage.getItem(this.storageKeys.grnRecords);
-    if (savedGrns) {
-      try {
-        this.grnRecords = JSON.parse(savedGrns);
-      } catch (e) {
-        this.grnRecords = [];
-      }
-    }
     return this.grnPayments;
   }
 
   loadOperatingExpenses() {
-    const saved = localStorage.getItem(this.storageKeys.operatingExpenses);
-    if (saved) {
-      try {
-        this.expenses = JSON.parse(saved);
-      } catch (e) {
-        this.expenses = [];
-      }
-    }
     return this.expenses;
   }
 
   saveOrderPayments() {
-    localStorage.setItem(this.storageKeys.orderPayments, JSON.stringify(this.orderPayments));
+    // In-memory state only; backend database is the source of truth.
   }
 
   saveGrnPayments() {
-    localStorage.setItem(this.storageKeys.grnPayments, JSON.stringify(this.grnPayments));
+    // In-memory state only; backend database is the source of truth.
   }
 
   saveExpenses() {
-    localStorage.setItem(this.storageKeys.operatingExpenses, JSON.stringify(this.expenses));
+    // In-memory state only; backend database is the source of truth.
   }
 
   saveOrders(orders) {
     this.orders = orders;
-    localStorage.setItem(this.storageKeys.orders, JSON.stringify(this.orders));
   }
 
   formatCurrency(amount) {

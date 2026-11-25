@@ -20,7 +20,7 @@ class SupplierApiTest extends TestCase
             'email' => 'sales@apexgraphics.lk',
         ];
 
-        $response = $this->postJson('/api/v1/suppliers', $payload);
+        $response = $this->postJson('/advertising/suppliers', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
@@ -42,7 +42,7 @@ class SupplierApiTest extends TestCase
             'mobile' => '0718822334',
         ];
 
-        $response = $this->postJson('/api/v1/suppliers', $payload);
+        $response = $this->postJson('/advertising/suppliers', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
@@ -57,7 +57,7 @@ class SupplierApiTest extends TestCase
 
     public function test_validation_fails_when_name_or_mobile_missing(): void
     {
-        $response = $this->postJson('/api/v1/suppliers', []);
+        $response = $this->postJson('/advertising/suppliers', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'mobile']);
@@ -65,13 +65,13 @@ class SupplierApiTest extends TestCase
 
     public function test_cannot_create_duplicate_supplier_with_same_name(): void
     {
-        $this->postJson('/api/v1/suppliers', [
+        $this->postJson('/advertising/suppliers', [
             'name' => 'Universal Ink Lanka',
             'mobile' => '0771122334',
             'email' => 'info@universalink.lk',
         ])->assertStatus(201);
 
-        $duplicate = $this->postJson('/api/v1/suppliers', [
+        $duplicate = $this->postJson('/advertising/suppliers', [
             'name' => 'Universal Ink Lanka',
             'mobile' => '0779988776',
             'email' => 'different@universalink.lk',
@@ -83,13 +83,13 @@ class SupplierApiTest extends TestCase
 
     public function test_cannot_create_duplicate_supplier_with_same_mobile(): void
     {
-        $this->postJson('/api/v1/suppliers', [
+        $this->postJson('/advertising/suppliers', [
             'name' => 'First Sign Supplies',
             'mobile' => '0775566778',
             'email' => 'first@signsupplies.lk',
         ])->assertStatus(201);
 
-        $duplicate = $this->postJson('/api/v1/suppliers', [
+        $duplicate = $this->postJson('/advertising/suppliers', [
             'name' => 'Second Sign Supplies',
             'mobile' => '0775566778',
             'email' => 'second@signsupplies.lk',
@@ -101,13 +101,13 @@ class SupplierApiTest extends TestCase
 
     public function test_cannot_create_duplicate_supplier_with_same_email(): void
     {
-        $this->postJson('/api/v1/suppliers', [
+        $this->postJson('/advertising/suppliers', [
             'name' => 'Alpha Paper Lanka',
             'mobile' => '0712233445',
             'email' => 'contact@alphapaper.lk',
         ])->assertStatus(201);
 
-        $duplicate = $this->postJson('/api/v1/suppliers', [
+        $duplicate = $this->postJson('/advertising/suppliers', [
             'name' => 'Beta Paper Lanka',
             'mobile' => '0719988776',
             'email' => 'contact@alphapaper.lk',
@@ -140,7 +140,7 @@ class SupplierApiTest extends TestCase
         ]);
 
         // 1. Fetching across ALL suppliers (e.g. + Create New GRN path)
-        $allResponse = $this->getJson('/api/v1/purchase-orders/data?per_page=100');
+        $allResponse = $this->getJson('/advertising/purchase-orders/data?per_page=100');
         $allResponse->assertOk()
             ->assertJsonPath('success', true);
 
@@ -152,7 +152,7 @@ class SupplierApiTest extends TestCase
         $this->assertContains($poB->id, $poIds);
 
         // 2. Fetching filtered to Supplier Alpha only (Supplier Directory Card path)
-        $filteredResponse = $this->getJson('/api/v1/purchase-orders/data?suppliers_id='.$supplierA->id);
+        $filteredResponse = $this->getJson('/advertising/purchase-orders/data?suppliers_id='.$supplierA->id);
         $filteredResponse->assertOk();
 
         $filteredOrders = $filteredResponse->json('data.purchase_orders');

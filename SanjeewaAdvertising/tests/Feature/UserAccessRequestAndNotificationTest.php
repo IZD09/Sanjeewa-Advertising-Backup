@@ -48,7 +48,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
         $this->assertEquals(0, $user->getAssignedModulesCount());
 
         // 2. Submit login attempt via JSON/AJAX
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/advertising/auth/login', [
             'username' => 'nimal',
             'password' => 'password123',
         ]);
@@ -126,7 +126,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
         $this->assertTrue($user->hasAnyModulePermission());
 
         // Submit login
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/advertising/auth/login', [
             'username' => 'kamal',
             'password' => 'password123',
         ]);
@@ -159,7 +159,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
         $admin = Admin::where('username', 'admin')->first();
 
         // Submit one-click permission request
-        $response = $this->postJson('/api/v1/permissions/request', [
+        $response = $this->postJson('/advertising/permissions/request', [
             'user_id' => $user->id,
         ]);
 
@@ -199,10 +199,10 @@ class UserAccessRequestAndNotificationTest extends TestCase
         ]);
 
         // Trigger a notification
-        $this->postJson('/api/v1/permissions/request', ['user_id' => $user->id]);
+        $this->postJson('/advertising/permissions/request', ['user_id' => $user->id]);
 
         // Authenticate as Admin
-        $response = $this->actingAs($admin, 'admin')->getJson('/api/v1/notifications');
+        $response = $this->actingAs($admin, 'admin')->getJson('/advertising/notifications');
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -216,7 +216,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
         $notificationId = $data['notifications'][0]['id'];
 
         // Mark as read
-        $markResponse = $this->actingAs($admin, 'admin')->patchJson("/api/v1/notifications/{$notificationId}/read");
+        $markResponse = $this->actingAs($admin, 'admin')->patchJson("/advertising/notifications/{$notificationId}/read");
         $markResponse->assertStatus(200);
         $markResponse->assertJson([
             'success' => true,
@@ -226,7 +226,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
         ]);
 
         // Verify unread count is updated
-        $updatedResponse = $this->actingAs($admin, 'admin')->getJson('/api/v1/notifications');
+        $updatedResponse = $this->actingAs($admin, 'admin')->getJson('/advertising/notifications');
         $this->assertEquals(0, $updatedResponse->json('data.unread_count'));
     }
 
@@ -256,10 +256,10 @@ class UserAccessRequestAndNotificationTest extends TestCase
             'user_statuses_id' => 1,
         ]);
 
-        $this->postJson('/api/v1/permissions/request', ['user_id' => $user1->id]);
-        $this->postJson('/api/v1/permissions/request', ['user_id' => $user2->id]);
+        $this->postJson('/advertising/permissions/request', ['user_id' => $user1->id]);
+        $this->postJson('/advertising/permissions/request', ['user_id' => $user2->id]);
 
-        $response = $this->actingAs($admin, 'admin')->postJson('/api/v1/notifications/mark-all-read');
+        $response = $this->actingAs($admin, 'admin')->postJson('/advertising/notifications/mark-all-read');
         $response->assertStatus(200);
         $response->assertJson([
             'success' => true,
@@ -268,7 +268,7 @@ class UserAccessRequestAndNotificationTest extends TestCase
             ],
         ]);
 
-        $checkResponse = $this->actingAs($admin, 'admin')->getJson('/api/v1/notifications');
+        $checkResponse = $this->actingAs($admin, 'admin')->getJson('/advertising/notifications');
         $this->assertEquals(0, $checkResponse->json('data.unread_count'));
     }
 }

@@ -17,7 +17,7 @@ export class LiveSyncManager {
 
   /**
    * @param {Object} [options={}]
-   * @param {string} [options.endpoint="/api/v1/live-sync/versions"]
+   * @param {string} [options.endpoint="/advertising/live-sync/versions"]
    * @param {number} [options.intervalMs=8000]
    * @param {number} [options.jitterMs=1500]
    * @param {number} [options.staggerMinMs=200]
@@ -25,7 +25,7 @@ export class LiveSyncManager {
    * @param {string} [options.broadcastChannelName="sanjeewa_live_sync"]
    */
   constructor(options = {}) {
-    this.endpoint = options.endpoint || "/api/v1/live-sync/versions";
+    this.endpoint = options.endpoint || "/advertising/live-sync/versions";
     this.intervalMs = options.intervalMs || 8000;
     this.jitterMs = options.jitterMs ?? 1500;
     this.staggerMinMs = options.staggerMinMs ?? 200;

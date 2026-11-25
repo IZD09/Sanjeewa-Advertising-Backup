@@ -205,7 +205,7 @@ export class UserControlDataLoader {
   async syncUsersFromBackend(options = {}) {
     const { force = false, silent = false } = options;
     try {
-      const response = await this.http.get("/api/v1/users/all", {}, {
+      const response = await this.http.get("/advertising/users/all", {}, {
         headers: silent ? { "X-Background-Poll": "1" } : {}
       });
       if (response && response.success && Array.isArray(response.data)) {
@@ -228,7 +228,7 @@ export class UserControlDataLoader {
 
   async syncAdminsFromBackend() {
     try {
-      const response = await this.http.get("/api/v1/admins/all");
+      const response = await this.http.get("/advertising/admins/all");
       if (response && response.success && Array.isArray(response.data)) {
         this.admins = response.data.map(a => this.normalizeAdmin(a));
         this.onAdminsUpdated(this.admins);
@@ -241,12 +241,12 @@ export class UserControlDataLoader {
   }
 
   /**
-   * Fetch user permissions from the backend User Module (/api/v1/users/{userId}/permissions).
+   * Fetch user permissions from the backend User Module (/advertising/users/{userId}/permissions).
    */
   async fetchUserPermissions(userId) {
     if (!userId) return {};
     try {
-      const response = await this.http.get(`/api/v1/users/${userId}/permissions`);
+      const response = await this.http.get(`/advertising/users/${userId}/permissions`);
       const list = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
       const matrix = this.convertBackendPermissionsToMatrix(list);
       this.permissions[`user_${userId}`] = matrix;
@@ -257,7 +257,7 @@ export class UserControlDataLoader {
   }
 
   /**
-   * Search users via User Module endpoint (/api/v1/users/search) using RequestHandler.
+   * Search users via User Module endpoint (/advertising/users/search) using RequestHandler.
    *
    * @param {string} [rawQuery=""]
    * @param {Object} [options={}]
@@ -280,7 +280,7 @@ export class UserControlDataLoader {
       params.id = cleanQuery;
     }
 
-    const response = await this.http.get("/api/v1/users/search", params, options);
+    const response = await this.http.get("/advertising/users/search", params, options);
     const list = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
     const normalized = list.map(u => this.normalizeUser(u));
 

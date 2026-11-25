@@ -99,7 +99,7 @@ export class StockMovementsHandler extends BaseTableLoader {
     }
 
     try {
-      const response = await this.http.get(`/api/v1/inventory/movements?${params.toString()}`);
+      const response = await this.http.get(`/advertising/inventory/movements?${params.toString()}`);
       if (response && response.success && Array.isArray(response.data)) {
         const items = response.data;
         const pagination = response.pagination || {};
@@ -126,7 +126,7 @@ export class StockMovementsHandler extends BaseTableLoader {
    */
   async fetchStats() {
     try {
-      const response = await this.http.get("/api/v1/inventory/movements/stats");
+      const response = await this.http.get("/advertising/inventory/movements/stats");
       if (response && response.success && response.data) {
         const stats = response.data;
 

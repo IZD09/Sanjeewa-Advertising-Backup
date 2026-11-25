@@ -53,7 +53,7 @@ export class ViewGRNModal extends BaseModalHandler {
         try {
           const numericId = String(identifierOrRecord).replace(/\D/g, "");
           if (numericId) {
-            const res = await fetch(`/api/v1/grns/${numericId}`, {
+            const res = await fetch(`/advertising/grns/${numericId}`, {
               headers: { "Accept": "application/json" }
             });
             const json = await res.json();

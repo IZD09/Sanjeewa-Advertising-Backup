@@ -291,7 +291,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       return;
     }
     try {
-      const res = await this.http.get("/api/v1/customers/all");
+      const res = await this.http.get("/advertising/customers/all");
       const data = res?.data || res;
       this.customers = Array.isArray(data) ? data : (data?.data || []);
     } catch (err) {
@@ -346,7 +346,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
       try {
         const rawNum = String(orderId).match(/(\d+)$/)?.[1];
         if (rawNum) {
-          const res = await this.http.get(`/api/v1/print-jobs/${rawNum}`);
+          const res = await this.http.get(`/advertising/print-jobs/${rawNum}`);
           const jobData = res?.data || res;
           if (jobData?.customers_id) {
             customerToSelect = this.customers.find(c => Number(c.id) === Number(jobData.customers_id));
@@ -550,7 +550,7 @@ export class RecordInvoicePaymentModal extends BaseModalHandler {
    */
   async fetchCustomerPendingJobs(customerId) {
     try {
-      const res = await this.http.get(`/api/v1/invoices/available-jobs?customer_id=${customerId}&pending_only=1`);
+      const res = await this.http.get(`/advertising/invoices/available-jobs?customer_id=${customerId}&pending_only=1`);
       const data = res?.data || res;
       const rawJobs = Array.isArray(data) ? data : (data?.jobs || []);
 

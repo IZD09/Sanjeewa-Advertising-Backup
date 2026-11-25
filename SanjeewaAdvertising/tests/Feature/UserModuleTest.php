@@ -49,7 +49,7 @@ class UserModuleTest extends TestCase
             'user_statuses_id' => $this->status->id,
         ];
 
-        $response = $this->postJson('/api/v1/auth/register', $payload);
+        $response = $this->postJson('/advertising/auth/register', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -94,7 +94,7 @@ class UserModuleTest extends TestCase
             ]);
         }
 
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/advertising/auth/login', [
             'username' => 'kamal_'.$unique,
             'password' => 'MyPassword123',
         ]);
@@ -117,7 +117,7 @@ class UserModuleTest extends TestCase
 
     public function test_auth_login_with_invalid_credentials_returns_401(): void
     {
-        $response = $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/advertising/auth/login', [
             'username' => 'nonexistent_user',
             'password' => 'WrongPass',
         ]);
@@ -149,7 +149,7 @@ class UserModuleTest extends TestCase
             'logout' => null,
         ]);
 
-        $response = $this->postJson('/api/v1/auth/logout', [
+        $response = $this->postJson('/advertising/auth/logout', [
             'user_id' => $user->id,
         ]);
 
@@ -199,7 +199,7 @@ class UserModuleTest extends TestCase
         $admin = Admin::where('username', 'admin')->first();
 
         // 1. Create user (only admin is authorized)
-        $storeResponse = $this->actingAs($admin, 'admin')->postJson('/api/v1/users', [
+        $storeResponse = $this->actingAs($admin, 'admin')->postJson('/advertising/users', [
             'first_name' => 'Kasun',
             'last_name' => 'Fernando',
             'mobile' => '075'.rand(1000000, 9999999),
@@ -212,31 +212,31 @@ class UserModuleTest extends TestCase
         $userId = $storeResponse->json('data.id');
 
         // 2. Show user
-        $showResponse = $this->getJson("/api/v1/users/{$userId}");
+        $showResponse = $this->getJson("/advertising/users/{$userId}");
         $showResponse->assertStatus(200)
             ->assertJsonPath('data.username', 'kasun_'.$unique);
 
         // 3. Update user
-        $updateResponse = $this->putJson("/api/v1/users/{$userId}", [
+        $updateResponse = $this->putJson("/advertising/users/{$userId}", [
             'first_name' => 'Kasun Updated',
         ]);
         $updateResponse->assertStatus(200)
             ->assertJsonPath('data.first_name', 'Kasun Updated');
 
         // 4. Index listing
-        $indexResponse = $this->getJson('/api/v1/users?search=Kasun');
+        $indexResponse = $this->getJson('/advertising/users?search=Kasun');
         $indexResponse->assertStatus(200)
             ->assertJsonPath('success', true);
 
         // 5. Update user status
-        $statusResponse = $this->patchJson("/api/v1/users/{$userId}/status", [
+        $statusResponse = $this->patchJson("/advertising/users/{$userId}/status", [
             'user_statuses_id' => $this->status->id,
         ]);
         $statusResponse->assertStatus(200)
             ->assertJsonPath('data.status.id', $this->status->id);
 
         // 6. Delete user
-        $deleteResponse = $this->deleteJson("/api/v1/users/{$userId}");
+        $deleteResponse = $this->deleteJson("/advertising/users/{$userId}");
         $deleteResponse->assertStatus(200);
 
         $this->assertDatabaseMissing('users', ['id' => $userId]);
@@ -262,12 +262,12 @@ class UserModuleTest extends TestCase
             'logout' => now(),
         ]);
 
-        $showResponse = $this->getJson("/api/v1/users/{$user->id}");
+        $showResponse = $this->getJson("/advertising/users/{$user->id}");
         $showResponse->assertStatus(200)
             ->assertJsonPath('data.full_name', 'Ruwan Perera')
             ->assertJsonPath('data.status.user_status', 'Active');
 
-        $loginsResponse = $this->getJson("/api/v1/users/{$user->id}/logins");
+        $loginsResponse = $this->getJson("/advertising/users/{$user->id}/logins");
         $loginsResponse->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('pagination.total', 1);
@@ -298,15 +298,15 @@ class UserModuleTest extends TestCase
             'user_statuses_id' => $this->status->id,
         ]);
 
-        // 1. Test GET /api/v1/users/all
-        $allResponse = $this->getJson('/api/v1/users/all');
+        // 1. Test GET /advertising/users/all
+        $allResponse = $this->getJson('/advertising/users/all');
         $allResponse->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertIsArray($allResponse->json('data'));
         $this->assertGreaterThanOrEqual(2, count($allResponse->json('data')));
 
-        // 2. Test GET /api/v1/users?all=true
-        $indexAllResponse = $this->getJson('/api/v1/users?all=true');
+        // 2. Test GET /advertising/users?all=true
+        $indexAllResponse = $this->getJson('/advertising/users?all=true');
         $indexAllResponse->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertIsArray($indexAllResponse->json('data'));
@@ -326,30 +326,30 @@ class UserModuleTest extends TestCase
             'user_statuses_id' => $this->status->id,
         ]);
 
-        // Search by first name via /api/v1/users/search
-        $searchResponse = $this->getJson('/api/v1/users/search?q=Chamara');
+        // Search by first name via /advertising/users/search
+        $searchResponse = $this->getJson('/advertising/users/search?q=Chamara');
         $searchResponse->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertSame($targetUser->id, $searchResponse->json('data.0.id'));
 
         // Search by full name "Chamara Jayasinghe"
-        $fullNameSearch = $this->getJson('/api/v1/users/search?q=Chamara Jayasinghe&all=true');
+        $fullNameSearch = $this->getJson('/advertising/users/search?q=Chamara Jayasinghe&all=true');
         $fullNameSearch->assertStatus(200);
         $this->assertContains($targetUser->id, array_column($fullNameSearch->json('data'), 'id'));
 
         // Search by mobile
-        $mobileSearch = $this->getJson("/api/v1/users?search={$targetUser->mobile}&all=true");
+        $mobileSearch = $this->getJson("/advertising/users?search={$targetUser->mobile}&all=true");
         $mobileSearch->assertStatus(200);
         $this->assertContains($targetUser->id, array_column($mobileSearch->json('data'), 'id'));
 
-        // Search by user ID via /api/v1/users/search?q={id} and ?id={id}
-        $idSearch = $this->getJson("/api/v1/users/search?q={$targetUser->id}&id={$targetUser->id}&all=true");
+        // Search by user ID via /advertising/users/search?q={id} and ?id={id}
+        $idSearch = $this->getJson("/advertising/users/search?q={$targetUser->id}&id={$targetUser->id}&all=true");
         $idSearch->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertContains($targetUser->id, array_column($idSearch->json('data'), 'id'));
 
         // Search by prefixed user ID (#id)
-        $hashIdSearch = $this->getJson('/api/v1/users/search?q='.urlencode("#{$targetUser->id}").'&all=true');
+        $hashIdSearch = $this->getJson('/advertising/users/search?q='.urlencode("#{$targetUser->id}").'&all=true');
         $hashIdSearch->assertStatus(200)
             ->assertJsonPath('success', true);
         $this->assertContains($targetUser->id, array_column($hashIdSearch->json('data'), 'id'));

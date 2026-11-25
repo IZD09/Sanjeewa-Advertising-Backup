@@ -139,7 +139,7 @@ class PrintJobsPageTest extends TestCase
 
     public function test_floor_data_api_returns_structured_production_datasets(): void
     {
-        $response = $this->actingAs($this->user, 'web')->getJson('/api/v1/print-jobs/floor-data');
+        $response = $this->actingAs($this->user, 'web')->getJson('/advertising/print-jobs/floor-data');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -160,7 +160,7 @@ class PrintJobsPageTest extends TestCase
 
     public function test_can_update_job_status_through_endpoint(): void
     {
-        $response = $this->actingAs($this->user, 'web')->patchJson("/api/v1/print-jobs/{$this->job->id}/status", [
+        $response = $this->actingAs($this->user, 'web')->patchJson("/advertising/print-jobs/{$this->job->id}/status", [
             'print_job_statuses_id' => 4,
         ]);
 
@@ -176,7 +176,7 @@ class PrintJobsPageTest extends TestCase
     public function test_can_assign_and_remove_stock_item_allocation(): void
     {
         // Assign stock
-        $assignResponse = $this->actingAs($this->user, 'web')->postJson("/api/v1/print-jobs/{$this->job->id}/stock-items", [
+        $assignResponse = $this->actingAs($this->user, 'web')->postJson("/advertising/print-jobs/{$this->job->id}/stock-items", [
             'stock_id' => $this->stock->id,
             'qty' => 3,
         ]);
@@ -189,7 +189,7 @@ class PrintJobsPageTest extends TestCase
         ]);
 
         // Remove stock
-        $removeResponse = $this->actingAs($this->user, 'web')->deleteJson("/api/v1/print-jobs/{$this->job->id}/stock-items/{$this->stock->id}");
+        $removeResponse = $this->actingAs($this->user, 'web')->deleteJson("/advertising/print-jobs/{$this->job->id}/stock-items/{$this->stock->id}");
         $removeResponse->assertStatus(200);
         $this->assertDatabaseMissing('print_jobs_stock_items', [
             'print_jobs_id' => $this->job->id,

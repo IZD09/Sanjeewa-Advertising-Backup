@@ -184,7 +184,7 @@ class GrnItemsUnitTest extends TestCase
         ]);
 
         // Submit Create GRN payload matching CreateGrnModal.js
-        $response = $this->postJson('/api/v1/grns', [
+        $response = $this->postJson('/advertising/grns', [
             'status' => 'Pending',
             'purchase_orders' => [
                 [

@@ -56,7 +56,7 @@ export class CreateGrnProcess {
    */
   async loadSuppliers() {
     try {
-      const res = await this.http.get("/api/v1/suppliers/all");
+      const res = await this.http.get("/advertising/suppliers/all");
       const data = res?.data || res;
       this.suppliers = Array.isArray(data) ? data : (data?.data || []);
     } catch (err) {
@@ -72,7 +72,7 @@ export class CreateGrnProcess {
    */
   async loadInventoryCatalog() {
     try {
-      const res = await this.http.get("/api/v1/inventory/stocks/form-data");
+      const res = await this.http.get("/advertising/inventory/stocks/form-data");
       const data = res?.data || res;
       this.brands = Array.isArray(data?.brands) ? data.brands : [];
       this.stockItemsCatalog = Array.isArray(data?.stock_items) ? data.stock_items : [];
@@ -97,7 +97,7 @@ export class CreateGrnProcess {
       if (typeof callbacks.onStart === "function") callbacks.onStart();
 
       try {
-        const response = await this.http.get("/api/v1/purchase-orders/data", { per_page: 100 });
+        const response = await this.http.get("/advertising/purchase-orders/data", { per_page: 100 });
         const data = response?.data || response;
         purchaseOrders = data?.purchase_orders ?? data?.orders ?? (Array.isArray(data) ? data : []);
         if (this.ctx.setPurchaseOrders && Array.isArray(purchaseOrders)) {
@@ -510,7 +510,7 @@ export class CreateGrnProcess {
   }
 
   /**
-   * Build API payload for POST /api/v1/grns.
+   * Build API payload for POST /advertising/grns.
    * @param {string} remarks
    * @param {{subTotal: number, discount: number, netTotal: number}} financials
    * @returns {Object}
@@ -567,7 +567,7 @@ export class CreateGrnProcess {
    */
   async submitGrn(remarks = "", financials = { subTotal: 0, discount: 0, netTotal: 0 }) {
     const payload = this.buildPayload(remarks, financials);
-    const response = await this.http.post("/api/v1/grns", payload);
+    const response = await this.http.post("/advertising/grns", payload);
     const createdGrn = response?.data || response;
     const grnCode = createdGrn?.grn_number || createdGrn?.grn_id || `GRN-${Date.now().toString().slice(-4)}`;
 

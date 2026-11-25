@@ -18,7 +18,7 @@ class InventoryCategoriesTest extends TestCase
 
     public function test_can_retrieve_combined_categories_tab_data(): void
     {
-        $response = $this->getJson('/api/v1/inventory/categories/data');
+        $response = $this->getJson('/advertising/inventory/categories/data');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -54,7 +54,7 @@ class InventoryCategoriesTest extends TestCase
 
     public function test_can_list_categories(): void
     {
-        $response = $this->getJson('/api/v1/inventory/categories');
+        $response = $this->getJson('/advertising/inventory/categories');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -78,7 +78,7 @@ class InventoryCategoriesTest extends TestCase
             'category' => 'Speciality Media '.uniqid(),
         ];
 
-        $response = $this->postJson('/api/v1/inventory/categories', $payload);
+        $response = $this->postJson('/advertising/inventory/categories', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
@@ -87,7 +87,7 @@ class InventoryCategoriesTest extends TestCase
 
     public function test_validates_category_creation(): void
     {
-        $response = $this->postJson('/api/v1/inventory/categories', [
+        $response = $this->postJson('/advertising/inventory/categories', [
             'category' => 'A',
         ]);
 
@@ -99,7 +99,7 @@ class InventoryCategoriesTest extends TestCase
     {
         $category = Category::first();
 
-        $response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id);
+        $response = $this->getJson('/advertising/inventory/subcategories?category_id='.$category->id);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -125,7 +125,7 @@ class InventoryCategoriesTest extends TestCase
             'categories_id' => $category->id,
         ];
 
-        $response = $this->postJson('/api/v1/inventory/subcategories', $payload);
+        $response = $this->postJson('/advertising/inventory/subcategories', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
@@ -135,7 +135,7 @@ class InventoryCategoriesTest extends TestCase
 
     public function test_validates_subcategory_creation(): void
     {
-        $response = $this->postJson('/api/v1/inventory/subcategories', [
+        $response = $this->postJson('/advertising/inventory/subcategories', [
             'subcategory' => '',
             'categories_id' => 999999,
         ]);
@@ -157,7 +157,7 @@ class InventoryCategoriesTest extends TestCase
             ]);
         }
 
-        $page1Response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id.'&page=1&per_page=20');
+        $page1Response = $this->getJson('/advertising/inventory/subcategories?category_id='.$category->id.'&page=1&per_page=20');
         $page1Response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(20, 'data')
@@ -166,7 +166,7 @@ class InventoryCategoriesTest extends TestCase
             ->assertJsonPath('pagination.total', 25)
             ->assertJsonPath('pagination.last_page', 2);
 
-        $page2Response = $this->getJson('/api/v1/inventory/subcategories?category_id='.$category->id.'&page=2&per_page=20');
+        $page2Response = $this->getJson('/advertising/inventory/subcategories?category_id='.$category->id.'&page=2&per_page=20');
         $page2Response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(5, 'data')
