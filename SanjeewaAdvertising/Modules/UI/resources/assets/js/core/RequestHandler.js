@@ -22,8 +22,8 @@ class RequestPriorityScheduler {
     this.activeHigh = 0;
     this.activeNormal = 0;
     this.activeLow = 0;
-    this.maxNormal = 6;
-    this.maxLow = 2;
+    this.maxNormal = 8;
+    this.maxLow = 4;
     this.normalQueue = [];
     this.lowQueue = [];
     this.inFlightLowGets = new Map();
@@ -47,9 +47,6 @@ class RequestPriorityScheduler {
     if (
       lowerUrl.includes("live-sync/") ||
       lowerUrl.includes("/notifications") ||
-      lowerUrl.includes("/dashboard/data") ||
-      lowerUrl.includes("/reports/") ||
-      lowerUrl.includes("/advertising/reports") ||
       lowerUrl.includes("/advertising/activities")
     ) {
       return "low";
