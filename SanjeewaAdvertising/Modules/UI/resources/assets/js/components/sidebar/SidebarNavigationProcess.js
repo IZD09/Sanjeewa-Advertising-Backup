@@ -241,6 +241,11 @@ export class SidebarNavigationProcess {
         this.goTo("/settings");
         break;
 
+      case "about-us":
+        if (window.location.pathname === "/about-us") return;
+        this.goTo("/about-us");
+        break;
+
       default:
         if (window.location.pathname === "/" + navigateLocation) return;
         this.goTo("/" + navigateLocation);

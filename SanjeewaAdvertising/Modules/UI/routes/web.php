@@ -158,5 +158,8 @@ Route::middleware(['auth:web,admin'])->group(function () {
 
     Route::get('/user-control', fn () => redirect()->route('admin.user-control'));
 
+    Route::view('/about-us', 'ui::layouts.pages.about-us.about-us')
+        ->name('ui.about-us');
+
     Route::resource('uis', UIController::class)->names('ui');
 });

@@ -10,6 +10,7 @@
 
 import { ValidatBuilder } from "./core/ValidatBuilder.js";
 import { RequestHandler } from "./core/RequestHandler.js";
+import { OrytingoLoginTransition } from "./core/OrytingoLoginTransition.js";
 
 export class LoginManager {
   /**
@@ -381,7 +382,10 @@ export class LoginManager {
       if (data?.success !== false) {
         isRedirecting = true;
         const targetUrl = data?.data?.redirect_url || data?.redirect_url || redirectUrl;
-        window.location.href = targetUrl;
+        await OrytingoLoginTransition.play({
+          redirectUrl: targetUrl,
+          subtitle: "Signing in to your workspace...",
+        });
         return;
       }
 

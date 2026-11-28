@@ -101,7 +101,7 @@
             </ul>
         </div>
 
-        <div class="foot">&copy; <span id="yr">{{ date('Y') }}</span> {{ $appShopName }}. All rights reserved.</div>
+        <div class="foot">&copy; <span id="yr">{{ date('Y') }}</span> <strong>Orytingo</strong> &middot; All rights reserved.</div>
     </section>
 
     {{-- Right Form Section --}}

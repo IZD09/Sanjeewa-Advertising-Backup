@@ -107,6 +107,7 @@
                 ['component' => 'user-control'],
                 ['component' => 'admin-profile'],
                 ['component' => 'settings'],
+                ['component' => 'about-us'],
             ],
         ],
     ];
@@ -150,6 +151,7 @@
             'items' => [
                 ['component' => 'user-profile'],
                 ['component' => 'settings'],
+                ['component' => 'about-us'],
             ],
         ],
     ];
@@ -177,7 +179,7 @@
             $filteredItems = [];
             foreach ($group['items'] ?? [] as $item) {
                 $comp = $item['component'] ?? '';
-                if ($comp === 'user-profile') {
+                if (in_array($comp, ['user-profile', 'about-us'], true)) {
                     $filteredItems[] = $item;
                     continue;
                 }

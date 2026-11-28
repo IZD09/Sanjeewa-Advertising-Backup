@@ -10,6 +10,7 @@
 
 import { ValidatBuilder } from "../core/ValidatBuilder.js";
 import { RequestHandler } from "../core/RequestHandler.js";
+import { OrytingoLoginTransition } from "../core/OrytingoLoginTransition.js";
 
 export class AdminLoginManager {
   /**
@@ -288,7 +289,10 @@ export class AdminLoginManager {
 
       if (response && (response.success || response.status === "success" || response.data)) {
         const targetUrl = response?.data?.redirect_url || response?.redirect_url || redirectUrl;
-        window.location.href = targetUrl;
+        await OrytingoLoginTransition.play({
+          redirectUrl: targetUrl,
+          subtitle: "Initializing Administrator Console...",
+        });
       } else {
         const errorMsg = response?.message || response?.error || "Invalid administrator credentials or access denied.";
         this.setStatus(errorMsg, "error");
