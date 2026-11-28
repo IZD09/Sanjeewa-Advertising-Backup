@@ -20,12 +20,12 @@ export class StockItemAggregatedEntity {
     this.subcategory = data.subcategory || "General";
     this.brands = Array.isArray(data.brands) ? data.brands : [];
     this.batchesCount = data.batches_count ?? data.batchesCount ?? 0;
-    this.totalQty = parseInt(data.total_qty ?? data.currentStock ?? data.qty ?? 0, 10);
+    this.totalQty = Number((parseFloat(data.total_qty ?? data.currentStock ?? data.qty ?? 0) || 0).toFixed(3));
     this.unit = data.unit || "Units";
     this.unitPrice = parseFloat(data.unitPrice ?? 0);
     this.totalVal = parseFloat(data.total_val ?? data.totalValue ?? (this.totalQty * this.unitPrice));
-    this.lowStockQty = parseInt(data.low_stock_qty ?? data.minThreshold ?? 10, 10);
-    this.reorderQty = parseInt(data.reorder_qty ?? 20, 10);
+    this.lowStockQty = Number((parseFloat(data.low_stock_qty ?? data.minThreshold ?? 10) || 10).toFixed(3));
+    this.reorderQty = Number((parseFloat(data.reorder_qty ?? 20) || 20).toFixed(3));
     this.status = data.status || this.calculateStatus();
     this.raw = data;
   }
@@ -100,7 +100,7 @@ export class StockItemAggregatedEntity {
         ${batchesBadge}
       </td>
       <td class="text-right">
-        <strong style="font-size: 13.5px; color: var(--text);">${this.totalQty.toLocaleString()}</strong>
+        <strong style="font-size: 13.5px; color: var(--text);">${this.totalQty.toLocaleString(undefined, { maximumFractionDigits: 3 })}</strong>
         <span class="inv-unit-badge" style="margin-left: 3px;">${this.unit}</span>
       </td>
       <td>

@@ -32,7 +32,7 @@ class StoreStockRequest extends FormRequest
                 'items' => ['required', 'array', 'min:1'],
                 'items.*.stock_items_id' => ['required', 'integer', 'exists:stock_items,id'],
                 'items.*.brands_id' => ['required', 'integer', 'exists:brands,id'],
-                'items.*.qty' => ['required', 'integer', 'min:1'],
+                'items.*.qty' => ['required', 'numeric', 'min:0.001'],
                 'items.*.buy' => ['required', 'numeric', 'min:0'],
                 'items.*.price' => ['required', 'numeric', 'min:0'],
                 'items.*.batch_id' => ['nullable', 'integer', 'exists:item_batches,id'],
@@ -43,7 +43,7 @@ class StoreStockRequest extends FormRequest
         return [
             'stock_items_id' => ['required', 'integer', 'exists:stock_items,id'],
             'brands_id' => ['required', 'integer', 'exists:brands,id'],
-            'qty' => ['required', 'integer', 'min:1'],
+            'qty' => ['required', 'numeric', 'min:0.001'],
             'buy' => ['required', 'numeric', 'min:0'],
             'price' => ['required', 'numeric', 'min:0'],
             'grn_id' => ['required', 'integer', 'exists:grn,id'],
@@ -91,26 +91,26 @@ class StoreStockRequest extends FormRequest
                 foreach ($grn->purchaseOrders as $po) {
                     foreach ($po->items as $poi) {
                         $itemId = (int) $poi->stock_items_id;
-                        $poQty = (int) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered);
+                        $poQty = round((float) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered), 3);
                         if ($poQty > 0) {
-                            $expectedQtyMap[$itemId] = ($expectedQtyMap[$itemId] ?? 0) + $poQty;
+                            $expectedQtyMap[$itemId] = round(($expectedQtyMap[$itemId] ?? 0) + $poQty, 3);
                         }
                     }
                 }
 
                 foreach ($grn->stocks as $grnStock) {
                     $itemId = (int) $grnStock->stock_items_id;
-                    if ((int) $grnStock->qty > 0) {
-                        $expectedQtyMap[$itemId] = (int) $grnStock->qty;
+                    if ((float) $grnStock->qty > 0) {
+                        $expectedQtyMap[$itemId] = round((float) $grnStock->qty, 3);
                     }
                 }
 
                 foreach ($items as $idx => $itemRow) {
                     $itemId = (int) ($itemRow['stock_items_id'] ?? 0);
-                    $receivedQty = (int) ($itemRow['qty'] ?? 0);
+                    $receivedQty = round((float) ($itemRow['qty'] ?? 0), 3);
                     $maxQty = $expectedQtyMap[$itemId] ?? null;
 
-                    if ($maxQty !== null && $maxQty > 0 && $receivedQty > $maxQty) {
+                    if ($maxQty !== null && $maxQty > 0 && $receivedQty > $maxQty + 0.0001) {
                         $validator->errors()->add(
                             "items.{$idx}.qty",
                             "Received quantity ({$receivedQty}) for item #".($idx + 1)." cannot exceed GRN quantity ({$maxQty})."

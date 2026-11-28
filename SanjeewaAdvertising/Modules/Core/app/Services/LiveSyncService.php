@@ -22,6 +22,7 @@ class LiveSyncService
         'grn',
         'customers',
         'hr',
+        'transport',
         'users',
         'reports',
     ];
@@ -181,6 +182,10 @@ class LiveSyncService
             str_contains($clean, 'employee')
         ) {
             $channels[] = 'hr';
+        }
+
+        if (str_contains($clean, 'transport') || str_contains($clean, 'dispatch') || str_contains($clean, 'vehicle')) {
+            $channels[] = 'transport';
         }
 
         if (str_contains($clean, 'user') || str_contains($clean, 'role') || str_contains($clean, 'permission')) {

@@ -296,7 +296,7 @@ export class StockItemSelector {
       this.selectedItem.brand_name ||
       (compatible.length > 0 ? compatible[0].brand : (allBrands[0]?.brand || "Generic"));
 
-    const grnQty = parseInt(this.selectedItem.qty || this.selectedItem.qty_received || this.selectedItem.qty_ordered || 1, 10);
+    const grnQty = Number((parseFloat(this.selectedItem.qty || this.selectedItem.qty_received || this.selectedItem.qty_ordered || 1) || 1).toFixed(3));
     const receivedQty = 0;
 
     const unitCost = this.selectedItem.unit_cost !== undefined ? parseFloat(this.selectedItem.unit_cost) || 0 : 0;
@@ -376,7 +376,7 @@ export class StockItemSelector {
         fullItem.brand_name ||
         (compatible.length > 0 ? compatible[0].brand : (allBrands[0]?.brand || "Generic"));
 
-      const grnQty = parseInt(fullItem.qty || fullItem.qty_received || fullItem.qty_ordered || 1, 10);
+      const grnQty = Number((parseFloat(fullItem.qty || fullItem.qty_received || fullItem.qty_ordered || 1) || 1).toFixed(3));
       const receivedQty = 0;
       const unitCost = fullItem.unit_cost !== undefined ? parseFloat(fullItem.unit_cost) : 0;
       const sellingPrice =
@@ -532,7 +532,7 @@ export class StockItemSelector {
           ${item.grn_qty ?? item.qty}
         </td>
         <td style="padding: 6px 8px; text-align: center; vertical-align: middle; width: 75px;">
-          <input type="number" min="0" max="${item.grn_qty ?? item.qty}" step="1" value="${item.qty}" 
+          <input type="number" min="0" max="${item.grn_qty ?? item.qty}" step="any" value="${item.qty}" 
             class="inv-search-input staged-qty-input" 
             data-item-id="${item.id}"
             style="width: 60px; height: 26px; padding: 2px 4px; text-align: center; font-size: 11.5px; font-weight: 700; color: #1677ff; box-sizing: border-box;" 
@@ -558,7 +558,7 @@ export class StockItemSelector {
     tbody.querySelectorAll(".staged-qty-input").forEach((input) => {
       input.addEventListener("input", (e) => {
         const id = Number(e.target.dataset.itemId);
-        let newQty = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+        let newQty = e.target.value === "" ? 0 : Number((parseFloat(e.target.value) || 0).toFixed(3));
         if (!isNaN(newQty) && newQty >= 0) {
           const item = this.stagedItems.find((it) => Number(it.id) === id);
           if (item) {

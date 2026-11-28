@@ -36,7 +36,7 @@
       <!-- 3. Quantity Number Input -->
       <div class="po-field">
         <label class="po-label" for="adjQtyInput"><span>Adjustment Quantity <span class="req">*</span></span></label>
-        <input type="number" id="adjQtyInput" name="adj_qty" class="inv-search-input" min="1" step="1" placeholder="Enter quantity to adjust">
+        <input type="number" id="adjQtyInput" name="adj_qty" class="inv-search-input" min="0" step="any" placeholder="Enter quantity to adjust">
       </div>
 
       <!-- 4. Read-Only Financial Impact Value -->

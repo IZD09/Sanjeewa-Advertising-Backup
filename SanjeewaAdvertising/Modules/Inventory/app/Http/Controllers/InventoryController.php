@@ -23,8 +23,7 @@ class InventoryController extends BaseApiController
     public function __construct(
         protected InventoryCategoryService $categoryService,
         protected StockItemService $stockItemService
-    ) {
-    }
+    ) {}
 
     /**
      * Retrieve combined catalog data for the Stock Items & Brands UI tab.
@@ -246,8 +245,8 @@ class InventoryController extends BaseApiController
                 'type_id' => $typeId,
                 'type_name' => $typeName,
                 'direction' => $dir,
-                'qty' => (int) $item->qty,
-                'qty_display' => ($isIn ? '+' : ($isOut ? '-' : '±')).number_format((float) $item->qty),
+                'qty' => round((float) $item->qty, 3),
+                'qty_display' => ($isIn ? '+' : ($isOut ? '-' : '±')).(rtrim(rtrim(number_format((float) $item->qty, 3, '.', ','), '0'), '.') ?: '0'),
                 'unit_price' => (float) ($stock?->price ?? 0),
                 'buy_price' => (float) ($stock?->buy ?? 0),
                 'total_value' => round((float) (($stock?->price ?? 0) * $item->qty), 2),
@@ -265,8 +264,8 @@ class InventoryController extends BaseApiController
     public function stockMovementsStats(): JsonResponse
     {
         $totalMovements = StockMovement::count();
-        $inwardQty = (int) StockMovement::whereIn('stock_movements_types_id', [1, 3])->sum('qty');
-        $outwardQty = (int) StockMovement::whereIn('stock_movements_types_id', [2, 4, 6, 7])->sum('qty');
+        $inwardQty = round((float) StockMovement::whereIn('stock_movements_types_id', [1, 3])->sum('qty'), 3);
+        $outwardQty = round((float) StockMovement::whereIn('stock_movements_types_id', [2, 4, 6, 7])->sum('qty'), 3);
         $adjustmentCount = StockMovement::where('stock_movements_types_id', 5)->count();
 
         return $this->success([
@@ -306,9 +305,7 @@ class InventoryController extends BaseApiController
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-    }
+    public function store(Request $request) {}
 
     /**
      * Show the specified resource.
@@ -329,14 +326,10 @@ class InventoryController extends BaseApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
-    {
-    }
+    public function update(Request $request, $id) {}
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
-    {
-    }
+    public function destroy($id) {}
 }

@@ -15,8 +15,7 @@ class PurchaseOrderController extends BaseApiController
 {
     public function __construct(
         protected PurchaseOrderService $purchaseOrderService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of purchase orders.
@@ -143,8 +142,8 @@ class PurchaseOrderController extends BaseApiController
         $request->validate([
             'stock_items_id' => ['required', 'integer', 'exists:stock_items,id'],
             'unit_cost' => ['required', 'numeric', 'min:0'],
-            'qty_ordered' => ['required', 'integer', 'min:1'],
-            'qty_received' => ['nullable', 'integer', 'min:0'],
+            'qty_ordered' => ['required', 'numeric', 'min:0.001'],
+            'qty_received' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $order = $this->purchaseOrderService->getPurchaseOrderById($id);

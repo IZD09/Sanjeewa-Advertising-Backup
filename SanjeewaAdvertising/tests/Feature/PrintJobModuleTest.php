@@ -2,14 +2,23 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Customer\Models\Customer;
 use Modules\Design\Models\PrintCost;
 use Modules\Design\Models\PrintCostType;
 use Modules\Design\Models\PrintType;
+use Modules\Inventory\Models\Brand;
+use Modules\Inventory\Models\Category;
+use Modules\Inventory\Models\Stock;
+use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Models\StockUnit;
+use Modules\Inventory\Models\Subcategory;
 use Modules\PrintJob\Models\DeliveryMethod;
 use Modules\PrintJob\Models\PrintJob;
 use Modules\PrintJob\Models\PrintJobStatus;
 use Modules\PrintJob\Models\Unit;
+use Modules\Supplier\Models\Grn;
+use Modules\Supplier\Models\GrnStatus;
 use Modules\Transaction\Models\PaymentStatus;
 use Modules\Transaction\Models\PaymentType;
 use Modules\User\Models\User;
@@ -761,5 +770,90 @@ class PrintJobModuleTest extends TestCase
 
         $missingPaymentMethodResponse->assertStatus(422)
             ->assertJsonValidationErrors(['payment_types_id']);
+    }
+
+    public function test_can_assign_fractional_stock_and_deduct_decimal_quantity_on_printing(): void
+    {
+        $category = Category::firstOrCreate(['category' => 'Inks & Solvents']);
+        $subcategory = Subcategory::firstOrCreate(
+            ['subcategory' => 'Eco Solvent Ink', 'categories_id' => $category->id]
+        );
+        $brand = Brand::firstOrCreate(['brand' => 'Epson']);
+        $stockUnit = StockUnit::firstOrCreate(
+            ['symble' => 'L'],
+            ['unit' => 'Liters']
+        );
+        DB::table('stock_movements_types')->insertOrIgnore([
+            'id' => 2,
+            'stock_movements_type' => 'Job Usage / Issue',
+        ]);
+
+        $stockItem = StockItem::create([
+            'name' => 'Cyan Eco Solvent Ink',
+            'code' => 'INK-CYN-01',
+            'subcategories_id' => $subcategory->id,
+            'low_stock_qty' => 0.500,
+            'reorder_qty' => 2.000,
+            'stock_units_id' => $stockUnit->id,
+        ]);
+
+        $grnStatus = GrnStatus::firstOrCreate(['id' => 1], ['grn_status' => 'Completed']);
+        $grn = Grn::create([
+            'at_time' => now(),
+            'grn_statuses_id' => $grnStatus->id,
+        ]);
+
+        $stock = Stock::create([
+            'stock_items_id' => $stockItem->id,
+            'brands_id' => $brand->id,
+            'grn_id' => $grn->id,
+            'qty' => 2.000,
+            'price' => 4500.00,
+            'buy' => 3600.00,
+            'add_date' => now(),
+        ]);
+
+        $job = PrintJob::create([
+            'users_id' => $this->user->id,
+            'customer_id' => $this->customer->id,
+            'print_types_id' => $this->printType->id,
+            'add_date' => now(),
+            'qty' => 3,
+        ]);
+
+        // Allocate 0.25 L (250 ml) and update to 0.34 L via batch sync
+        $assignResponse = $this->postJson("/advertising/print-jobs/{$job->id}/stock-items", [
+            'stock_items' => [
+                [
+                    'stock_id' => $stock->id,
+                    'qty' => 0.34,
+                ],
+            ],
+        ]);
+
+        $assignResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.materials.0.qty', 0.34);
+
+        // Move job to Finishing status (ID 5) -> triggers automatic fractional stock deduction
+        DB::table('print_job_statuses')->insertOrIgnore([
+            'id' => 5,
+            'print_job_states' => 'Finishing',
+        ]);
+        $statusResponse = $this->patchJson("/advertising/print-jobs/{$job->id}/status", [
+            'print_job_statuses_id' => 5,
+        ]);
+
+        $statusResponse->assertStatus(200);
+
+        $stock->refresh();
+        $this->assertEquals(1.66, $stock->qty);
+
+        $this->assertDatabaseHas('stock_movements', [
+            'stock_id' => $stock->id,
+            'stock_movements_types_id' => 2,
+            'source_id' => $job->id,
+            'qty' => 0.340,
+        ]);
     }
 }

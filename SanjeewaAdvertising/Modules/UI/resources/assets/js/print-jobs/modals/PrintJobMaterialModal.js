@@ -31,23 +31,42 @@ export class PrintJobMaterialModal {
             btnAdd.onclick = () => this.addToCart();
         }
 
-        // Selector Qty Minus / Plus stepper buttons
+        // Selector Qty Minus / Plus stepper buttons & Unit Selector
         const btnMinus = document.getElementById('btnSelectorQtyMinus');
         const btnPlus = document.getElementById('btnSelectorQtyPlus');
         const inputQty = document.getElementById('inputMaterialQty');
+        const unitSelect = document.getElementById('selectMaterialQtyUnit');
 
         if (btnMinus && inputQty) {
             btnMinus.onclick = () => {
-                const current = parseInt(inputQty.value, 10) || 1;
-                inputQty.value = String(Math.max(1, current - 1));
+                const factor = this.getSelectedUnitFactor();
+                const step = factor < 1 ? (factor === 0.01 ? 10 : 50) : (parseFloat(inputQty.value) <= 1 ? 0.1 : 1);
+                const minVal = factor < 1 ? 1 : 0.1;
+                const current = parseFloat(inputQty.value) || (factor < 1 ? 100 : 1);
+                inputQty.value = String(this.roundQty(Math.max(minVal, current - step)));
+                this.updateUnitConversionHint();
             };
         }
 
         if (btnPlus && inputQty) {
             btnPlus.onclick = () => {
-                const current = parseInt(inputQty.value, 10) || 1;
-                const max = parseInt(inputQty.max, 10) || 999999;
-                inputQty.value = String(Math.min(max, current + 1));
+                const factor = this.getSelectedUnitFactor();
+                const step = factor < 1 ? (factor === 0.01 ? 10 : 50) : (parseFloat(inputQty.value) < 1 ? 0.1 : 1);
+                const current = parseFloat(inputQty.value) || 0;
+                const max = parseFloat(inputQty.max) || 999999;
+                inputQty.value = String(this.roundQty(Math.min(max, current + step)));
+                this.updateUnitConversionHint();
+            };
+        }
+
+        if (inputQty) {
+            inputQty.oninput = () => this.updateUnitConversionHint();
+        }
+
+        if (unitSelect) {
+            unitSelect.onchange = () => {
+                this.syncQtyInputLimitsForUnit();
+                this.updateUnitConversionHint();
             };
         }
 
@@ -111,7 +130,93 @@ export class PrintJobMaterialModal {
         // 4. Material dropdown selection preview change
         const selectStock = document.getElementById('selectAllocateStock');
         if (selectStock) {
-            selectStock.onchange = () => this.updateStockPreview();
+            selectStock.onchange = () => this.updateStockPreview(true);
+        }
+    }
+
+    roundQty(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return 0;
+        return Number(num.toFixed(3));
+    }
+
+    getUnitConversionOptions(rawUnit, rawUnitName = '') {
+        const combined = `${rawUnit || ''} ${rawUnitName || ''}`.trim().toLowerCase();
+        if (/\b(l|ltr|liter|liters|litre|litres)\b/.test(combined) && !/\bml\b/.test(combined)) {
+            return {
+                baseSymbol: rawUnit || 'L',
+                options: [
+                    { label: rawUnit || 'L', factor: 1 },
+                    { label: 'ml', factor: 0.001 }
+                ]
+            };
+        }
+        if (/\b(kg|kilogram|kilograms)\b/.test(combined)) {
+            return {
+                baseSymbol: rawUnit || 'kg',
+                options: [
+                    { label: rawUnit || 'kg', factor: 1 },
+                    { label: 'g', factor: 0.001 }
+                ]
+            };
+        }
+        if (/\b(m|meter|meters|metre|metres)\b/.test(combined) && !/\b(cm|mm|sqm)\b/.test(combined)) {
+            return {
+                baseSymbol: rawUnit || 'm',
+                options: [
+                    { label: rawUnit || 'm', factor: 1 },
+                    { label: 'cm', factor: 0.01 }
+                ]
+            };
+        }
+        return null;
+    }
+
+    getSelectedUnitFactor() {
+        const unitSelect = document.getElementById('selectMaterialQtyUnit');
+        if (!unitSelect || unitSelect.style.display === 'none') return 1;
+        const opt = unitSelect.selectedOptions ? unitSelect.selectedOptions[0] : null;
+        return opt ? (parseFloat(opt.getAttribute('data-factor')) || 1) : 1;
+    }
+
+    syncQtyInputLimitsForUnit() {
+        const select = document.getElementById('selectAllocateStock');
+        const inputQty = document.getElementById('inputMaterialQty');
+        if (!select || !inputQty) return;
+
+        const stockId = parseInt(select.value, 10);
+        const stock = this.availableStocks.find(s => Number(s.id) === stockId);
+        const availBaseQty = stock ? this.roundQty(stock.qty) : 999999;
+        const factor = this.getSelectedUnitFactor();
+
+        if (availBaseQty > 0) {
+            inputQty.max = String(this.roundQty(availBaseQty / factor));
+        }
+        inputQty.min = factor < 1 ? '1' : '0.001';
+    }
+
+    updateUnitConversionHint() {
+        const badge = document.getElementById('previewConvertedQtyBadge');
+        const unitSelect = document.getElementById('selectMaterialQtyUnit');
+        const inputQty = document.getElementById('inputMaterialQty');
+        if (!badge) return;
+
+        const factor = this.getSelectedUnitFactor();
+        if (!unitSelect || unitSelect.style.display === 'none' || factor === 1 || !inputQty) {
+            badge.style.display = 'none';
+            return;
+        }
+
+        const rawVal = parseFloat(inputQty.value) || 0;
+        const baseSymbol = unitSelect.getAttribute('data-base-unit') || 'Units';
+        const subSymbol = unitSelect.selectedOptions?.[0]?.value || '';
+        const converted = this.roundQty(rawVal * factor);
+
+        if (rawVal > 0) {
+            badge.textContent = `${this.roundQty(rawVal)} ${subSymbol} = ${converted} ${baseSymbol}`;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
         }
     }
 
@@ -231,27 +336,35 @@ export class PrintJobMaterialModal {
                 const codePart = s.code ? `[${this.escapeHtml(s.code)}] ` : '';
                 const brandPart = s.brand ? ` (${this.escapeHtml(s.brand)})` : '';
                 const catPart = s.category ? ` • ${this.escapeHtml(s.category)}` : '';
+                const unitLabel = s.unit && s.unit !== 'Units' ? ` ${this.escapeHtml(s.unit)}` : '';
+                const availQty = this.roundQty(s.qty);
                 const inCartItem = this.cart.find(c => Number(c.stock_id) === Number(s.id));
-                const cartTag = inCartItem ? ` [Selected: ${inCartItem.qty}]` : '';
+                const cartTag = inCartItem ? ` [Selected: ${this.roundQty(inCartItem.qty)}${unitLabel}]` : '';
                 return `
-                    <option value="${s.id}" data-code="${this.escapeHtml(s.code || '')}" data-brand="${this.escapeHtml(s.brand || '')}" data-category="${this.escapeHtml(s.category || '')}" data-subcategory="${this.escapeHtml(s.subcategory || '')}" data-qty="${s.qty}">
-                        ${codePart}${this.escapeHtml(s.name)}${brandPart}${catPart} — Avail: ${s.qty}${cartTag}
+                    <option value="${s.id}" data-code="${this.escapeHtml(s.code || '')}" data-brand="${this.escapeHtml(s.brand || '')}" data-category="${this.escapeHtml(s.category || '')}" data-subcategory="${this.escapeHtml(s.subcategory || '')}" data-qty="${availQty}" data-unit="${this.escapeHtml(s.unit || '')}">
+                        ${codePart}${this.escapeHtml(s.name)}${brandPart}${catPart} — Avail: ${availQty}${unitLabel}${cartTag}
                     </option>
                 `;
             }).join('');
 
-        this.updateStockPreview();
+        this.updateStockPreview(false);
     }
 
-    updateStockPreview() {
+    updateStockPreview(resetUnitSelector = false) {
         const select = document.getElementById('selectAllocateStock');
         const preview = document.getElementById('allocStockItemPreview');
         const inputQty = document.getElementById('inputMaterialQty');
+        const unitSelect = document.getElementById('selectMaterialQtyUnit');
         if (!select || !preview) return;
 
         const opt = select.selectedOptions ? select.selectedOptions[0] : null;
         if (!opt || !opt.value) {
             preview.style.display = 'none';
+            if (unitSelect) {
+                unitSelect.style.display = 'none';
+                unitSelect.innerHTML = '';
+            }
+            this.updateUnitConversionHint();
             return;
         }
 
@@ -274,21 +387,37 @@ export class PrintJobMaterialModal {
             catEl.textContent = [catName, subcatName].filter(Boolean).join(' / ') || 'General';
         }
 
-        const availQty = stock ? stock.qty : (parseInt(opt.getAttribute('data-qty'), 10) || 0);
-        if (qtyEl) qtyEl.textContent = `${availQty} in stock`;
+        const unitSymbol = stock?.unit || opt.getAttribute('data-unit') || '';
+        const displayUnit = unitSymbol && unitSymbol !== 'Units' ? ` ${unitSymbol}` : '';
+        const availQty = this.roundQty(stock ? stock.qty : (parseFloat(opt.getAttribute('data-qty')) || 0));
+        if (qtyEl) qtyEl.textContent = `${availQty}${displayUnit} in stock`;
+
+        if (unitSelect && (resetUnitSelector || unitSelect.getAttribute('data-stock-id') !== String(stockId))) {
+            const unitConfig = this.getUnitConversionOptions(unitSymbol, stock?.unit_name || '');
+            unitSelect.setAttribute('data-stock-id', String(stockId));
+            if (unitConfig) {
+                unitSelect.setAttribute('data-base-unit', unitConfig.baseSymbol);
+                unitSelect.innerHTML = unitConfig.options
+                    .map(u => `<option value="${this.escapeHtml(u.label)}" data-factor="${u.factor}">${this.escapeHtml(u.label)}</option>`)
+                    .join('');
+                unitSelect.style.display = 'block';
+            } else {
+                unitSelect.style.display = 'none';
+                unitSelect.innerHTML = '';
+            }
+        }
 
         if (inCartBadge) {
             if (cartItem) {
-                inCartBadge.textContent = `Already Selected: ${cartItem.qty}`;
+                inCartBadge.textContent = `Already Selected: ${this.roundQty(cartItem.qty)}${displayUnit}`;
                 inCartBadge.style.display = 'inline-block';
             } else {
                 inCartBadge.style.display = 'none';
             }
         }
 
-        if (inputQty && availQty > 0) {
-            inputQty.max = availQty;
-        }
+        this.syncQtyInputLimitsForUnit();
+        this.updateUnitConversionHint();
 
         preview.style.display = 'block';
     }
@@ -313,8 +442,9 @@ export class PrintJobMaterialModal {
                 brand: m.brand || refStock?.brand || 'Generic',
                 category: m.category || refStock?.category || '',
                 subcategory: m.subcategory || refStock?.subcategory || '',
-                avail_qty: refStock ? Number(refStock.qty) : 9999,
-                qty: Math.max(1, parseInt(m.qty, 10) || 1)
+                unit: m.unit || refStock?.unit || '',
+                avail_qty: refStock ? this.roundQty(refStock.qty) : 9999,
+                qty: this.roundQty(Math.max(0.001, parseFloat(m.qty) || 1))
             };
         });
         this.isCartDirty = false;
@@ -401,32 +531,35 @@ export class PrintJobMaterialModal {
         if (!selectStock || !inputQty) return;
 
         const stockId = parseInt(selectStock.value, 10);
-        const addQty = parseInt(inputQty.value, 10);
+        const rawInputQty = parseFloat(inputQty.value);
+        const factor = this.getSelectedUnitFactor();
+        const addQty = this.roundQty(rawInputQty * factor);
 
         if (!stockId) {
             this.showToast('Please select a material / stock item to add.', 'warning');
             return;
         }
-        if (!addQty || addQty <= 0) {
-            this.showToast('Please enter a valid quantity of at least 1.', 'warning');
+        if (isNaN(rawInputQty) || addQty < 0.001) {
+            this.showToast('Please enter a valid quantity greater than 0 (min 0.001).', 'warning');
             return;
         }
 
         const refStock = this.availableStocks.find(s => Number(s.id) === stockId);
-        const maxAvail = refStock ? Number(refStock.qty) : 9999;
+        const maxAvail = refStock ? this.roundQty(refStock.qty) : 9999;
+        const unitStr = refStock?.unit && refStock.unit !== 'Units' ? ` ${refStock.unit}` : '';
 
         const existing = this.cart.find(item => Number(item.stock_id) === stockId);
         if (existing) {
-            const nextQty = existing.qty + addQty;
+            const nextQty = this.roundQty(existing.qty + addQty);
             if (maxAvail > 0 && nextQty > maxAvail) {
                 existing.qty = maxAvail;
-                this.showToast(`Adjusted "${existing.name}" to maximum available warehouse stock (${maxAvail}).`, 'warning');
+                this.showToast(`Adjusted "${existing.name}" to maximum available warehouse stock (${maxAvail}${unitStr}).`, 'warning');
             } else {
                 existing.qty = nextQty;
-                this.showToast(`Updated "${existing.name}" quantity (Total: ${existing.qty}).`, 'info');
+                this.showToast(`Updated "${existing.name}" quantity (Total: ${existing.qty}${unitStr}).`, 'info');
             }
         } else {
-            const finalQty = maxAvail > 0 ? Math.min(addQty, maxAvail) : addQty;
+            const finalQty = this.roundQty(maxAvail > 0 ? Math.min(addQty, maxAvail) : addQty);
             const itemName = refStock ? refStock.name : `Stock #${stockId}`;
             this.cart.push({
                 stock_id: stockId,
@@ -435,10 +568,11 @@ export class PrintJobMaterialModal {
                 brand: refStock?.brand || 'Generic',
                 category: refStock?.category || '',
                 subcategory: refStock?.subcategory || '',
+                unit: refStock?.unit || '',
                 avail_qty: maxAvail,
                 qty: finalQty
             });
-            this.showToast(`Added "${itemName}" (Qty: ${finalQty}) to selected materials!`, 'success');
+            this.showToast(`Added "${itemName}" (Qty: ${finalQty}${unitStr}) to selected materials!`, 'success');
         }
 
         this.isCartDirty = true;
@@ -452,18 +586,18 @@ export class PrintJobMaterialModal {
     }
 
     /**
-     * Adjust quantity of a selected material item by delta (-1 or +1) or direct value.
+     * Adjust quantity of a selected material item by delta or direct decimal value.
      */
     updateCartItemQty(stockId, newQty) {
         const item = this.cart.find(c => Number(c.stock_id) === Number(stockId));
         if (!item) return;
 
-        let parsed = parseInt(newQty, 10);
-        if (isNaN(parsed) || parsed < 1) {
-            parsed = 1;
+        let parsed = this.roundQty(newQty);
+        if (isNaN(parsed) || parsed < 0.001) {
+            parsed = 0.001;
         }
         if (item.avail_qty > 0 && parsed > item.avail_qty) {
-            parsed = item.avail_qty;
+            parsed = this.roundQty(item.avail_qty);
             this.showToast(`Maximum available warehouse stock for "${item.name}" is ${item.avail_qty}.`, 'warning');
         }
 
@@ -505,7 +639,7 @@ export class PrintJobMaterialModal {
 
     updateFooterActionButtons() {
         const count = this.cart.length;
-        const totalUnits = this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+        const totalUnits = this.roundQty(this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0));
 
         const headerCount = document.getElementById('allocHeaderCartCount');
         if (headerCount) {
@@ -559,7 +693,7 @@ export class PrintJobMaterialModal {
 
         this.updateFooterActionButtons();
 
-        const totalUnits = this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+        const totalUnits = this.roundQty(this.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0));
 
         if (badge) {
             badge.textContent = `${this.cart.length} material${this.cart.length !== 1 ? 's' : ''} (${totalUnits} units)`;
@@ -611,32 +745,36 @@ export class PrintJobMaterialModal {
                                         <span style="background: var(--surface-2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; font-size: 11px; color: var(--text); font-weight: 600;">
                                             ${this.escapeHtml(m.brand || 'Generic')}
                                         </span>
-                                        ${m.avail_qty && m.avail_qty < 9999 ? `<span style="font-size: 11px; color: #16a34a; font-weight: 600;">Avail: ${m.avail_qty}</span>` : ''}
+                                        ${m.avail_qty && m.avail_qty < 9999 ? `<span style="font-size: 11px; color: #16a34a; font-weight: 600;">Avail: ${this.roundQty(m.avail_qty)}${m.unit && m.unit !== 'Units' ? ' ' + this.escapeHtml(m.unit) : ''}</span>` : ''}
                                     </div>
                                 </td>
                                 <td style="text-align: center;">
-                                    <div style="display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: hidden; height: 30px;">
-                                        <button type="button"
-                                                class="btn-cart-qty-minus"
-                                                data-stock-id="${m.stock_id}"
-                                                title="Decrease Quantity"
-                                                style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                                            <i class="fa-solid fa-minus" style="font-size: 9px;"></i>
-                                        </button>
-                                        <input type="number"
-                                               class="pj-input pj-alloc-qty-input"
-                                               data-stock-id="${m.stock_id}"
-                                               value="${m.qty}"
-                                               min="1"
-                                               max="${m.avail_qty || 9999}"
-                                               style="width: 56px; height: 100%; border: none; border-radius: 0; text-align: center; font-weight: 700; font-family: monospace; font-size: 12.5px; padding: 0 4px;" />
-                                        <button type="button"
-                                                class="btn-cart-qty-plus"
-                                                data-stock-id="${m.stock_id}"
-                                                title="Increase Quantity"
-                                                style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                                            <i class="fa-solid fa-plus" style="font-size: 9px;"></i>
-                                        </button>
+                                    <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <div style="display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: hidden; height: 30px;">
+                                            <button type="button"
+                                                    class="btn-cart-qty-minus"
+                                                    data-stock-id="${m.stock_id}"
+                                                    title="Decrease Quantity"
+                                                    style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                                <i class="fa-solid fa-minus" style="font-size: 9px;"></i>
+                                            </button>
+                                            <input type="number"
+                                                   class="pj-input pj-alloc-qty-input"
+                                                   data-stock-id="${m.stock_id}"
+                                                   value="${this.roundQty(m.qty)}"
+                                                   min="0.001"
+                                                   step="any"
+                                                   max="${m.avail_qty || 9999}"
+                                                   style="width: 66px; height: 100%; border: none; border-radius: 0; text-align: center; font-weight: 700; font-family: monospace; font-size: 12.5px; padding: 0 4px;" />
+                                            <button type="button"
+                                                    class="btn-cart-qty-plus"
+                                                    data-stock-id="${m.stock_id}"
+                                                    title="Increase Quantity"
+                                                    style="width: 28px; height: 100%; border: none; background: var(--surface-2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                                <i class="fa-solid fa-plus" style="font-size: 9px;"></i>
+                                            </button>
+                                        </div>
+                                        ${m.unit && m.unit !== 'Units' ? `<span style="font-size: 11px; font-weight: 700; color: #0284c7;">${this.escapeHtml(m.unit)}</span>` : ''}
                                     </div>
                                 </td>
                                 <td style="text-align: right;">
@@ -660,8 +798,12 @@ export class PrintJobMaterialModal {
             btn.onclick = () => {
                 const stockId = parseInt(btn.getAttribute('data-stock-id'), 10);
                 const item = this.cart.find(c => Number(c.stock_id) === stockId);
-                if (item && item.qty > 1) {
-                    this.updateCartItemQty(stockId, item.qty - 1);
+                if (item) {
+                    const step = item.qty <= 1 || !Number.isInteger(item.qty) ? 0.1 : 1;
+                    const nextVal = this.roundQty(item.qty - step);
+                    if (nextVal >= 0.001) {
+                        this.updateCartItemQty(stockId, nextVal);
+                    }
                 }
             };
         });
@@ -672,7 +814,8 @@ export class PrintJobMaterialModal {
                 const stockId = parseInt(btn.getAttribute('data-stock-id'), 10);
                 const item = this.cart.find(c => Number(c.stock_id) === stockId);
                 if (item) {
-                    this.updateCartItemQty(stockId, item.qty + 1);
+                    const step = item.qty < 1 || !Number.isInteger(item.qty) ? 0.1 : 1;
+                    this.updateCartItemQty(stockId, this.roundQty(item.qty + step));
                 }
             };
         });
@@ -719,7 +862,7 @@ export class PrintJobMaterialModal {
         try {
             const payload = this.cart.map(item => ({
                 stock_id: Number(item.stock_id),
-                qty: Math.max(1, parseInt(item.qty, 10) || 1)
+                qty: this.roundQty(Math.max(0.001, parseFloat(item.qty) || 0.001))
             }));
 
             const updatedData = await this.dataLoader.syncStockItems(this.currentJob.id, payload);
@@ -774,7 +917,7 @@ export class PrintJobMaterialModal {
         try {
             const payload = this.cart.map(item => ({
                 stock_id: Number(item.stock_id),
-                qty: Math.max(1, parseInt(item.qty, 10) || 1)
+                qty: this.roundQty(Math.max(0.001, parseFloat(item.qty) || 0.001))
             }));
 
             await this.dataLoader.syncStockItems(this.currentJob.id, payload);

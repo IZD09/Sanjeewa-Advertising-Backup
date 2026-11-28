@@ -52,7 +52,7 @@ export class StockFormValidator {
         }
         const q = Number(it.qty);
         if (!it.qty || isNaN(q) || q <= 0) {
-          return { isValid: false, error: `Please enter a valid Received quantity (min 1) for ${label}.` };
+          return { isValid: false, error: `Please enter a valid Received quantity (min 0.001) for ${label}.` };
         }
         const maxQty = Number(it.grn_qty);
         if (it.grn_qty !== undefined && it.grn_qty !== null && !isNaN(maxQty) && maxQty > 0 && q > maxQty) {
@@ -89,7 +89,7 @@ export class StockFormValidator {
 
     const qty = Number(data.qty);
     if (!data.qty || isNaN(qty) || qty <= 0) {
-      return { isValid: false, error: "Quantity received must be a positive number (min 1)." };
+      return { isValid: false, error: "Quantity received must be a positive number (min 0.001)." };
     }
 
     const buy = Number(data.buy);

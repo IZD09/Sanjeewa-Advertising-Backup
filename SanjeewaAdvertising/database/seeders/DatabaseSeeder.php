@@ -14,6 +14,7 @@ use Modules\Invoice\Database\Seeders\InvoiceDatabaseSeeder;
 use Modules\PrintJob\Database\Seeders\PrintJobDatabaseSeeder;
 use Modules\Supplier\Database\Seeders\SupplierDatabaseSeeder;
 use Modules\Transaction\Database\Seeders\TransactionDatabaseSeeder;
+use Modules\Transport\Database\Seeders\TransportDatabaseSeeder;
 use Modules\User\Database\Seeders\UserDatabaseSeeder;
 
 class DatabaseSeeder extends Seeder
@@ -37,6 +38,7 @@ class DatabaseSeeder extends Seeder
             PrintJobDatabaseSeeder::class,
             InvoiceDatabaseSeeder::class,
             HRDatabaseSeeder::class,
+            TransportDatabaseSeeder::class,
             PaymentsModuleDataSeeder::class,
         ]);
     }

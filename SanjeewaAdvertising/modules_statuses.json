@@ -11,5 +11,6 @@
     "UI": true,
     "Invoice": true,
     "Reports": true,
-    "HR": true
+    "HR": true,
+    "Transport": true
 }

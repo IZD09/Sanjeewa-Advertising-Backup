@@ -26,7 +26,7 @@ class StoreGrnItemRequest extends FormRequest
             'grn_id' => ['required', 'integer', 'exists:grn,id'],
             'item_batches_id' => ['required', 'integer', 'exists:item_batches,id'],
             'stock_id' => ['required', 'integer', 'exists:stock,id'],
-            'qty' => ['required', 'integer', 'min:1'],
+            'qty' => ['required', 'numeric', 'min:0.001'],
         ];
     }
 

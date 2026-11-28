@@ -92,6 +92,15 @@
     "src": "resources/assets/css/admin-profile.css",
     "isEntry": true
   },
+  "resources/assets/css/admin-transport.css": {
+    "file": "assets/admin-transport-CTXdM332.css",
+    "name": "admin-transport",
+    "names": [
+      "admin-transport.css"
+    ],
+    "src": "resources/assets/css/admin-transport.css",
+    "isEntry": true
+  },
   "resources/assets/css/admin-user-control.css": {
     "file": "assets/admin-user-control-DcCU8Siw.css",
     "name": "admin-user-control",
@@ -102,7 +111,7 @@
     "isEntry": true
   },
   "resources/assets/css/components/sidebar.css": {
-    "file": "assets/sidebar-kuei_92V.css",
+    "file": "assets/sidebar-BGO1fWid.css",
     "name": "sidebar",
     "names": [
       "sidebar.css"
@@ -111,7 +120,7 @@
     "isEntry": true
   },
   "resources/assets/css/core.css": {
-    "file": "assets/core-DxnONnDs.css",
+    "file": "assets/core--2dChQSR.css",
     "name": "core",
     "names": [
       "core.css"
@@ -269,6 +278,17 @@
       "_BaseTableRowBuilder-CrSEebSa.js"
     ]
   },
+  "resources/assets/js/admin/transport/TransportManager.js": {
+    "file": "assets/TransportManager-BpxQ56xO.js",
+    "name": "TransportManager",
+    "src": "resources/assets/js/admin/transport/TransportManager.js",
+    "isEntry": true,
+    "imports": [
+      "_RequestHandler-lpvRwLwZ.js",
+      "_ConfirmModalHelper-DtrZaNdB.js",
+      "_LiveSyncManager-jxbHYhVd.js"
+    ]
+  },
   "resources/assets/js/admin/user-control/processes/UserControlManager.js": {
     "file": "assets/UserControlManager-CWXBqQA4.js",
     "name": "UserControlManager",
@@ -290,7 +310,7 @@
     ]
   },
   "resources/assets/js/components/sidebar.js": {
-    "file": "assets/sidebar-DCy_YCNy.js",
+    "file": "assets/sidebar-Cy806DKz.js",
     "name": "sidebar",
     "src": "resources/assets/js/components/sidebar.js",
     "isEntry": true
@@ -347,7 +367,7 @@
     ]
   },
   "resources/assets/js/grn.js": {
-    "file": "assets/grn-DSXaX5Pa.js",
+    "file": "assets/grn-Cwz8smQC.js",
     "name": "grn",
     "src": "resources/assets/js/grn.js",
     "isEntry": true,
@@ -363,7 +383,7 @@
     ]
   },
   "resources/assets/js/inventory.js": {
-    "file": "assets/inventory-CV-dOQh1.js",
+    "file": "assets/inventory-D4gMQHpQ.js",
     "name": "inventory",
     "src": "resources/assets/js/inventory.js",
     "isEntry": true,
@@ -423,7 +443,7 @@
     ]
   },
   "resources/assets/js/print-jobs.js": {
-    "file": "assets/print-jobs-D7vUmXhi.js",
+    "file": "assets/print-jobs-DSRBj-wg.js",
     "name": "print-jobs",
     "src": "resources/assets/js/print-jobs.js",
     "isEntry": true,

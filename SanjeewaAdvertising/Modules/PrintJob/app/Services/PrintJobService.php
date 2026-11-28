@@ -238,7 +238,7 @@ class PrintJobService
                 $syncData = [];
                 foreach ($data['stock_items'] as $item) {
                     if (! empty($item['stock_id'])) {
-                        $syncData[$item['stock_id']] = ['qty' => (int) ($item['qty'] ?? 1)];
+                        $syncData[$item['stock_id']] = ['qty' => round(max(0.001, (float) ($item['qty'] ?? 1)), 3)];
                     }
                 }
                 if (! empty($syncData)) {
@@ -518,7 +518,7 @@ class PrintJobService
         $printJob->loadMissing('stockItems');
 
         foreach ($printJob->stockItems as $stockItem) {
-            $qtyUsed = (int) ($stockItem->pivot?->qty ?? 0);
+            $qtyUsed = round((float) ($stockItem->pivot?->qty ?? 0), 3);
             if ($qtyUsed <= 0) {
                 continue;
             }
@@ -526,7 +526,7 @@ class PrintJobService
             // Lock stock row and decrement quantity
             $stock = Stock::query()->lockForUpdate()->find($stockItem->id);
             if ($stock) {
-                $newQty = max(0, ((int) $stock->qty) - $qtyUsed);
+                $newQty = round(max(0, ((float) $stock->qty) - $qtyUsed), 3);
                 $stock->update(['qty' => $newQty]);
 
                 // Record stock movement (Job Usage / Issue, Type ID: 2)
@@ -558,10 +558,10 @@ class PrintJobService
     /**
      * Assign or update a stock item for the print job.
      */
-    public function assignStockItem(PrintJob $printJob, int $stockId, int $qty): PrintJob
+    public function assignStockItem(PrintJob $printJob, int $stockId, float $qty): PrintJob
     {
         $printJob->stockItems()->syncWithoutDetaching([
-            $stockId => ['qty' => $qty],
+            $stockId => ['qty' => round($qty, 3)],
         ]);
 
         return $this->getPrintJobById($printJob->id) ?? $printJob;
@@ -577,7 +577,7 @@ class PrintJobService
         $syncData = [];
         foreach ($items as $item) {
             $stockId = (int) ($item['stock_id'] ?? 0);
-            $qty = max(1, (int) ($item['qty'] ?? 1));
+            $qty = round(max(0.001, (float) ($item['qty'] ?? 1)), 3);
             if ($stockId > 0) {
                 $syncData[$stockId] = ['qty' => $qty];
             }
@@ -645,7 +645,7 @@ class PrintJobService
         ])->values()->all();
 
         $availableStocks = Stock::query()
-            ->with(['stockItem.subcategory.category', 'brand'])
+            ->with(['stockItem.subcategory.category', 'stockItem.stockUnit', 'brand'])
             ->where('qty', '>', 0)
             ->orderBy('id')
             ->get()
@@ -659,7 +659,9 @@ class PrintJobService
                     'category_id' => (int) ($s->stockItem?->subcategory?->categories_id ?? 0),
                     'subcategory' => $s->stockItem?->subcategory?->subcategory ?? '',
                     'subcategory_id' => (int) ($s->stockItem?->subcategories_id ?? 0),
-                    'qty' => (int) $s->qty,
+                    'qty' => round((float) $s->qty, 3),
+                    'unit' => $s->stockItem?->stockUnit?->symble ?? $s->stockItem?->stockUnit?->unit ?? 'Units',
+                    'unit_name' => $s->stockItem?->stockUnit?->unit ?? $s->stockItem?->stockUnit?->symble ?? 'Units',
                     'price' => (float) $s->price,
                 ];
             });
@@ -673,7 +675,7 @@ class PrintJobService
             'statusHistory.status',
             'cost.printCosts',
             'payments',
-            'stockItems.stockItem',
+            'stockItems.stockItem.stockUnit',
             'stockItems.brand',
         ]);
 
@@ -774,7 +776,8 @@ class PrintJobService
                     'stock_id' => (int) $stock->id,
                     'name' => $stock->stockItem?->name ?? 'Material #'.$stock->id,
                     'brand' => $stock->brand?->brand ?? '',
-                    'qty' => (int) ($stock->pivot?->qty ?? 1),
+                    'qty' => round((float) ($stock->pivot?->qty ?? 1), 3),
+                    'unit' => $stock->stockItem?->stockUnit?->symble ?? $stock->stockItem?->stockUnit?->unit ?? '',
                 ];
             })->values()->all();
 

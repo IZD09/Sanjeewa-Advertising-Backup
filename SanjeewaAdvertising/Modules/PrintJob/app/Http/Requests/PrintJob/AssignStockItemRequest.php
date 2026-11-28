@@ -26,10 +26,10 @@ class AssignStockItemRequest extends FormRequest
 
         return [
             'stock_id' => [$hasBatch ? 'nullable' : 'required', 'nullable', 'integer', 'exists:stock,id'],
-            'qty' => [$hasBatch ? 'nullable' : 'required', 'nullable', 'integer', 'min:1'],
+            'qty' => [$hasBatch ? 'nullable' : 'required', 'nullable', 'numeric', 'min:0.001'],
             'stock_items' => ['sometimes', 'present', 'array'],
             'stock_items.*.stock_id' => ['required', 'integer', 'exists:stock,id'],
-            'stock_items.*.qty' => ['required', 'integer', 'min:1'],
+            'stock_items.*.qty' => ['required', 'numeric', 'min:0.001'],
         ];
     }
 }

@@ -67,8 +67,8 @@ class PurchaseOrderItem extends Model
             'purchase_orders_id' => 'integer',
             'stock_items_id' => 'integer',
             'unit_cost' => 'decimal:2',
-            'qty_ordered' => 'integer',
-            'qty_received' => 'integer',
+            'qty_ordered' => 'float',
+            'qty_received' => 'float',
         ];
     }
 

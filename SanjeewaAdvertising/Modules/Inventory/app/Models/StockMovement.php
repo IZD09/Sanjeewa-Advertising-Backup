@@ -51,7 +51,7 @@ class StockMovement extends Model
         return [
             'stock_id' => 'integer',
             'stock_movements_types_id' => 'integer',
-            'qty' => 'integer',
+            'qty' => 'float',
             'date' => 'datetime',
             'source_id' => 'integer',
         ];

@@ -61,8 +61,8 @@
                     </div>
                 </div>
 
-                <!-- Row 2: Material Selector, Stepper Quantity, Add Material Button -->
-                <div style="display: grid; grid-template-columns: 1fr 140px 145px; gap: 10px; align-items: flex-end;">
+                <!-- Row 2: Material Selector, Stepper Quantity + Unit Converter, Add Material Button -->
+                <div style="display: grid; grid-template-columns: 1fr 205px 145px; gap: 10px; align-items: flex-end;">
                     <div class="pj-form-group" style="margin-bottom: 0;">
                         <label for="selectAllocateStock" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">
                             <i class="fa-solid fa-box-open" style="color: #0284c7; margin-right: 4px;"></i> 3. Material / Stock Item <span style="color: #ff4d4f;">*</span>
@@ -70,8 +70,8 @@
                         <select class="pj-select" id="selectAllocateStock" style="width: 100%; height: 38px;">
                             <option value="">-- Choose Stock Item --</option>
                             @foreach($availableStocks ?? [] as $stk)
-                                <option value="{{ $stk['id'] }}" data-code="{{ $stk['code'] ?? '' }}" data-brand="{{ $stk['brand'] ?? '' }}" data-category-id="{{ $stk['category_id'] ?? '' }}" data-subcategory-id="{{ $stk['subcategory_id'] ?? '' }}" data-qty="{{ $stk['qty'] ?? 0 }}">
-                                    {{ $stk['name'] }} {{ !empty($stk['code']) ? "[{$stk['code']}]" : '' }} {{ !empty($stk['brand']) ? "({$stk['brand']})" : '' }} - Avail: {{ $stk['qty'] }}
+                                <option value="{{ $stk['id'] }}" data-code="{{ $stk['code'] ?? '' }}" data-brand="{{ $stk['brand'] ?? '' }}" data-category-id="{{ $stk['category_id'] ?? '' }}" data-subcategory-id="{{ $stk['subcategory_id'] ?? '' }}" data-qty="{{ $stk['qty'] ?? 0 }}" data-unit="{{ $stk['unit'] ?? 'Units' }}">
+                                    {{ $stk['name'] }} {{ !empty($stk['code']) ? "[{$stk['code']}]" : '' }} {{ !empty($stk['brand']) ? "({$stk['brand']})" : '' }} - Avail: {{ $stk['qty'] }} {{ $stk['unit'] ?? '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -79,11 +79,13 @@
                     <div class="pj-form-group" style="margin-bottom: 0;">
                         <label for="inputMaterialQty" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text);">Quantity <span style="color: #ff4d4f;">*</span></label>
                         <div style="display: flex; align-items: center; height: 38px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow: hidden;">
-                            <button type="button" id="btnSelectorQtyMinus" title="Decrease Quantity" style="width: 34px; height: 100%; border: none; background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <button type="button" id="btnSelectorQtyMinus" title="Decrease Quantity" style="width: 32px; height: 100%; border: none; background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <i class="fa-solid fa-minus" style="font-size: 10px;"></i>
                             </button>
-                            <input type="number" class="pj-input" id="inputMaterialQty" value="1" min="1" style="height: 100%; border: none; border-radius: 0; font-weight: 700; text-align: center; width: 100%; padding: 0 4px;" />
-                            <button type="button" id="btnSelectorQtyPlus" title="Increase Quantity" style="width: 34px; height: 100%; border: none; background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <input type="number" class="pj-input" id="inputMaterialQty" value="1" min="0.001" step="any" style="height: 100%; border: none; border-radius: 0; font-weight: 700; text-align: center; width: 100%; min-width: 56px; padding: 0 4px;" />
+                            <select id="selectMaterialQtyUnit" aria-label="Quantity Unit" style="display: none; height: 100%; border: none; border-left: 1px solid var(--border); background: rgba(2, 132, 199, 0.08); color: #0284c7; font-size: 11.5px; font-weight: 700; padding: 0 6px; cursor: pointer; outline: none; flex-shrink: 0;">
+                            </select>
+                            <button type="button" id="btnSelectorQtyPlus" title="Increase Quantity" style="width: 32px; height: 100%; border: none; background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <i class="fa-solid fa-plus" style="font-size: 10px;"></i>
                             </button>
                         </div>
@@ -103,7 +105,8 @@
                             <span style="color: var(--text-muted);">Brand:</span> <span id="previewStockBrand" style="font-weight: 600;">—</span> •
                             <span style="color: var(--text-muted);">Category:</span> <span id="previewStockCategory" style="font-weight: 500;">—</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span id="previewConvertedQtyBadge" style="display: none; padding: 2px 8px; border-radius: 10px; background: rgba(22, 163, 74, 0.12); color: #15803d; font-weight: 700; font-size: 11px;"></span>
                             <span id="previewInCartBadge" style="display: none; padding: 2px 8px; border-radius: 10px; background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700; font-size: 11px;"></span>
                             <span><span style="color: var(--text-muted);">Warehouse Stock:</span> <strong id="previewStockQty" style="color: #16a34a;">0</strong></span>
                         </div>

@@ -128,8 +128,8 @@ export class CreateGrnItemEntity {
                aria-label="Receiving quantity for ${this.item_name}"
                class="grn-inline-input text-right grn-modal-qty-input"
                data-item-index="${index}"
-               min="1"
-               step="1"
+               min="0.001"
+               step="any"
                value="${this.receiving_qty}"
                style="width: 90px; height: 30px; font-weight: 700; color: #1677ff; text-align: right; font-size: 12.5px;"
                required>

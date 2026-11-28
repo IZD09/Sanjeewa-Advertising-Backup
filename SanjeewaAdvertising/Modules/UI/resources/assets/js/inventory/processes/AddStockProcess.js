@@ -414,7 +414,7 @@ export class AddStockProcess {
         item_name: item.name,
         brands_id: Number(item.brand_id),
         grn_qty: Number(item.grn_qty) || null,
-        qty: parseInt(item.qty, 10),
+        qty: Number((parseFloat(item.qty) || 0).toFixed(3)),
         buy: parseFloat(item.unit_cost) || 0,
         price: parseFloat(item.selling_price) || 0,
         batch_id: item.batch_id ? Number(item.batch_id) : null,

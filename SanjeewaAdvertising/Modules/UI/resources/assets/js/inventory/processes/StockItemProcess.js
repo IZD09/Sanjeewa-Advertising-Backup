@@ -552,8 +552,8 @@ export class StockItemProcess {
       name: nameInput ? nameInput.value.trim() : "",
       category_id: catSelect ? parseInt(catSelect.value, 10) : null,
       subcategories_id: subcatSelect ? parseInt(subcatSelect.value, 10) : null,
-      low_stock_qty: lowStockInput ? parseInt(lowStockInput.value, 10) || 10 : 10,
-      reorder_qty: reorderInput ? parseInt(reorderInput.value, 10) || 20 : 20,
+      low_stock_qty: lowStockInput && lowStockInput.value !== "" ? Number((parseFloat(lowStockInput.value) || 0).toFixed(3)) : 10,
+      reorder_qty: reorderInput && reorderInput.value !== "" ? Number((parseFloat(reorderInput.value) || 0).toFixed(3)) : 20,
       brands: Array.from(this.selectedBrandIds),
     };
 

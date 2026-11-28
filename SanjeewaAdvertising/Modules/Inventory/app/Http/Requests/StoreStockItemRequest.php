@@ -45,8 +45,8 @@ class StoreStockItemRequest extends FormRequest
             'subcategories_id' => ['required', 'integer', 'exists:subcategories,id'],
             'brands' => ['required', 'array', 'min:1'],
             'brands.*' => ['integer', 'exists:brands,id'],
-            'low_stock_qty' => ['nullable', 'integer', 'min:0'],
-            'reorder_qty' => ['nullable', 'integer', 'min:0'],
+            'low_stock_qty' => ['nullable', 'numeric', 'min:0'],
+            'reorder_qty' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

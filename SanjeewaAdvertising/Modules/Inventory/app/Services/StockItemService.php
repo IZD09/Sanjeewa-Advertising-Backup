@@ -114,8 +114,8 @@ class StockItemService
             'name' => trim($data['name']),
             'code' => $code,
             'subcategories_id' => (int) $data['subcategories_id'],
-            'low_stock_qty' => isset($data['low_stock_qty']) ? (int) $data['low_stock_qty'] : 10,
-            'reorder_qty' => isset($data['reorder_qty']) ? (int) $data['reorder_qty'] : 20,
+            'low_stock_qty' => isset($data['low_stock_qty']) ? round((float) $data['low_stock_qty'], 3) : 10,
+            'reorder_qty' => isset($data['reorder_qty']) ? round((float) $data['reorder_qty'], 3) : 20,
             'stock_units_id' => isset($data['stock_units_id']) ? (int) $data['stock_units_id'] : 1,
         ]);
 
@@ -146,10 +146,10 @@ class StockItemService
             $updateData['subcategories_id'] = (int) $data['subcategories_id'];
         }
         if (isset($data['low_stock_qty'])) {
-            $updateData['low_stock_qty'] = (int) $data['low_stock_qty'];
+            $updateData['low_stock_qty'] = round((float) $data['low_stock_qty'], 3);
         }
         if (isset($data['reorder_qty'])) {
-            $updateData['reorder_qty'] = (int) $data['reorder_qty'];
+            $updateData['reorder_qty'] = round((float) $data['reorder_qty'], 3);
         }
         if (isset($data['stock_units_id'])) {
             $updateData['stock_units_id'] = (int) $data['stock_units_id'];

@@ -54,8 +54,8 @@ class StockItem extends Model
     {
         return [
             'subcategories_id' => 'integer',
-            'low_stock_qty' => 'integer',
-            'reorder_qty' => 'integer',
+            'low_stock_qty' => 'float',
+            'reorder_qty' => 'float',
             'stock_units_id' => 'integer',
         ];
     }

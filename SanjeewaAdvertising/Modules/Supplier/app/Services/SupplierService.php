@@ -216,7 +216,7 @@ class SupplierService
             }
 
             $totalPoAmount += (float) $po->items->sum(
-                fn ($item) => (float) ($item->unit_cost ?? 0) * (int) ($item->qty_ordered ?? 0)
+                fn ($item) => (float) ($item->unit_cost ?? 0) * (float) ($item->qty_ordered ?? 0)
             );
 
             foreach ($po->grns as $grn) {

@@ -52,7 +52,7 @@ class GrmItem extends Model
             'grn_id' => 'integer',
             'item_batches_id' => 'integer',
             'stock_id' => 'integer',
-            'qty' => 'integer',
+            'qty' => 'float',
         ];
     }
 

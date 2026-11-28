@@ -55,7 +55,9 @@
             "Modules\\Reports\\": "Modules/Reports/app/",
             "Modules\\Reports\\Database\\Seeders\\": "Modules/Reports/database/seeders/",
             "Modules\\HR\\": "Modules/HR/app/",
-            "Modules\\HR\\Database\\Seeders\\": "Modules/HR/database/seeders/"
+            "Modules\\HR\\Database\\Seeders\\": "Modules/HR/database/seeders/",
+            "Modules\\Transport\\": "Modules/Transport/app/",
+            "Modules\\Transport\\Database\\Seeders\\": "Modules/Transport/database/seeders/"
         }
     },
     "autoload-dev": {

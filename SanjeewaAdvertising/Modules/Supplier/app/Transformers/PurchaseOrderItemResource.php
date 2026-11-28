@@ -20,8 +20,8 @@ class PurchaseOrderItemResource extends JsonResource
             'purchase_orders_id' => $this->purchase_orders_id,
             'stock_items_id' => $this->stock_items_id,
             'unit_cost' => (float) $this->unit_cost,
-            'qty_ordered' => (int) $this->qty_ordered,
-            'qty_received' => (int) $this->qty_received,
+            'qty_ordered' => round((float) $this->qty_ordered, 3),
+            'qty_received' => round((float) $this->qty_received, 3),
             'stock_item' => $this->whenLoaded('stockItem', function () {
                 return [
                     'id' => $this->stockItem->id,

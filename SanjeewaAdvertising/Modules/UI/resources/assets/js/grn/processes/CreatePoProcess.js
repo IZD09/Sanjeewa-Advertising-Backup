@@ -294,7 +294,7 @@ export class CreatePoProcess {
     const itemsPayload = this.newPoItems.map((item) => ({
       stock_items_id: parseInt(item.stock_items_id || item.id, 10),
       unit_cost: parseFloat(item.unit_cost) || 0,
-      qty_ordered: parseInt(item.qty, 10) || 1,
+      qty_ordered: Number((parseFloat(item.qty) || 1).toFixed(3)),
       qty_received: 0,
     }));
 

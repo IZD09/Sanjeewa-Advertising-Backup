@@ -28,9 +28,9 @@ class StorePurchaseOrderRequest extends FormRequest
 
                 $normalizedItems[] = [
                     'stock_items_id' => $stockItemsId ? (int) $stockItemsId : null,
-                    'qty_ordered' => (int) $qtyOrdered,
+                    'qty_ordered' => round((float) $qtyOrdered, 3),
                     'unit_cost' => (float) $unitCost,
-                    'qty_received' => (int) $qtyReceived,
+                    'qty_received' => round((float) $qtyReceived, 3),
                 ];
             }
             $this->merge(['items' => $normalizedItems]);
@@ -54,8 +54,8 @@ class StorePurchaseOrderRequest extends FormRequest
             'items' => ['nullable', 'array'],
             'items.*.stock_items_id' => ['required_with:items', 'integer', 'exists:stock_items,id'],
             'items.*.unit_cost' => ['required_with:items', 'numeric', 'min:0'],
-            'items.*.qty_ordered' => ['required_with:items', 'integer', 'min:1'],
-            'items.*.qty_received' => ['nullable', 'integer', 'min:0'],
+            'items.*.qty_ordered' => ['required_with:items', 'numeric', 'min:0.001'],
+            'items.*.qty_received' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

@@ -255,7 +255,7 @@ class GrnService
                         'brands_id' => $brandId,
                     ]);
 
-                    $qty = max(1, (int) ($stockItem['qty'] ?? $stockItem['receiving_qty'] ?? 1));
+                    $qty = round(max(0.001, (float) ($stockItem['qty'] ?? $stockItem['receiving_qty'] ?? 1)), 3);
                     $buyCost = (float) ($stockItem['buy'] ?? $stockItem['unit_cost'] ?? 0);
                     $price = isset($stockItem['price']) && (float) $stockItem['price'] > 0
                         ? (float) $stockItem['price']
@@ -557,7 +557,7 @@ class GrnService
         $subTotal = 0.0;
 
         foreach ($grn->stocks as $stock) {
-            $qty = (int) $stock->qty;
+            $qty = round((float) $stock->qty, 3);
             $unitCost = (float) $stock->buy;
             $itemTotal = $qty * $unitCost;
             $subTotal += $itemTotal;
@@ -586,7 +586,7 @@ class GrnService
             foreach ($grn->purchaseOrders as $order) {
                 if ($order->relationLoaded('items')) {
                     foreach ($order->items as $poi) {
-                        $qty = (int) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered);
+                        $qty = round((float) ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered), 3);
                         $unitCost = (float) $poi->unit_cost;
                         $itemTotal = $qty * $unitCost;
                         $subTotal += $itemTotal;

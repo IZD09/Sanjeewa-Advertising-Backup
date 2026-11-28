@@ -281,9 +281,9 @@ export class CreateGrnProcess {
 
     if (Array.isArray(po.items) && po.items.length > 0) {
       po.items.forEach((item) => {
-        const qtyOrdered = parseInt(item.qty_ordered, 10) || 0;
-        const qtyReceived = parseInt(item.qty_received, 10) || 0;
-        const remainingQty = Math.max(1, qtyOrdered - qtyReceived);
+        const qtyOrdered = Number((parseFloat(item.qty_ordered) || 0).toFixed(3));
+        const qtyReceived = Number((parseFloat(item.qty_received) || 0).toFixed(3));
+        const remainingQty = Math.max(0.001, Number((qtyOrdered - qtyReceived).toFixed(3)) || 1);
         const unitCost = parseFloat(item.unit_cost) || 0;
 
         const stockItemId = item.stock_items_id || item.item_id;
@@ -551,7 +551,7 @@ export class CreateGrnProcess {
           batch_mode: isExistingBatch ? "EXISTING" : "NEW",
           create_new_batch: !isExistingBatch,
           batch_id: isExistingBatch ? parseInt(item.batch_id, 10) : null,
-          qty: Math.round(item.receiving_qty),
+          qty: Number((parseFloat(item.receiving_qty) || 0).toFixed(3)),
           buy: unitCost,
           price: sellPrice
         };

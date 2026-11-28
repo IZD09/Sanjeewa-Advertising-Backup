@@ -99,7 +99,7 @@ class GrnItemService
             'grn_id' => (int) $data['grn_id'],
             'item_batches_id' => (int) $data['item_batches_id'],
             'stock_id' => (int) $data['stock_id'],
-            'qty' => (int) $data['qty'],
+            'qty' => round((float) $data['qty'], 3),
         ]);
     }
 

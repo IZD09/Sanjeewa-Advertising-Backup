@@ -267,7 +267,7 @@ class PrintJobController extends BaseApiController
             $updatedJob = $this->printJobService->assignStockItem(
                 $printJob,
                 $request->integer('stock_id'),
-                $request->integer('qty')
+                round((float) $request->input('qty'), 3)
             );
         }
 

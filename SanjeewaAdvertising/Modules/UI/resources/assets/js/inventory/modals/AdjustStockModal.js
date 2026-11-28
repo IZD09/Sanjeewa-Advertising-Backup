@@ -86,7 +86,7 @@ export class AdjustStockModal extends BaseModalHandler {
 
     this.currentContextItem = item;
     this.currentStockId = stockId || item.id || item.stock_id || null;
-    this.baseQty = parseInt(item.qty ?? item.currentStock ?? 0, 10) || 0;
+    this.baseQty = Number((parseFloat(item.qty ?? item.currentStock ?? 0) || 0).toFixed(3));
     this.currentAdjustmentType = "ADD";
 
     // Set Modal Title
@@ -143,16 +143,16 @@ export class AdjustStockModal extends BaseModalHandler {
     const qtyInput = document.getElementById("adjQtyInput");
     if (!qtyInput) return;
 
-    let currentVal = parseInt(qtyInput.value, 10);
+    let currentVal = parseFloat(qtyInput.value);
     if (isNaN(currentVal)) {
       currentVal = this.baseQty;
     }
 
     if (type === "ADD") {
-      qtyInput.value = currentVal + 1;
+      qtyInput.value = Number((currentVal + 1).toFixed(3));
     } else if (type === "DEDUCT") {
       if (currentVal > 0) {
-        qtyInput.value = currentVal - 1;
+        qtyInput.value = Number(Math.max(0, currentVal - 1).toFixed(3));
       }
     }
 
@@ -166,7 +166,7 @@ export class AdjustStockModal extends BaseModalHandler {
     const qtyInput = document.getElementById("adjQtyInput");
     if (!qtyInput) return;
 
-    const val = parseInt(qtyInput.value, 10) || 0;
+    const val = parseFloat(qtyInput.value) || 0;
     if (val >= this.baseQty) {
       this.setAdjustmentType("ADD", false);
     } else {
@@ -212,8 +212,8 @@ export class AdjustStockModal extends BaseModalHandler {
     const impactElem = document.getElementById("adjImpactValue");
     if (!impactElem) return;
 
-    const targetQty = parseInt(qtyInput?.value, 10) || 0;
-    const diff = targetQty - this.baseQty;
+    const targetQty = Number((parseFloat(qtyInput?.value) || 0).toFixed(3));
+    const diff = Number((targetQty - this.baseQty).toFixed(3));
     const unitPrice = parseFloat(this.currentContextItem.unitPrice ?? this.currentContextItem.buyPrice ?? 0) || 0;
     const impactVal = Math.abs(diff) * unitPrice;
 
@@ -252,13 +252,14 @@ export class AdjustStockModal extends BaseModalHandler {
       return;
     }
 
-    const targetQty = parseInt(qtyInput?.value, 10);
+    const rawTarget = parseFloat(qtyInput?.value);
+    const targetQty = isNaN(rawTarget) ? NaN : Number(rawTarget.toFixed(3));
     if (isNaN(targetQty) || targetQty < 0) {
       this.showToast("Please enter a valid non-negative adjustment quantity", "error");
       return;
     }
 
-    const diff = targetQty - this.baseQty;
+    const diff = Number((targetQty - this.baseQty).toFixed(3));
     const reason = reasonSelect?.value || "Physical Count Mismatch";
     const remarks = remarksInput?.value?.trim() || "";
 

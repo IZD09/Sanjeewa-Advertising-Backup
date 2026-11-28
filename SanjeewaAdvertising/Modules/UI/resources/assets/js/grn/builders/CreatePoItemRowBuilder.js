@@ -53,8 +53,8 @@ export class CreatePoItemEntity {
                name="new_po_items[${index}][qty]"
                aria-label="Order quantity for ${this.item_name}"
                class="grn-inline-input text-right"
-               min="1"
-               step="1"
+               min="0.001"
+               step="any"
                value="${this.qty}"
                oninput="window.grnManager.onNewPoQtyChange(${index}, this.value)">
       </td>

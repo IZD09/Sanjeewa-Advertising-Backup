@@ -221,6 +221,11 @@ export class SidebarNavigationProcess {
         }
         break;
 
+      case "transport":
+        if (window.location.pathname === "/admin/transport" || window.location.pathname === "/transport") return;
+        this.goTo("/admin/transport");
+        break;
+
       case "hr-management":
         if (window.location.pathname === "/admin/hr-management" || window.location.pathname === "/hr-management") return;
         this.goTo("/admin/hr-management");

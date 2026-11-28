@@ -37,7 +37,7 @@ class StoreGrnRequest extends FormRequest
             'stocks.*.batch_mode' => ['nullable', 'string', 'in:NEW,EXISTING,new,existing'],
             'stocks.*.batch_id' => ['nullable', 'integer', 'exists:item_batches,id'],
             'stocks.*.create_new_batch' => ['nullable', 'boolean'],
-            'stocks.*.qty' => ['required_with:stocks', 'integer', 'min:1'],
+            'stocks.*.qty' => ['required_with:stocks', 'numeric', 'min:0.001'],
             'stocks.*.price' => ['nullable', 'numeric', 'min:0'],
             'stocks.*.buy' => ['required_with:stocks', 'numeric', 'min:0'],
         ];

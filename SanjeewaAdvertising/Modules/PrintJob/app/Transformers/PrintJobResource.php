@@ -83,7 +83,7 @@ class PrintJobResource extends JsonResource
             'stock_items' => $this->whenLoaded('stockItems', function () {
                 return $this->stockItems->map(fn ($stock) => [
                     'stock_id' => (int) $stock->id,
-                    'qty' => $stock->pivot ? (int) $stock->pivot->qty : 0,
+                    'qty' => $stock->pivot ? round((float) $stock->pivot->qty, 3) : 0,
                     'price' => (float) $stock->price,
                     'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? $stock->stockItem?->item_name) : null,
                     'item_name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? $stock->stockItem?->item_name) : null,
@@ -95,7 +95,7 @@ class PrintJobResource extends JsonResource
                     'stock_id' => (int) $stock->id,
                     'name' => $stock->relationLoaded('stockItem') ? ($stock->stockItem?->name ?? 'Material #'.$stock->id) : 'Material #'.$stock->id,
                     'brand' => $stock->relationLoaded('brand') ? ($stock->brand?->brand ?? '') : '',
-                    'qty' => $stock->pivot ? (int) $stock->pivot->qty : 1,
+                    'qty' => $stock->pivot ? round((float) $stock->pivot->qty, 3) : 1,
                 ])->values()->all();
             }),
             'materials_count' => $this->relationLoaded('stockItems') ? $this->stockItems->count() : 0,

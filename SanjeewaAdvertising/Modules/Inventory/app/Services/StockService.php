@@ -90,8 +90,8 @@ class StockService
         $allStocks = Stock::all(['id', 'qty', 'price']);
         $totalItems = $allStocks->count();
         $totalValue = $allStocks->sum(fn ($st) => (float) $st->qty * (float) $st->price);
-        $lowStockCount = $allStocks->filter(fn ($st) => (int) $st->qty > 0 && (int) $st->qty <= 10)->count();
-        $outOfStockCount = $allStocks->filter(fn ($st) => (int) $st->qty <= 0)->count();
+        $lowStockCount = $allStocks->filter(fn ($st) => (float) $st->qty > 0 && (float) $st->qty <= 10)->count();
+        $outOfStockCount = $allStocks->filter(fn ($st) => (float) $st->qty <= 0)->count();
 
         return [
             'items' => $transformedItems,
@@ -165,13 +165,13 @@ class StockService
             $subcat = $item->subcategory;
             $cat = $subcat?->category;
 
-            $totalQty = (int) $item->stocks->sum('qty');
+            $totalQty = round((float) $item->stocks->sum('qty'), 3);
             $totalVal = round($item->stocks->sum(function (Stock $st) {
-                return (int) $st->qty * (float) $st->price;
+                return (float) $st->qty * (float) $st->price;
             }), 2);
 
-            $lowThreshold = (int) ($item->low_stock_qty ?? 10);
-            $reorderQty = (int) ($item->reorder_qty ?? 20);
+            $lowThreshold = round((float) ($item->low_stock_qty ?? 10), 3);
+            $reorderQty = round((float) ($item->reorder_qty ?? 20), 3);
 
             $status = match (true) {
                 $totalQty <= 0 => ['label' => 'Out of Stock', 'class' => 'ant-tag-red'],
@@ -241,12 +241,12 @@ class StockService
         $cat = $subcat?->category;
         $brand = $stock->brand;
 
-        $qty = (int) $stock->qty;
+        $qty = round((float) $stock->qty, 3);
         $unitPrice = (float) $stock->price;
         $buyPrice = (float) $stock->buy;
         $totalVal = round($qty * $unitPrice, 2);
 
-        $lowThreshold = (int) ($item?->low_stock_qty ?? 10);
+        $lowThreshold = round((float) ($item?->low_stock_qty ?? 10), 3);
         $status = match (true) {
             $qty <= 0 => ['label' => 'Out of Stock', 'class' => 'ant-tag-red'],
             $qty <= $lowThreshold => ['label' => 'Low Stock', 'class' => 'ant-tag-orange'],
@@ -261,7 +261,7 @@ class StockService
 
         $batches = $stock->grmItems->map(function ($grm) use ($stock, $supplierName, $buyPrice, $qty) {
             $batchNo = $grm->itemBatch?->batch_no ?? ($grm->item_batches_id ? 'BAT-'.str_pad((string) $grm->item_batches_id, 4, '0', STR_PAD_LEFT) : 'BAT-'.$stock->id);
-            $batchQty = (int) $grm->qty;
+            $batchQty = round((float) $grm->qty, 3);
 
             return [
                 'id' => $batchNo,
@@ -300,7 +300,7 @@ class StockService
                 'id' => 'TXN-'.$mov->id,
                 'date' => $mov->date ? $mov->date->format('Y-m-d H:i') : null,
                 'type' => $type,
-                'qty' => (int) $mov->qty,
+                'qty' => round((float) $mov->qty, 3),
                 'reason' => $mov->movementType?->stock_movements_type ?? 'Stock Movement',
                 'batchId' => 'BAT-'.$mov->stock_id,
                 'user' => 'Admin',
@@ -329,7 +329,7 @@ class StockService
             'status' => $status,
             'minThreshold' => $lowThreshold,
             'low_stock_qty' => $lowThreshold,
-            'reorder_qty' => (int) ($item?->reorder_qty ?? 20),
+            'reorder_qty' => round((float) ($item?->reorder_qty ?? 20), 3),
             'grn_id' => $stock->grn_id,
             'add_date' => $stock->add_date ? $stock->add_date->format('Y-m-d') : null,
             'batches' => $batches,
@@ -364,8 +364,8 @@ class StockService
                 'category_id' => $item->subcategory?->categories_id,
                 'category_name' => $item->subcategory?->category?->category ?? 'General',
                 'subcategory_name' => $item->subcategory?->subcategory ?? 'General',
-                'low_stock_qty' => (int) ($item->low_stock_qty ?? 10),
-                'reorder_qty' => (int) ($item->reorder_qty ?? 20),
+                'low_stock_qty' => round((float) ($item->low_stock_qty ?? 10), 3),
+                'reorder_qty' => round((float) ($item->reorder_qty ?? 20), 3),
                 'compatible_brands' => $item->brands->map(fn ($b) => [
                     'id' => $b->id,
                     'brand' => $b->brand,
@@ -378,7 +378,7 @@ class StockService
                     'id' => $st->id,
                     'brands_id' => $st->brands_id,
                     'brand_name' => $st->brand?->brand ?? 'Generic',
-                    'qty' => (int) $st->qty,
+                    'qty' => round((float) $st->qty, 3),
                     'buy' => (float) $st->buy,
                     'price' => (float) $st->price,
                     'grn_id' => $st->grn_id,
@@ -471,9 +471,9 @@ class StockService
                             $meta = $resolveGrnItemMeta($item);
                             $grnStock = $meta['grn_stock'];
 
-                            $qty = (int) ($grnStock && $grnStock->qty > 0
+                            $qty = round((float) ($grnStock && $grnStock->qty > 0
                                 ? $grnStock->qty
-                                : ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered));
+                                : ($poi->qty_received > 0 ? $poi->qty_received : $poi->qty_ordered)), 3);
                             if ($qty <= 0) {
                                 $qty = 1;
                             }
@@ -487,10 +487,10 @@ class StockService
                             if ($itemsMap->has($item->id)) {
                                 $existing = $itemsMap->get($item->id);
                                 if (! $grnStock) {
-                                    $existing['qty'] += $qty;
+                                    $existing['qty'] = round($existing['qty'] + $qty, 3);
                                 }
-                                $existing['qty_ordered'] += (int) $poi->qty_ordered;
-                                $existing['qty_received'] += (int) $poi->qty_received;
+                                $existing['qty_ordered'] = round($existing['qty_ordered'] + (float) $poi->qty_ordered, 3);
+                                $existing['qty_received'] = round($existing['qty_received'] + (float) $poi->qty_received, 3);
                                 $existing['total_cost'] = round($existing['qty'] * $existing['unit_cost'], 2);
                                 $existing['total_value'] = round($existing['qty'] * $existing['selling_price'], 2);
                                 $itemsMap->put($item->id, $existing);
@@ -511,8 +511,8 @@ class StockService
                                     'unit_cost' => $unitCost,
                                     'selling_price' => $sellingPrice,
                                     'qty' => $qty,
-                                    'qty_ordered' => (int) $poi->qty_ordered,
-                                    'qty_received' => (int) $poi->qty_received,
+                                    'qty_ordered' => round((float) $poi->qty_ordered, 3),
+                                    'qty_received' => round((float) $poi->qty_received, 3),
                                     'total_cost' => round($qty * $unitCost, 2),
                                     'total_value' => round($qty * $sellingPrice, 2),
                                     'po_id' => $po->id,
@@ -528,7 +528,7 @@ class StockService
                                         'id' => $st->id,
                                         'brands_id' => $st->brands_id,
                                         'brand_name' => $st->brand?->brand ?? 'Generic',
-                                        'qty' => (int) $st->qty,
+                                        'qty' => round((float) $st->qty, 3),
                                         'buy' => (float) $st->buy,
                                         'price' => (float) $st->price,
                                         'grn_id' => $st->grn_id,
@@ -545,7 +545,7 @@ class StockService
                         $item = $stock->stockItem;
                         if ($item && ! in_array($item->id, $stockedItemIds) && ! $itemsMap->has($item->id)) {
                             $meta = $resolveGrnItemMeta($item);
-                            $qty = (int) $stock->qty > 0 ? (int) $stock->qty : 1;
+                            $qty = (float) $stock->qty > 0 ? round((float) $stock->qty, 3) : 1;
                             $unitCost = (float) $stock->buy;
                             $sellingPrice = (float) $stock->price > 0 ? (float) $stock->price : round($unitCost * 1.25, 2);
 
@@ -582,7 +582,7 @@ class StockService
                                     'id' => $st->id,
                                     'brands_id' => $st->brands_id,
                                     'brand_name' => $st->brand?->brand ?? 'Generic',
-                                    'qty' => (int) $st->qty,
+                                    'qty' => round((float) $st->qty, 3),
                                     'buy' => (float) $st->buy,
                                     'price' => (float) $st->price,
                                     'grn_id' => $st->grn_id,
@@ -661,7 +661,7 @@ class StockService
             }
 
             $stockItemId = (int) $data['stock_items_id'];
-            $receivedQty = (int) $data['qty'];
+            $receivedQty = round((float) $data['qty'], 3);
             $addDate = ! empty($data['add_date'])
                 ? Carbon::parse($data['add_date'])
                 : now();
@@ -709,7 +709,7 @@ class StockService
 
                 if ($batchStock) {
                     // Add received quantity to the existing batch's stock
-                    $batchStock->qty = (int) $batchStock->qty + $receivedQty;
+                    $batchStock->qty = round((float) $batchStock->qty + $receivedQty, 3);
                     $batchStock->add_date = $addDate;
                     if (isset($data['buy']) && (float) $data['buy'] > 0) {
                         $batchStock->buy = (float) $data['buy'];
@@ -905,13 +905,13 @@ class StockService
     public function updateStock(Stock $stock, array $data): Stock
     {
         return DB::transaction(function () use ($stock, $data) {
-            $incomingQty = (int) $data['qty'];
+            $incomingQty = round((float) $data['qty'], 3);
             $addDate = ! empty($data['add_date'])
                 ? Carbon::parse($data['add_date'])
                 : now();
 
             // Increment existing stock quantity with the received shipment quantity
-            $stock->qty = (int) $stock->qty + $incomingQty;
+            $stock->qty = round((float) $stock->qty + $incomingQty, 3);
 
             if (isset($data['price'])) {
                 $stock->price = $data['price'];
@@ -987,22 +987,22 @@ class StockService
     public function adjustStock(Stock $stock, array $data): Stock
     {
         return DB::transaction(function () use ($stock, $data) {
-            $oldQty = (int) $stock->qty;
+            $oldQty = round((float) $stock->qty, 3);
             $type = strtoupper((string) ($data['adjustment_type'] ?? 'ADD'));
 
             // Check if final target quantity is provided or delta qty
             if (isset($data['new_qty']) && is_numeric($data['new_qty'])) {
-                $finalQty = max(0, (int) $data['new_qty']);
-                $diff = abs($finalQty - $oldQty);
+                $finalQty = round(max(0, (float) $data['new_qty']), 3);
+                $diff = round(abs($finalQty - $oldQty), 3);
                 $isIncrease = $finalQty >= $oldQty;
             } else {
-                $deltaQty = (int) ($data['qty'] ?? 0);
+                $deltaQty = round((float) ($data['qty'] ?? 0), 3);
                 if ($type === 'DEDUCT') {
-                    $finalQty = max(0, $oldQty - $deltaQty);
-                    $diff = min($oldQty, $deltaQty);
+                    $finalQty = round(max(0, $oldQty - $deltaQty), 3);
+                    $diff = round(min($oldQty, $deltaQty), 3);
                     $isIncrease = false;
                 } else {
-                    $finalQty = $oldQty + $deltaQty;
+                    $finalQty = round($oldQty + $deltaQty, 3);
                     $diff = $deltaQty;
                     $isIncrease = true;
                 }

@@ -57,7 +57,7 @@ class Stock extends Model
         return [
             'stock_items_id' => 'integer',
             'add_date' => 'datetime',
-            'qty' => 'integer',
+            'qty' => 'float',
             'price' => 'decimal:2',
             'buy' => 'decimal:2',
             'grn_id' => 'integer',

@@ -64,7 +64,7 @@ class PrintJobStockItem extends Model
         return [
             'print_jobs_id' => 'integer',
             'stock_id' => 'integer',
-            'qty' => 'integer',
+            'qty' => 'float',
         ];
     }
 

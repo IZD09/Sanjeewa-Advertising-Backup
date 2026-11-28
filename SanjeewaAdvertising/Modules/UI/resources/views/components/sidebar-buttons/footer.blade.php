@@ -22,3 +22,6 @@
     </div>
     <i class="fa-solid fa-ellipsis"></i>
 </div>
+<div class="sidebar-copyright" aria-label="Software Copyright">
+    <span>&copy; {{ date('Y') }} <strong>Orytingo</strong> &middot; All rights reserved</span>
+</div>

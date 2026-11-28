@@ -52,7 +52,7 @@ class StorePrintJobRequest extends FormRequest
                 'orders.*.print_cost_ids.*' => ['integer', 'exists:print_cost,id'],
                 'orders.*.stock_items' => ['nullable', 'array'],
                 'orders.*.stock_items.*.stock_id' => ['required_with:orders.*.stock_items', 'integer', 'exists:stock,id'],
-                'orders.*.stock_items.*.qty' => ['required_with:orders.*.stock_items', 'integer', 'min:1'],
+                'orders.*.stock_items.*.qty' => ['required_with:orders.*.stock_items', 'numeric', 'min:0.001'],
             ];
         }
 
@@ -83,7 +83,7 @@ class StorePrintJobRequest extends FormRequest
             'print_cost_ids.*' => ['integer', 'exists:print_cost,id'],
             'stock_items' => ['nullable', 'array'],
             'stock_items.*.stock_id' => ['required_with:stock_items', 'integer', 'exists:stock,id'],
-            'stock_items.*.qty' => ['required_with:stock_items', 'integer', 'min:1'],
+            'stock_items.*.qty' => ['required_with:stock_items', 'numeric', 'min:0.001'],
         ];
     }
 

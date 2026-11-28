@@ -184,8 +184,8 @@ class PurchaseOrderService
                         'purchase_orders_id' => $po->id,
                         'stock_items_id' => $stockItemId,
                         'unit_cost' => (float) ($item['unit_cost'] ?? 0),
-                        'qty_ordered' => (int) ($item['qty_ordered'] ?? $item['qty'] ?? 1),
-                        'qty_received' => (int) ($item['qty_received'] ?? 0),
+                        'qty_ordered' => round((float) ($item['qty_ordered'] ?? $item['qty'] ?? 1), 3),
+                        'qty_received' => round((float) ($item['qty_received'] ?? 0), 3),
                     ]);
                 }
             }
@@ -204,8 +204,8 @@ class PurchaseOrderService
             ->selectRaw('COALESCE(SUM(qty_ordered), 0) as total_ordered, COALESCE(SUM(qty_received), 0) as total_received')
             ->first();
 
-        $ordered = (int) ($totals->total_ordered ?? 0);
-        $received = (int) ($totals->total_received ?? 0);
+        $ordered = round((float) ($totals->total_ordered ?? 0), 3);
+        $received = round((float) ($totals->total_received ?? 0), 3);
 
         $hasUnfinishedItems = DB::table('purchase_order_items')
             ->where('purchase_orders_id', $poId)
@@ -281,8 +281,8 @@ class PurchaseOrderService
             'purchase_orders_id' => $purchaseOrder->id,
             'stock_items_id' => (int) $itemData['stock_items_id'],
             'unit_cost' => (float) ($itemData['unit_cost'] ?? 0),
-            'qty_ordered' => (int) ($itemData['qty_ordered'] ?? 1),
-            'qty_received' => (int) ($itemData['qty_received'] ?? 0),
+            'qty_ordered' => round((float) ($itemData['qty_ordered'] ?? 1), 3),
+            'qty_received' => round((float) ($itemData['qty_received'] ?? 0), 3),
         ]);
     }
 
@@ -358,8 +358,8 @@ class PurchaseOrderService
         $totalReceived = 0;
 
         foreach ($po->items as $item) {
-            $qtyOrdered = (int) $item->qty_ordered;
-            $qtyReceived = (int) $item->qty_received;
+            $qtyOrdered = round((float) $item->qty_ordered, 3);
+            $qtyReceived = round((float) $item->qty_received, 3);
             $unitCost = (float) $item->unit_cost;
             $itemTotal = $qtyOrdered * $unitCost;
 
